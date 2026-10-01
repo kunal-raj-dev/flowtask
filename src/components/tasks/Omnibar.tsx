@@ -84,7 +84,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
             onChange={(e) => setInput(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-            placeholder="Add task... (e.g. 'Review proposal tomorrow at 3pm #work p1 ~30m' or press 'N')"
+            placeholder={isFocused ? "Type task name... ('tomorrow', '#project', 'p1', '~30m')" : "Add a task... (press 'N')"}
             className="w-full bg-transparent text-sm font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none"
           />
 
@@ -109,6 +109,53 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
             )}
           </div>
         </div>
+
+        {/* Quick Helper Token Chips when focused & empty */}
+        {isFocused && input.trim().length === 0 && (
+          <div className="px-4 pb-2.5 pt-1 flex items-center gap-1.5 border-t border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)] animate-slide-down">
+            <span className="font-semibold uppercase tracking-wider text-[10px]">Quick:</span>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setInput((prev) => (prev ? `${prev} today` : 'today '));
+              }}
+              className="px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l1)] hover:bg-stone-200/70 dark:hover:bg-white/[0.08] transition-colors"
+            >
+              + today
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setInput((prev) => (prev ? `${prev} tomorrow` : 'tomorrow '));
+              }}
+              className="px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l1)] hover:bg-stone-200/70 dark:hover:bg-white/[0.08] transition-colors"
+            >
+              + tomorrow
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setInput((prev) => (prev ? `${prev} ~25m` : '~25m '));
+              }}
+              className="px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l1)] hover:bg-stone-200/70 dark:hover:bg-white/[0.08] transition-colors"
+            >
+              + ~25m
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setInput((prev) => (prev ? `${prev} p1` : 'p1 '));
+              }}
+              className="px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
+            >
+              + p1
+            </button>
+          </div>
+        )}
 
         {/* Real-time NLP parsing badges preview */}
         {input.trim().length > 0 && hasRecognizedTokens && (

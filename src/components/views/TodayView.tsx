@@ -13,6 +13,8 @@ import {
   Zap,
   List,
   Clock,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface TodayViewProps {
@@ -45,9 +47,17 @@ export const TodayView: React.FC<TodayViewProps> = ({
     return (localStorage.getItem('flowtask_today_mode') as 'list' | 'timeline') || 'list';
   });
 
+  const [isCompletedCollapsed, setIsCompletedCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem('flowtask_today_completed_collapsed') === 'true';
+  });
+
   useEffect(() => {
     localStorage.setItem('flowtask_today_mode', displayMode);
   }, [displayMode]);
+
+  useEffect(() => {
+    localStorage.setItem('flowtask_today_completed_collapsed', String(isCompletedCollapsed));
+  }, [isCompletedCollapsed]);
 
   const todayStr = formatLocalDate(new Date());
 
@@ -293,9 +303,15 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
 
             {pinnedTasks.length === 0 ? (
-              <div className="p-5 rounded-2xl border border-dashed border-stone-300/80 dark:border-stone-800 text-center text-xs text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/40 backdrop-blur-xs">
-                No top focus items selected yet. Click the <Star size={12} className="inline mx-0.5 text-amber-500" /> star on any task below or press <kbd className="px-1 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px]">f</kbd> to anchor your day.
-              </div>
+              otherActiveTasks.length > 0 ? (
+                <div className="py-2 px-3 rounded-xl border border-stone-200/60 dark:border-white/[0.06] text-xs text-[var(--text-muted)] bg-transparent flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Star size={13} className="text-amber-500" />
+                    <span>Anchor your day with up to 3 Most Important Tasks.</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-[var(--text-muted)]">Press 'f' to star</span>
+                </div>
+              ) : null
             ) : (
               <div className="space-y-2.5">
                 {pinnedTasks.map((task) => (
@@ -320,10 +336,12 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
 
             {otherActiveTasks.length === 0 && pinnedTasks.length === 0 ? (
-              <div className="text-center py-14 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-2xl border border-[var(--border-hairline)]">
-                <CheckCircle2 size={36} className="mx-auto mb-2.5 text-stone-300 dark:text-stone-700" />
+              <div className="text-center py-14 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-3xl border border-[var(--border-hairline)]">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <CheckCircle2 size={24} />
+                </div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">All clear for today!</p>
-                <p className="text-xs mt-1 text-[var(--text-secondary)]">Add a new task above or enjoy your free time.</p>
+                <p className="text-xs mt-1 text-[var(--text-secondary)]">Take a breath, reflect, or enjoy your well-deserved free time.</p>
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -340,22 +358,35 @@ export const TodayView: React.FC<TodayViewProps> = ({
             )}
           </div>
 
-          {/* Section 3: Completed Today */}
+          {/* Section 3: Completed Today (Collapsible Accordion) */}
           {completedTodayTasks.length > 0 && (
-            <div className="pt-5 border-t border-[var(--border-hairline)]">
-              <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <CheckCircle2 size={13} />
-                Completed Today ({completedTodayTasks.length})
-              </h3>
-              <div className="space-y-2">
-                {completedTodayTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onSelectTask={onSelectTask}
-                  />
-                ))}
-              </div>
+            <div className="pt-4 border-t border-[var(--border-hairline)] mt-6">
+              <button
+                type="button"
+                onClick={() => setIsCompletedCollapsed((prev) => !prev)}
+                className="flex items-center justify-between w-full text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors py-1 group"
+              >
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 size={13} className="text-emerald-500" />
+                  <span>Completed Today ({completedTodayTasks.length})</span>
+                </span>
+                <span className="text-[11px] text-[var(--text-muted)] group-hover:text-[var(--text-primary)] flex items-center gap-1 font-normal">
+                  {isCompletedCollapsed ? 'Show' : 'Hide'}
+                  {isCompletedCollapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+                </span>
+              </button>
+
+              {!isCompletedCollapsed && (
+                <div className="space-y-2 mt-3 animate-slide-down">
+                  {completedTodayTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onSelectTask={onSelectTask}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </>

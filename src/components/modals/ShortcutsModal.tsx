@@ -14,6 +14,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
     { key: 'f or *', desc: 'Pin to Top 3 Focus (Rule of 3)' },
     { key: 't / m / s', desc: 'Reschedule: Today / Tomorrow / Someday' },
     { key: 'N', desc: 'Quick add task (focus Omnibar)' },
+    { key: '[', desc: 'Toggle Sidebar (Zen Focus Mode)' },
     { key: 'Ctrl / ⌘ + K', desc: 'Open Command Palette' },
     { key: '?', desc: 'Show keyboard shortcuts' },
     { key: 'Esc', desc: 'Close any modal or drawer' },

@@ -20,6 +20,8 @@ import {
   RefreshCw,
   TrendingUp,
   Palette,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { useAuth } from '../../context/AuthContext';
@@ -30,6 +32,8 @@ interface SidebarProps {
   onOpenExportImport: () => void;
   onOpenBrainDump: () => void;
   onOpenAesthetics?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -38,6 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenExportImport,
   onOpenBrainDump,
   onOpenAesthetics,
+  isCollapsed = false,
+  onToggleCollapse,
 }) => {
   const {
     tasks,
@@ -101,6 +107,84 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'logbook', label: 'Logbook', icon: CheckCircle2, count: doneCount, color: 'text-stone-400' },
   ];
 
+  if (isCollapsed) {
+    return (
+      <aside className="w-16 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col items-center select-none transition-all duration-200 py-3 justify-between">
+        {/* Top: FT Button & Expand Toggle */}
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={onToggleCollapse}
+            title="Expand Sidebar ([)"
+            className="w-8 h-8 rounded-xl bg-gradient-to-br from-stone-900 to-stone-700 dark:from-white dark:to-stone-200 text-white dark:text-stone-950 flex items-center justify-center font-bold text-xs tracking-wider shadow-sm card-surface hover:scale-105 transition-transform"
+          >
+            FT
+          </button>
+          {onToggleCollapse && (
+            <button
+              onClick={onToggleCollapse}
+              title="Expand Sidebar ([)"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <PanelLeftOpen size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Center: Nav Views */}
+        <div className="flex flex-col items-center gap-1.5 my-auto overflow-y-auto max-h-[60vh] py-1 px-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id as any)}
+                title={`${item.label}${item.count !== null && item.count > 0 ? ` (${item.count})` : ''}`}
+                className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                  isActive
+                    ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
+                    : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <Icon size={16} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
+                {item.count !== null && item.count > 0 && !isActive && (
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-500 ring-2 ring-[var(--bg-surface-l1)]" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Bottom: Focus Timer, Aesthetics, Theme */}
+        <div className="flex flex-col items-center gap-1.5 pt-2 border-t border-[var(--border-hairline)] w-full px-2">
+          <button
+            onClick={onOpenPomodoro}
+            title="Focus Mode & Timer"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-500/35 hover:bg-amber-500/25 transition-colors"
+          >
+            <Timer size={16} />
+          </button>
+          {onOpenAesthetics && (
+            <button
+              onClick={onOpenAesthetics}
+              title="Aesthetics & Sounds"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-purple-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <Palette size={15} />
+            </button>
+          )}
+          <button
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+          >
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside className="w-64 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/80 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col select-none transition-colors duration-200">
       {/* Brand Header */}
@@ -127,6 +211,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Sparkles size={15} />
           </button>
+          {onToggleCollapse && (
+            <button
+              onClick={onToggleCollapse}
+              title="Collapse Sidebar ([)"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <PanelLeftClose size={15} />
+            </button>
+          )}
         </div>
       </div>
 

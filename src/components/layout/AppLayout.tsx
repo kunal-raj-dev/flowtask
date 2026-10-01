@@ -29,6 +29,9 @@ export const AppLayout: React.FC = () => {
   } = useTaskContext();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem('flowtask_sidebar_collapsed') === 'true';
+  });
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isBrainDumpOpen, setIsBrainDumpOpen] = useState(false);
@@ -36,6 +39,10 @@ export const AppLayout: React.FC = () => {
   const [isAestheticsOpen, setIsAestheticsOpen] = useState(false);
   const [pomodoroTaskId, setPomodoroTaskId] = useState<string | null>(null);
   const [isPomodoroOpen, setIsPomodoroOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('flowtask_sidebar_collapsed', String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
 
   // Global Keyboard shortcuts
   useEffect(() => {
@@ -50,6 +57,9 @@ export const AppLayout: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen(true);
+      } else if (e.key === '[' || ((e.ctrlKey || e.metaKey) && e.key === '\\')) {
+        e.preventDefault();
+        setIsSidebarCollapsed((prev) => !prev);
       }
     };
 
@@ -125,7 +135,7 @@ export const AppLayout: React.FC = () => {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block relative z-10">
+      <div className="hidden md:block relative z-10 transition-all duration-200">
         <Sidebar
           onOpenPomodoro={() => {
             setPomodoroTaskId(null);
@@ -135,6 +145,8 @@ export const AppLayout: React.FC = () => {
           onOpenExportImport={() => setIsExportImportOpen(true)}
           onOpenBrainDump={() => setIsBrainDumpOpen(true)}
           onOpenAesthetics={() => setIsAestheticsOpen(true)}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         />
       </div>
 

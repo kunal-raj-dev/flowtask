@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Task } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
+import { TaskContextMenu } from './TaskContextMenu';
 import {
   Check,
   Calendar,
@@ -10,6 +11,7 @@ import {
   Timer,
   Trash2,
   ListTodo,
+  MoreHorizontal,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 
@@ -29,9 +31,46 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const {
     toggleTaskStatus,
     toggleTaskPinToday,
+    updateTask,
     deleteTask,
     projects,
   } = useTaskContext();
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(task.title);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTitleDraft(task.title);
+  }, [task.title]);
+
+  useEffect(() => {
+    if (isEditingTitle) {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    }
+  }, [isEditingTitle]);
+
+  const handleSaveTitle = () => {
+    if (titleDraft.trim() && titleDraft.trim() !== task.title) {
+      updateTask(task.id, { title: titleDraft.trim() });
+    } else {
+      setTitleDraft(task.title);
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveTitle();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setTitleDraft(task.title);
+      setIsEditingTitle(false);
+    }
+  };
 
   const isDone = task.status === 'done';
   const todayStr = formatLocalDate(new Date());
@@ -72,6 +111,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     <div
       id={`task-${task.id}`}
       onClick={() => onSelectTask(task.id)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setContextMenu({ x: e.clientX, y: e.clientY });
+      }}
       className={`group relative flex items-start gap-3.5 p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer ${
         isKeyboardFocused
           ? 'ring-2 ring-amber-500/80 dark:ring-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.22)] -translate-y-[1px]'
@@ -104,15 +147,33 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span
-            className={`text-sm leading-snug font-semibold transition-all ${
-              isDone
-                ? 'line-through text-[var(--text-muted)]'
-                : 'text-[var(--text-primary)]'
-            }`}
-          >
-            {task.title}
-          </span>
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={handleSaveTitle}
+              onKeyDown={handleTitleKeyDown}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none border-b-2 border-amber-500 pb-0.5"
+            />
+          ) : (
+            <span
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                if (!isDone) setIsEditingTitle(true);
+              }}
+              title="Double-click to edit title"
+              className={`text-sm leading-snug font-semibold transition-all ${
+                isDone
+                  ? 'line-through text-[var(--text-muted)]'
+                  : 'text-[var(--text-primary)]'
+              }`}
+            >
+              {task.title}
+            </span>
+          )}
 
           {/* Priority pip */}
           {task.priority !== 'p4' && !isDone && (
@@ -232,6 +293,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </button>
         )}
 
+        {/* Context Menu Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            const rect = e.currentTarget.getBoundingClientRect();
+            setContextMenu({ x: rect.right, y: rect.bottom });
+          }}
+          title="More options (or right click)"
+          className="p-1.5 rounded-lg text-stone-400 hover:text-[var(--text-primary)] hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+        >
+          <MoreHorizontal size={14} />
+        </button>
+
         {/* Delete button */}
         <button
           type="button"
@@ -242,6 +317,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <Trash2 size={14} />
         </button>
       </div>
+
+      {/* Floating Right-Click Context Menu */}
+      {contextMenu && (
+        <TaskContextMenu
+          task={task}
+          position={contextMenu}
+          onClose={() => setContextMenu(null)}
+          onStartFocus={onStartFocus}
+          onEditTitle={() => setIsEditingTitle(true)}
+        />
+      )}
     </div>
   );
 };

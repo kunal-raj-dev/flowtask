@@ -92,6 +92,7 @@ Raycast-inspired keyboard palette allowing you to navigate anywhere, search task
 | `f` or `*` | Pin / unpin active task to Top 3 Focus (Rule of 3) |
 | `t` / `m` / `s` | Reschedule active task to Today / Tomorrow / Someday |
 | `N` | Quick-add new task into Omnibar |
+| `[` | Toggle Sidebar (Zen Focus Mode) |
 | `Ctrl+K` / `Cmd+K` | Open Command Palette |
 | `?` or `Shift+/` | Open Keyboard Shortcuts cheatsheet |
 | `Esc` | Close drawers, modals, and palettes |

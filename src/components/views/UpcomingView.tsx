@@ -3,6 +3,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
 import { Omnibar } from '../tasks/Omnibar';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { Calendar, CalendarDays } from 'lucide-react';
 
 interface UpcomingViewProps {
@@ -16,7 +17,13 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   onStartFocus,
   onOpenBrainDump,
 }) => {
-  const { tasks } = useTaskContext();
+  const {
+    tasks,
+    toggleTaskStatus,
+    toggleTaskPinToday,
+    updateTask,
+    deleteTask,
+  } = useTaskContext();
 
   const today = new Date();
   const todayStr = formatLocalDate(today);
@@ -49,6 +56,16 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
     (t) => t.dueDate && t.dueDate > nextWeekEndStr
   );
 
+  const { focusedTaskId } = useKeyboardNavigation({
+    tasks: upcomingTasks,
+    onSelectTask,
+    onToggleStatus: toggleTaskStatus,
+    onTogglePinToday: toggleTaskPinToday,
+    onUpdateTask: updateTask,
+    onDeleteTask: deleteTask,
+    enabled: true,
+  });
+
   const renderSection = (title: string, sectionTasks: typeof upcomingTasks, subtitle?: string) => {
     if (sectionTasks.length === 0) return null;
     return (
@@ -66,6 +83,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
               task={task}
               onSelectTask={onSelectTask}
               onStartFocus={onStartFocus}
+              isKeyboardFocused={focusedTaskId === task.id}
             />
           ))}
         </div>
