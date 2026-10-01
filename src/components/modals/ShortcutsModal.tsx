@@ -13,7 +13,6 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
     { key: '1 - 4', desc: 'Set priority (P1 to P4)' },
     { key: 'f or *', desc: 'Pin to Top 3 Focus (Rule of 3)' },
     { key: 't / m / s', desc: 'Reschedule: Today / Tomorrow / Someday' },
-    { key: 'Shift + D', desc: 'Evening Daily Shutdown' },
     { key: 'N', desc: 'Quick add task (focus Omnibar)' },
     { key: 'Ctrl / ⌘ + K', desc: 'Open Command Palette' },
     { key: '?', desc: 'Show keyboard shortcuts' },

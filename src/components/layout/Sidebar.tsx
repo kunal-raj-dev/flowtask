@@ -29,7 +29,6 @@ interface SidebarProps {
   onOpenShortcuts: () => void;
   onOpenExportImport: () => void;
   onOpenBrainDump: () => void;
-  onOpenDailyShutdown?: () => void;
   onOpenAesthetics?: () => void;
 }
 
@@ -38,7 +37,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenShortcuts,
   onOpenExportImport,
   onOpenBrainDump,
-  onOpenDailyShutdown,
   onOpenAesthetics,
 }) => {
   const {
@@ -122,15 +120,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="flex items-center gap-1">
-          {onOpenDailyShutdown && (
-            <button
-              onClick={onOpenDailyShutdown}
-              title="Evening Daily Shutdown (Shift+D)"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-indigo-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Moon size={15} />
-            </button>
-          )}
           <button
             onClick={onOpenBrainDump}
             title="Multi-line Brain Dump"

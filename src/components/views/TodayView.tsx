@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   CalendarClock,
   Zap,
-  Moon,
   List,
   Clock,
 } from 'lucide-react';
@@ -40,8 +39,6 @@ export const TodayView: React.FC<TodayViewProps> = ({
     toggleTaskPinToday,
     updateTask,
     deleteTask,
-    isDailyShutdownOpen,
-    setIsDailyShutdownOpen,
   } = useTaskContext();
 
   const [displayMode, setDisplayMode] = useState<'list' | 'timeline'>(() => {
@@ -86,7 +83,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
     onTogglePinToday: toggleTaskPinToday,
     onUpdateTask: updateTask,
     onDeleteTask: deleteTask,
-    enabled: displayMode === 'list' && !isDailyShutdownOpen,
+    enabled: displayMode === 'list',
   });
 
   const totalTodayCount = filteredTasks.length + completedTodayTasks.length;
@@ -116,7 +113,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           </div>
 
-          {/* Action Row: Segmented Switcher, Daily Shutdown Trigger & Dual-Gradient SVG Ring */}
+          {/* Action Row: Segmented Switcher & Dual-Gradient SVG Ring */}
           <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
             {/* List vs Timeline Mode Switcher */}
             <div className="flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] shadow-inner">
@@ -145,17 +142,6 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 <span>Timeline</span>
               </button>
             </div>
-
-            {/* Evening Daily Shutdown Trigger */}
-            <button
-              type="button"
-              onClick={() => setIsDailyShutdownOpen(true)}
-              title="Evening Daily Shutdown (Shift+D)"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-indigo-500/15 via-purple-500/10 to-pink-500/15 hover:from-indigo-500/25 hover:to-pink-500/25 text-indigo-900 dark:text-indigo-300 text-xs font-bold border border-indigo-500/30 transition-all active:scale-95 shadow-xs card-surface"
-            >
-              <Moon size={14} className="text-indigo-600 dark:text-indigo-400" />
-              <span>End Day</span>
-            </button>
 
             {/* Daily Progress Widget with Dual-Gradient SVG Ring */}
             {totalTodayCount > 0 && (

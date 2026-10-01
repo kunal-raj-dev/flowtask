@@ -43,8 +43,6 @@ interface TaskContextType {
   lastSyncedAt: Date | null;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
-  isDailyShutdownOpen: boolean;
-  setIsDailyShutdownOpen: (open: boolean) => void;
   forceSyncToCloud: () => Promise<void>;
 
   // Actions
@@ -96,7 +94,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(isConfigured ? 'syncing' : 'local');
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isDailyShutdownOpen, setIsDailyShutdownOpen] = useState(false);
 
   // Theme state
   const [theme, setThemeState] = useState<AppTheme>(() => {
@@ -699,8 +696,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         lastSyncedAt,
         isAuthModalOpen,
         setIsAuthModalOpen,
-        isDailyShutdownOpen,
-        setIsDailyShutdownOpen,
         forceSyncToCloud,
         setActiveView,
         setViewLayout,

@@ -14,7 +14,6 @@ import { CommandPalette } from '../modals/CommandPalette';
 import { ShortcutsModal } from '../modals/ShortcutsModal';
 import { BrainDumpModal } from '../modals/BrainDumpModal';
 import { ExportImportModal } from '../modals/ExportImportModal';
-import { DailyShutdownModal } from '../modals/DailyShutdownModal';
 import { AestheticsModal } from '../modals/AestheticsModal';
 import { AuthModal } from '../modals/AuthModal';
 import { Toast } from '../ui/Toast';
@@ -27,8 +26,6 @@ export const AppLayout: React.FC = () => {
     setSelectedTaskId,
     isAuthModalOpen,
     setIsAuthModalOpen,
-    isDailyShutdownOpen,
-    setIsDailyShutdownOpen,
   } = useTaskContext();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
@@ -53,9 +50,6 @@ export const AppLayout: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen(true);
-      } else if (e.shiftKey && (e.key === 'D' || e.key === 'd')) {
-        e.preventDefault();
-        setIsDailyShutdownOpen(true);
       }
     };
 
@@ -140,7 +134,6 @@ export const AppLayout: React.FC = () => {
           onOpenShortcuts={() => setIsShortcutsOpen(true)}
           onOpenExportImport={() => setIsExportImportOpen(true)}
           onOpenBrainDump={() => setIsBrainDumpOpen(true)}
-          onOpenDailyShutdown={() => setIsDailyShutdownOpen(true)}
           onOpenAesthetics={() => setIsAestheticsOpen(true)}
         />
       </div>
@@ -172,10 +165,6 @@ export const AppLayout: React.FC = () => {
               onOpenBrainDump={() => {
                 setIsSidebarOpenMobile(false);
                 setIsBrainDumpOpen(true);
-              }}
-              onOpenDailyShutdown={() => {
-                setIsSidebarOpenMobile(false);
-                setIsDailyShutdownOpen(true);
               }}
               onOpenAesthetics={() => {
                 setIsSidebarOpenMobile(false);
@@ -238,10 +227,6 @@ export const AppLayout: React.FC = () => {
         }}
         onOpenBrainDump={() => setIsBrainDumpOpen(true)}
         onOpenExportImport={() => setIsExportImportOpen(true)}
-        onOpenDailyShutdown={() => {
-          setIsCommandPaletteOpen(false);
-          setIsDailyShutdownOpen(true);
-        }}
         onOpenAesthetics={() => {
           setIsCommandPaletteOpen(false);
           setIsAestheticsOpen(true);
@@ -259,12 +244,6 @@ export const AppLayout: React.FC = () => {
       {isExportImportOpen && (
         <ExportImportModal onClose={() => setIsExportImportOpen(false)} />
       )}
-
-      {/* Global Daily Shutdown Modal */}
-      <DailyShutdownModal
-        isOpen={isDailyShutdownOpen}
-        onClose={() => setIsDailyShutdownOpen(false)}
-      />
 
       {/* Aesthetics & Themes Customization Modal */}
       <AestheticsModal

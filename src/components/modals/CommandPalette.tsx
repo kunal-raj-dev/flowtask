@@ -23,7 +23,6 @@ interface CommandPaletteProps {
   onOpenPomodoro: () => void;
   onOpenBrainDump: () => void;
   onOpenExportImport: () => void;
-  onOpenDailyShutdown?: () => void;
   onOpenAesthetics?: () => void;
 }
 
@@ -34,7 +33,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenPomodoro,
   onOpenBrainDump,
   onOpenExportImport,
-  onOpenDailyShutdown,
   onOpenAesthetics,
 }) => {
   const {
@@ -115,12 +113,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       title: 'Start Focus Timer',
       icon: Timer,
       run: () => onOpenPomodoro(),
-    },
-    {
-      id: 'daily-shutdown',
-      title: 'Evening Daily Shutdown (Shift+D)',
-      icon: Moon,
-      run: () => onOpenDailyShutdown && onOpenDailyShutdown(),
     },
     {
       id: 'braindump',
