@@ -92,13 +92,13 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-sm card-surface">
-          <CalendarDays size={22} className="stroke-[2.2]" />
+    <div className="max-w-3xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
+        <div className="p-2 sm:p-2.5 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-sm card-surface flex-shrink-0">
+          <CalendarDays size={20} className="stroke-[2.2]" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
             Upcoming Schedule
           </h2>
           <p className="text-xs text-[var(--text-secondary)] font-medium">

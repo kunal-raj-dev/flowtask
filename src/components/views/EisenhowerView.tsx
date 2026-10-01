@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Priority } from '../../types/task';
 import { Grid2X2, Plus, ArrowUpRight, Flame, Target, Zap, Coffee } from 'lucide-react';
@@ -12,6 +12,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   onSelectTask,
 }) => {
   const { tasks, updateTask, addTask, toggleTaskStatus } = useTaskContext();
+  const [mobileQuadrant, setMobileQuadrant] = useState<Priority>('p1');
 
   const activeTasks = tasks.filter((t) => t.status !== 'done');
   const todayStr = formatLocalDate(new Date());
@@ -83,21 +84,52 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-6xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm card-surface">
-            <Grid2X2 size={22} className="stroke-[2.2]" />
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm card-surface flex-shrink-0">
+            <Grid2X2 size={20} className="stroke-[2.2]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
               Eisenhower Priority Matrix
             </h2>
             <p className="text-xs text-[var(--text-secondary)] font-medium">
-              Drag tasks between quadrants to organize by urgency and importance
+              Categorize and focus by urgency and importance
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Quadrant Switcher */}
+      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] mb-4 shadow-inner">
+        {quadrants.map((q) => {
+          const count = activeTasks.filter((t) => t.priority === q.priority).length;
+          const isActive = mobileQuadrant === q.priority;
+          const shortTitle =
+            q.priority === 'p1'
+              ? 'Do First'
+              : q.priority === 'p2'
+              ? 'Schedule'
+              : q.priority === 'p3'
+              ? 'Delegate'
+              : 'Backlog';
+          return (
+            <button
+              key={q.priority}
+              type="button"
+              onClick={() => setMobileQuadrant(q.priority)}
+              className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <span>{shortTitle}</span>
+              <span className="text-[10px] font-mono font-bold opacity-75">({count})</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 2x2 Grid */}
@@ -106,12 +138,15 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
           const Icon = q.icon;
           const quadTasks = activeTasks.filter((t) => t.priority === q.priority);
 
+          const isVisibleOnMobile = mobileQuadrant === q.priority;
           return (
             <div
               key={q.priority}
               onDrop={(e) => handleDrop(e, q.priority)}
               onDragOver={handleDragOver}
-              className={`bg-[var(--bg-surface-l2)] rounded-3xl border border-[var(--border-hairline)] p-5 flex flex-col shadow-card card-surface min-h-[280px] transition-all`}
+              className={`${
+                isVisibleOnMobile ? 'flex' : 'hidden md:flex'
+              } bg-[var(--bg-surface-l2)] rounded-3xl border border-[var(--border-hairline)] p-4 sm:p-5 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
             >
               {/* Quadrant Header */}
               <div className="flex items-start justify-between pb-3.5 mb-3.5 border-b border-[var(--border-hairline)]">
@@ -172,7 +207,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       </div>
 
                       {/* Quick promote to Today */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         {task.dueDate !== todayStr && (
                           <button
                             onClick={(e) => {
@@ -180,9 +215,10 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                               updateTask(task.id, { dueDate: todayStr });
                             }}
                             title="Move to Today"
-                            className="p-1 text-[var(--text-muted)] hover:text-amber-500 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                            aria-label="Move to Today"
+                            className="p-1.5 text-[var(--text-muted)] hover:text-amber-500 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
                           >
-                            <ArrowUpRight size={13} />
+                            <ArrowUpRight size={14} />
                           </button>
                         )}
                       </div>

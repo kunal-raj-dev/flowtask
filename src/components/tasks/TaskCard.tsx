@@ -146,7 +146,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-1.5">
           {isEditingTitle ? (
             <input
               ref={titleInputRef}
@@ -178,7 +178,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* Priority pip */}
           {task.priority !== 'p4' && !isDone && (
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider shadow-xs ${getPriorityStyle(
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider shadow-xs shrink-0 ${getPriorityStyle(
                 task.priority
               )}`}
             >
@@ -188,7 +188,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Pinned Top 3 indicator */}
           {task.isPinnedToday && !isDone && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/35 uppercase tracking-wider shadow-xs">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/35 uppercase tracking-wider shadow-xs shrink-0">
               <Star size={10} className="fill-amber-500 text-amber-500" />
               Focus
             </span>
@@ -203,7 +203,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         )}
 
         {/* Metadata Badges */}
-        <div className="flex flex-wrap items-center gap-2 mt-2.5">
+        <div className="flex flex-wrap items-center gap-1.5 mt-2">
           {/* Project tag */}
           {project && project.id !== 'inbox' && (
             <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)]">
@@ -260,9 +260,45 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       </div>
 
-      {/* Hover action tools */}
+      {/* Mobile action tools (always visible and touch-accessible) */}
       <div
-        className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="flex sm:hidden items-center gap-0.5 shrink-0 ml-1"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!isDone && (
+          <button
+            type="button"
+            onClick={() => toggleTaskPinToday(task.id)}
+            title={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
+            aria-label={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
+            className={`p-2 rounded-xl transition-colors ${
+              task.isPinnedToday
+                ? 'text-amber-500 bg-amber-500/10'
+                : 'text-stone-400 hover:text-amber-500 active:bg-stone-200/50 dark:active:bg-white/[0.06]'
+            }`}
+          >
+            <Star size={16} className={task.isPinnedToday ? 'fill-amber-500' : ''} />
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            const rect = e.currentTarget.getBoundingClientRect();
+            setContextMenu({ x: Math.min(rect.right, window.innerWidth - 180), y: rect.bottom + 4 });
+          }}
+          title="More options"
+          aria-label="More options"
+          className="p-2 rounded-xl text-stone-400 hover:text-[var(--text-primary)] active:bg-stone-200/50 dark:active:bg-white/[0.06] transition-colors"
+        >
+          <MoreHorizontal size={16} />
+        </button>
+      </div>
+
+      {/* Desktop hover action tools */}
+      <div
+        className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Rule of 3 Today Pin button */}

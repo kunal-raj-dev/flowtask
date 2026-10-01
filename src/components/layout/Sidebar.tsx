@@ -34,6 +34,8 @@ interface SidebarProps {
   onOpenAesthetics?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  onItemClick?: () => void;
+  isMobileDrawer?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -44,6 +46,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAesthetics,
   isCollapsed = false,
   onToggleCollapse,
+  onItemClick,
+  isMobileDrawer = false,
 }) => {
   const {
     tasks,
@@ -205,13 +209,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <div className="flex items-center gap-1">
           <button
-            onClick={onOpenBrainDump}
+            onClick={() => {
+              onOpenBrainDump();
+              onItemClick?.();
+            }}
             title="Multi-line Brain Dump"
             className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
           >
             <Sparkles size={15} />
           </button>
-          {onToggleCollapse && (
+          {onToggleCollapse && !isMobileDrawer && (
             <button
               onClick={onToggleCollapse}
               title="Collapse Sidebar ([)"
@@ -235,7 +242,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           return (
             <button
               key={item.id}
-              onClick={() => setActiveView(item.id as any)}
+              onClick={() => {
+                setActiveView(item.id as any);
+                onItemClick?.();
+              }}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-all ${
                 isActive
                   ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
@@ -288,7 +298,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             return (
               <button
                 key={project.id}
-                onClick={() => setActiveView(`project:${project.id}`)}
+                onClick={() => {
+                  setActiveView(`project:${project.id}`);
+                  onItemClick?.();
+                }}
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   isSelected
                     ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
@@ -379,50 +392,63 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Utility Footer: Sound, Theme, Shortcuts, Export */}
-      <div className="p-3 border-t border-[var(--border-hairline)] flex items-center justify-between text-[var(--text-secondary)]">
-        <div className="flex items-center gap-1">
+      <div className="p-3 border-t border-[var(--border-hairline)] flex items-center justify-between text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="flex items-center gap-1.5">
           {onOpenAesthetics && (
             <button
-              onClick={onOpenAesthetics}
+              onClick={() => {
+                onOpenAesthetics();
+                onItemClick?.();
+              }}
               title="Aesthetics & Sound Profiles"
-              className="p-1.5 hover:text-purple-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+              aria-label="Aesthetics & Sound Profiles"
+              className="p-2 sm:p-1.5 hover:text-purple-500 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
             >
-              <Palette size={15} />
+              <Palette size={17} />
             </button>
           )}
 
           <button
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            aria-label={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+            className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
           >
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
           <button
             onClick={toggleSound}
             title={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
-            className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            aria-label={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
+            className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
           >
-            {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
           </button>
         </div>
 
-        <div className="flex items-center gap-1">
-          <button
-            onClick={onOpenShortcuts}
-            title="Keyboard shortcuts (?)"
-            className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            <Keyboard size={15} />
-          </button>
+        <div className="flex items-center gap-1.5">
+          {!isMobileDrawer && (
+            <button
+              onClick={onOpenShortcuts}
+              title="Keyboard shortcuts (?)"
+              aria-label="Keyboard shortcuts"
+              className="hidden sm:inline-flex p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <Keyboard size={17} />
+            </button>
+          )}
 
           <button
-            onClick={onOpenExportImport}
+            onClick={() => {
+              onOpenExportImport();
+              onItemClick?.();
+            }}
             title="Export / Import data"
-            className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            aria-label="Export or import data"
+            className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
           >
-            <DownloadCloud size={15} />
+            <DownloadCloud size={17} />
           </button>
         </div>
       </div>

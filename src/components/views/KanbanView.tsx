@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { TaskStatus } from '../../types/task';
 import { Kanban, Plus, Circle, Clock, CheckCircle2 } from 'lucide-react';
@@ -11,6 +11,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   onSelectTask,
 }) => {
   const { tasks, updateTask, addTask } = useTaskContext();
+  const [mobileColumn, setMobileColumn] = useState<TaskStatus>('todo');
 
   const columns: {
     status: TaskStatus;
@@ -65,35 +66,61 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-sm card-surface">
-            <Kanban size={22} className="stroke-[2.2]" />
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-sm card-surface flex-shrink-0">
+            <Kanban size={20} className="stroke-[2.2]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
               Kanban Board
             </h2>
             <p className="text-xs text-[var(--text-secondary)] font-medium">
-              Drag and drop tasks between workflow stages
+              Manage workflow stages and team velocity
             </p>
           </div>
         </div>
       </div>
 
+      {/* Mobile Column Tab Switcher */}
+      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] mb-4 shadow-inner">
+        {columns.map((col) => {
+          const count = tasks.filter((t) => t.status === col.status).length;
+          const isActive = mobileColumn === col.status;
+          return (
+            <button
+              key={col.status}
+              type="button"
+              onClick={() => setMobileColumn(col.status)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <span>{col.title}</span>
+              <span className="text-[10px] font-mono font-bold opacity-75">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Columns Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 flex-1 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 flex-1 items-start">
         {columns.map((col) => {
           const colTasks = tasks.filter((t) => t.status === col.status);
           const ColIcon = col.icon;
 
+          const isVisibleOnMobile = mobileColumn === col.status;
           return (
             <div
               key={col.status}
               onDrop={(e) => handleDrop(e, col.status)}
               onDragOver={handleDragOver}
-              className="bg-[var(--bg-surface-l1)]/60 rounded-3xl p-4 border border-[var(--border-hairline)] flex flex-col min-h-[520px] backdrop-blur-xs shadow-xs"
+              className={`${
+                isVisibleOnMobile ? 'flex' : 'hidden md:flex'
+              } bg-[var(--bg-surface-l1)]/60 rounded-3xl p-3.5 sm:p-4 border border-[var(--border-hairline)] flex-col min-h-[360px] md:min-h-[520px] backdrop-blur-xs shadow-xs`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between mb-3.5 px-1">
@@ -137,7 +164,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         </span>
                         {task.priority !== 'p4' && (
                           <span
-                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border shadow-xs ${
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border shadow-xs shrink-0 ${
                               task.priority === 'p1'
                                 ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
                                 : task.priority === 'p2'
@@ -163,6 +190,40 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                             {task.subtasks.filter((s) => s.completed).length}/
                             {task.subtasks.length} subtasks
                           </span>
+                        )}
+                      </div>
+
+                      {/* Mobile quick status advance buttons */}
+                      <div
+                        className="flex md:hidden items-center justify-end gap-1.5 pt-2 border-t border-[var(--border-hairline)]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {col.status !== 'todo' && (
+                          <button
+                            type="button"
+                            onClick={() => updateTask(task.id, { status: 'todo' })}
+                            className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l1)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          >
+                            ← To Do
+                          </button>
+                        )}
+                        {col.status !== 'in_progress' && (
+                          <button
+                            type="button"
+                            onClick={() => updateTask(task.id, { status: 'in_progress' })}
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-[10px] font-semibold text-amber-600 dark:text-amber-400"
+                          >
+                            {col.status === 'todo' ? 'Start →' : '← In Prog'}
+                          </button>
+                        )}
+                        {col.status !== 'done' && (
+                          <button
+                            type="button"
+                            onClick={() => updateTask(task.id, { status: 'done', completedAt: Date.now() })}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400"
+                          >
+                            ✓ Done
+                          </button>
                         )}
                       </div>
                     </div>

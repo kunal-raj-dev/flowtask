@@ -84,7 +84,15 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
             onChange={(e) => setInput(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-            placeholder={isFocused ? "Type task name... ('tomorrow', '#project', 'p1', '~30m')" : "Add a task... (press 'N')"}
+            placeholder={
+              isFocused
+                ? typeof window !== 'undefined' && window.innerWidth < 640
+                  ? "Task name... (e.g. #work p1)"
+                  : "Type task name... ('tomorrow', '#project', 'p1', '~30m')"
+                : typeof window !== 'undefined' && window.innerWidth < 640
+                ? "Add a task..."
+                : "Add a task... (press 'N')"
+            }
             className="w-full bg-transparent text-sm font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none"
           />
 
@@ -112,7 +120,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
 
         {/* Quick Helper Token Chips when focused & empty */}
         {isFocused && input.trim().length === 0 && (
-          <div className="px-4 pb-2.5 pt-1 flex items-center gap-1.5 border-t border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)] animate-slide-down">
+          <div className="px-4 pb-2.5 pt-1 flex flex-wrap items-center gap-1.5 border-t border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)] animate-slide-down">
             <span className="font-semibold uppercase tracking-wider text-[10px]">Quick:</span>
             <button
               type="button"

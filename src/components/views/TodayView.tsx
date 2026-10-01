@@ -101,16 +101,16 @@ export const TodayView: React.FC<TodayViewProps> = ({
   const progressPercent = totalTodayCount > 0 ? Math.round((doneTodayCount / totalTodayCount) * 100) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
       {/* View Header with Date & Progress in a Luminous Horizon Card */}
       <div className="mb-6">
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/[0.08] via-rose-500/[0.04] to-indigo-500/[0.06] dark:from-white/[0.04] dark:via-white/[0.02] dark:to-transparent border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-md shadow-amber-500/25 card-surface flex-shrink-0">
-              <Sun size={24} className="stroke-[2.2]" />
+        <div className="p-3.5 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/[0.08] via-rose-500/[0.04] to-indigo-500/[0.06] dark:from-white/[0.04] dark:via-white/[0.02] dark:to-transparent border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-md shadow-amber-500/25 card-surface flex-shrink-0">
+              <Sun size={22} className="stroke-[2.2]" />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+              <h2 className="text-lg sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 My Day
               </h2>
               <p className="text-xs text-[var(--text-secondary)] font-medium">
@@ -124,7 +124,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
           </div>
 
           {/* Action Row: Segmented Switcher & Dual-Gradient SVG Ring */}
-          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center justify-between sm:justify-end gap-2.5 flex-wrap sm:flex-nowrap">
             {/* List vs Timeline Mode Switcher */}
             <div className="flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] shadow-inner">
               <button
@@ -153,9 +153,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
               </button>
             </div>
 
-            {/* Daily Progress Widget with Dual-Gradient SVG Ring */}
+            {/* Daily Progress Widget with Dual-Gradient SVG Ring (Now visible on mobile too) */}
             {totalTodayCount > 0 && (
-              <div className="hidden sm:flex items-center gap-3 bg-white/80 dark:bg-[var(--bg-surface-l2)] px-3.5 py-1.5 rounded-2xl border border-stone-200/80 dark:border-[var(--border-hairline)] shadow-subtle card-surface backdrop-blur-sm">
+              <div className="flex items-center gap-2.5 sm:gap-3 bg-white/80 dark:bg-[var(--bg-surface-l2)] px-3 py-1.5 rounded-2xl border border-stone-200/80 dark:border-[var(--border-hairline)] shadow-subtle card-surface backdrop-blur-sm">
                 <div className="text-right">
                   <div className="text-[11px] font-bold text-[var(--text-primary)] font-mono leading-tight">
                     {doneTodayCount}/{totalTodayCount}
@@ -164,8 +164,8 @@ export const TodayView: React.FC<TodayViewProps> = ({
                     {progressPercent}%
                   </div>
                 </div>
-                <div className="relative w-8 h-8 flex items-center justify-center">
-                  <svg className="w-8 h-8 -rotate-90 transform" viewBox="0 0 36 36">
+                <div className="relative w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center">
+                  <svg className="w-7 h-7 sm:w-8 sm:h-8 -rotate-90 transform" viewBox="0 0 36 36">
                     <defs>
                       <linearGradient id="todayProgressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#F59E0B" />
@@ -193,7 +193,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="absolute text-[9px] font-bold text-amber-600 dark:text-amber-400 font-mono">
+                  <span className="absolute text-[8px] sm:text-[9px] font-bold text-amber-600 dark:text-amber-400 font-mono">
                     {progressPercent}%
                   </span>
                 </div>
@@ -252,8 +252,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
           <Omnibar onOpenBrainDump={onOpenBrainDump} />
 
           {/* Quick Filters */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
+          {/* Quick Filters */}
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setQuickWinsOnly(!quickWinsOnly)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
@@ -287,9 +288,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
           {/* Section 1: Rule of 3 (Top 3 Focus for Today) */}
           <div className="mb-7">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
               <div className="flex items-center gap-1.5">
-                <Star size={14} className="text-amber-500 fill-amber-500" />
+                <Star size={14} className="text-amber-500 fill-amber-500 shrink-0" />
                 <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
                   Top 3 Focus (Rule of 3)
                 </h3>
@@ -304,12 +305,15 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
             {pinnedTasks.length === 0 ? (
               otherActiveTasks.length > 0 ? (
-                <div className="py-2 px-3 rounded-xl border border-stone-200/60 dark:border-white/[0.06] text-xs text-[var(--text-muted)] bg-transparent flex items-center justify-between">
+                <div className="py-2.5 px-3 rounded-xl border border-stone-200/60 dark:border-white/[0.06] text-xs text-[var(--text-muted)] bg-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <span className="flex items-center gap-1.5">
-                    <Star size={13} className="text-amber-500" />
+                    <Star size={13} className="text-amber-500 shrink-0" />
                     <span>Anchor your day with up to 3 Most Important Tasks.</span>
                   </span>
-                  <span className="text-[10px] font-mono text-[var(--text-muted)]">Press 'f' to star</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-medium">
+                    <span className="hidden sm:inline font-mono">Press 'f' to star</span>
+                    <span className="sm:hidden">Tap ⭐ on card to pin</span>
+                  </span>
                 </div>
               ) : null
             ) : (

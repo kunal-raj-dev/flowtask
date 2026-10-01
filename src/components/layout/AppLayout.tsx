@@ -17,15 +17,22 @@ import { ExportImportModal } from '../modals/ExportImportModal';
 import { AestheticsModal } from '../modals/AestheticsModal';
 import { AuthModal } from '../modals/AuthModal';
 import { Toast } from '../ui/Toast';
-import { Menu, Search } from 'lucide-react';
+import { MobileBottomNav } from './MobileBottomNav';
+import { Menu, Search, Sun, Moon, Palette } from 'lucide-react';
+import { formatLocalDate } from '../../utils/nlpParser';
 
 export const AppLayout: React.FC = () => {
   const {
     activeView,
+    setActiveView,
     selectedTaskId,
     setSelectedTaskId,
     isAuthModalOpen,
     setIsAuthModalOpen,
+    theme,
+    toggleTheme,
+    tasks,
+    projects,
   } = useTaskContext();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
@@ -66,6 +73,33 @@ export const AppLayout: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const todayStr = formatLocalDate(new Date());
+  const todayCount = tasks.filter(
+    (t) => t.status !== 'done' && (t.dueDate === todayStr || t.isPinnedToday)
+  ).length;
+  const upcomingCount = tasks.filter(
+    (t) => t.status !== 'done' && t.dueDate && t.dueDate > todayStr
+  ).length;
+
+  const getViewTitle = () => {
+    switch (activeView) {
+      case 'today': return 'My Day';
+      case 'inbox': return 'Inbox';
+      case 'upcoming': return 'Upcoming';
+      case 'matrix': return 'Priority Matrix';
+      case 'kanban': return 'Kanban Board';
+      case 'insights': return 'Insights';
+      case 'someday': return 'Someday';
+      case 'logbook': return 'Logbook';
+      default:
+        if (activeView.startsWith('project:')) {
+          const p = projects.find((proj) => proj.id === activeView.split(':')[1]);
+          return p ? p.name : 'Project';
+        }
+        return 'FlowTask';
+    }
+  };
 
   const handleStartFocus = (taskId: string) => {
     setPomodoroTaskId(taskId);
@@ -161,6 +195,8 @@ export const AppLayout: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <Sidebar
+              onItemClick={() => setIsSidebarOpenMobile(false)}
+              isMobileDrawer={true}
               onOpenPomodoro={() => {
                 setIsSidebarOpenMobile(false);
                 setPomodoroTaskId(null);
@@ -190,27 +226,86 @@ export const AppLayout: React.FC = () => {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
         {/* Mobile Top Header */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/80 backdrop-blur-md">
-          <button
-            onClick={() => setIsSidebarOpenMobile(true)}
-            className="p-1.5 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-200/50 dark:hover:bg-stone-800/50"
-          >
-            <Menu size={20} />
-          </button>
-          <span className="font-semibold text-sm tracking-tight">FlowTask</span>
-          <button
-            onClick={() => setIsCommandPaletteOpen(true)}
-            className="p-1.5 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-200/50 dark:hover:bg-stone-800/50"
-          >
-            <Search size={18} />
-          </button>
-        </div>
+        <header className="md:hidden flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => setIsSidebarOpenMobile(true)}
+              aria-label="Open navigation menu"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="font-bold text-sm tracking-tight text-[var(--text-primary)] truncate">
+                {getViewTitle()}
+              </span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-stone-200/80 dark:bg-stone-800/80 text-stone-600 dark:text-stone-300 font-semibold border border-[var(--border-subtle)] shrink-0">
+                Zen
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Quick Theme Toggle directly in header */}
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+              aria-label="Toggle theme"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+            >
+              {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+            </button>
+
+            {/* Quick Aesthetics / Sounds */}
+            <button
+              onClick={() => setIsAestheticsOpen(true)}
+              title="Aesthetics & Sounds"
+              aria-label="Aesthetics & Sounds"
+              className="p-2 text-[var(--text-secondary)] hover:text-purple-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+            >
+              <Palette size={18} />
+            </button>
+
+            {/* Search */}
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              title="Search tasks"
+              aria-label="Search tasks"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+            >
+              <Search size={18} />
+            </button>
+          </div>
+        </header>
 
         {/* View Viewport */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-24 md:pb-0">
           {renderActiveView()}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeView={activeView}
+        onSelectView={(viewId) => setActiveView(viewId as any)}
+        onQuickAdd={() => {
+          if (activeView !== 'today') {
+            setActiveView('today');
+          }
+          setTimeout(() => {
+            const omnibarInput = document.querySelector('input[placeholder*="task"], input[placeholder*="Task"]') as HTMLInputElement | null;
+            if (omnibarInput) {
+              omnibarInput.focus();
+              omnibarInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+              setIsBrainDumpOpen(true);
+            }
+          }, 50);
+        }}
+        onOpenMenu={() => setIsSidebarOpenMobile(true)}
+        todayCount={todayCount}
+        upcomingCount={upcomingCount}
+      />
 
       {/* Slide-over Task Detail Drawer */}
       {selectedTaskId && (
