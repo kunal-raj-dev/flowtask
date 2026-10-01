@@ -17,12 +17,14 @@ interface TaskCardProps {
   task: Task;
   onSelectTask: (taskId: string) => void;
   onStartFocus?: (taskId: string) => void;
+  isKeyboardFocused?: boolean;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onSelectTask,
   onStartFocus,
+  isKeyboardFocused = false,
 }) => {
   const {
     toggleTaskStatus,
@@ -68,8 +70,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   return (
     <div
+      id={`task-${task.id}`}
       onClick={() => onSelectTask(task.id)}
       className={`group relative flex items-start gap-3.5 p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer ${
+        isKeyboardFocused
+          ? 'ring-2 ring-amber-500/80 dark:ring-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.22)] -translate-y-[1px]'
+          : ''
+      } ${
         isDone
           ? 'bg-[var(--bg-surface-l1)]/60 border-[var(--border-hairline)] opacity-60'
           : task.isPinnedToday

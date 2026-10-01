@@ -12,6 +12,8 @@ import {
   Sparkles,
   DownloadCloud,
   Cloud,
+  TrendingUp,
+  Palette,
 } from 'lucide-react';
 
 interface CommandPaletteProps {
@@ -21,6 +23,8 @@ interface CommandPaletteProps {
   onOpenPomodoro: () => void;
   onOpenBrainDump: () => void;
   onOpenExportImport: () => void;
+  onOpenDailyShutdown?: () => void;
+  onOpenAesthetics?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -30,6 +34,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenPomodoro,
   onOpenBrainDump,
   onOpenExportImport,
+  onOpenDailyShutdown,
+  onOpenAesthetics,
 }) => {
   const {
     tasks,
@@ -99,10 +105,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       run: () => setActiveView('kanban'),
     },
     {
+      id: 'insights',
+      title: 'Go to Productivity Insights & Stats',
+      icon: TrendingUp,
+      run: () => setActiveView('insights'),
+    },
+    {
       id: 'timer',
       title: 'Start Focus Timer',
       icon: Timer,
       run: () => onOpenPomodoro(),
+    },
+    {
+      id: 'daily-shutdown',
+      title: 'Evening Daily Shutdown (Shift+D)',
+      icon: Moon,
+      run: () => onOpenDailyShutdown && onOpenDailyShutdown(),
     },
     {
       id: 'braindump',
@@ -121,6 +139,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       title: 'Cloud Synchronization & Account Settings',
       icon: Cloud,
       run: () => setIsAuthModalOpen(true),
+    },
+    {
+      id: 'aesthetics',
+      title: 'Theme & Sound Aesthetics (5 Colorways, Tactile Chimes)',
+      icon: Palette,
+      run: () => onOpenAesthetics && onOpenAesthetics(),
     },
     {
       id: 'theme',

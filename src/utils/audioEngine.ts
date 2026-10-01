@@ -3,9 +3,12 @@
  * Zero external audio assets required. 100% offline and low-latency.
  */
 
+export type SoundProfile = 'zen' | 'mechanical' | 'bubble' | 'mute';
+
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private isSoundEnabled: boolean = true;
+  private soundProfile: SoundProfile = 'zen';
   private ambientSource: AudioNode | null = null;
   private ambientGain: GainNode | null = null;
 
@@ -13,6 +16,10 @@ class AudioEngine {
     const saved = localStorage.getItem('flowtask_sound_enabled');
     if (saved !== null) {
       this.isSoundEnabled = saved === 'true';
+    }
+    const savedProfile = localStorage.getItem('flowtask_sound_profile') as SoundProfile;
+    if (savedProfile) {
+      this.soundProfile = savedProfile;
     }
   }
 
@@ -42,17 +49,56 @@ class AudioEngine {
     return this.isSoundEnabled;
   }
 
+  public setSoundProfile(profile: SoundProfile) {
+    this.soundProfile = profile;
+    localStorage.setItem('flowtask_sound_profile', profile);
+  }
+
+  public getSoundProfile(): SoundProfile {
+    return this.soundProfile;
+  }
+
   /**
    * Play a pleasant two-tone celebratory chime for completed tasks.
    */
   public playCompletionChime() {
-    if (!this.isSoundEnabled) return;
+    if (!this.isSoundEnabled || this.soundProfile === 'mute') return;
     const ctx = this.getContext();
     if (!ctx) return;
 
     const now = ctx.currentTime;
 
-    // Harmonic frequencies: C5 (523.25Hz) and G5 (783.99Hz)
+    if (this.soundProfile === 'mechanical') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1400, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.04);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.04);
+      return;
+    }
+
+    if (this.soundProfile === 'bubble') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(820, now + 0.07);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.09);
+      return;
+    }
+
+    // Default 'zen' profile: Harmonic frequencies C5 and G5
     const playTone = (freq: number, start: number, duration: number, gainVal: number) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();

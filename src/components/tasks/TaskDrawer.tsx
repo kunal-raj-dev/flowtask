@@ -13,7 +13,9 @@ import {
   Trash2,
   Plus,
   Check,
+  Sparkles,
 } from 'lucide-react';
+import { suggestSubtasks, suggestDuration } from '../../utils/aiCopilot';
 
 interface TaskDrawerProps {
   taskId: string;
@@ -41,9 +43,29 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const task = tasks.find((t) => t.id === taskId);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
+  const [isDecomposing, setIsDecomposing] = useState(false);
+
   if (!task) return null;
 
   const isDone = task.status === 'done';
+
+  const handleMagicBreakdown = () => {
+    setIsDecomposing(true);
+    setTimeout(() => {
+      const suggested = suggestSubtasks(task.title, task.description);
+      suggested.forEach((sub) => {
+        const exists = task.subtasks?.some((s) => s.title.toLowerCase() === sub.title.toLowerCase());
+        if (!exists) {
+          addSubTask(task.id, sub.title);
+        }
+      });
+
+      if (!task.estimatedMinutes) {
+        updateTask(task.id, { estimatedMinutes: suggestDuration(task.title) });
+      }
+      setIsDecomposing(false);
+    }, 200);
+  };
 
   const handleAddSub = (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,9 +278,23 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <label className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider">
                 Subtasks {totalSubs > 0 && `(${completedSubs}/${totalSubs})`}
               </label>
-              {totalSubs > 0 && (
-                <span className="text-xs font-mono text-[var(--text-muted)] font-semibold">{progressPercent}%</span>
-              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleMagicBreakdown}
+                  disabled={isDecomposing}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-gradient-to-r from-purple-500/15 via-indigo-500/15 to-pink-500/10 hover:from-purple-500/25 hover:to-pink-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 shadow-xs transition-all active:scale-95 disabled:opacity-50 card-surface"
+                  title="Automatically generate action steps with AI"
+                >
+                  <Sparkles size={11} className={isDecomposing ? 'animate-spin text-purple-500' : 'text-purple-500'} />
+                  <span>{isDecomposing ? 'Decomposing...' : 'Magic Breakdown'}</span>
+                </button>
+
+                {totalSubs > 0 && (
+                  <span className="text-xs font-mono text-[var(--text-muted)] font-semibold">{progressPercent}%</span>
+                )}
+              </div>
             </div>
 
             {/* Progress bar */}

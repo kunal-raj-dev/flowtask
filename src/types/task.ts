@@ -24,6 +24,8 @@ export interface Task {
   subtasks: SubTask[];
   recurrence?: RecurrenceFrequency;
   isPinnedToday?: boolean; // Rule of 3 (Top Focus for Today)
+  scheduledStart?: string; // HH:mm (e.g. '09:30')
+  scheduledEnd?: string; // HH:mm (e.g. '10:30')
   createdAt: number;
   completedAt?: number;
 }
@@ -42,6 +44,7 @@ export type ViewId =
   | 'someday'
   | 'matrix'
   | 'kanban'
+  | 'insights'
   | 'logbook'
   | `project:${string}`;
 

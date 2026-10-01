@@ -18,6 +18,8 @@ import {
   Sparkles,
   CloudOff,
   RefreshCw,
+  TrendingUp,
+  Palette,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { useAuth } from '../../context/AuthContext';
@@ -27,6 +29,8 @@ interface SidebarProps {
   onOpenShortcuts: () => void;
   onOpenExportImport: () => void;
   onOpenBrainDump: () => void;
+  onOpenDailyShutdown?: () => void;
+  onOpenAesthetics?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -34,6 +38,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenShortcuts,
   onOpenExportImport,
   onOpenBrainDump,
+  onOpenDailyShutdown,
+  onOpenAesthetics,
 }) => {
   const {
     tasks,
@@ -92,6 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: upcomingCount, color: 'text-purple-500' },
     { id: 'matrix', label: 'Priority Matrix', icon: Grid2X2, count: null, color: 'text-emerald-500' },
     { id: 'kanban', label: 'Kanban Board', icon: Kanban, count: null, color: 'text-indigo-500' },
+    { id: 'insights', label: 'Insights & Stats', icon: TrendingUp, count: null, color: 'text-teal-500' },
     { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-yellow-500' },
     { id: 'logbook', label: 'Logbook', icon: CheckCircle2, count: doneCount, color: 'text-stone-400' },
   ];
@@ -114,13 +121,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={onOpenBrainDump}
-          title="Multi-line Brain Dump"
-          className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-        >
-          <Sparkles size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          {onOpenDailyShutdown && (
+            <button
+              onClick={onOpenDailyShutdown}
+              title="Evening Daily Shutdown (Shift+D)"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-indigo-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <Moon size={15} />
+            </button>
+          )}
+          <button
+            onClick={onOpenBrainDump}
+            title="Multi-line Brain Dump"
+            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+          >
+            <Sparkles size={15} />
+          </button>
+        </div>
       </div>
 
       {/* Navigation Views */}
@@ -281,6 +299,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Utility Footer: Sound, Theme, Shortcuts, Export */}
       <div className="p-3 border-t border-[var(--border-hairline)] flex items-center justify-between text-[var(--text-secondary)]">
         <div className="flex items-center gap-1">
+          {onOpenAesthetics && (
+            <button
+              onClick={onOpenAesthetics}
+              title="Aesthetics & Sound Profiles"
+              className="p-1.5 hover:text-purple-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <Palette size={15} />
+            </button>
+          )}
+
           <button
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}

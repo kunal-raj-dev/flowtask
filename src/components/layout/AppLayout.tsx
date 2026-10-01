@@ -6,6 +6,7 @@ import { UpcomingView } from '../views/UpcomingView';
 import { EisenhowerView } from '../views/EisenhowerView';
 import { KanbanView } from '../views/KanbanView';
 import { LogbookView } from '../views/LogbookView';
+import { InsightsView } from '../views/InsightsView';
 import { TaskList } from '../tasks/TaskList';
 import { TaskDrawer } from '../tasks/TaskDrawer';
 import { PomodoroModal } from '../focus/PomodoroModal';
@@ -13,6 +14,8 @@ import { CommandPalette } from '../modals/CommandPalette';
 import { ShortcutsModal } from '../modals/ShortcutsModal';
 import { BrainDumpModal } from '../modals/BrainDumpModal';
 import { ExportImportModal } from '../modals/ExportImportModal';
+import { DailyShutdownModal } from '../modals/DailyShutdownModal';
+import { AestheticsModal } from '../modals/AestheticsModal';
 import { AuthModal } from '../modals/AuthModal';
 import { Toast } from '../ui/Toast';
 import { Menu, Search } from 'lucide-react';
@@ -24,6 +27,8 @@ export const AppLayout: React.FC = () => {
     setSelectedTaskId,
     isAuthModalOpen,
     setIsAuthModalOpen,
+    isDailyShutdownOpen,
+    setIsDailyShutdownOpen,
   } = useTaskContext();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
@@ -31,6 +36,7 @@ export const AppLayout: React.FC = () => {
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isBrainDumpOpen, setIsBrainDumpOpen] = useState(false);
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
+  const [isAestheticsOpen, setIsAestheticsOpen] = useState(false);
   const [pomodoroTaskId, setPomodoroTaskId] = useState<string | null>(null);
   const [isPomodoroOpen, setIsPomodoroOpen] = useState(false);
 
@@ -47,6 +53,9 @@ export const AppLayout: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen(true);
+      } else if (e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+        e.preventDefault();
+        setIsDailyShutdownOpen(true);
       }
     };
 
@@ -92,6 +101,9 @@ export const AppLayout: React.FC = () => {
         />
       );
     }
+    if (activeView === 'insights') {
+      return <InsightsView onSelectTask={(id) => setSelectedTaskId(id)} />;
+    }
     if (activeView === 'logbook') {
       return <LogbookView onSelectTask={(id) => setSelectedTaskId(id)} />;
     }
@@ -128,6 +140,8 @@ export const AppLayout: React.FC = () => {
           onOpenShortcuts={() => setIsShortcutsOpen(true)}
           onOpenExportImport={() => setIsExportImportOpen(true)}
           onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onOpenDailyShutdown={() => setIsDailyShutdownOpen(true)}
+          onOpenAesthetics={() => setIsAestheticsOpen(true)}
         />
       </div>
 
@@ -158,6 +172,14 @@ export const AppLayout: React.FC = () => {
               onOpenBrainDump={() => {
                 setIsSidebarOpenMobile(false);
                 setIsBrainDumpOpen(true);
+              }}
+              onOpenDailyShutdown={() => {
+                setIsSidebarOpenMobile(false);
+                setIsDailyShutdownOpen(true);
+              }}
+              onOpenAesthetics={() => {
+                setIsSidebarOpenMobile(false);
+                setIsAestheticsOpen(true);
               }}
             />
           </div>
@@ -216,6 +238,14 @@ export const AppLayout: React.FC = () => {
         }}
         onOpenBrainDump={() => setIsBrainDumpOpen(true)}
         onOpenExportImport={() => setIsExportImportOpen(true)}
+        onOpenDailyShutdown={() => {
+          setIsCommandPaletteOpen(false);
+          setIsDailyShutdownOpen(true);
+        }}
+        onOpenAesthetics={() => {
+          setIsCommandPaletteOpen(false);
+          setIsAestheticsOpen(true);
+        }}
       />
 
       {isShortcutsOpen && (
@@ -229,6 +259,18 @@ export const AppLayout: React.FC = () => {
       {isExportImportOpen && (
         <ExportImportModal onClose={() => setIsExportImportOpen(false)} />
       )}
+
+      {/* Global Daily Shutdown Modal */}
+      <DailyShutdownModal
+        isOpen={isDailyShutdownOpen}
+        onClose={() => setIsDailyShutdownOpen(false)}
+      />
+
+      {/* Aesthetics & Themes Customization Modal */}
+      <AestheticsModal
+        isOpen={isAestheticsOpen}
+        onClose={() => setIsAestheticsOpen(false)}
+      />
 
       <AuthModal
         isOpen={isAuthModalOpen}

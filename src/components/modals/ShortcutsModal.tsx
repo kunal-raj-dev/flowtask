@@ -7,8 +7,15 @@ interface ShortcutsModalProps {
 
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
   const shortcuts = [
+    { key: 'j / k', desc: 'Navigate up / down tasks' },
+    { key: 'Space / x', desc: 'Toggle complete highlighted task' },
+    { key: 'Enter', desc: 'Open task detail drawer' },
+    { key: '1 - 4', desc: 'Set priority (P1 to P4)' },
+    { key: 'f or *', desc: 'Pin to Top 3 Focus (Rule of 3)' },
+    { key: 't / m / s', desc: 'Reschedule: Today / Tomorrow / Someday' },
+    { key: 'Shift + D', desc: 'Evening Daily Shutdown' },
     { key: 'N', desc: 'Quick add task (focus Omnibar)' },
-    { key: 'Ctrl / ⌘ + K', desc: 'Open Command Palette & Omni-Search' },
+    { key: 'Ctrl / ⌘ + K', desc: 'Open Command Palette' },
     { key: '?', desc: 'Show keyboard shortcuts' },
     { key: 'Esc', desc: 'Close any modal or drawer' },
   ];

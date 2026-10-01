@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import confetti from 'canvas-confetti';
 import type { Task, Project, ViewId, Priority } from '../types/task';
 import { parseTaskInput, formatLocalDate } from '../utils/nlpParser';
-import { audioEngine } from '../utils/audioEngine';
+import { audioEngine, type SoundProfile } from '../utils/audioEngine';
 import {
   loadTasksFromStorage,
   saveTasksToStorage,
@@ -20,6 +20,8 @@ interface UndoAction {
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local';
 
+export type AppTheme = 'light' | 'dark' | 'tokyo' | 'nord' | 'matcha';
+
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
@@ -29,8 +31,9 @@ interface TaskContextType {
   searchQuery: string;
   priorityFilter: Priority | 'all';
   quickWinsOnly: boolean;
-  theme: 'light' | 'dark';
+  theme: AppTheme;
   soundEnabled: boolean;
+  soundProfile: SoundProfile;
   overdueTasks: Task[];
   isTriageDismissed: boolean;
   toast: { message: string; actionLabel?: string; onAction?: () => void } | null;
@@ -40,6 +43,8 @@ interface TaskContextType {
   lastSyncedAt: Date | null;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
+  isDailyShutdownOpen: boolean;
+  setIsDailyShutdownOpen: (open: boolean) => void;
   forceSyncToCloud: () => Promise<void>;
 
   // Actions
@@ -49,8 +54,10 @@ interface TaskContextType {
   setSearchQuery: (query: string) => void;
   setPriorityFilter: (p: Priority | 'all') => void;
   setQuickWinsOnly: (enabled: boolean) => void;
+  setTheme: (t: AppTheme) => void;
   toggleTheme: () => void;
   toggleSound: () => void;
+  setSoundProfile: (p: SoundProfile) => void;
 
   addTask: (input: string, explicitOverrides?: Partial<Task>) => Task;
   addMultipleTasks: (lines: string[]) => void;
@@ -89,15 +96,17 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(isConfigured ? 'syncing' : 'local');
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isDailyShutdownOpen, setIsDailyShutdownOpen] = useState(false);
 
   // Theme state
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('flowtask_theme');
-    if (saved === 'dark' || saved === 'light') return saved;
+  const [theme, setThemeState] = useState<AppTheme>(() => {
+    const saved = localStorage.getItem('flowtask_theme') as AppTheme;
+    if (saved && ['light', 'dark', 'tokyo', 'nord', 'matcha'].includes(saved)) return saved;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
-  // Sound state
+  // Sound profile state
+  const [soundProfile, setSoundProfileState] = useState<SoundProfile>(() => audioEngine.getSoundProfile());
   const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => audioEngine.getSoundEnabled());
 
   // Save to localStorage whenever tasks change locally
@@ -110,16 +119,29 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [projects]);
 
   useEffect(() => {
-    if (theme === 'dark') {
+    document.documentElement.classList.remove('dark', 'theme-tokyo', 'theme-nord', 'theme-matcha');
+    if (theme === 'dark' || theme === 'tokyo' || theme === 'nord') {
       document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
     }
+    if (theme === 'tokyo') document.documentElement.classList.add('theme-tokyo');
+    if (theme === 'nord') document.documentElement.classList.add('theme-nord');
+    if (theme === 'matcha') document.documentElement.classList.add('theme-matcha');
+
+    document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('flowtask_theme', theme);
   }, [theme]);
 
+  const setTheme = useCallback((t: AppTheme) => {
+    setThemeState(t);
+  }, []);
+
   const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+    setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
+
+  const setSoundProfile = useCallback((p: SoundProfile) => {
+    setSoundProfileState(p);
+    audioEngine.setSoundProfile(p);
   }, []);
 
   const toggleSound = useCallback(() => {
@@ -666,7 +688,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         priorityFilter,
         quickWinsOnly,
         theme,
+        setTheme,
         soundEnabled,
+        soundProfile,
+        setSoundProfile,
         overdueTasks,
         isTriageDismissed,
         toast,
@@ -674,6 +699,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         lastSyncedAt,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        isDailyShutdownOpen,
+        setIsDailyShutdownOpen,
         forceSyncToCloud,
         setActiveView,
         setViewLayout,

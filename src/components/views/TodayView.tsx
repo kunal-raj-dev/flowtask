@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
 import { Omnibar } from '../tasks/Omnibar';
+import { TimelineView } from './TimelineView';
+import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { formatLocalDate } from '../../utils/nlpParser';
 import {
   Sun,
@@ -9,6 +11,9 @@ import {
   CheckCircle2,
   CalendarClock,
   Zap,
+  Moon,
+  List,
+  Clock,
 } from 'lucide-react';
 
 interface TodayViewProps {
@@ -31,7 +36,21 @@ export const TodayView: React.FC<TodayViewProps> = ({
     setQuickWinsOnly,
     priorityFilter,
     setPriorityFilter,
+    toggleTaskStatus,
+    toggleTaskPinToday,
+    updateTask,
+    deleteTask,
+    isDailyShutdownOpen,
+    setIsDailyShutdownOpen,
   } = useTaskContext();
+
+  const [displayMode, setDisplayMode] = useState<'list' | 'timeline'>(() => {
+    return (localStorage.getItem('flowtask_today_mode') as 'list' | 'timeline') || 'list';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('flowtask_today_mode', displayMode);
+  }, [displayMode]);
 
   const todayStr = formatLocalDate(new Date());
 
@@ -57,15 +76,28 @@ export const TodayView: React.FC<TodayViewProps> = ({
       (t.dueDate === todayStr || (t.completedAt && formatLocalDate(new Date(t.completedAt)) === todayStr))
   );
 
+  // Active tasks array for linear keyboard traversal (j/k)
+  const activeListTasks = [...pinnedTasks, ...otherActiveTasks];
+
+  const { focusedTaskId } = useKeyboardNavigation({
+    tasks: activeListTasks,
+    onSelectTask,
+    onToggleStatus: toggleTaskStatus,
+    onTogglePinToday: toggleTaskPinToday,
+    onUpdateTask: updateTask,
+    onDeleteTask: deleteTask,
+    enabled: displayMode === 'list' && !isDailyShutdownOpen,
+  });
+
   const totalTodayCount = filteredTasks.length + completedTodayTasks.length;
   const doneTodayCount = completedTodayTasks.length;
   const progressPercent = totalTodayCount > 0 ? Math.round((doneTodayCount / totalTodayCount) * 100) : 0;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       {/* View Header with Date & Progress in a Luminous Horizon Card */}
       <div className="mb-6">
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/[0.08] via-rose-500/[0.04] to-indigo-500/[0.06] dark:from-white/[0.04] dark:via-white/[0.02] dark:to-transparent border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md flex items-center justify-between">
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/[0.08] via-rose-500/[0.04] to-indigo-500/[0.06] dark:from-white/[0.04] dark:via-white/[0.02] dark:to-transparent border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-md shadow-amber-500/25 card-surface flex-shrink-0">
               <Sun size={24} className="stroke-[2.2]" />
@@ -84,50 +116,94 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           </div>
 
-          {/* Daily Progress Widget with Dual-Gradient SVG Ring */}
-          {totalTodayCount > 0 && (
-            <div className="flex items-center gap-3.5 bg-white/80 dark:bg-[var(--bg-surface-l2)] px-4 py-2 rounded-2xl border border-stone-200/80 dark:border-[var(--border-hairline)] shadow-subtle card-surface backdrop-blur-sm">
-              <div className="text-right">
-                <div className="text-xs font-bold text-[var(--text-primary)] font-mono">
-                  {doneTodayCount} of {totalTodayCount} done
-                </div>
-                <div className="text-[10px] text-[var(--text-muted)] font-semibold font-mono">{progressPercent}% complete</div>
-              </div>
-              <div className="relative w-9 h-9 flex items-center justify-center">
-                <svg className="w-9 h-9 -rotate-90 transform" viewBox="0 0 36 36">
-                  <defs>
-                    <linearGradient id="todayProgressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#F59E0B" />
-                      <stop offset="100%" stopColor="#10B981" />
-                    </linearGradient>
-                  </defs>
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="14"
-                    fill="none"
-                    className="stroke-stone-200/80 dark:stroke-stone-800"
-                    strokeWidth="3.2"
-                  />
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="14"
-                    fill="none"
-                    stroke="url(#todayProgressGrad)"
-                    className="transition-all duration-500 ease-out"
-                    strokeWidth="3.2"
-                    strokeDasharray={88}
-                    strokeDashoffset={88 - (88 * progressPercent) / 100}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="absolute text-[10px] font-bold text-amber-600 dark:text-amber-400 font-mono">
-                  {progressPercent}%
-                </span>
-              </div>
+          {/* Action Row: Segmented Switcher, Daily Shutdown Trigger & Dual-Gradient SVG Ring */}
+          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+            {/* List vs Timeline Mode Switcher */}
+            <div className="flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] shadow-inner">
+              <button
+                type="button"
+                onClick={() => setDisplayMode('list')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  displayMode === 'list'
+                    ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <List size={13} />
+                <span>List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDisplayMode('timeline')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  displayMode === 'timeline'
+                    ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <Clock size={13} />
+                <span>Timeline</span>
+              </button>
             </div>
-          )}
+
+            {/* Evening Daily Shutdown Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsDailyShutdownOpen(true)}
+              title="Evening Daily Shutdown (Shift+D)"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-indigo-500/15 via-purple-500/10 to-pink-500/15 hover:from-indigo-500/25 hover:to-pink-500/25 text-indigo-900 dark:text-indigo-300 text-xs font-bold border border-indigo-500/30 transition-all active:scale-95 shadow-xs card-surface"
+            >
+              <Moon size={14} className="text-indigo-600 dark:text-indigo-400" />
+              <span>End Day</span>
+            </button>
+
+            {/* Daily Progress Widget with Dual-Gradient SVG Ring */}
+            {totalTodayCount > 0 && (
+              <div className="hidden sm:flex items-center gap-3 bg-white/80 dark:bg-[var(--bg-surface-l2)] px-3.5 py-1.5 rounded-2xl border border-stone-200/80 dark:border-[var(--border-hairline)] shadow-subtle card-surface backdrop-blur-sm">
+                <div className="text-right">
+                  <div className="text-[11px] font-bold text-[var(--text-primary)] font-mono leading-tight">
+                    {doneTodayCount}/{totalTodayCount}
+                  </div>
+                  <div className="text-[9px] text-[var(--text-muted)] font-semibold font-mono">
+                    {progressPercent}%
+                  </div>
+                </div>
+                <div className="relative w-8 h-8 flex items-center justify-center">
+                  <svg className="w-8 h-8 -rotate-90 transform" viewBox="0 0 36 36">
+                    <defs>
+                      <linearGradient id="todayProgressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#F59E0B" />
+                        <stop offset="100%" stopColor="#10B981" />
+                      </linearGradient>
+                    </defs>
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="14"
+                      fill="none"
+                      className="stroke-stone-200/80 dark:stroke-stone-800"
+                      strokeWidth="3.2"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="14"
+                      fill="none"
+                      stroke="url(#todayProgressGrad)"
+                      className="transition-all duration-500 ease-out"
+                      strokeWidth="3.2"
+                      strokeDasharray={88}
+                      strokeDashoffset={88 - (88 * progressPercent) / 100}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="absolute text-[9px] font-bold text-amber-600 dark:text-amber-400 font-mono">
+                    {progressPercent}%
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Gentle Clean-Slate Overdue Triage Banner */}
@@ -171,117 +247,132 @@ export const TodayView: React.FC<TodayViewProps> = ({
         )}
       </div>
 
-      {/* Omnibar Quick Capture */}
-      <Omnibar onOpenBrainDump={onOpenBrainDump} />
+      {/* Conditionally Render: Timeline View or List View */}
+      {displayMode === 'timeline' ? (
+        <TimelineView onSelectTask={onSelectTask} onStartFocus={onStartFocus} />
+      ) : (
+        <>
+          {/* Omnibar Quick Capture */}
+          <Omnibar onOpenBrainDump={onOpenBrainDump} />
 
-      {/* Quick Filters */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setQuickWinsOnly(!quickWinsOnly)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
-              quickWinsOnly
-                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 shadow-xs'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-transparent hover:bg-stone-200/50 dark:hover:bg-white/[0.04]'
-            }`}
-          >
-            <Zap size={13} className={quickWinsOnly ? 'text-amber-500 fill-amber-500' : ''} />
-            Quick Wins (≤15m)
-          </button>
+          {/* Quick Filters */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setQuickWinsOnly(!quickWinsOnly)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                  quickWinsOnly
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-transparent hover:bg-stone-200/50 dark:hover:bg-white/[0.04]'
+                }`}
+              >
+                <Zap size={13} className={quickWinsOnly ? 'text-amber-500 fill-amber-500' : ''} />
+                Quick Wins (≤15m)
+              </button>
 
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value as any)}
-            className="text-xs bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-xl px-2.5 py-1.5 outline-none transition-colors card-surface cursor-pointer"
-          >
-            <option value="all">All Priorities</option>
-            <option value="p1">P1 Urgent only</option>
-            <option value="p2">P2 High only</option>
-            <option value="p3">P3 Medium only</option>
-          </select>
-        </div>
-      </div>
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as any)}
+                className="text-xs bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-xl px-2.5 py-1.5 outline-none transition-colors card-surface cursor-pointer"
+              >
+                <option value="all">All Priorities</option>
+                <option value="p1">P1 Urgent only</option>
+                <option value="p2">P2 High only</option>
+                <option value="p3">P3 Medium only</option>
+              </select>
+            </div>
 
-      {/* Section 1: Rule of 3 (Top 3 Focus for Today) */}
-      <div className="mb-7">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1.5">
-            <Star size={14} className="text-amber-500 fill-amber-500" />
-            <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
-              Top 3 Focus (Rule of 3)
-            </h3>
-            <span className="text-[11px] font-mono text-[var(--text-muted)] font-semibold">
-              ({pinnedTasks.length}/3)
-            </span>
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] font-mono">
+              <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 text-[10px]">j</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 text-[10px]">k</kbd>
+              <span>to navigate</span>
+            </div>
           </div>
-          <span className="text-[11px] text-[var(--text-muted)]">
-            Star up to 3 tasks to guard your focus
-          </span>
-        </div>
 
-        {pinnedTasks.length === 0 ? (
-          <div className="p-5 rounded-2xl border border-dashed border-stone-300/80 dark:border-stone-800 text-center text-xs text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/40 backdrop-blur-xs">
-            No top focus items selected yet. Click the <Star size={12} className="inline mx-0.5 text-amber-500" /> star on any task below to anchor your day.
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {pinnedTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onSelectTask={onSelectTask}
-                onStartFocus={onStartFocus}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {/* Section 1: Rule of 3 (Top 3 Focus for Today) */}
+          <div className="mb-7">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <Star size={14} className="text-amber-500 fill-amber-500" />
+                <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                  Top 3 Focus (Rule of 3)
+                </h3>
+                <span className="text-[11px] font-mono text-[var(--text-muted)] font-semibold">
+                  ({pinnedTasks.length}/3)
+                </span>
+              </div>
+              <span className="text-[11px] text-[var(--text-muted)]">
+                Star up to 3 tasks to guard your focus
+              </span>
+            </div>
 
-      {/* Section 2: Other Tasks for Today */}
-      <div className="mb-7">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
-            Tasks for Today {otherActiveTasks.length > 0 && `(${otherActiveTasks.length})`}
-          </h3>
-        </div>
+            {pinnedTasks.length === 0 ? (
+              <div className="p-5 rounded-2xl border border-dashed border-stone-300/80 dark:border-stone-800 text-center text-xs text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/40 backdrop-blur-xs">
+                No top focus items selected yet. Click the <Star size={12} className="inline mx-0.5 text-amber-500" /> star on any task below or press <kbd className="px-1 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px]">f</kbd> to anchor your day.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {pinnedTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onSelectTask={onSelectTask}
+                    onStartFocus={onStartFocus}
+                    isKeyboardFocused={focusedTaskId === task.id}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
-        {otherActiveTasks.length === 0 && pinnedTasks.length === 0 ? (
-          <div className="text-center py-14 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-2xl border border-[var(--border-hairline)]">
-            <CheckCircle2 size={36} className="mx-auto mb-2.5 text-stone-300 dark:text-stone-700" />
-            <p className="text-sm font-semibold text-[var(--text-primary)]">All clear for today!</p>
-            <p className="text-xs mt-1 text-[var(--text-secondary)]">Add a new task above or enjoy your free time.</p>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {otherActiveTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onSelectTask={onSelectTask}
-                onStartFocus={onStartFocus}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {/* Section 2: Other Tasks for Today */}
+          <div className="mb-7">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+                Tasks for Today {otherActiveTasks.length > 0 && `(${otherActiveTasks.length})`}
+              </h3>
+            </div>
 
-      {/* Section 3: Completed Today */}
-      {completedTodayTasks.length > 0 && (
-        <div className="pt-5 border-t border-[var(--border-hairline)]">
-          <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <CheckCircle2 size={13} />
-            Completed Today ({completedTodayTasks.length})
-          </h3>
-          <div className="space-y-2">
-            {completedTodayTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onSelectTask={onSelectTask}
-              />
-            ))}
+            {otherActiveTasks.length === 0 && pinnedTasks.length === 0 ? (
+              <div className="text-center py-14 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-2xl border border-[var(--border-hairline)]">
+                <CheckCircle2 size={36} className="mx-auto mb-2.5 text-stone-300 dark:text-stone-700" />
+                <p className="text-sm font-semibold text-[var(--text-primary)]">All clear for today!</p>
+                <p className="text-xs mt-1 text-[var(--text-secondary)]">Add a new task above or enjoy your free time.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {otherActiveTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onSelectTask={onSelectTask}
+                    onStartFocus={onStartFocus}
+                    isKeyboardFocused={focusedTaskId === task.id}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+
+          {/* Section 3: Completed Today */}
+          {completedTodayTasks.length > 0 && (
+            <div className="pt-5 border-t border-[var(--border-hairline)]">
+              <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <CheckCircle2 size={13} />
+                Completed Today ({completedTodayTasks.length})
+              </h3>
+              <div className="space-y-2">
+                {completedTodayTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onSelectTask={onSelectTask}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

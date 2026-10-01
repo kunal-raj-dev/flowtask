@@ -51,7 +51,9 @@ Never wake up to an intimidating wall of red overdue badges. FlowTask greets you
 ![Pomodoro Focus Chamber](screenshots/pomodoro_focus_timer.png)
 
 ### 5. 🎯 Multi-Perspective Productivity Views
-- ☀️ **My Day / Today**: Focused daily view with Rule of 3 and SVG circular progress ring.
+- ☀️ **My Day / Today**: Focused daily view with Rule of 3, progressive List ↔ Timeline switcher, and SVG circular progress ring.
+- ◷ **Day Timeline & Time-blocking**: Hourly schedule rail (07:00–22:00) with real-time red clock indicator, drag-and-drop time slots, and a **Workload Capacity Gauge** that guards you against burnout.
+- 🌙 **Evening Daily Shutdown (`Shift+D`)**: A 3-step evening closure ritual. Celebrates today's completed accomplishments, triages remaining tasks with 1-click simplicity, and invites you to unplug and disconnect.
 - 📅 **Upcoming**: Chronological horizon grouped into Tomorrow, This Week, Next Week, and Later.
 - 🎯 **Eisenhower Priority Matrix**: Interactive 2x2 grid (Do First, Schedule, Delegate, Someday) with drag-and-drop.
 - 📋 **Kanban Board**: Stage-based visual workflow columns (To Do, In Progress, Completed).
@@ -84,13 +86,16 @@ Raycast-inspired keyboard palette allowing you to navigate anywhere, search task
 
 | Shortcut | Action |
 |---|---|
+| `j` / `k` or `↓` / `↑` | Navigate down / up task list with tactile halo focus |
+| `Space` or `x` | Toggle completion status of active task |
+| `Enter` | Open Task Detail drawer |
+| `1` - `4` | Set task priority (`P1 Urgent` to `P4 Low`) |
+| `f` or `*` | Pin / unpin active task to Top 3 Focus (Rule of 3) |
+| `t` / `m` / `s` | Reschedule active task to Today / Tomorrow / Someday |
+| `Shift + D` | Launch Evening Daily Shutdown ritual |
 | `N` | Quick-add new task into Omnibar |
 | `Ctrl+K` / `Cmd+K` | Open Command Palette |
 | `?` or `Shift+/` | Open Keyboard Shortcuts cheatsheet |
-| `F` | Launch Focus Timer (Pomodoro) |
-| `Space` | Toggle completion status of active task |
-| `1` - `4` | Set task priority (`P1` to `P4`) |
-| `D` | Set task due date to Today |
 | `Esc` | Close drawers, modals, and palettes |
 
 ---
