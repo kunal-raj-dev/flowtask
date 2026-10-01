@@ -1,0 +1,12 @@
+.git
+.github
+.firebase
+.firebaserc
+firestore.rules
+firestore.indexes.json
+node_modules
+dist
+*.test.ts
+*.test.tsx
+.env
+.env.local
