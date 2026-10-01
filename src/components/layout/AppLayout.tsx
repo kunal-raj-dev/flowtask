@@ -13,6 +13,7 @@ import { CommandPalette } from '../modals/CommandPalette';
 import { ShortcutsModal } from '../modals/ShortcutsModal';
 import { BrainDumpModal } from '../modals/BrainDumpModal';
 import { ExportImportModal } from '../modals/ExportImportModal';
+import { AuthModal } from '../modals/AuthModal';
 import { Toast } from '../ui/Toast';
 import { Menu, Search } from 'lucide-react';
 
@@ -21,6 +22,8 @@ export const AppLayout: React.FC = () => {
     activeView,
     selectedTaskId,
     setSelectedTaskId,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
   } = useTaskContext();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
@@ -226,6 +229,11 @@ export const AppLayout: React.FC = () => {
       {isExportImportOpen && (
         <ExportImportModal onClose={() => setIsExportImportOpen(false)} />
       )}
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
 
       {/* Global Toast */}
       <Toast />

@@ -16,8 +16,11 @@ import {
   DownloadCloud,
   Timer,
   Sparkles,
+  CloudOff,
+  RefreshCw,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
   onOpenPomodoro: () => void;
@@ -42,7 +45,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     soundEnabled,
     toggleSound,
     addProject,
+    syncStatus,
+    setIsAuthModalOpen,
   } = useTaskContext();
+
+  const { user, isAnonymous } = useAuth();
 
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -220,6 +227,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </form>
         )}
+      </div>
+
+      {/* Cloud Database Sync Status Widget */}
+      <div className="px-3 pt-2">
+        <button
+          onClick={() => setIsAuthModalOpen(true)}
+          title="Cloud Database Sync & Account"
+          className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium bg-[var(--bg-surface-l2)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] border border-[var(--border-hairline)] transition-all card-surface group cursor-pointer"
+        >
+          <div className="flex items-center gap-2 truncate">
+            {syncStatus === 'synced' && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20 shrink-0" />
+            )}
+            {syncStatus === 'syncing' && (
+              <RefreshCw size={12} className="text-amber-500 animate-spin shrink-0" />
+            )}
+            {syncStatus === 'offline' && (
+              <CloudOff size={12} className="text-amber-500 shrink-0" />
+            )}
+            {syncStatus === 'local' && (
+              <span className="w-2 h-2 rounded-full bg-stone-400 shrink-0" />
+            )}
+            <span className="text-[11px] font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] truncate">
+              {syncStatus === 'synced'
+                ? user && !isAnonymous
+                  ? user.displayName || user.email?.split('@')[0] || 'Synced'
+                  : 'Cloud Synced'
+                : syncStatus === 'syncing'
+                ? 'Syncing...'
+                : syncStatus === 'offline'
+                ? 'Offline (Queued)'
+                : 'Local Mode'}
+            </span>
+          </div>
+          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold px-1.5 py-0.5 rounded bg-blue-500/10 dark:bg-blue-500/15 shrink-0">
+            {user && !isAnonymous ? 'Account' : 'Cloud'}
+          </span>
+        </button>
       </div>
 
       {/* Focus Timer Launch Button */}

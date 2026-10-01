@@ -11,6 +11,7 @@ import {
   Timer,
   Sparkles,
   DownloadCloud,
+  Cloud,
 } from 'lucide-react';
 
 interface CommandPaletteProps {
@@ -35,6 +36,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setActiveView,
     toggleTheme,
     theme,
+    setIsAuthModalOpen,
   } = useTaskContext();
 
   const [query, setQuery] = useState('');
@@ -113,6 +115,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       title: 'Export / Backup Data',
       icon: DownloadCloud,
       run: () => onOpenExportImport(),
+    },
+    {
+      id: 'cloud-sync',
+      title: 'Cloud Synchronization & Account Settings',
+      icon: Cloud,
+      run: () => setIsAuthModalOpen(true),
     },
     {
       id: 'theme',
