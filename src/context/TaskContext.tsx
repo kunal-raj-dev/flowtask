@@ -10,11 +10,15 @@ import {
   saveProjectsToStorage,
   calculateNextDueDate,
 } from '../utils/storage';
+import { useAuth } from './AuthContext';
+import { taskSyncService } from '../services/taskSyncService';
 
 interface UndoAction {
   description: string;
   previousTasks: Task[];
 }
+
+export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local';
 
 interface TaskContextType {
   tasks: Task[];
@@ -30,6 +34,13 @@ interface TaskContextType {
   overdueTasks: Task[];
   isTriageDismissed: boolean;
   toast: { message: string; actionLabel?: string; onAction?: () => void } | null;
+
+  // Cloud Sync & Auth Modal
+  syncStatus: SyncStatus;
+  lastSyncedAt: Date | null;
+  isAuthModalOpen: boolean;
+  setIsAuthModalOpen: (open: boolean) => void;
+  forceSyncToCloud: () => Promise<void>;
 
   // Actions
   setActiveView: (view: ViewId) => void;
@@ -60,6 +71,8 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, isConfigured } = useAuth();
+
   const [tasks, setTasks] = useState<Task[]>(() => loadTasksFromStorage());
   const [projects, setProjects] = useState<Project[]>(() => loadProjectsFromStorage());
   const [activeView, setActiveView] = useState<ViewId>('today');
@@ -72,6 +85,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
   const [toast, setToast] = useState<{ message: string; actionLabel?: string; onAction?: () => void } | null>(null);
 
+  // Cloud Sync state
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(isConfigured ? 'syncing' : 'local');
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('flowtask_theme');
@@ -82,6 +100,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Sound state
   const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => audioEngine.getSoundEnabled());
 
+  // Save to localStorage whenever tasks change locally
   useEffect(() => {
     saveTasksToStorage(tasks);
   }, [tasks]);
@@ -130,8 +149,97 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [actionToUndo, ...rest] = undoStack;
     setUndoStack(rest);
     setTasks(actionToUndo.previousTasks);
+    if (user) {
+      taskSyncService.batchMigrate(user.uid, actionToUndo.previousTasks, projects).catch((err) => {
+        console.warn('Failed to sync undo to cloud:', err);
+      });
+    }
     showToast(`Undone: ${actionToUndo.description}`);
-  }, [undoStack, showToast]);
+  }, [undoStack, user, projects, showToast]);
+
+  // Firebase Real-time Synchronization effect
+  useEffect(() => {
+    if (!isConfigured || !user) {
+      setSyncStatus('local');
+      return;
+    }
+
+    let isMounted = true;
+    setSyncStatus('syncing');
+
+    // Check if cloud has existing tasks; if empty, migrate initial/local data
+    taskSyncService
+      .checkHasRemoteData(user.uid)
+      .then(async (hasRemote) => {
+        if (!isMounted) return;
+        if (!hasRemote) {
+          const currentLocalTasks = loadTasksFromStorage();
+          const currentLocalProjects = loadProjectsFromStorage();
+          if (currentLocalTasks.length > 0 || currentLocalProjects.length > 0) {
+            await taskSyncService.batchMigrate(user.uid, currentLocalTasks, currentLocalProjects);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Initial remote check warning:', err);
+      });
+
+    // Real-time listener for tasks
+    const unsubTasks = taskSyncService.subscribeToTasks(
+      user.uid,
+      (remoteTasks, hasPendingWrites) => {
+        if (!isMounted) return;
+        if (remoteTasks.length > 0) {
+          setTasks(remoteTasks);
+        }
+        setSyncStatus(hasPendingWrites ? 'syncing' : 'synced');
+        setLastSyncedAt(new Date());
+      },
+      (err) => {
+        console.warn('Task sync listener reported offline:', err);
+        if (isMounted) setSyncStatus('offline');
+      }
+    );
+
+    // Real-time listener for projects
+    const unsubProjects = taskSyncService.subscribeToProjects(
+      user.uid,
+      (remoteProjects) => {
+        if (!isMounted) return;
+        if (remoteProjects.length > 0) {
+          setProjects(remoteProjects);
+        }
+      },
+      (err) => {
+        console.warn('Project sync listener reported offline:', err);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      unsubTasks();
+      unsubProjects();
+    };
+  }, [user, isConfigured]);
+
+  // Force sync helper
+  const forceSyncToCloud = useCallback(async () => {
+    if (!user) {
+      showToast('Offline mode: Sign in to sync across devices');
+      return;
+    }
+    setSyncStatus('syncing');
+    try {
+      await taskSyncService.batchMigrate(user.uid, tasks, projects);
+      setSyncStatus('synced');
+      setLastSyncedAt(new Date());
+      showToast('All tasks & projects synced to Cloud!');
+    } catch (err) {
+      console.error('Manual sync failed:', err);
+      setSyncStatus('offline');
+      showToast('Sync queued in offline cache');
+    }
+  }, [user, tasks, projects, showToast]);
 
   // Compute overdue tasks (tasks not done with dueDate before today)
   const todayStr = formatLocalDate(new Date());
@@ -181,9 +289,16 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setTasks((prev) => [newTask, ...prev]);
       audioEngine.playClickSound();
+
+      if (user) {
+        taskSyncService.saveTask(user.uid, newTask).catch((err) => {
+          console.warn('Cloud task sync queued offline:', err);
+        });
+      }
+
       return newTask;
     },
-    [activeView, projects, todayStr]
+    [activeView, projects, todayStr, user]
   );
 
   // Add multiple tasks from multi-line brain dump
@@ -216,15 +331,39 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return newTasks;
       });
 
+      if (user && created.length > 0) {
+        taskSyncService.batchMigrate(user.uid, created, []).catch((err) => {
+          console.warn('Batch task sync queued offline:', err);
+        });
+      }
+
       showToast(`Added ${cleanLines.length} tasks from Brain Dump`);
     },
-    [activeView, todayStr, showToast]
+    [activeView, todayStr, showToast, user]
   );
 
   // Update Task
-  const updateTask = useCallback((id: string, updates: Partial<Task>) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
-  }, []);
+  const updateTask = useCallback(
+    (id: string, updates: Partial<Task>) => {
+      let updatedTask: Task | undefined;
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === id) {
+            updatedTask = { ...t, ...updates };
+            return updatedTask;
+          }
+          return t;
+        })
+      );
+
+      if (user && updatedTask) {
+        taskSyncService.saveTask(user.uid, updatedTask).catch((err) => {
+          console.warn('Task update queued offline:', err);
+        });
+      }
+    },
+    [user]
+  );
 
   // Delete Task with Undo
   const deleteTask = useCallback(
@@ -237,11 +376,17 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTasks((prev) => prev.filter((t) => t.id !== id));
       if (selectedTaskId === id) setSelectedTaskId(null);
 
+      if (user) {
+        taskSyncService.deleteTask(user.uid, id).catch((err) => {
+          console.warn('Cloud delete queued offline:', err);
+        });
+      }
+
       showToast(`Deleted "${taskToDelete.title}"`, 'Undo', () => {
         undoLastAction();
       });
     },
-    [tasks, selectedTaskId, pushUndo, showToast, undoLastAction]
+    [tasks, selectedTaskId, pushUndo, showToast, undoLastAction, user]
   );
 
   // Toggle Task Status (with sound, confetti, recurrence calculation, and undo)
@@ -255,7 +400,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (isCompleting) {
         audioEngine.playCompletionChime();
-        // Fire celebration confetti if in Today view or high priority
         if (activeView === 'today' || target.priority === 'p1') {
           confetti({
             particleCount: 40,
@@ -271,23 +415,26 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       pushUndo(isCompleting ? `Completed "${target.title}"` : `Reopened "${target.title}"`, prevTasks);
 
+      let modifiedTask: Task | undefined;
+      let nextRecurringTask: Task | undefined;
+
       setTasks((prev) => {
         let updated = prev.map((t) => {
           if (t.id === id) {
-            return {
+            modifiedTask = {
               ...t,
               status: isCompleting ? ('done' as const) : ('todo' as const),
               completedAt: isCompleting ? Date.now() : undefined,
               isPinnedToday: isCompleting ? false : t.isPinnedToday,
             };
+            return modifiedTask;
           }
           return t;
         });
 
-        // If completing a recurring task, automatically generate next occurrence!
         if (isCompleting && target.recurrence && target.recurrence !== 'none') {
           const nextDueDate = calculateNextDueDate(target.dueDate, target.recurrence);
-          const nextTask: Task = {
+          nextRecurringTask = {
             ...target,
             id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
             status: 'todo',
@@ -297,11 +444,24 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             createdAt: Date.now(),
             subtasks: target.subtasks.map((s) => ({ ...s, completed: false })),
           };
-          updated = [nextTask, ...updated];
+          updated = [nextRecurringTask, ...updated];
         }
 
         return updated;
       });
+
+      if (user) {
+        if (modifiedTask) {
+          taskSyncService.saveTask(user.uid, modifiedTask).catch((err) => {
+            console.warn('Status sync queued offline:', err);
+          });
+        }
+        if (nextRecurringTask) {
+          taskSyncService.saveTask(user.uid, nextRecurringTask).catch((err) => {
+            console.warn('Recurring task sync queued offline:', err);
+          });
+        }
+      }
 
       showToast(
         isCompleting ? `Marked "${target.title}" done` : `Reopened "${target.title}"`,
@@ -309,7 +469,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         () => undoLastAction()
       );
     },
-    [tasks, activeView, pushUndo, showToast, undoLastAction]
+    [tasks, activeView, pushUndo, showToast, undoLastAction, user]
   );
 
   // Toggle Task Pin for Rule of 3 in Today view
@@ -340,50 +500,81 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Subtask management
   const toggleSubTask = useCallback(
     (taskId: string, subtaskId: string) => {
+      let updatedTask: Task | undefined;
       setTasks((prev) =>
         prev.map((t) => {
           if (t.id === taskId) {
             const nextSubs = t.subtasks.map((s) =>
               s.id === subtaskId ? { ...s, completed: !s.completed } : s
             );
-            return { ...t, subtasks: nextSubs };
+            updatedTask = { ...t, subtasks: nextSubs };
+            return updatedTask;
           }
           return t;
         })
       );
       audioEngine.playClickSound();
+
+      if (user && updatedTask) {
+        taskSyncService.saveTask(user.uid, updatedTask).catch((err) => {
+          console.warn('Subtask sync queued offline:', err);
+        });
+      }
     },
-    []
+    [user]
   );
 
-  const addSubTask = useCallback((taskId: string, title: string) => {
-    if (!title.trim()) return;
-    const newSub = {
-      id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-      title: title.trim(),
-      completed: false,
-    };
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === taskId) {
-          return { ...t, subtasks: [...t.subtasks, newSub] };
-        }
-        return t;
-      })
-    );
-    audioEngine.playClickSound();
-  }, []);
+  const addSubTask = useCallback(
+    (taskId: string, title: string) => {
+      if (!title.trim()) return;
+      const newSub = {
+        id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        title: title.trim(),
+        completed: false,
+      };
 
-  const deleteSubTask = useCallback((taskId: string, subtaskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === taskId) {
-          return { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) };
-        }
-        return t;
-      })
-    );
-  }, []);
+      let updatedTask: Task | undefined;
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === taskId) {
+            updatedTask = { ...t, subtasks: [...t.subtasks, newSub] };
+            return updatedTask;
+          }
+          return t;
+        })
+      );
+      audioEngine.playClickSound();
+
+      if (user && updatedTask) {
+        taskSyncService.saveTask(user.uid, updatedTask).catch((err) => {
+          console.warn('Subtask add queued offline:', err);
+        });
+      }
+    },
+    [user]
+  );
+
+  const deleteSubTask = useCallback(
+    (taskId: string, subtaskId: string) => {
+      let updatedTask: Task | undefined;
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === taskId) {
+            updatedTask = { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) };
+            return updatedTask;
+          }
+          return t;
+        })
+      );
+
+      if (user && updatedTask) {
+        taskSyncService.saveTask(user.uid, updatedTask).catch((err) => {
+          console.warn('Subtask delete queued offline:', err);
+        });
+      }
+    },
+    [user]
+  );
 
   // Gentle Overdue Triage (Clean Slate)
   const bulkRescheduleOverdue = useCallback(
@@ -393,8 +584,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
-      setTasks((prev) =>
-        prev.map((t) => {
+      let updatedList: Task[] = [];
+      setTasks((prev) => {
+        updatedList = prev.map((t) => {
           if (t.status !== 'done' && t.dueDate && t.dueDate < todayStr && t.dueDate !== '') {
             if (action === 'today') {
               return { ...t, dueDate: todayStr };
@@ -404,8 +596,15 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
           }
           return t;
-        })
-      );
+        });
+        return updatedList;
+      });
+
+      if (user && updatedList.length > 0) {
+        taskSyncService.batchMigrate(user.uid, updatedList, projects).catch((err) => {
+          console.warn('Bulk reschedule queued offline:', err);
+        });
+      }
 
       setIsTriageDismissed(true);
       showToast(
@@ -414,7 +613,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : 'Moved overdue tasks to Someday'
       );
     },
-    [todayStr, showToast]
+    [todayStr, showToast, user, projects]
   );
 
   // Add custom project
@@ -423,21 +622,36 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const newProj: Project = { id, name, color, icon: icon || 'Folder' };
       setProjects((prev) => [...prev, newProj]);
+
+      if (user) {
+        taskSyncService.saveProject(user.uid, newProj).catch((err) => {
+          console.warn('Project save queued offline:', err);
+        });
+      }
+
       showToast(`Created project "${name}"`);
     },
-    [showToast]
+    [showToast, user]
   );
 
   // JSON Import
   const importTasks = useCallback(
     (importedTasks: Task[], importedProjects?: Project[]) => {
       setTasks(importedTasks);
+      const nextProjects = importedProjects && importedProjects.length > 0 ? importedProjects : projects;
       if (importedProjects && importedProjects.length > 0) {
         setProjects(importedProjects);
       }
+
+      if (user) {
+        taskSyncService.batchMigrate(user.uid, importedTasks, nextProjects).catch((err) => {
+          console.warn('Import sync queued offline:', err);
+        });
+      }
+
       showToast(`Successfully imported ${importedTasks.length} tasks!`);
     },
-    [showToast]
+    [showToast, user, projects]
   );
 
   return (
@@ -456,6 +670,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         overdueTasks,
         isTriageDismissed,
         toast,
+        syncStatus,
+        lastSyncedAt,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        forceSyncToCloud,
         setActiveView,
         setViewLayout,
         setSelectedTaskId,
