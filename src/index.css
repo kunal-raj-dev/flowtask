@@ -161,15 +161,36 @@ code, kbd, samp, pre, .font-mono {
   background: rgba(150, 150, 150, 0.35);
 }
 
-/* Micro-spring Checkbox Animation */
+/* Micro-spring Checkbox & SVG Stroke Draw Animation */
 @keyframes checkSpring {
-  0% { transform: scale(0.7); opacity: 0; }
-  60% { transform: scale(1.15); }
+  0% { transform: scale(0.65); opacity: 0; }
+  50% { transform: scale(1.18); }
+  75% { transform: scale(0.96); }
   100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes checkDraw {
+  0% {
+    stroke-dashoffset: 24;
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
 .animate-check-spring {
-  animation: checkSpring 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: checkSpring 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-check-draw {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 0;
+  animation: checkDraw 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes slideDown {
@@ -230,3 +251,41 @@ code, kbd, samp, pre, .font-mono {
 .animate-aurora-4 {
   animation: auroraDrift4 34s ease-in-out infinite alternate;
 }
+
+/* Print-Optimized Executive Pocket Cockpit */
+@media print {
+  aside,
+  header,
+  nav,
+  button,
+  input,
+  .batch-action-bar,
+  .toast,
+  .no-print {
+    display: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  main, .card-surface {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .border, [class*="border-"] {
+    border-color: #e5e7eb !important;
+  }
+
+  [class*="text-"] {
+    color: #111827 !important;
+  }
+}
+

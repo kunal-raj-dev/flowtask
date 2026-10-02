@@ -4,6 +4,7 @@
  */
 
 export type SoundProfile = 'zen' | 'mechanical' | 'bubble' | 'mute';
+export type AmbientSoundType = 'none' | 'brown' | 'pink' | 'white' | 'rain';
 
 class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -13,13 +14,19 @@ class AudioEngine {
   private ambientGain: GainNode | null = null;
 
   constructor() {
-    const saved = localStorage.getItem('flowtask_sound_enabled');
-    if (saved !== null) {
-      this.isSoundEnabled = saved === 'true';
-    }
-    const savedProfile = localStorage.getItem('flowtask_sound_profile') as SoundProfile;
-    if (savedProfile) {
-      this.soundProfile = savedProfile;
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+        const saved = localStorage.getItem('flowtask_sound_enabled');
+        if (saved !== null) {
+          this.isSoundEnabled = saved === 'true';
+        }
+        const savedProfile = localStorage.getItem('flowtask_sound_profile') as SoundProfile;
+        if (savedProfile) {
+          this.soundProfile = savedProfile;
+        }
+      }
+    } catch {
+      // Storage unavailable or disabled
     }
   }
 
@@ -39,7 +46,11 @@ class AudioEngine {
 
   public setSoundEnabled(enabled: boolean) {
     this.isSoundEnabled = enabled;
-    localStorage.setItem('flowtask_sound_enabled', String(enabled));
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem('flowtask_sound_enabled', String(enabled));
+      }
+    } catch {}
     if (!enabled && this.ambientGain) {
       this.stopAmbientSound();
     }
@@ -51,7 +62,11 @@ class AudioEngine {
 
   public setSoundProfile(profile: SoundProfile) {
     this.soundProfile = profile;
-    localStorage.setItem('flowtask_sound_profile', profile);
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem('flowtask_sound_profile', profile);
+      }
+    } catch {}
   }
 
   public getSoundProfile(): SoundProfile {
@@ -122,6 +137,13 @@ class AudioEngine {
   }
 
   /**
+   * Alias for playCompletionChime for completed task actions.
+   */
+  public playTaskComplete() {
+    this.playCompletionChime();
+  }
+
+  /**
    * Play a subtle click for toggling subtasks or buttons.
    */
   public playClickSound() {
@@ -179,7 +201,26 @@ class AudioEngine {
   }
 
   /**
-   * Synthesize real-time Brown Noise for deep focus.
+   * Universal ambient soundscape player.
+   */
+  public startAmbientSound(type: AmbientSoundType, volume: number = 0.08) {
+    if (type === 'none') {
+      this.stopAmbientSound();
+      return;
+    }
+    if (type === 'brown') {
+      this.startBrownNoise(volume);
+    } else if (type === 'pink') {
+      this.startPinkNoise(volume);
+    } else if (type === 'white') {
+      this.startWhiteNoise(volume * 0.6);
+    } else if (type === 'rain') {
+      this.startRainSound(volume);
+    }
+  }
+
+  /**
+   * Synthesize real-time Brown Noise for deep rumble focus.
    */
   public startBrownNoise(volume: number = 0.1) {
     if (!this.isSoundEnabled) return;
@@ -200,34 +241,214 @@ class AudioEngine {
       output[i] *= 3.5; // Gain compensation
     }
 
-    const whiteNoise = ctx.createBufferSource();
-    whiteNoise.buffer = noiseBuffer;
-    whiteNoise.loop = true;
+    const source = ctx.createBufferSource();
+    source.buffer = noiseBuffer;
+    source.loop = true;
 
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(400, ctx.currentTime);
+    filter.frequency.setValueAtTime(380, ctx.currentTime);
 
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), ctx.currentTime + 1.2);
 
-    whiteNoise.connect(filter);
+    source.connect(filter);
     filter.connect(gain);
     gain.connect(ctx.destination);
 
-    whiteNoise.start();
+    source.start();
 
-    this.ambientSource = whiteNoise;
+    this.ambientSource = source;
     this.ambientGain = gain;
   }
 
-  public stopAmbientSound() {
-    if (this.ambientSource) {
+  /**
+   * Synthesize real-time Pink Noise (1/f equal energy per octave) via Paul Kellet filter.
+   */
+  public startPinkNoise(volume: number = 0.08) {
+    if (!this.isSoundEnabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    this.stopAmbientSound();
+
+    const bufferSize = 2 * ctx.sampleRate;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      b3 = 0.86650 * b3 + white * 0.3104856;
+      b4 = 0.55000 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.0168980;
+      output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+      b6 = white * 0.115926;
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = noiseBuffer;
+    source.loop = true;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), ctx.currentTime + 1.2);
+
+    source.connect(gain);
+    gain.connect(ctx.destination);
+
+    source.start();
+
+    this.ambientSource = source;
+    this.ambientGain = gain;
+  }
+
+  /**
+   * Synthesize real-time White Noise with gentle top-end rolloff.
+   */
+  public startWhiteNoise(volume: number = 0.05) {
+    if (!this.isSoundEnabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    this.stopAmbientSound();
+
+    const bufferSize = 2 * ctx.sampleRate;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = (Math.random() * 2 - 1) * 0.4;
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = noiseBuffer;
+    source.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(6000, ctx.currentTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), ctx.currentTime + 1.2);
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    source.start();
+
+    this.ambientSource = source;
+    this.ambientGain = gain;
+  }
+
+  /**
+   * Synthesize gentle Rain Sound using band-filtered pink noise with subtle wave ripples.
+   */
+  public startRainSound(volume: number = 0.08) {
+    if (!this.isSoundEnabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    this.stopAmbientSound();
+
+    const bufferSize = 2 * ctx.sampleRate;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.998 * b0 + white * 0.06;
+      b1 = 0.99 * b1 + white * 0.08;
+      b2 = 0.95 * b2 + white * 0.16;
+      output[i] = (b0 + b1 + b2) * 0.2;
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = noiseBuffer;
+    source.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1400, ctx.currentTime);
+    filter.Q.setValueAtTime(0.8, ctx.currentTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), ctx.currentTime + 1.2);
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    source.start();
+
+    this.ambientSource = source;
+    this.ambientGain = gain;
+  }
+
+  /**
+   * Harmonic Tibetan singing bowl chord (528 Hz Solfeggio frequency + harmonic overtones)
+   * celebrating complete execution of all 3 MITs.
+   */
+  public playRuleOf3Fanfare() {
+    if (!this.isSoundEnabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const frequencies = [528, 792, 1056]; // 528 Hz fundamental, fifth, octave
+
+    frequencies.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+
+      const amp = 0.16 / (idx + 1);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(amp, now + 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.0);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + idx * 0.04);
+      osc.stop(now + 3.0);
+    });
+  }
+
+  public stopAmbientSound(fadeDuration: number = 0.8) {
+    if (this.ambientSource && this.ambientGain && this.ctx) {
+      const source = this.ambientSource;
+      const gain = this.ambientGain;
+      const now = this.ctx.currentTime;
+      try {
+        gain.gain.setValueAtTime(gain.gain.value, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + fadeDuration);
+        setTimeout(() => {
+          try {
+            (source as AudioScheduledSourceNode).stop();
+          } catch {}
+        }, fadeDuration * 1000);
+      } catch {
+        try {
+          (source as AudioScheduledSourceNode).stop();
+        } catch {}
+      }
+      this.ambientSource = null;
+      this.ambientGain = null;
+    } else if (this.ambientSource) {
       try {
         (this.ambientSource as AudioScheduledSourceNode).stop();
-      } catch {
-        // already stopped
-      }
+      } catch {}
       this.ambientSource = null;
       this.ambientGain = null;
     }

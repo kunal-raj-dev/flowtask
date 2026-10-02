@@ -12,6 +12,7 @@ import {
   Flag,
   CheckCircle2,
   Circle,
+  Copy,
 } from 'lucide-react';
 
 interface TaskContextMenuProps {
@@ -34,6 +35,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
     deleteTask,
     toggleTaskStatus,
     toggleTaskPinToday,
+    duplicateTask,
   } = useTaskContext();
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,18 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <span>Rename Title</span>
         </button>
       )}
+
+      {/* Duplicate task */}
+      <button
+        onClick={() => handleAction(() => duplicateTask(task.id))}
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+      >
+        <span className="flex items-center gap-2.5">
+          <Copy size={14} className="text-indigo-500" />
+          <span>Duplicate Task</span>
+        </span>
+        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">Clone</kbd>
+      </button>
 
       <div className="h-[1px] bg-[var(--border-hairline)] my-1" />
 

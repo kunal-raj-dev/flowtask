@@ -1,4 +1,4 @@
-import type { Task, Project, RecurrenceFrequency } from '../types/task';
+import type { Task, Project, RecurrenceFrequency, CustomRecurrenceRule } from '../types/task';
 import { formatLocalDate } from './nlpParser';
 
 const STORAGE_KEY_TASKS = 'flowtask_tasks_v1';
@@ -129,11 +129,25 @@ export function saveProjectsToStorage(projects: Project[]) {
 /**
  * Calculates the next due date for a recurring task
  */
-export function calculateNextDueDate(currentDueDateStr?: string, freq: RecurrenceFrequency = 'none'): string | undefined {
+export function calculateNextDueDate(
+  currentDueDateStr?: string,
+  freq: RecurrenceFrequency = 'none',
+  customRule?: CustomRecurrenceRule,
+  completedAt?: number
+): string | undefined {
   if (freq === 'none') return undefined;
 
-  const baseDate = currentDueDateStr ? new Date(currentDueDateStr) : new Date();
-  const next = new Date(baseDate.getTime());
+  let baseDate: Date;
+  if (freq === 'custom' && customRule?.mode === 'completion' && completedAt) {
+    baseDate = new Date(completedAt);
+  } else if (currentDueDateStr && currentDueDateStr.includes('-')) {
+    const [y, m, d] = currentDueDateStr.split('-').map(Number);
+    baseDate = new Date(y, m - 1, d);
+  } else {
+    baseDate = new Date();
+  }
+
+  const next = new Date(baseDate);
 
   if (freq === 'daily') {
     next.setDate(next.getDate() + 1);
@@ -143,8 +157,35 @@ export function calculateNextDueDate(currentDueDateStr?: string, freq: Recurrenc
     } while (next.getDay() === 0 || next.getDay() === 6); // skip Sun (0) and Sat (6)
   } else if (freq === 'weekly') {
     next.setDate(next.getDate() + 7);
+  } else if (freq === 'biweekly') {
+    next.setDate(next.getDate() + 14);
   } else if (freq === 'monthly') {
     next.setMonth(next.getMonth() + 1);
+  } else if (freq === 'yearly') {
+    next.setFullYear(next.getFullYear() + 1);
+  } else if (freq === 'custom' && customRule) {
+    const interval = Math.max(1, customRule.interval || 1);
+    if (customRule.unit === 'days') {
+      next.setDate(next.getDate() + interval);
+    } else if (customRule.unit === 'weeks') {
+      if (customRule.daysOfWeek && customRule.daysOfWeek.length > 0) {
+        const sortedDays = [...customRule.daysOfWeek].sort((a, b) => a - b);
+        const currentDay = next.getDay();
+        const nextDayInWeek = sortedDays.find((d) => d > currentDay);
+        if (nextDayInWeek !== undefined) {
+          next.setDate(next.getDate() + (nextDayInWeek - currentDay));
+        } else {
+          // Wrap around to next interval cycle's first day
+          const daysUntilNextWeek = 7 - currentDay + sortedDays[0];
+          const extraWeeks = Math.max(0, interval - 1) * 7;
+          next.setDate(next.getDate() + daysUntilNextWeek + extraWeeks);
+        }
+      } else {
+        next.setDate(next.getDate() + interval * 7);
+      }
+    } else if (customRule.unit === 'months') {
+      next.setMonth(next.getMonth() + interval);
+    }
   }
 
   return formatLocalDate(next);
@@ -200,4 +241,69 @@ export function exportToMarkdown(tasks: Task[], projects: Project[]): string {
  */
 export function exportToJSON(tasks: Task[], projects: Project[]): string {
   return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), tasks, projects }, null, 2);
+}
+
+/**
+ * Exports tasks to RFC-4180 compliant CSV
+ */
+export function exportToCSV(tasks: Task[], projects: Project[]): string {
+  const projectMap = new Map<string, string>();
+  projects.forEach((p) => projectMap.set(p.id, p.name));
+
+  const escapeCSV = (val: any) => {
+    if (val === undefined || val === null) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const headers = [
+    'ID',
+    'Title',
+    'Status',
+    'Priority',
+    'Project',
+    'Due Date',
+    'Due Time',
+    'Estimated (min)',
+    'Time Spent (min)',
+    'Tags',
+    'Context Tags',
+    'Subtasks Total',
+    'Subtasks Done',
+    'Created At',
+    'Completed At',
+  ];
+
+  const rows = tasks.map((t) => {
+    const projName = projectMap.get(t.projectId) || t.projectId;
+    const subtasksTotal = t.subtasks?.length || 0;
+    const subtasksDone = t.subtasks?.filter((s) => s.completed).length || 0;
+    const tagsStr = t.tags ? t.tags.join(';') : '';
+    const contextStr = t.contextTags ? t.contextTags.join(';') : '';
+    const createdStr = new Date(t.createdAt).toISOString();
+    const completedStr = t.completedAt ? new Date(t.completedAt).toISOString() : '';
+
+    return [
+      escapeCSV(t.id),
+      escapeCSV(t.title),
+      escapeCSV(t.status),
+      escapeCSV(t.priority.toUpperCase()),
+      escapeCSV(projName),
+      escapeCSV(t.dueDate || ''),
+      escapeCSV(t.dueTime || ''),
+      escapeCSV(t.estimatedMinutes ?? ''),
+      escapeCSV(t.timeSpentMinutes ?? ''),
+      escapeCSV(tagsStr),
+      escapeCSV(contextStr),
+      escapeCSV(subtasksTotal),
+      escapeCSV(subtasksDone),
+      escapeCSV(createdStr),
+      escapeCSV(completedStr),
+    ].join(',');
+  });
+
+  return [headers.join(','), ...rows].join('\n');
 }

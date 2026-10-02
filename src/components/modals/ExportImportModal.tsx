@@ -1,25 +1,69 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
-import { exportToMarkdown, exportToJSON } from '../../utils/storage';
-import { X, Download, Upload, Copy, Check, FileText, Database } from 'lucide-react';
+import { exportToMarkdown, exportToJSON, exportToCSV } from '../../utils/storage';
+import { generateDailyStandup } from '../../utils/standupGenerator';
+import { generateSnapshotShareUrl } from '../../utils/snapshotShare';
+import { audioEngine } from '../../utils/audioEngine';
+import confetti from 'canvas-confetti';
+import {
+  X,
+  Download,
+  Upload,
+  Copy,
+  Check,
+  FileText,
+  Database,
+  MessageSquare,
+  Share2,
+  Sparkles,
+  History,
+  Trash2,
+  ShieldCheck,
+  Clock,
+  Plus,
+  Table,
+} from 'lucide-react';
+import {
+  getStoredSnapshots,
+  createLocalSnapshot,
+  restoreSnapshot,
+  deleteSnapshot,
+  type LocalSnapshot,
+} from '../../utils/backupService';
 
 interface ExportImportModalProps {
   onClose: () => void;
+  initialTab?: 'standup' | 'markdown' | 'csv' | 'share' | 'json' | 'import' | 'snapshots';
 }
 
-export const ExportImportModal: React.FC<ExportImportModalProps> = ({ onClose }) => {
+export const ExportImportModal: React.FC<ExportImportModalProps> = ({
+  onClose,
+  initialTab = 'standup',
+}) => {
   const { tasks, projects, importTasks } = useTaskContext();
-  const [activeTab, setActiveTab] = useState<'markdown' | 'json' | 'import'>('markdown');
+  const [activeTab, setActiveTab] = useState<'standup' | 'markdown' | 'csv' | 'share' | 'json' | 'import' | 'snapshots'>(
+    initialTab
+  );
+  const [localSnapshots, setLocalSnapshots] = useState<LocalSnapshot[]>(() => getStoredSnapshots());
   const [copied, setCopied] = useState(false);
+  const [standupFormat, setStandupFormat] = useState<'slack' | 'markdown' | 'plain'>('slack');
   const [importJsonText, setImportJsonText] = useState('');
   const [importError, setImportError] = useState('');
 
   const markdownContent = exportToMarkdown(tasks, projects);
+  const csvContent = exportToCSV(tasks, projects);
   const jsonContent = exportToJSON(tasks, projects);
+  const standupContent = generateDailyStandup(tasks, projects, { format: standupFormat });
+  const shareUrl = generateSnapshotShareUrl(
+    tasks.filter((t) => t.status !== 'done'),
+    'FlowTask Active Sprint Snapshot'
+  );
 
-  const handleCopyMarkdown = () => {
-    navigator.clipboard.writeText(markdownContent);
+  const handleCopyText = (content: string) => {
+    navigator.clipboard.writeText(content);
     setCopied(true);
+    audioEngine.playCompletionChime();
+    confetti({ particleCount: 35, spread: 50, origin: { y: 0.7 } });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -42,6 +86,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ onClose })
         throw new Error('Invalid JSON format: missing "tasks" array');
       }
       importTasks(parsed.tasks, parsed.projects);
+      audioEngine.playCompletionChime();
       onClose();
     } catch (err: any) {
       setImportError(err.message || 'Invalid JSON');
@@ -65,54 +110,188 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ onClose })
         </button>
 
         <div className="flex items-center gap-3.5 mb-4">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 dark:from-emerald-500/30 dark:to-teal-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
-            <Database size={20} strokeWidth={2} />
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-teal-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-sm">
+            <Sparkles size={20} strokeWidth={2} />
           </div>
           <div>
             <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 tracking-tight">
-              Data Portability & Backups
+              Workday Portability & Standup
             </h3>
             <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">
-              Export to Markdown or backup/restore as JSON. 100% private & local.
+              Copy daily standups, export backups, or share zero-auth task snapshots.
             </p>
           </div>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex gap-1.5 p-1 bg-stone-100/80 dark:bg-white/[0.04] border border-stone-200/60 dark:border-white/5 rounded-2xl mb-4 text-xs font-semibold">
+        <div className="flex gap-1 p-1 bg-stone-100/80 dark:bg-white/[0.04] border border-stone-200/60 dark:border-white/5 rounded-2xl mb-4 text-xs font-semibold overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('standup')}
+            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'standup'
+                ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
+                : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
+            }`}
+          >
+            <MessageSquare size={13} /> Standup
+          </button>
+          <button
+            onClick={() => setActiveTab('share')}
+            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'share'
+                ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
+                : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
+            }`}
+          >
+            <Share2 size={13} /> Share Link
+          </button>
           <button
             onClick={() => setActiveTab('markdown')}
-            className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'markdown'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
             }`}
           >
-            <FileText size={14} /> Markdown Export
+            <FileText size={13} /> Markdown
+          </button>
+          <button
+            onClick={() => setActiveTab('csv')}
+            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'csv'
+                ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
+                : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
+            }`}
+          >
+            <Table size={13} /> CSV
           </button>
           <button
             onClick={() => setActiveTab('json')}
-            className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'json'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
             }`}
           >
-            <Database size={14} /> JSON Backup
+            <Database size={13} /> JSON
           </button>
           <button
             onClick={() => setActiveTab('import')}
-            className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'import'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
             }`}
           >
-            <Upload size={14} /> Import Data
+            <Upload size={13} /> Restore
+          </button>
+          <button
+            onClick={() => {
+              setLocalSnapshots(getStoredSnapshots());
+              setActiveTab('snapshots');
+            }}
+            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'snapshots'
+                ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
+                : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
+            }`}
+          >
+            <History size={13} /> Revisions
           </button>
         </div>
 
-        {/* Markdown Tab */}
+        {/* 1. Daily Standup Tab */}
+        {activeTab === 'standup' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
+                Format:
+              </span>
+              <div className="flex items-center gap-1 bg-stone-100 dark:bg-stone-800/60 p-0.5 rounded-xl text-[11px] font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setStandupFormat('slack')}
+                  className={`px-2.5 py-1 rounded-lg transition-all ${
+                    standupFormat === 'slack'
+                      ? 'bg-white dark:bg-[#1A1F2B] text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      : 'text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  Slack / Discord
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStandupFormat('markdown')}
+                  className={`px-2.5 py-1 rounded-lg transition-all ${
+                    standupFormat === 'markdown'
+                      ? 'bg-white dark:bg-[#1A1F2B] text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      : 'text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  Markdown
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStandupFormat('plain')}
+                  className={`px-2.5 py-1 rounded-lg transition-all ${
+                    standupFormat === 'plain'
+                      ? 'bg-white dark:bg-[#1A1F2B] text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      : 'text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  Plain Text
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              readOnly
+              rows={8}
+              value={standupContent}
+              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-indigo-500/50"
+            />
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => handleCopyText(standupContent)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
+              >
+                {copied ? <Check size={14} className="text-emerald-300" /> : <Copy size={14} />}
+                <span>{copied ? 'Copied to Clipboard!' : 'Copy Daily Standup'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 2. Share Snapshot Link Tab */}
+        {activeTab === 'share' && (
+          <div className="space-y-3">
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              This self-contained link encodes your active tasks directly into a client-side URL fragment. Anyone opening the link can preview and import tasks with <strong>zero sign-up, zero server storage, and complete privacy</strong>.
+            </p>
+
+            <textarea
+              readOnly
+              rows={5}
+              value={shareUrl}
+              className="w-full text-[11px] p-3 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed select-all"
+            />
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => handleCopyText(shareUrl)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all"
+              >
+                {copied ? <Check size={14} className="text-emerald-200" /> : <Copy size={14} />}
+                <span>{copied ? 'Link Copied!' : 'Copy Share Link'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 3. Markdown Tab */}
         {activeTab === 'markdown' && (
           <div className="space-y-3">
             <textarea
@@ -123,7 +302,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ onClose })
             />
             <div className="flex items-center justify-end gap-2">
               <button
-                onClick={handleCopyMarkdown}
+                onClick={() => handleCopyText(markdownContent)}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
               >
                 {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -140,7 +319,42 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ onClose })
           </div>
         )}
 
-        {/* JSON Backup Tab */}
+        {/* 3b. CSV Spreadsheet Tab */}
+        {activeTab === 'csv' && (
+          <div className="space-y-3">
+            <textarea
+              readOnly
+              rows={8}
+              value={csvContent}
+              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-indigo-500/50"
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                Compatible with Microsoft Excel, Apple Numbers, & Google Sheets.
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleCopyText(csvContent)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
+                >
+                  {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                  <span>{copied ? 'Copied!' : 'Copy CSV'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownloadFile(csvContent, 'FlowTask-Tasks.csv', 'text/csv;charset=utf-8;')}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-xl text-xs font-bold hover:bg-stone-800 dark:hover:bg-white shadow-sm transition-all"
+                >
+                  <Download size={14} />
+                  <span>Download .csv</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 4. JSON Backup Tab */}
         {activeTab === 'json' && (
           <div className="space-y-3">
             <textarea
@@ -150,6 +364,13 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ onClose })
               className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-indigo-500/50"
             />
             <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => handleCopyText(jsonContent)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
+              >
+                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                <span>{copied ? 'Copied!' : 'Copy JSON'}</span>
+              </button>
               <button
                 onClick={() => handleDownloadFile(jsonContent, 'flowtask-backup.json', 'application/json')}
                 className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-xl text-xs font-bold hover:bg-stone-800 dark:hover:bg-white shadow-sm transition-all"
@@ -161,7 +382,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ onClose })
           </div>
         )}
 
-        {/* Import Tab */}
+        {/* 5. Import Tab */}
         {activeTab === 'import' && (
           <form onSubmit={handleImportSubmit} className="space-y-3">
             <textarea
@@ -185,6 +406,113 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({ onClose })
               </button>
             </div>
           </form>
+        )}
+
+        {/* 6. Local Snapshots & Revisions Tab */}
+        {activeTab === 'snapshots' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-stone-800 dark:text-stone-200">
+                  Point-in-Time Rolling Snapshots
+                </p>
+                <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                  Automatic daily checkpoints & manual rollback points stored locally.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  createLocalSnapshot(tasks, projects, undefined, 'manual');
+                  setLocalSnapshots(getStoredSnapshots());
+                  audioEngine.playCompletionChime();
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all shrink-0"
+              >
+                <Plus size={13} />
+                <span>Take Snapshot</span>
+              </button>
+            </div>
+
+            <div className="max-h-[260px] overflow-y-auto space-y-2 pr-1">
+              {localSnapshots.length === 0 ? (
+                <div className="text-center py-8 text-stone-400 text-xs">
+                  No snapshots recorded yet. Automatic daily snapshots will appear here.
+                </div>
+              ) : (
+                localSnapshots.map((snap) => (
+                  <div
+                    key={snap.id}
+                    className="p-3 rounded-2xl bg-stone-50 dark:bg-white/[0.03] border border-stone-200/70 dark:border-white/5 flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-stone-900 dark:text-stone-100 truncate">
+                          {snap.label}
+                        </span>
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider ${
+                            snap.trigger === 'auto_daily'
+                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                              : snap.trigger === 'pre_batch'
+                              ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300'
+                              : 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
+                          }`}
+                        >
+                          {snap.trigger === 'auto_daily'
+                            ? 'Daily Auto'
+                            : snap.trigger === 'pre_batch'
+                            ? 'Pre-Action'
+                            : 'Manual'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-stone-400 font-mono mt-0.5">
+                        <Clock size={10} />
+                        <span>{new Date(snap.timestamp).toLocaleString()}</span>
+                        <span>•</span>
+                        <span>{snap.taskCount} tasks</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const conf = window.confirm(
+                            `Restore data from "${snap.label}"?\n\nThis will replace your current workspace with the ${snap.taskCount} tasks from this snapshot.`
+                          );
+                          if (conf) {
+                            const restored = restoreSnapshot(snap.id);
+                            if (restored) {
+                              importTasks(restored.tasks, restored.projects);
+                              audioEngine.playCompletionChime();
+                              confetti({ particleCount: 40, spread: 50 });
+                              onClose();
+                            }
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 font-bold text-[11px] shadow-xs hover:opacity-90 transition-opacity flex items-center gap-1"
+                      >
+                        <ShieldCheck size={12} />
+                        <span>Restore</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          deleteSnapshot(snap.id);
+                          setLocalSnapshots(getStoredSnapshots());
+                        }}
+                        title="Delete snapshot"
+                        className="p-1 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

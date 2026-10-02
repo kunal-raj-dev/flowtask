@@ -1,7 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { parseTaskInput } from '../../utils/nlpParser';
 import type { Priority } from '../../types/task';
+import {
+  createVoiceDictationSession,
+  isVoiceDictationSupported,
+  type VoiceDictationSession,
+} from '../../utils/voiceDictationService';
+import { audioEngine } from '../../utils/audioEngine';
 import {
   Plus,
   Calendar,
@@ -10,6 +16,10 @@ import {
   Clock,
   Sparkles,
   CornerDownLeft,
+  Mic,
+  MicOff,
+  Tag,
+  LayoutTemplate,
 } from 'lucide-react';
 
 interface OmnibarProps {
@@ -17,30 +27,95 @@ interface OmnibarProps {
 }
 
 export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
-  const { addTask } = useTaskContext();
+  const { addTask, setIsTemplatePickerOpen, showToast } = useTaskContext();
   const [input, setInput] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Global 'N' shortcut to focus Omnibar
+  // Voice-to-Task Speech Recognition
+  const [isListening, setIsListening] = useState(false);
+  const sessionRef = useRef<VoiceDictationSession | null>(null);
+
+  const isSpeechSupported = isVoiceDictationSupported();
+
+  const toggleVoiceInput = useCallback(() => {
+    if (!isSpeechSupported) {
+      showToast('Voice dictation is not supported in this browser.');
+      return;
+    }
+
+    if (isListening) {
+      sessionRef.current?.stop();
+      setIsListening(false);
+      audioEngine.playClickSound();
+      return;
+    }
+
+    const session = createVoiceDictationSession({
+      onStart: () => {
+        setIsListening(true);
+        audioEngine.playClickSound();
+      },
+      onTranscript: (transcript) => {
+        setInput(transcript);
+      },
+      onError: (msg) => {
+        setIsListening(false);
+        showToast(msg);
+      },
+      onEnd: () => {
+        setIsListening(false);
+      },
+    });
+
+    sessionRef.current = session;
+    const started = session.start();
+    if (!started) {
+      setIsListening(false);
+      showToast('Could not access microphone.');
+    }
+  }, [isSpeechSupported, isListening, showToast]);
+
+  useEffect(() => {
+    return () => {
+      sessionRef.current?.abort();
+    };
+  }, []);
+
+  // Global 'N' shortcut to focus Omnibar and 'Ctrl+Shift+V' to toggle Voice
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Global 'N' shortcut to focus Omnibar
       if (
         (e.key === 'n' || e.key === 'N') &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
         document.activeElement?.tagName !== 'INPUT' &&
         document.activeElement?.tagName !== 'TEXTAREA'
       ) {
         e.preventDefault();
         inputRef.current?.focus();
+        return;
+      }
+
+      // Ctrl+Shift+V or Cmd+Shift+V to toggle Voice Dictation
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        toggleVoiceInput();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [toggleVoiceInput]);
 
   const parsed = parseTaskInput(input);
   const hasRecognizedTokens =
-    parsed.dueDate || parsed.priority || parsed.projectTag || parsed.estimatedMinutes;
+    parsed.dueDate ||
+    parsed.priority ||
+    parsed.projectTag ||
+    parsed.estimatedMinutes ||
+    (parsed.contextTags && parsed.contextTags.length > 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +162,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
             placeholder={
               isFocused
                 ? typeof window !== 'undefined' && window.innerWidth < 640
-                  ? "Task name... (e.g. #work p1)"
-                  : "Type task name... ('tomorrow', '#project', 'p1', '~30m')"
+                  ? "Task name... (e.g. #work @calls p1)"
+                  : "Type task name... ('tomorrow', '#project', '@context', 'p1', '~30m')"
                 : typeof window !== 'undefined' && window.innerWidth < 640
                 ? "Add a task..."
                 : "Add a task... (press 'N')"
@@ -106,6 +181,30 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
               <Sparkles size={16} />
             </button>
 
+            <button
+              type="button"
+              onClick={() => setIsTemplatePickerOpen(true)}
+              title="Workflow Blueprints & Templates"
+              className="p-1.5 text-[var(--text-muted)] hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <LayoutTemplate size={16} />
+            </button>
+
+            {isSpeechSupported && (
+              <button
+                type="button"
+                onClick={toggleVoiceInput}
+                title={isListening ? 'Stop listening (Ctrl+Shift+V)' : 'Dictate task hands-free (Ctrl+Shift+V)'}
+                className={`p-1.5 rounded-lg transition-all ${
+                  isListening
+                    ? 'text-rose-500 bg-rose-500/15 border border-rose-500/30 animate-pulse ring-2 ring-rose-500/20'
+                    : 'text-[var(--text-muted)] hover:text-rose-500 hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
+                }`}
+              >
+                {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+              </button>
+            )}
+
             {input.trim() && (
               <button
                 type="submit"
@@ -117,6 +216,25 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
             )}
           </div>
         </div>
+
+        {/* Active Speech Dictation Waveform Indicator */}
+        {isListening && (
+          <div className="px-4 py-2 bg-rose-500/[0.08] dark:bg-rose-500/[0.12] border-t border-rose-500/20 flex items-center justify-between gap-3 text-xs text-rose-600 dark:text-rose-400 animate-slide-down">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+              <span className="font-semibold">
+                Listening... Speak naturally (e.g. &quot;Finish Q4 spec tomorrow at 2pm #work p1 ~45m&quot;)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleVoiceInput}
+              className="px-2 py-0.5 rounded-md bg-rose-500/20 hover:bg-rose-500/30 text-[11px] font-bold text-rose-700 dark:text-rose-300 transition-colors"
+            >
+              Done (Ctrl+Shift+V)
+            </button>
+          </div>
+        )}
 
         {/* Quick Helper Token Chips when focused & empty */}
         {isFocused && input.trim().length === 0 && (
@@ -162,6 +280,26 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
             >
               + p1
             </button>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setInput((prev) => (prev ? `${prev} @calls` : '@calls '));
+              }}
+              className="px-2 py-0.5 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 hover:bg-teal-500/20 transition-colors"
+            >
+              + @calls
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setInput((prev) => (prev ? `${prev} @computer` : '@computer '));
+              }}
+              className="px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
+            >
+              + @computer
+            </button>
           </div>
         )}
 
@@ -194,6 +332,17 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
               <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-indigo-500/15 to-violet-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-400/40 shadow-xs font-mono">
                 <Folder size={11} />#{parsed.projectTag}
               </span>
+            )}
+
+            {parsed.contextTags && parsed.contextTags.length > 0 && (
+              parsed.contextTags.map((ctx) => (
+                <span
+                  key={ctx}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-400/40 shadow-xs font-mono"
+                >
+                  <Tag size={10} />@{ctx}
+                </span>
+              ))
             )}
 
             {parsed.estimatedMinutes && (

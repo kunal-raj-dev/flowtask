@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTaskContext, type AppTheme } from '../../context/TaskContext';
 import { type SoundProfile, audioEngine } from '../../utils/audioEngine';
+import {
+  loadDiurnalOverride,
+  saveDiurnalOverride,
+  type DiurnalOverride,
+} from '../../utils/diurnalAura';
 import {
   Palette,
   Volume2,
@@ -13,6 +18,7 @@ import {
   Sparkles,
   Compass,
   Leaf,
+  Clock,
 } from 'lucide-react';
 
 interface AestheticsModalProps {
@@ -29,6 +35,13 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
     soundProfile,
     setSoundProfile,
   } = useTaskContext();
+
+  const [diurnalOverride, setDiurnalOverride] = useState<DiurnalOverride>(() => loadDiurnalOverride());
+
+  const handleDiurnalSelect = (override: DiurnalOverride) => {
+    setDiurnalOverride(override);
+    saveDiurnalOverride(override);
+  };
 
   if (!isOpen) return null;
 
@@ -274,6 +287,73 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
                       </button>
                     )}
                   </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 3: Diurnal Circadian Ambient Shift */}
+          <div className="pt-2 border-t border-[var(--border-hairline)]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                <Clock size={12} className="text-amber-500" />
+                <span>Diurnal Ambient Atmosphere</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                {diurnalOverride === 'auto' ? 'Dynamic Time-of-Day' : 'Locked'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                {
+                  id: 'auto' as const,
+                  label: 'Auto (Circadian)',
+                  desc: 'Follows local clock automatically',
+                  preview: 'from-amber-400/20 via-sky-400/20 to-violet-600/20',
+                },
+                {
+                  id: 'morning' as const,
+                  label: 'Morning Dawn',
+                  desc: 'Warm amber & rose luminescence',
+                  preview: 'from-amber-400/30 to-rose-400/20',
+                },
+                {
+                  id: 'midday' as const,
+                  label: 'Midday Zenith',
+                  desc: 'Electric indigo & sky clarity',
+                  preview: 'from-indigo-500/30 to-sky-400/20',
+                },
+                {
+                  id: 'evening' as const,
+                  label: 'Evening Cosmic',
+                  desc: 'Deep cosmic obsidian & violet',
+                  preview: 'from-violet-700/30 to-slate-900/30',
+                },
+              ].map((item) => {
+                const isSelected = diurnalOverride === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleDiurnalSelect(item.id)}
+                    className={`p-2.5 rounded-2xl border text-left transition-all relative overflow-hidden card-surface ${
+                      isSelected
+                        ? 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500/25'
+                        : 'border-[var(--border-hairline)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="text-xs font-bold text-[var(--text-primary)]">
+                        {item.label}
+                      </span>
+                      {isSelected && <Check size={12} className="text-amber-500 stroke-[3]" />}
+                    </div>
+                    <p className="text-[10px] text-[var(--text-secondary)] leading-tight mb-2">
+                      {item.desc}
+                    </p>
+                    <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${item.preview}`} />
+                  </button>
                 );
               })}
             </div>

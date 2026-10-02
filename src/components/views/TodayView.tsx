@@ -15,7 +15,14 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  Moon,
+  FileText,
+  Check,
 } from 'lucide-react';
+import { KeyboardHaloDock } from '../tasks/KeyboardHaloDock';
+import { generateDailyStandup } from '../../utils/standupGenerator';
+import { audioEngine } from '../../utils/audioEngine';
+import confetti from 'canvas-confetti';
 
 interface TodayViewProps {
   onSelectTask: (taskId: string) => void;
@@ -30,6 +37,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
 }) => {
   const {
     tasks,
+    projects,
     overdueTasks,
     isTriageDismissed,
     bulkRescheduleOverdue,
@@ -41,7 +49,12 @@ export const TodayView: React.FC<TodayViewProps> = ({
     toggleTaskPinToday,
     updateTask,
     deleteTask,
+    setIsEveningShutdownOpen,
+    isShutdownDismissed,
+    showToast,
   } = useTaskContext();
+
+  const [copiedStandup, setCopiedStandup] = useState(false);
 
   const [displayMode, setDisplayMode] = useState<'list' | 'timeline'>(() => {
     return (localStorage.getItem('flowtask_today_mode') as 'list' | 'timeline') || 'list';
@@ -59,6 +72,8 @@ export const TodayView: React.FC<TodayViewProps> = ({
     localStorage.setItem('flowtask_today_completed_collapsed', String(isCompletedCollapsed));
   }, [isCompletedCollapsed]);
 
+  const [selectedContextTag, setSelectedContextTag] = useState<string | null>(null);
+
   const todayStr = formatLocalDate(new Date());
 
   // Tasks belonging to Today: dueDate === todayStr OR isPinnedToday
@@ -68,10 +83,24 @@ export const TodayView: React.FC<TodayViewProps> = ({
     return isDueToday || isPinned;
   });
 
+  // Extract available context tags for Today
+  const availableContextTags = React.useMemo(() => {
+    const map = new Map<string, number>();
+    todayTasks.forEach((t) => {
+      if (t.status !== 'done' && t.contextTags) {
+        t.contextTags.forEach((ctx) => {
+          map.set(ctx, (map.get(ctx) || 0) + 1);
+        });
+      }
+    });
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [todayTasks]);
+
   // Filter tasks based on controls
   const filteredTasks = todayTasks.filter((t) => {
     if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
     if (quickWinsOnly && (t.estimatedMinutes || 999) > 15) return false;
+    if (selectedContextTag && (!t.contextTags || !t.contextTags.includes(selectedContextTag))) return false;
     return true;
   });
 
@@ -86,15 +115,37 @@ export const TodayView: React.FC<TodayViewProps> = ({
   // Active tasks array for linear keyboard traversal (j/k)
   const activeListTasks = [...pinnedTasks, ...otherActiveTasks];
 
-  const { focusedTaskId } = useKeyboardNavigation({
+  const { focusedTaskId, setFocusedIndex } = useKeyboardNavigation({
     tasks: activeListTasks,
     onSelectTask,
     onToggleStatus: toggleTaskStatus,
     onTogglePinToday: toggleTaskPinToday,
     onUpdateTask: updateTask,
     onDeleteTask: deleteTask,
+    onStartFocus,
     enabled: displayMode === 'list',
   });
+
+  const focusedTask = activeListTasks.find((t) => t.id === focusedTaskId);
+
+  const handleCopyStandup = async () => {
+    const markdown = generateDailyStandup(tasks, projects);
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopiedStandup(true);
+      audioEngine.playTaskComplete();
+      confetti({
+        particleCount: 35,
+        spread: 55,
+        origin: { y: 0.25 },
+        colors: ['#6366f1', '#10b981', '#f59e0b'],
+      });
+      showToast('Daily Standup digest copied to clipboard!');
+      setTimeout(() => setCopiedStandup(false), 2500);
+    } catch {
+      showToast('Failed to copy standup to clipboard');
+    }
+  };
 
   const totalTodayCount = filteredTasks.length + completedTodayTasks.length;
   const doneTodayCount = completedTodayTasks.length;
@@ -123,8 +174,28 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           </div>
 
-          {/* Action Row: Segmented Switcher & Dual-Gradient SVG Ring */}
+          {/* Action Row: Standup Digest, Segmented Switcher & Dual-Gradient SVG Ring */}
           <div className="flex items-center justify-between sm:justify-end gap-2.5 flex-wrap sm:flex-nowrap">
+            {/* Standup Digest Copier Button */}
+            <button
+              type="button"
+              onClick={handleCopyStandup}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/80 dark:bg-[var(--bg-surface-l2)] border border-stone-200/80 dark:border-[var(--border-hairline)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-indigo-400/50 shadow-subtle card-surface transition-all active:scale-95"
+              title="Copy Daily Standup digest formatted for Slack / Discord / Notion"
+            >
+              {copiedStandup ? (
+                <>
+                  <Check size={13} className="text-emerald-500 stroke-[2.5]" />
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <FileText size={13} className="text-indigo-500" />
+                  <span>Standup Digest</span>
+                </>
+              )}
+            </button>
+
             {/* List vs Timeline Mode Switcher */}
             <div className="flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] shadow-inner">
               <button
@@ -241,6 +312,33 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           </div>
         )}
+
+        {/* Symmetrical Evening Shutdown Banner */}
+        {doneTodayCount > 0 && !isShutdownDismissed && (
+          <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-500/[0.10] via-purple-500/[0.06] to-pink-500/[0.04] border border-indigo-500/25 shadow-card card-surface flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xs flex-shrink-0">
+                <Moon size={18} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[var(--text-primary)]">
+                  Wrapping up for today? You&apos;ve completed {doneTodayCount} task{doneTodayCount > 1 ? 's' : ''}!
+                </p>
+                <p className="text-[11px] text-[var(--text-secondary)]">
+                  Complete your evening shutdown ritual to close open loops and disconnect.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsEveningShutdownOpen(true)}
+              className="px-4 py-2 text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl shadow-xs transition-all active:scale-95 shrink-0"
+            >
+              Start Shutdown Ritual
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Conditionally Render: Timeline View or List View */}
@@ -285,6 +383,41 @@ export const TodayView: React.FC<TodayViewProps> = ({
               <span>to navigate</span>
             </div>
           </div>
+
+          {/* GTD Context Filter Rail */}
+          {availableContextTags.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1 mb-5 text-xs scrollbar-none animate-fade-in">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mr-1 shrink-0">
+                Context:
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedContextTag(null)}
+                className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+                  selectedContextTag === null
+                    ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
+                    : 'bg-stone-100 dark:bg-white/5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                All Contexts
+              </button>
+              {availableContextTags.map(([tag, count]) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setSelectedContextTag(selectedContextTag === tag ? null : tag)}
+                  className={`px-2.5 py-1 rounded-xl font-mono text-xs flex items-center gap-1 transition-all shrink-0 ${
+                    selectedContextTag === tag
+                      ? 'bg-teal-600 text-white font-bold shadow-xs'
+                      : 'bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 border border-teal-500/20'
+                  }`}
+                >
+                  <span>@{tag}</span>
+                  <span className="text-[10px] opacity-75 font-sans font-semibold">({count})</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Section 1: Rule of 3 (Top 3 Focus for Today) */}
           <div className="mb-7">
@@ -394,6 +527,25 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           )}
         </>
+      )}
+
+      {/* Keyboard Halo Action Dock for j/k spatial navigation */}
+      {focusedTask && (
+        <KeyboardHaloDock
+          task={focusedTask}
+          onSelect={() => onSelectTask(focusedTask.id)}
+          onToggleStatus={() => toggleTaskStatus(focusedTask.id)}
+          onStartFocus={() => onStartFocus(focusedTask.id)}
+          onRescheduleToday={() => updateTask(focusedTask.id, { dueDate: todayStr })}
+          onRescheduleTomorrow={() => {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            updateTask(focusedTask.id, { dueDate: formatLocalDate(tomorrow) });
+          }}
+          onRescheduleSomeday={() => updateTask(focusedTask.id, { dueDate: undefined, projectId: 'ideas' })}
+          onSetPriority={(priority) => updateTask(focusedTask.id, { priority })}
+          onDismiss={() => setFocusedIndex(-1)}
+        />
       )}
     </div>
   );

@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import confetti from 'canvas-confetti';
-import type { Task, Project, ViewId, Priority } from '../types/task';
+import type { Task, SubTask, Project, ViewId, Priority, CalendarEvent, InterruptionStash, SmartFilterView, SmartFilterPredicate } from '../types/task';
 import { parseTaskInput, formatLocalDate } from '../utils/nlpParser';
+import { BUILT_IN_SMART_VIEWS } from '../utils/smartViewUtils';
 import { audioEngine, type SoundProfile } from '../utils/audioEngine';
 import {
   loadTasksFromStorage,
@@ -12,6 +13,9 @@ import {
 } from '../utils/storage';
 import { useAuth } from './AuthContext';
 import { taskSyncService } from '../services/taskSyncService';
+import { fetchICSFeed } from '../services/calendarService';
+import { checkAndTriggerDailyAutoSnapshot } from '../utils/backupService';
+import { parseTimeToMinutes, minutesToTimeStr } from '../utils/timelineUtils';
 
 interface UndoAction {
   description: string;
@@ -45,6 +49,66 @@ interface TaskContextType {
   setIsAuthModalOpen: (open: boolean) => void;
   forceSyncToCloud: () => Promise<void>;
 
+  // Live Task Stopwatch
+  activeTimerTaskId: string | null;
+  activeTimerSeconds: number;
+  startTaskTimer: (taskId: string) => void;
+  stopTaskTimer: () => void;
+  toggleTaskTimer: (taskId: string) => void;
+
+  // Multi-Select Batch Actions
+  selectedTaskIds: string[];
+  toggleTaskSelection: (taskId: string) => void;
+  selectTask: (taskId: string) => void;
+  deselectTask: (taskId: string) => void;
+  selectAllTasks: (taskIds: string[]) => void;
+  clearTaskSelection: () => void;
+  batchUpdateTasks: (taskIds: string[], updates: Partial<Task>) => void;
+  batchDeleteTasks: (taskIds: string[]) => void;
+  batchToggleStatus: (taskIds: string[]) => void;
+
+  // Interruption Stash & Restore
+  interruptionStash: InterruptionStash | null;
+  isInterruptionModalOpen: boolean;
+  setIsInterruptionModalOpen: (open: boolean) => void;
+  stashActiveFocus: (overrideTask?: { id: string; title: string; projectId?: string }, overrideElapsed?: number) => void;
+  restoreStashedFocus: () => void;
+  clearInterruptionStash: () => void;
+
+  // Subtask Power Tools
+  promoteSubTaskToTask: (taskId: string, subtaskId: string) => void;
+  moveSubTask: (taskId: string, subtaskId: string, direction: 'up' | 'down') => void;
+
+  // Task Duplication
+  duplicateTask: (taskId: string) => Task | null;
+
+  // Workflow Templates Modal
+  isTemplatePickerOpen: boolean;
+  setIsTemplatePickerOpen: (open: boolean) => void;
+
+  // Weekly Review Modal
+  isWeeklyReviewOpen: boolean;
+  setIsWeeklyReviewOpen: (open: boolean) => void;
+
+  // Calendar ICS Overlay
+  calendarEvents: CalendarEvent[];
+  calendarIcsUrl: string;
+  setCalendarIcsUrl: (url: string) => void;
+  refreshCalendarEvents: () => Promise<void>;
+
+  // Evening Shutdown Ritual
+  isEveningShutdownOpen: boolean;
+  setIsEveningShutdownOpen: (open: boolean) => void;
+  isShutdownDismissed: boolean;
+  dismissShutdown: () => void;
+
+  // Smart Views
+  smartViews: SmartFilterView[];
+  addSmartView: (name: string, icon: string, color: string, predicate: SmartFilterPredicate) => SmartFilterView;
+  deleteSmartView: (id: string) => void;
+  isSmartFilterModalOpen: boolean;
+  setIsSmartFilterModalOpen: (open: boolean) => void;
+
   // Actions
   setActiveView: (view: ViewId) => void;
   setViewLayout: (layout: 'list' | 'kanban' | 'matrix') => void;
@@ -64,12 +128,14 @@ interface TaskContextType {
   toggleTaskStatus: (id: string) => void;
   toggleTaskPinToday: (id: string) => boolean; // returns false if already 3 pinned
   toggleSubTask: (taskId: string, subtaskId: string) => void;
-  addSubTask: (taskId: string, title: string) => void;
+  addSubTask: (taskId: string, title: string, estimatedMinutes?: number) => void;
+  updateSubTask: (taskId: string, subtaskId: string, updates: Partial<SubTask>) => void;
   deleteSubTask: (taskId: string, subtaskId: string) => void;
   bulkRescheduleOverdue: (action: 'today' | 'someday' | 'dismiss') => void;
   undoLastAction: () => void;
   addProject: (name: string, color: string, icon?: string) => void;
   importTasks: (tasks: Task[], projects?: Project[]) => void;
+  showToast: (message: string, actionLabel?: string, onAction?: () => void) => void;
   clearToast: () => void;
 }
 
@@ -95,6 +161,62 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Active Task Stopwatch state
+  const [activeTimerTaskId, setActiveTimerTaskId] = useState<string | null>(() => {
+    return localStorage.getItem('flowtask_active_timer_task_id') || null;
+  });
+  const [activeTimerSeconds, setActiveTimerSeconds] = useState<number>(0);
+
+  // External Calendar ICS state
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [calendarIcsUrl, setCalendarIcsUrlState] = useState<string>(() => {
+    return localStorage.getItem('flowtask_calendar_ics_url') || '';
+  });
+
+  // Evening Shutdown Ritual state
+  const [isEveningShutdownOpen, setIsEveningShutdownOpen] = useState(false);
+  const [isShutdownDismissed, setIsShutdownDismissed] = useState(false);
+
+  // Multi-Select state
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+
+  // Interruption Stash state
+  const [interruptionStash, setInterruptionStash] = useState<InterruptionStash | null>(() => {
+    try {
+      const saved = localStorage.getItem('flowtask_interruption_stash');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isInterruptionModalOpen, setIsInterruptionModalOpen] = useState(false);
+
+  // Smart Views state
+  const [customSmartViews, setCustomSmartViews] = useState<SmartFilterView[]>(() => {
+    try {
+      const saved = localStorage.getItem('flowtask_custom_smart_views');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isSmartFilterModalOpen, setIsSmartFilterModalOpen] = useState(false);
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
+  const [isWeeklyReviewOpen, setIsWeeklyReviewOpen] = useState(false);
+
+  // Stopwatch interval ticker
+  useEffect(() => {
+    if (!activeTimerTaskId) {
+      setActiveTimerSeconds(0);
+      return;
+    }
+    const startedAt = Date.now() - activeTimerSeconds * 1000;
+    const interval = setInterval(() => {
+      setActiveTimerSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeTimerTaskId]);
+
   // Theme state
   const [theme, setThemeState] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('flowtask_theme') as AppTheme;
@@ -114,6 +236,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     saveProjectsToStorage(projects);
   }, [projects]);
+
+  // Rolling local snapshot safety net
+  useEffect(() => {
+    if (tasks.length > 0) {
+      checkAndTriggerDailyAutoSnapshot(tasks, projects);
+    }
+  }, [tasks, projects]);
 
   useEffect(() => {
     document.documentElement.classList.remove('dark', 'theme-tokyo', 'theme-nord', 'theme-matcha');
@@ -290,6 +419,23 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         defaultDueDate = todayStr;
       }
 
+      // Automatically allocate timeline schedule slots if dueTime and duration exist
+      let scheduledStart = explicitOverrides?.scheduledStart;
+      let scheduledEnd = explicitOverrides?.scheduledEnd;
+      const effectiveDueTime = parsed.dueTime || explicitOverrides?.dueTime;
+      const effectiveDuration = parsed.estimatedMinutes || explicitOverrides?.estimatedMinutes;
+
+      if (!scheduledStart && effectiveDueTime) {
+        scheduledStart = effectiveDueTime;
+        if (!scheduledEnd && effectiveDuration) {
+          const startMin = parseTimeToMinutes(effectiveDueTime);
+          if (startMin !== null) {
+            const endMin = Math.min(1439, startMin + effectiveDuration);
+            scheduledEnd = minutesToTimeStr(endMin);
+          }
+        }
+      }
+
       const newTask: Task = {
         id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
         title: parsed.cleanTitle || 'Untitled task',
@@ -298,11 +444,16 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         priority: parsed.priority || explicitOverrides?.priority || 'p4',
         projectId: targetProjectId,
         dueDate: defaultDueDate,
-        dueTime: parsed.dueTime || explicitOverrides?.dueTime,
-        estimatedMinutes: parsed.estimatedMinutes || explicitOverrides?.estimatedMinutes,
+        dueTime: effectiveDueTime,
+        estimatedMinutes: effectiveDuration,
         subtasks: explicitOverrides?.subtasks || [],
-        recurrence: explicitOverrides?.recurrence || 'none',
+        recurrence: parsed.recurrence || explicitOverrides?.recurrence || 'none',
+        customRecurrence: explicitOverrides?.customRecurrence || parsed.customRecurrence,
         isPinnedToday: explicitOverrides?.isPinnedToday || false,
+        scheduledStart,
+        scheduledEnd,
+        tags: explicitOverrides?.tags || parsed.tags,
+        contextTags: explicitOverrides?.contextTags || parsed.contextTags,
         createdAt: Date.now(),
       };
 
@@ -340,6 +491,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             dueDate: parsed.dueDate || (activeView === 'today' ? todayStr : undefined),
             dueTime: parsed.dueTime,
             estimatedMinutes: parsed.estimatedMinutes,
+            contextTags: parsed.contextTags,
             subtasks: [],
             recurrence: 'none',
             createdAt: Date.now(),
@@ -418,15 +570,31 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const prevTasks = [...tasks];
 
       if (isCompleting) {
-        audioEngine.playCompletionChime();
-        if (activeView === 'today' || target.priority === 'p1') {
+        const pinnedTasks = tasks.filter((t) => t.isPinnedToday);
+        const willFinishRuleOf3 =
+          target.isPinnedToday &&
+          pinnedTasks.length >= 1 &&
+          pinnedTasks.every((t) => (t.id === id ? true : t.status === 'done'));
+
+        if (willFinishRuleOf3) {
+          audioEngine.playRuleOf3Fanfare();
           confetti({
-            particleCount: 40,
-            spread: 60,
-            origin: { y: 0.8 },
-            colors: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'],
-            disableForReducedMotion: true,
+            particleCount: 80,
+            spread: 90,
+            origin: { y: 0.5 },
+            colors: ['#F59E0B', '#10B981', '#6366F1', '#EC4899'],
           });
+        } else {
+          audioEngine.playCompletionChime();
+          if (activeView === 'today' || target.priority === 'p1') {
+            confetti({
+              particleCount: 40,
+              spread: 60,
+              origin: { y: 0.8 },
+              colors: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'],
+              disableForReducedMotion: true,
+            });
+          }
         }
       } else {
         audioEngine.playClickSound();
@@ -452,7 +620,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
 
         if (isCompleting && target.recurrence && target.recurrence !== 'none') {
-          const nextDueDate = calculateNextDueDate(target.dueDate, target.recurrence);
+          const nextDueDate = calculateNextDueDate(
+            target.dueDate,
+            target.recurrence,
+            target.customRecurrence,
+            Date.now()
+          );
           nextRecurringTask = {
             ...target,
             id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
@@ -544,12 +717,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 
   const addSubTask = useCallback(
-    (taskId: string, title: string) => {
+    (taskId: string, title: string, estimatedMinutes?: number) => {
       if (!title.trim()) return;
-      const newSub = {
+      const newSub: SubTask = {
         id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
         title: title.trim(),
         completed: false,
+        estimatedMinutes: estimatedMinutes && estimatedMinutes > 0 ? estimatedMinutes : undefined,
       };
 
       let updatedTask: Task | undefined;
@@ -567,6 +741,31 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (user && updatedTask) {
         taskSyncService.saveTask(user.uid, updatedTask).catch((err) => {
           console.warn('Subtask add queued offline:', err);
+        });
+      }
+    },
+    [user]
+  );
+
+  const updateSubTask = useCallback(
+    (taskId: string, subtaskId: string, updates: Partial<SubTask>) => {
+      let updatedTask: Task | undefined;
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === taskId) {
+            updatedTask = {
+              ...t,
+              subtasks: t.subtasks.map((s) => (s.id === subtaskId ? { ...s, ...updates } : s)),
+            };
+            return updatedTask;
+          }
+          return t;
+        })
+      );
+
+      if (user && updatedTask) {
+        taskSyncService.saveTask(user.uid, updatedTask).catch((err) => {
+          console.warn('Subtask update queued offline:', err);
         });
       }
     },
@@ -593,6 +792,403 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     },
     [user]
+  );
+
+  // Subtask-to-Task Promotion
+  const promoteSubTaskToTask = useCallback(
+    (taskId: string, subtaskId: string) => {
+      const parent = tasks.find((t) => t.id === taskId);
+      if (!parent) return;
+      const sub = parent.subtasks?.find((s) => s.id === subtaskId);
+      if (!sub) return;
+
+      deleteSubTask(taskId, subtaskId);
+
+      addTask(sub.title, {
+        projectId: parent.projectId,
+        priority: parent.priority,
+        dueDate: parent.dueDate,
+      });
+
+      showToast(`Promoted "${sub.title}" to an independent task.`);
+    },
+    [tasks, deleteSubTask, addTask, showToast]
+  );
+
+  // Move / Reorder Subtask
+  const moveSubTask = useCallback(
+    (taskId: string, subtaskId: string, direction: 'up' | 'down') => {
+      let updatedTask: Task | undefined;
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId || !t.subtasks) return t;
+          const subs = [...t.subtasks];
+          const index = subs.findIndex((s) => s.id === subtaskId);
+          if (index === -1) return t;
+          const targetIndex = direction === 'up' ? index - 1 : index + 1;
+          if (targetIndex < 0 || targetIndex >= subs.length) return t;
+          const [moved] = subs.splice(index, 1);
+          subs.splice(targetIndex, 0, moved);
+          updatedTask = { ...t, subtasks: subs };
+          return updatedTask;
+        })
+      );
+
+      if (user && updatedTask) {
+        taskSyncService.saveTask(user.uid, updatedTask).catch((err) => {
+          console.warn('Subtask move queued offline:', err);
+        });
+      }
+    },
+    [user]
+  );
+
+  // Duplicate / Clone Task
+  const duplicateTask = useCallback(
+    (taskId: string): Task | null => {
+      const target = tasks.find((t) => t.id === taskId);
+      if (!target) return null;
+      const clone: Task = {
+        ...target,
+        id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+        title: `${target.title} (Copy)`,
+        status: 'todo',
+        completedAt: undefined,
+        subtasks: (target.subtasks || []).map((s) => ({
+          ...s,
+          id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+          completed: false,
+        })),
+        createdAt: Date.now(),
+      };
+      setTasks((prev) => [clone, ...prev]);
+      audioEngine.playClickSound();
+      showToast(`Duplicated "${target.title}"`);
+      if (user) {
+        taskSyncService.saveTask(user.uid, clone).catch(console.warn);
+      }
+      return clone;
+    },
+    [tasks, user, showToast]
+  );
+
+  // Active Task Stopwatch actions
+  const stopTaskTimer = useCallback(() => {
+    if (!activeTimerTaskId) return;
+    const elapsedSeconds = activeTimerSeconds;
+    const minutesToAdd = Math.max(1, Math.round(elapsedSeconds / 60));
+
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === activeTimerTaskId) {
+          return {
+            ...t,
+            timeSpentMinutes: (t.timeSpentMinutes || 0) + minutesToAdd,
+          };
+        }
+        return t;
+      })
+    );
+
+    localStorage.removeItem('flowtask_active_timer_task_id');
+    setActiveTimerTaskId(null);
+    setActiveTimerSeconds(0);
+    showToast(`Logged ${minutesToAdd}m of focus time.`);
+  }, [activeTimerTaskId, activeTimerSeconds, showToast]);
+
+  const startTaskTimer = useCallback(
+    (taskId: string) => {
+      if (activeTimerTaskId && activeTimerTaskId !== taskId) {
+        stopTaskTimer();
+      }
+      setActiveTimerTaskId(taskId);
+      setActiveTimerSeconds(0);
+      localStorage.setItem('flowtask_active_timer_task_id', taskId);
+      audioEngine.playClickSound();
+    },
+    [activeTimerTaskId, stopTaskTimer]
+  );
+
+  const toggleTaskTimer = useCallback(
+    (taskId: string) => {
+      if (activeTimerTaskId === taskId) {
+        stopTaskTimer();
+      } else {
+        startTaskTimer(taskId);
+      }
+    },
+    [activeTimerTaskId, stopTaskTimer, startTaskTimer]
+  );
+
+  // Multi-Select Batch Actions
+  const toggleTaskSelection = useCallback((taskId: string) => {
+    setSelectedTaskIds((prev) =>
+      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
+    );
+  }, []);
+
+  const selectTask = useCallback((taskId: string) => {
+    setSelectedTaskIds((prev) => (prev.includes(taskId) ? prev : [...prev, taskId]));
+  }, []);
+
+  const deselectTask = useCallback((taskId: string) => {
+    setSelectedTaskIds((prev) => prev.filter((id) => id !== taskId));
+  }, []);
+
+  const selectAllTasks = useCallback((taskIds: string[]) => {
+    setSelectedTaskIds(taskIds);
+  }, []);
+
+  const clearTaskSelection = useCallback(() => {
+    setSelectedTaskIds([]);
+  }, []);
+
+  const batchUpdateTasks = useCallback(
+    (taskIds: string[], updates: Partial<Task>) => {
+      if (taskIds.length === 0) return;
+      pushUndo(`Bulk updated ${taskIds.length} tasks`, tasks);
+
+      let updatedList: Task[] = [];
+      setTasks((prev) => {
+        updatedList = prev.map((t) => {
+          if (taskIds.includes(t.id)) {
+            return { ...t, ...updates };
+          }
+          return t;
+        });
+        return updatedList;
+      });
+
+      audioEngine.playClickSound();
+      showToast(`Updated ${taskIds.length} tasks.`);
+      clearTaskSelection();
+
+      if (user) {
+        taskSyncService.batchMigrate(user.uid, updatedList, projects).catch((err) => {
+          console.warn('Batch task update queued offline:', err);
+        });
+      }
+    },
+    [tasks, projects, user, pushUndo, showToast, clearTaskSelection]
+  );
+
+  const batchDeleteTasks = useCallback(
+    (taskIds: string[]) => {
+      if (taskIds.length === 0) return;
+      pushUndo(`Bulk deleted ${taskIds.length} tasks`, tasks);
+
+      let remaining: Task[] = [];
+      setTasks((prev) => {
+        remaining = prev.filter((t) => !taskIds.includes(t.id));
+        return remaining;
+      });
+
+      audioEngine.playClickSound();
+      showToast(`Deleted ${taskIds.length} tasks.`);
+      clearTaskSelection();
+
+      if (user) {
+        taskSyncService.batchMigrate(user.uid, remaining, projects).catch((err) => {
+          console.warn('Batch delete sync queued offline:', err);
+        });
+      }
+    },
+    [tasks, projects, user, pushUndo, showToast, clearTaskSelection]
+  );
+
+  const batchToggleStatus = useCallback(
+    (taskIds: string[]) => {
+      if (taskIds.length === 0) return;
+      pushUndo(`Toggled ${taskIds.length} tasks`, tasks);
+
+      let updatedList: Task[] = [];
+      setTasks((prev) => {
+        const allDone = taskIds.every((id) => {
+          const found = prev.find((t) => t.id === id);
+          return found?.status === 'done';
+        });
+        const newStatus = allDone ? 'todo' : 'done';
+
+        updatedList = prev.map((t) => {
+          if (taskIds.includes(t.id)) {
+            return {
+              ...t,
+              status: newStatus,
+              completedAt: newStatus === 'done' ? Date.now() : undefined,
+            };
+          }
+          return t;
+        });
+        return updatedList;
+      });
+
+      audioEngine.playCompletionChime();
+      showToast(`Updated status for ${taskIds.length} tasks.`);
+      clearTaskSelection();
+
+      if (user) {
+        taskSyncService.batchMigrate(user.uid, updatedList, projects).catch((err) => {
+          console.warn('Batch toggle status queued offline:', err);
+        });
+      }
+    },
+    [tasks, projects, user, pushUndo, showToast, clearTaskSelection]
+  );
+
+  // Interruption Stash & Restore
+  const stashActiveFocus = useCallback(
+    (
+      overrideTask?: { id: string; title: string; projectId?: string },
+      overrideElapsed?: number
+    ) => {
+      const targetTaskId = overrideTask?.id || activeTimerTaskId;
+      if (!targetTaskId) {
+        setIsInterruptionModalOpen(true);
+        return;
+      }
+
+      const currentTask = overrideTask || tasks.find((t) => t.id === targetTaskId);
+      const elapsed =
+        overrideElapsed !== undefined ? overrideElapsed : activeTimerSeconds;
+
+      const stash: InterruptionStash = {
+        taskId: targetTaskId,
+        taskTitle: currentTask?.title || 'Focused Task',
+        elapsedSeconds: elapsed,
+        stashedAt: Date.now(),
+        projectId: currentTask?.projectId,
+      };
+
+      setInterruptionStash(stash);
+      localStorage.setItem('flowtask_interruption_stash', JSON.stringify(stash));
+
+      localStorage.removeItem('flowtask_active_timer_task_id');
+      setActiveTimerTaskId(null);
+      setActiveTimerSeconds(0);
+
+      setIsInterruptionModalOpen(true);
+      audioEngine.playClickSound();
+      showToast(`Stashed focus on "${stash.taskTitle}".`);
+    },
+    [activeTimerTaskId, activeTimerSeconds, tasks, showToast]
+  );
+
+  const restoreStashedFocus = useCallback(() => {
+    if (!interruptionStash) return;
+
+    startTaskTimer(interruptionStash.taskId);
+    setActiveTimerSeconds(interruptionStash.elapsedSeconds);
+
+    const title = interruptionStash.taskTitle;
+    setInterruptionStash(null);
+    localStorage.removeItem('flowtask_interruption_stash');
+    setIsInterruptionModalOpen(false);
+
+    audioEngine.playCompletionChime();
+    showToast(`Restored focus on "${title}"!`);
+  }, [interruptionStash, startTaskTimer, showToast]);
+
+  const clearInterruptionStash = useCallback(() => {
+    setInterruptionStash(null);
+    localStorage.removeItem('flowtask_interruption_stash');
+  }, []);
+
+  // Keyboard shortcut listener for Alt+S, Alt+R, and Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable);
+
+      if (e.altKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        stashActiveFocus();
+      } else if (e.altKey && (e.key === 'r' || e.key === 'R')) {
+        e.preventDefault();
+        restoreStashedFocus();
+      } else if (e.key === 'Escape' && selectedTaskIds.length > 0 && !isInput) {
+        clearTaskSelection();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stashActiveFocus, restoreStashedFocus, selectedTaskIds, clearTaskSelection]);
+
+  // Calendar ICS feed management
+  const setCalendarIcsUrl = useCallback((url: string) => {
+    setCalendarIcsUrlState(url);
+    localStorage.setItem('flowtask_calendar_ics_url', url);
+  }, []);
+
+  const refreshCalendarEvents = useCallback(async () => {
+    if (!calendarIcsUrl.trim()) {
+      setCalendarEvents([]);
+      return;
+    }
+    try {
+      const today = formatLocalDate(new Date());
+      const events = await fetchICSFeed(calendarIcsUrl, today);
+      setCalendarEvents(events);
+    } catch (err) {
+      console.warn('Failed to refresh ICS calendar feed:', err);
+    }
+  }, [calendarIcsUrl]);
+
+  useEffect(() => {
+    if (calendarIcsUrl) {
+      refreshCalendarEvents();
+      const interval = setInterval(refreshCalendarEvents, 15 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [calendarIcsUrl, refreshCalendarEvents]);
+
+  const dismissShutdown = useCallback(() => {
+    setIsShutdownDismissed(true);
+  }, []);
+
+  // Smart Views Management
+  const smartViews: SmartFilterView[] = [...BUILT_IN_SMART_VIEWS, ...customSmartViews];
+
+  const addSmartView = useCallback(
+    (name: string, icon: string, color: string, predicate: SmartFilterPredicate): SmartFilterView => {
+      const newView: SmartFilterView = {
+        id: 'sv-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        name: name.trim(),
+        icon,
+        color,
+        predicate,
+      };
+
+      setCustomSmartViews((prev) => {
+        const next = [...prev, newView];
+        localStorage.setItem('flowtask_custom_smart_views', JSON.stringify(next));
+        return next;
+      });
+
+      audioEngine.playCompletionChime();
+      showToast(`Created smart view "${newView.name}".`);
+      return newView;
+    },
+    [showToast]
+  );
+
+  const deleteSmartView = useCallback(
+    (id: string) => {
+      setCustomSmartViews((prev) => {
+        const next = prev.filter((v) => v.id !== id);
+        localStorage.setItem('flowtask_custom_smart_views', JSON.stringify(next));
+        return next;
+      });
+
+      if (activeView === `smart:${id}`) {
+        setActiveView('today');
+      }
+      showToast('Smart view removed.');
+    },
+    [activeView, showToast]
   );
 
   // Gentle Overdue Triage (Clean Slate)
@@ -697,6 +1293,40 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthModalOpen,
         setIsAuthModalOpen,
         forceSyncToCloud,
+        activeTimerTaskId,
+        activeTimerSeconds,
+        startTaskTimer,
+        stopTaskTimer,
+        toggleTaskTimer,
+        selectedTaskIds,
+        toggleTaskSelection,
+        selectTask,
+        deselectTask,
+        selectAllTasks,
+        clearTaskSelection,
+        batchUpdateTasks,
+        batchDeleteTasks,
+        batchToggleStatus,
+        interruptionStash,
+        isInterruptionModalOpen,
+        setIsInterruptionModalOpen,
+        stashActiveFocus,
+        restoreStashedFocus,
+        clearInterruptionStash,
+        promoteSubTaskToTask,
+        calendarEvents,
+        calendarIcsUrl,
+        setCalendarIcsUrl,
+        refreshCalendarEvents,
+        isEveningShutdownOpen,
+        setIsEveningShutdownOpen,
+        isShutdownDismissed,
+        dismissShutdown,
+        smartViews,
+        addSmartView,
+        deleteSmartView,
+        isSmartFilterModalOpen,
+        setIsSmartFilterModalOpen,
         setActiveView,
         setViewLayout,
         setSelectedTaskId,
@@ -713,11 +1343,19 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         toggleTaskPinToday,
         toggleSubTask,
         addSubTask,
+        updateSubTask,
         deleteSubTask,
+        moveSubTask,
+        duplicateTask,
+        isTemplatePickerOpen,
+        setIsTemplatePickerOpen,
+        isWeeklyReviewOpen,
+        setIsWeeklyReviewOpen,
         bulkRescheduleOverdue,
         undoLastAction,
         addProject,
         importTasks,
+        showToast,
         clearToast,
       }}
     >

@@ -22,8 +22,17 @@ import {
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
+  Zap,
+  Brain,
+  Flame,
+  Archive,
+  Filter,
+  Trash2,
+  FileEdit,
+  Compass,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { filterTasksByPredicate } from '../../utils/smartViewUtils';
 import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
@@ -32,6 +41,7 @@ interface SidebarProps {
   onOpenExportImport: () => void;
   onOpenBrainDump: () => void;
   onOpenAesthetics?: () => void;
+  onOpenScratchpad?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   onItemClick?: () => void;
@@ -44,6 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenExportImport,
   onOpenBrainDump,
   onOpenAesthetics,
+  onOpenScratchpad,
   isCollapsed = false,
   onToggleCollapse,
   onItemClick,
@@ -61,6 +72,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     addProject,
     syncStatus,
     setIsAuthModalOpen,
+    smartViews,
+    deleteSmartView,
+    setIsSmartFilterModalOpen,
+    setIsWeeklyReviewOpen,
   } = useTaskContext();
 
   const { user, isAnonymous } = useAuth();
@@ -111,6 +126,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'logbook', label: 'Logbook', icon: CheckCircle2, count: doneCount, color: 'text-stone-400' },
   ];
 
+  const getSmartViewIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'zap': return Zap;
+      case 'brain': return Brain;
+      case 'flame': return Flame;
+      case 'archive': return Archive;
+      default: return Filter;
+    }
+  };
+
   if (isCollapsed) {
     return (
       <aside className="w-16 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col items-center select-none transition-all duration-200 py-3 justify-between">
@@ -159,8 +184,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
 
-        {/* Bottom: Focus Timer, Aesthetics, Theme */}
+        {/* Bottom: Weekly Review, Focus Timer, Aesthetics, Theme */}
         <div className="flex flex-col items-center gap-1.5 pt-2 border-t border-[var(--border-hairline)] w-full px-2">
+          <button
+            onClick={() => {
+              setIsWeeklyReviewOpen(true);
+              onItemClick?.();
+            }}
+            title="Weekly Review & Retrospective (Ctrl+Shift+W)"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-colors"
+          >
+            <Compass size={16} />
+          </button>
           <button
             onClick={onOpenPomodoro}
             title="Focus Mode & Timer"
@@ -175,6 +210,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="p-1.5 text-[var(--text-secondary)] hover:text-purple-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
             >
               <Palette size={15} />
+            </button>
+          )}
+          {onOpenScratchpad && (
+            <button
+              onClick={onOpenScratchpad}
+              title="Sticky Scratchpad (Alt+N)"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-amber-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <FileEdit size={15} />
             </button>
           )}
           <button
@@ -270,6 +314,76 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
               )}
             </button>
+          );
+        })}
+
+        {/* Smart Filter Views Section */}
+        <div className="pt-4 pb-1 flex items-center justify-between px-2.5">
+          <span className="text-[11px] font-semibold text-[var(--text-muted)] tracking-wider uppercase flex items-center gap-1.5">
+            Smart Views
+          </span>
+          <button
+            onClick={() => setIsSmartFilterModalOpen(true)}
+            className="text-[var(--text-muted)] hover:text-indigo-500 p-0.5 rounded transition-colors"
+            title="Create Smart Filter View"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+
+        {smartViews.map((sv) => {
+          const isSelected = activeView === `smart:${sv.id}`;
+          const count = filterTasksByPredicate(tasks, sv.predicate).length;
+          const Icon = getSmartViewIcon(sv.icon);
+
+          return (
+            <div
+              key={sv.id}
+              className={`group w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                isSelected
+                  ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
+                  : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
+              }`}
+            >
+              <button
+                onClick={() => {
+                  setActiveView(`smart:${sv.id}` as any);
+                  onItemClick?.();
+                }}
+                className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+              >
+                <div className={`p-1 rounded-lg ${isSelected ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
+                  <Icon size={14} className={sv.color || 'text-indigo-500'} />
+                </div>
+                <span className="truncate">{sv.name}</span>
+              </button>
+
+              <div className="flex items-center gap-1 shrink-0">
+                {count > 0 && (
+                  <span
+                    className={`text-[11px] px-2 py-0.5 rounded-md font-mono border ${
+                      isSelected
+                        ? 'bg-stone-100 dark:bg-white/10 text-[var(--text-primary)] font-semibold border-[var(--border-subtle)]'
+                        : 'text-[var(--text-muted)] border-transparent'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
+                {!sv.isBuiltIn && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSmartView(sv.id);
+                    }}
+                    title="Delete Smart View"
+                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-rose-500 text-[var(--text-muted)] transition-opacity"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
           );
         })}
 
@@ -380,13 +494,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Focus Timer Launch Button */}
-      <div className="p-3 border-t border-[var(--border-hairline)]">
+      {/* Focus & Review Launchers */}
+      <div className="p-3 border-t border-[var(--border-hairline)] space-y-1.5">
+        <button
+          onClick={() => {
+            setIsWeeklyReviewOpen(true);
+            onItemClick?.();
+          }}
+          className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-semibold transition-all border border-purple-500/25 shadow-subtle hover:border-purple-500/40 card-surface active:scale-[0.98]"
+        >
+          <div className="flex items-center gap-2">
+            <Compass size={14} className="text-purple-500" />
+            <span>Weekly Review</span>
+          </div>
+          <span className="text-[10px] font-mono text-purple-600/70 dark:text-purple-300/70">^⇧W</span>
+        </button>
+
         <button
           onClick={onOpenPomodoro}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/10 hover:from-amber-500/25 hover:to-rose-500/15 text-amber-900 dark:text-amber-300 text-xs font-bold transition-all border border-amber-500/35 shadow-subtle hover:border-amber-500/55 card-surface active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/10 hover:from-amber-500/25 hover:to-rose-500/15 text-amber-900 dark:text-amber-300 text-xs font-bold transition-all border border-amber-500/35 shadow-subtle hover:border-amber-500/55 card-surface active:scale-[0.98]"
         >
-          <Timer size={15} />
+          <Timer size={14} />
           <span>Focus Mode & Timer</span>
         </button>
       </div>
@@ -428,6 +556,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {onOpenScratchpad && (
+            <button
+              onClick={() => {
+                onOpenScratchpad();
+                onItemClick?.();
+              }}
+              title="Sticky Scratchpad (Alt+N)"
+              aria-label="Sticky Scratchpad"
+              className="p-2 sm:p-1.5 hover:text-amber-500 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <FileEdit size={17} />
+            </button>
+          )}
+
           {!isMobileDrawer && (
             <button
               onClick={onOpenShortcuts}

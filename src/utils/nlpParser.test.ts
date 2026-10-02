@@ -54,4 +54,64 @@ describe('nlpParser', () => {
     const testDate = new Date(2026, 9, 15); // Oct 15, 2026
     expect(formatLocalDate(testDate)).toBe('2026-10-15');
   });
+
+  it('parses natural language recurrence rules', () => {
+    const resDaily = parseTaskInput('Meditate every day');
+    expect(resDaily.cleanTitle).toBe('Meditate');
+    expect(resDaily.recurrence).toBe('daily');
+
+    const resWeekdays = parseTaskInput('Standup on weekdays at 9am #work');
+    expect(resWeekdays.cleanTitle).toBe('Standup');
+    expect(resWeekdays.recurrence).toBe('weekdays');
+    expect(resWeekdays.dueTime).toBe('09:00');
+
+    const resWeekly = parseTaskInput('Review sprint metrics every monday');
+    expect(resWeekly.cleanTitle).toBe('Review sprint metrics');
+    expect(resWeekly.recurrence).toBe('weekly');
+    expect(resWeekly.dueDate).toBeDefined();
+
+    const resBiweekly = parseTaskInput('Pay team biweekly #finances');
+    expect(resBiweekly.cleanTitle).toBe('Pay team');
+    expect(resBiweekly.recurrence).toBe('biweekly');
+
+    const resMonthly = parseTaskInput('Pay rent every month');
+    expect(resMonthly.cleanTitle).toBe('Pay rent');
+    expect(resMonthly.recurrence).toBe('monthly');
+  });
+
+  it('parses relative time-of-day keywords (morning, afternoon, evening)', () => {
+    const resMorn = parseTaskInput('Call doctor tomorrow morning');
+    expect(resMorn.cleanTitle).toBe('Call doctor');
+    expect(resMorn.dueDate).toBeDefined();
+    expect(resMorn.dueTime).toBe('09:00');
+
+    const resAft = parseTaskInput('Client demo afternoon');
+    expect(resAft.cleanTitle).toBe('Client demo');
+    expect(resAft.dueTime).toBe('14:00');
+
+    const resEve = parseTaskInput('Family dinner tonight');
+    expect(resEve.cleanTitle).toBe('Family dinner');
+    expect(resEve.dueTime).toBe('18:00');
+  });
+
+  it('parses GTD context tags (@calls, @computer, @errands)', () => {
+    const resSingle = parseTaskInput('Call client about contract @calls #work p1');
+    expect(resSingle.cleanTitle).toBe('Call client about contract');
+    expect(resSingle.contextTags).toEqual(['calls']);
+    expect(resSingle.projectTag).toBe('work');
+    expect(resSingle.priority).toBe('p1');
+
+    const resMultiple = parseTaskInput('Fix layout bug @computer @desk #code');
+    expect(resMultiple.cleanTitle).toBe('Fix layout bug');
+    expect(resMultiple.contextTags).toEqual(['computer', 'desk']);
+    expect(resMultiple.projectTag).toBe('code');
+  });
+
+  it('parses multiple hashtags as tags array', () => {
+    const res = parseTaskInput('Implement OAuth2 flow #work #backend #auth p1');
+    expect(res.cleanTitle).toBe('Implement OAuth2 flow');
+    expect(res.projectTag).toBe('work');
+    expect(res.tags).toEqual(['work', 'backend', 'auth']);
+    expect(res.priority).toBe('p1');
+  });
 });

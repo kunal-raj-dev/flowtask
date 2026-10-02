@@ -1,39 +1,117 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
-import { CheckCircle2, Trophy, Sparkles } from 'lucide-react';
+import {
+  CheckCircle2,
+  Copy,
+  Check,
+  Search,
+  Download,
+  Filter,
+  FileText,
+} from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { generateWorklogMarkdown } from '../../utils/worklogExporter';
+import { audioEngine } from '../../utils/audioEngine';
+import confetti from 'canvas-confetti';
 
 interface LogbookViewProps {
   onSelectTask: (taskId: string) => void;
 }
 
 export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
-  const { tasks } = useTaskContext();
+  const { tasks, projects } = useTaskContext();
+  const [copiedSummary, setCopiedSummary] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [timeHorizon, setTimeHorizon] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
 
-  const completedTasks = tasks
+  const todayStr = formatLocalDate(new Date());
+  const nowMs = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const sevenDaysAgoMs = nowMs - 7 * dayMs;
+  const thirtyDaysAgoMs = nowMs - 30 * dayMs;
+
+  // Filter completed tasks
+  const allCompletedTasks = tasks
     .filter((t) => t.status === 'done')
     .sort((a, b) => (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt));
 
-  const todayStr = formatLocalDate(new Date());
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = formatLocalDate(yesterday);
+  const filteredTasks = allCompletedTasks.filter((t) => {
+    // 1. Search Query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchTitle = t.title.toLowerCase().includes(q);
+      const matchDesc = t.description?.toLowerCase().includes(q);
+      const matchTags = t.tags?.some((tag) => tag.toLowerCase().includes(q));
+      if (!matchTitle && !matchDesc && !matchTags) return false;
+    }
 
-  const todayCompleted = completedTasks.filter(
-    (t) => t.completedAt && formatLocalDate(new Date(t.completedAt)) === todayStr
-  );
-  const yesterdayCompleted = completedTasks.filter(
-    (t) => t.completedAt && formatLocalDate(new Date(t.completedAt)) === yesterdayStr
-  );
-  const olderCompleted = completedTasks.filter(
-    (t) =>
-      !t.completedAt ||
-      (formatLocalDate(new Date(t.completedAt)) !== todayStr &&
-        formatLocalDate(new Date(t.completedAt)) !== yesterdayStr)
-  );
+    // 2. Project
+    if (selectedProjectId !== 'all' && t.projectId !== selectedProjectId) {
+      return false;
+    }
 
-  const renderSection = (title: string, sectionTasks: typeof completedTasks) => {
+    // 3. Time Horizon
+    const completedTime = t.completedAt || t.createdAt;
+    if (timeHorizon === 'today') {
+      const compDateStr = formatLocalDate(new Date(completedTime));
+      if (compDateStr !== todayStr) return false;
+    } else if (timeHorizon === 'week') {
+      if (completedTime < sevenDaysAgoMs) return false;
+    } else if (timeHorizon === 'month') {
+      if (completedTime < thirtyDaysAgoMs) return false;
+    }
+
+    return true;
+  });
+
+  const totalFilteredMinutes = filteredTasks.reduce(
+    (acc, t) => acc + (t.timeSpentMinutes || t.estimatedMinutes || 25),
+    0
+  );
+  const totalFilteredHours = (totalFilteredMinutes / 60).toFixed(1);
+
+  // Group filtered tasks by relative periods
+  const todayTasks = filteredTasks.filter(
+    (t) => formatLocalDate(new Date(t.completedAt || t.createdAt)) === todayStr
+  );
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = formatLocalDate(yesterdayDate);
+
+  const yesterdayTasks = filteredTasks.filter(
+    (t) => formatLocalDate(new Date(t.completedAt || t.createdAt)) === yesterdayStr
+  );
+  const earlierTasks = filteredTasks.filter((t) => {
+    const dStr = formatLocalDate(new Date(t.completedAt || t.createdAt));
+    return dStr !== todayStr && dStr !== yesterdayStr;
+  });
+
+  const handleCopyWorklog = () => {
+    const text = generateWorklogMarkdown(filteredTasks, projects, { timeHorizon });
+    navigator.clipboard.writeText(text);
+    setCopiedSummary(true);
+    audioEngine.playCompletionChime();
+    confetti({ particleCount: 35, spread: 50, origin: { y: 0.6 } });
+    setTimeout(() => setCopiedSummary(false), 2000);
+  };
+
+  const handleDownloadWorklog = () => {
+    const text = generateWorklogMarkdown(filteredTasks, projects, { timeHorizon });
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `flowtask-worklog-${todayStr}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    audioEngine.playCompletionChime();
+  };
+
+  const renderSection = (title: string, sectionTasks: typeof filteredTasks) => {
     if (sectionTasks.length === 0) return null;
     return (
       <div className="mb-7">
@@ -50,42 +128,126 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm card-surface">
-            <CheckCircle2 size={22} className="stroke-[2.2]" />
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 p-5 rounded-3xl bg-gradient-to-r from-emerald-500/[0.08] via-teal-500/[0.05] to-indigo-500/[0.06] border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20 card-surface flex-shrink-0">
+            <CheckCircle2 size={24} className="stroke-[2.2]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               Logbook & Accomplishments
             </h2>
             <p className="text-xs text-[var(--text-secondary)] font-medium">
-              {completedTasks.length} tasks completed to date
+              {allCompletedTasks.length} lifetime completions • {filteredTasks.length} shown ({totalFilteredHours}h logged)
             </p>
           </div>
         </div>
 
-        {completedTasks.length > 0 && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/25 shadow-xs card-surface">
-            <Trophy size={14} className="text-amber-500" />
-            <span>Well Done!</span>
+        {allCompletedTasks.length > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyWorklog}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-l1)] text-xs font-semibold text-[var(--text-primary)] shadow-xs transition-all card-surface active:scale-95"
+              title="Copy formatted Markdown report to clipboard"
+            >
+              {copiedSummary ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-stone-400" />}
+              <span>{copiedSummary ? 'Copied!' : 'Copy Report'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadWorklog}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-l1)] text-xs font-semibold text-[var(--text-primary)] shadow-xs transition-all card-surface active:scale-95"
+              title="Download worklog as .md file"
+            >
+              <Download size={14} className="text-stone-400" />
+              <span className="hidden sm:inline">Export .md</span>
+            </button>
           </div>
         )}
       </div>
 
-      {completedTasks.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-2xl border border-[var(--border-hairline)]">
-          <Sparkles size={36} className="mx-auto mb-2 text-stone-300 dark:text-stone-700" />
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Logbook is empty</p>
-          <p className="text-xs mt-1 text-[var(--text-secondary)]">Check off tasks to build your achievement history.</p>
+      {/* Filter & Search Bar */}
+      <div className="mb-6 p-3.5 bg-[var(--bg-surface-l2)] rounded-2xl border border-[var(--border-hairline)] shadow-sm card-surface space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Keyword Search */}
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search completed accomplishments, notes, or tags..."
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] rounded-xl outline-none text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+            />
+          </div>
+
+          {/* Project Selector */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Filter size={14} className="text-[var(--text-muted)] hidden sm:inline" />
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="text-xs px-2.5 py-1.5 bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] rounded-xl outline-none text-[var(--text-primary)] font-medium cursor-pointer"
+            >
+              <option value="all">All Projects</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Time Horizon Pills */}
+        <div className="flex items-center gap-1.5 text-xs overflow-x-auto pt-1 border-t border-[var(--border-hairline)]">
+          <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mr-1">
+            Horizon:
+          </span>
+          {[
+            { id: 'all', label: 'All Time' },
+            { id: 'today', label: 'Today' },
+            { id: 'week', label: 'This Week' },
+            { id: 'month', label: 'This Month' },
+          ].map((h) => (
+            <button
+              key={h.id}
+              type="button"
+              onClick={() => setTimeHorizon(h.id as any)}
+              className={`px-3 py-1 rounded-xl font-semibold transition-all ${
+                timeHorizon === h.id
+                  ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04]'
+              }`}
+            >
+              {h.label}
+            </button>
+          ))}
+          <span className="ml-auto text-[11px] font-mono text-[var(--text-muted)]">
+            {filteredTasks.length} matches
+          </span>
+        </div>
+      </div>
+
+      {/* Task Sections */}
+      {filteredTasks.length === 0 ? (
+        <div className="text-center py-16 bg-[var(--bg-surface-l2)] rounded-3xl border border-[var(--border-hairline)] card-surface">
+          <FileText size={36} className="mx-auto mb-2 text-stone-400 opacity-60" />
+          <p className="text-sm font-bold text-[var(--text-primary)]">No completed tasks match your filter</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">
+            Try adjusting your search query, project, or time horizon.
+          </p>
         </div>
       ) : (
-        <div>
-          {renderSection('Completed Today', todayCompleted)}
-          {renderSection('Completed Yesterday', yesterdayCompleted)}
-          {renderSection('Earlier Completed', olderCompleted)}
-        </div>
+        <>
+          {renderSection('Completed Today', todayTasks)}
+          {renderSection('Completed Yesterday', yesterdayTasks)}
+          {renderSection('Completed Earlier', earlierTasks)}
+        </>
       )}
     </div>
   );

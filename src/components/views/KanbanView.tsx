@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { TaskStatus } from '../../types/task';
-import { Kanban, Plus, Circle, Clock, CheckCircle2 } from 'lucide-react';
+import { Kanban, Plus, Circle, Clock, CheckCircle2, Keyboard } from 'lucide-react';
+import { audioEngine } from '../../utils/audioEngine';
 
 interface KanbanViewProps {
   onSelectTask: (taskId: string) => void;
@@ -12,6 +13,90 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 }) => {
   const { tasks, updateTask, addTask } = useTaskContext();
   const [mobileColumn, setMobileColumn] = useState<TaskStatus>('todo');
+  const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
+
+  // Hotkey navigation: '1', '2', '3' or 'h', 'j', 'k', 'l' or Arrow keys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === '1') {
+        setMobileColumn('todo');
+      } else if (e.key === '2') {
+        setMobileColumn('in_progress');
+      } else if (e.key === '3') {
+        setMobileColumn('done');
+      } else if (e.key === 'ArrowLeft' || e.key === 'h' || e.key === 'H') {
+        setMobileColumn((prev) => {
+          if (prev === 'done') return 'in_progress';
+          if (prev === 'in_progress') return 'todo';
+          return prev;
+        });
+      } else if (e.key === 'ArrowRight' || e.key === 'l' || e.key === 'L') {
+        setMobileColumn((prev) => {
+          if (prev === 'todo') return 'in_progress';
+          if (prev === 'in_progress') return 'done';
+          return prev;
+        });
+      } else if (e.key === 'ArrowDown' || e.key === 'j' || e.key === 'J') {
+        e.preventDefault();
+        const colTasks = tasks.filter((t) => t.status === mobileColumn);
+        if (colTasks.length > 0) {
+          const currentIndex = colTasks.findIndex((t) => t.id === focusedCardId);
+          if (currentIndex === -1 || currentIndex >= colTasks.length - 1) {
+            setFocusedCardId(colTasks[0].id);
+          } else {
+            setFocusedCardId(colTasks[currentIndex + 1].id);
+          }
+        }
+      } else if (e.key === 'ArrowUp' || e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        const colTasks = tasks.filter((t) => t.status === mobileColumn);
+        if (colTasks.length > 0) {
+          const currentIndex = colTasks.findIndex((t) => t.id === focusedCardId);
+          if (currentIndex <= 0) {
+            setFocusedCardId(colTasks[colTasks.length - 1].id);
+          } else {
+            setFocusedCardId(colTasks[currentIndex - 1].id);
+          }
+        }
+      } else if (e.key === 'Enter') {
+        if (focusedCardId) {
+          e.preventDefault();
+          onSelectTask(focusedCardId);
+        }
+      } else if (e.key === ' ') {
+        if (focusedCardId) {
+          e.preventDefault();
+          const current = tasks.find((t) => t.id === focusedCardId);
+          if (current) {
+            const nextStatus: TaskStatus =
+              current.status === 'todo'
+                ? 'in_progress'
+                : current.status === 'in_progress'
+                ? 'done'
+                : 'todo';
+            updateTask(current.id, {
+              status: nextStatus,
+              completedAt: nextStatus === 'done' ? Date.now() : undefined,
+            });
+            audioEngine.playCompletionChime();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileColumn, tasks, focusedCardId, onSelectTask, updateTask]);
 
   const columns: {
     status: TaskStatus;
@@ -80,6 +165,16 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               Manage workflow stages and team velocity
             </p>
           </div>
+        </div>
+
+        {/* Keyboard shortcut hint */}
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)]">
+          <Keyboard size={13} className="text-indigo-500" />
+          <span>Vim / Nav:</span>
+          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">h j k l</kbd>
+          <span>or</span>
+          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">1-3</kbd>
+          <span>• Space advance</span>
         </div>
       </div>
 
@@ -155,8 +250,15 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                       key={task.id}
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)}
-                      onClick={() => onSelectTask(task.id)}
-                      className="p-3.5 bg-[var(--bg-surface-l2)] rounded-2xl border border-[var(--border-hairline)] shadow-card hover:border-stone-300 dark:hover:border-stone-700 hover:shadow-elevated hover:-translate-y-[1px] cursor-grab active:cursor-grabbing transition-all space-y-2 card-surface"
+                      onClick={() => {
+                        setFocusedCardId(task.id);
+                        onSelectTask(task.id);
+                      }}
+                      className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-2xl border transition-all space-y-2 card-surface cursor-grab active:cursor-grabbing hover:-translate-y-[1px] ${
+                        focusedCardId === task.id
+                          ? 'border-indigo-500 ring-2 ring-indigo-500/40 shadow-elevated'
+                          : 'border-[var(--border-hairline)] shadow-card hover:border-stone-300 dark:hover:border-stone-700'
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <span className="text-xs font-semibold text-[var(--text-primary)] leading-snug">
@@ -193,16 +295,17 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         )}
                       </div>
 
-                      {/* Mobile quick status advance buttons */}
+                      {/* Quick status advance buttons (always visible on mobile, hover on desktop) */}
                       <div
-                        className="flex md:hidden items-center justify-end gap-1.5 pt-2 border-t border-[var(--border-hairline)]"
+                        className="flex items-center justify-end gap-1.5 pt-2 border-t border-[var(--border-hairline)] sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {col.status !== 'todo' && (
                           <button
                             type="button"
                             onClick={() => updateTask(task.id, { status: 'todo' })}
-                            className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l1)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            className="px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l1)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+                            title="Move back to To Do"
                           >
                             ← To Do
                           </button>
@@ -211,7 +314,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                           <button
                             type="button"
                             onClick={() => updateTask(task.id, { status: 'in_progress' })}
-                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-[10px] font-semibold text-amber-600 dark:text-amber-400"
+                            className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-[10px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+                            title={col.status === 'todo' ? 'Start Task' : 'Move to In Progress'}
                           >
                             {col.status === 'todo' ? 'Start →' : '← In Prog'}
                           </button>
@@ -220,7 +324,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                           <button
                             type="button"
                             onClick={() => updateTask(task.id, { status: 'done', completedAt: Date.now() })}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400"
+                            className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                            title="Mark Completed"
                           >
                             ✓ Done
                           </button>

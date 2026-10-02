@@ -147,3 +147,35 @@ export function suggestDuration(taskTitle: string): number {
   if (/review|sync|clean|organize|triage|read/i.test(text)) return 30;
   return 30;
 }
+
+/**
+ * Anti-Procrastination Splitter: Generates an ultra-low activation energy 2-minute starter step
+ * to break cognitive resistance and establish immediate momentum.
+ */
+export function generateStarterStep(taskTitle: string, description?: string): string {
+  const combined = `${taskTitle} ${description || ''}`.toLowerCase().trim();
+
+  if (/\b(code|coding|bug|fix|issue|implement|refactor|test|tests|pr|build|develop)\b/i.test(combined)) {
+    return `⚡ [2-Min Starter] Open codebase, pull latest changes, and locate target file`;
+  }
+  if (/\b(write|writing|doc|docs|spec|specs|draft|drafting|article|blog|rfc|notes)\b/i.test(combined)) {
+    return `⚡ [2-Min Starter] Open blank document and write working title + 1 single sentence`;
+  }
+  if (/\b(tax|taxes|irs|invoice|invoices|expense|expenses|budget|bank|bill|bills)\b/i.test(combined)) {
+    return `⚡ [2-Min Starter] Log into account and download the primary statement or receipt`;
+  }
+  if (/\b(email|reply|message|slack|dm|call|contact)\b/i.test(combined)) {
+    return `⚡ [2-Min Starter] Open inbox and write just the recipient name & friendly greeting`;
+  }
+  if (/\b(research|read|study|review|learn)\b/i.test(combined)) {
+    return `⚡ [2-Min Starter] Open link or book and read only the first introductory paragraph`;
+  }
+  if (/\b(clean|organize|tidy|sort|declutter)\b/i.test(combined)) {
+    return `⚡ [2-Min Starter] Clear just one single corner or delete 3 outdated files`;
+  }
+  if (/\b(workout|gym|run|exercise|stretch)\b/i.test(combined)) {
+    return `⚡ [2-Min Starter] Put on shoes and do 10 gentle arm & hamstring stretches`;
+  }
+
+  return `⚡ [2-Min Starter] Spend 2 uninterrupted minutes jotting down 3 raw thoughts for "${taskTitle.trim()}"`;
+}

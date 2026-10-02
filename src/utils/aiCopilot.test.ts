@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { suggestSubtasks, suggestDuration } from './aiCopilot';
+import { suggestSubtasks, suggestDuration, generateStarterStep } from './aiCopilot';
 
 describe('aiCopilot', () => {
   describe('suggestSubtasks', () => {
@@ -59,6 +59,26 @@ describe('aiCopilot', () => {
 
     it('defaults to 30m for general items', () => {
       expect(suggestDuration('Follow up with supplier')).toBe(30);
+    });
+  });
+
+  describe('generateStarterStep', () => {
+    it('generates low-friction code starter step', () => {
+      const starter = generateStarterStep('Refactor authentication provider');
+      expect(starter).toContain('[2-Min Starter]');
+      expect(starter.toLowerCase()).toContain('open codebase');
+    });
+
+    it('generates low-friction writing starter step', () => {
+      const starter = generateStarterStep('Write comprehensive project documentation');
+      expect(starter).toContain('[2-Min Starter]');
+      expect(starter.toLowerCase()).toContain('open blank document');
+    });
+
+    it('generates universal momentum fallback for arbitrary task', () => {
+      const starter = generateStarterStep('Assemble Scandinavian furniture');
+      expect(starter).toContain('[2-Min Starter]');
+      expect(starter.toLowerCase()).toContain('2 uninterrupted minutes');
     });
   });
 });

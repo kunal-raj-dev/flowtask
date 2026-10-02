@@ -9,6 +9,7 @@ interface UseKeyboardNavigationProps {
   onTogglePinToday?: (taskId: string) => void;
   onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
   onDeleteTask?: (taskId: string) => void;
+  onStartFocus?: (taskId: string) => void;
   enabled?: boolean;
 }
 
@@ -19,6 +20,7 @@ export function useKeyboardNavigation({
   onTogglePinToday,
   onUpdateTask,
   onDeleteTask,
+  onStartFocus,
   enabled = true,
 }: UseKeyboardNavigationProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
@@ -149,6 +151,16 @@ export function useKeyboardNavigation({
           break;
         }
 
+        // Start Focus Mode / Pomodoro ('p')
+        case 'p':
+        case 'P': {
+          if (focusedTaskId && onStartFocus) {
+            e.preventDefault();
+            onStartFocus(focusedTaskId);
+          }
+          break;
+        }
+
         // Delete task
         case 'Delete':
         case 'Backspace': {
@@ -179,6 +191,7 @@ export function useKeyboardNavigation({
       onTogglePinToday,
       onUpdateTask,
       onDeleteTask,
+      onStartFocus,
     ]
   );
 

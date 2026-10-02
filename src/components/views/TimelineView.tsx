@@ -5,8 +5,11 @@ import { formatLocalDate } from '../../utils/nlpParser';
 import {
   parseTimeToMinutes,
   minutesToTimeStr,
-  calculateCapacityMetrics,
   calculateBlockPosition,
+  classifyTaskCognitiveIntensity,
+  analyzeCognitiveTopology,
+  findOverlappingCalendarEvent,
+  findNextFreeGap,
   TIMELINE_START_HOUR,
   TIMELINE_END_HOUR,
   TIMELINE_HOUR_HEIGHT_PX,
@@ -19,6 +22,9 @@ import {
   AlertCircle,
   Calendar,
   Check,
+  RefreshCw,
+  X,
+  ExternalLink,
 } from 'lucide-react';
 
 interface TimelineViewProps {
@@ -30,7 +36,21 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onSelectTask,
   onStartFocus,
 }) => {
-  const { tasks, updateTask, toggleTaskStatus, projects, addTask } = useTaskContext();
+  const {
+    tasks,
+    updateTask,
+    toggleTaskStatus,
+    projects,
+    addTask,
+    calendarEvents,
+    calendarIcsUrl,
+    setCalendarIcsUrl,
+    refreshCalendarEvents,
+  } = useTaskContext();
+
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [icsUrlInput, setIcsUrlInput] = useState(calendarIcsUrl);
+  const [isRefreshingFeed, setIsRefreshingFeed] = useState(false);
 
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState(() => {
     const now = new Date();
@@ -79,12 +99,29 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     }
   });
 
-  // Calculate Capacity using pure utility
+  // Calculate Meeting Minutes from Calendar events
+  const meetingMinutes = calendarEvents.reduce((acc, ev) => {
+    if (ev.isAllDay) return acc;
+    const startMin = parseTimeToMinutes(ev.startTime);
+    const endMin = parseTimeToMinutes(ev.endTime);
+    if (startMin === null) return acc;
+    const duration = endMin ? Math.max(15, endMin - startMin) : 30;
+    return acc + duration;
+  }, 0);
+  const totalMeetingHours = (meetingMinutes / 60).toFixed(1);
+
+  // Calculate Capacity
   const targetWorkCapacityHours = 6.0;
-  const {
-    totalPlannedHours,
-    capacityPercent,
-  } = calculateCapacityMetrics(todayTasks, targetWorkCapacityHours);
+
+  const taskMinutes = todayTasks.reduce((acc, t) => acc + (t.estimatedMinutes || 30), 0);
+  const totalCombinedMinutes = taskMinutes + meetingMinutes;
+  const combinedPlannedHours = (totalCombinedMinutes / 60).toFixed(1);
+  const combinedCapacityPercent = Math.min(
+    150,
+    Math.round((totalCombinedMinutes / (targetWorkCapacityHours * 60)) * 100)
+  );
+
+  const cognitiveTopology = analyzeCognitiveTopology(todayTasks, calendarEvents);
 
   const handleQuickAdd = (hour: number) => {
     if (!quickAddTitle.trim()) {
@@ -128,11 +165,16 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               <Clock size={20} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-[var(--text-primary)]">Day Timeline & Time-blocking</h3>
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
                   {scheduledTasks.length} scheduled
                 </span>
+                {calendarIcsUrl && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+                    {calendarEvents.length} calendar events
+                  </span>
+                )}
               </div>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                 Protect your calendar by allocating realistic time blocks.
@@ -140,44 +182,104 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             </div>
           </div>
 
-          {/* Workload Health Bar */}
-          <div className="sm:text-right min-w-[220px]">
-            <div className="flex items-center justify-between sm:justify-end gap-2 text-xs font-semibold text-[var(--text-primary)] font-mono">
-              <span>{totalPlannedHours}h planned</span>
-              <span className="text-[var(--text-muted)]">/ {targetWorkCapacityHours}h target</span>
-            </div>
-
-            <div className="w-full bg-stone-200 dark:bg-stone-800 h-2 rounded-full overflow-hidden mt-1.5">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  capacityPercent > 100
-                    ? 'bg-rose-500'
-                    : capacityPercent > 75
-                    ? 'bg-amber-500'
-                    : 'bg-emerald-500'
+          {/* Sync Calendar & Workload Health Bar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {/* Calendar Sync Button */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  setIcsUrlInput(calendarIcsUrl);
+                  setIsCalendarModalOpen(true);
+                }}
+                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                  calendarIcsUrl
+                    ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20'
+                    : 'bg-stone-100 dark:bg-stone-800 text-[var(--text-secondary)] hover:text-amber-500 border-[var(--border-hairline)]'
                 }`}
-                style={{ width: `${capacityPercent}%` }}
-              />
+              >
+                <Calendar size={13} />
+                <span>{calendarIcsUrl ? 'Calendar Connected' : 'Sync Calendar (.ics)'}</span>
+              </button>
+              {calendarIcsUrl && (
+                <button
+                  onClick={async () => {
+                    setIsRefreshingFeed(true);
+                    await refreshCalendarEvents();
+                    setTimeout(() => setIsRefreshingFeed(false), 600);
+                  }}
+                  title="Refresh calendar events"
+                  className="p-1.5 rounded-xl text-stone-500 hover:text-indigo-600 hover:bg-indigo-500/10 border border-[var(--border-hairline)] transition-colors"
+                >
+                  <RefreshCw size={13} className={isRefreshingFeed ? 'animate-spin' : ''} />
+                </button>
+              )}
             </div>
 
-            <div className="text-[10px] font-medium text-[var(--text-secondary)] mt-1 flex items-center justify-between sm:justify-end gap-1">
-              {capacityPercent > 100 ? (
-                <span className="text-rose-500 flex items-center gap-1 font-semibold">
-                  <AlertCircle size={10} /> Overbooked ({capacityPercent}%)
-                </span>
-              ) : capacityPercent > 75 ? (
-                <span className="text-amber-600 dark:text-amber-400 font-semibold">
-                  Full Day Capacity ⚡
-                </span>
-              ) : (
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                  Healthy & Balanced 🌱
-                </span>
-              )}
+            {/* Workload Health Bar */}
+            <div className="sm:text-right min-w-[220px]">
+              <div className="flex items-center justify-between sm:justify-end gap-2 text-xs font-semibold text-[var(--text-primary)] font-mono">
+                <span>{combinedPlannedHours}h planned</span>
+                <span className="text-[var(--text-muted)]">/ {targetWorkCapacityHours}h target</span>
+              </div>
+              <div className="text-[10px] text-[var(--text-muted)] font-mono flex items-center justify-between sm:justify-end gap-1.5 mt-0.5 flex-wrap">
+                <span>🧠 Deep: {cognitiveTopology.deepWorkHours}h</span>
+                <span>•</span>
+                <span>⚡ Admin: {cognitiveTopology.adminHours}h</span>
+                {meetingMinutes > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-indigo-600 dark:text-indigo-400">📅 Mtgs: {totalMeetingHours}h</span>
+                  </>
+                )}
+              </div>
+
+              <div className="w-full bg-stone-200 dark:bg-stone-800 h-2 rounded-full overflow-hidden mt-1.5 flex">
+                <div
+                  className={`h-full transition-all duration-500 ${
+                    combinedCapacityPercent > 100
+                      ? 'bg-rose-500'
+                      : combinedCapacityPercent > 75
+                      ? 'bg-amber-500'
+                      : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${Math.min(100, Math.round((taskMinutes / (targetWorkCapacityHours * 60)) * 100))}%` }}
+                />
+                {meetingMinutes > 0 && (
+                  <div
+                    className="h-full bg-indigo-500/70 transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round((meetingMinutes / (targetWorkCapacityHours * 60)) * 100))}%` }}
+                  />
+                )}
+              </div>
+
+              <div className="text-[10px] font-medium text-[var(--text-secondary)] mt-1 flex items-center justify-between sm:justify-end gap-1">
+                {combinedCapacityPercent > 100 ? (
+                  <span className="text-rose-500 flex items-center gap-1 font-semibold">
+                    <AlertCircle size={10} /> Overbooked ({combinedCapacityPercent}%)
+                  </span>
+                ) : combinedCapacityPercent > 75 ? (
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                    Full Day Capacity ⚡
+                  </span>
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                    Healthy & Balanced 🌱
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Buffer Guard Strain Alert */}
+        {cognitiveTopology.hasHighCognitiveStrain && (
+          <div className="mt-3.5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-200 animate-slide-down">
+            <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="font-medium">{cognitiveTopology.strainWarning}</span>
+          </div>
+        )}
       </div>
+
 
       {/* Main Grid: Unscheduled Sidebar + Hourly Canvas */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -261,6 +363,27 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
         {/* Right: Hourly Timeline (Desktop: 8 cols) */}
         <div className="lg:col-span-8 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-3xl p-4 sm:p-6 card-surface overflow-hidden relative">
+          {/* All-Day Calendar Events if present */}
+          {calendarEvents.some((e) => e.isAllDay) && (
+            <div className="mb-4 p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 pl-1">
+                All-Day Events:
+              </span>
+              {calendarEvents
+                .filter((e) => e.isAllDay)
+                .map((ev) => (
+                  <span
+                    key={ev.id}
+                    title={ev.description || ev.title}
+                    className="text-xs px-2.5 py-1 rounded-xl bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 font-semibold border border-indigo-500/20 flex items-center gap-1.5"
+                  >
+                    <Calendar size={11} />
+                    {ev.title}
+                  </span>
+                ))}
+            </div>
+          )}
+
           <div className="relative" style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT_PX}px` }}>
             {/* Hour Rows */}
             {Array.from({ length: TOTAL_HOURS }, (_, i) => {
@@ -346,11 +469,68 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               </div>
             )}
 
+            {/* Calendar Meeting Overlay Blocks */}
+            {calendarEvents
+              .filter((ev) => !ev.isAllDay)
+              .map((ev) => {
+                const startMin = parseTimeToMinutes(ev.startTime);
+                const endMin = parseTimeToMinutes(ev.endTime);
+                if (startMin === null) return null;
+                const duration = endMin ? Math.max(15, endMin - startMin) : 30;
+
+                if (startMin < START_HOUR * 60 || startMin >= END_HOUR * 60) return null;
+
+                const { topPx, heightPx } = calculateBlockPosition(
+                  startMin,
+                  duration,
+                  START_HOUR,
+                  HOUR_HEIGHT_PX
+                );
+
+                return (
+                  <div
+                    key={ev.id}
+                    title={`${ev.title}${ev.location ? ' • ' + ev.location : ''}${ev.description ? '\n' + ev.description : ''}`}
+                    className="absolute left-16 right-2 rounded-2xl p-2.5 border border-dashed border-indigo-400/50 dark:border-indigo-400/30 bg-indigo-500/[0.08] dark:bg-indigo-500/[0.14] text-indigo-950 dark:text-indigo-200 flex items-start justify-between gap-3 overflow-hidden transition-all shadow-xs"
+                    style={{
+                      top: `${topPx}px`,
+                      height: `${heightPx}px`,
+                      zIndex: 6,
+                    }}
+                  >
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-500/70" />
+                    <div className="min-w-0 pl-2">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={11} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <span className="text-xs font-semibold truncate text-indigo-900 dark:text-indigo-100">
+                          {ev.title}
+                        </span>
+                        <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 shrink-0">
+                          Calendar
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-indigo-700/80 dark:text-indigo-300/80 font-mono flex items-center gap-2 mt-0.5">
+                        <span>
+                          {ev.startTime} – {ev.endTime}
+                        </span>
+                        <span>({duration}m)</span>
+                        {ev.location && (
+                          <span className="truncate max-w-[140px] text-[9px] opacity-80">
+                            📍 {ev.location}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
             {/* Scheduled Task Blocks */}
             {scheduledTasks.map(({ task, startMin, duration }) => {
               const { topPx, heightPx } = calculateBlockPosition(startMin, duration, START_HOUR, HOUR_HEIGHT_PX);
               const project = projects.find((p) => p.id === task.projectId);
               const isDone = task.status === 'done';
+              const overlapEvent = findOverlappingCalendarEvent(startMin, duration, calendarEvents);
 
               return (
                 <div
@@ -359,6 +539,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   className={`absolute left-16 right-2 rounded-2xl p-2.5 border transition-all duration-150 cursor-pointer shadow-subtle hover:shadow-card hover:-translate-y-[1px] flex items-center justify-between gap-3 overflow-hidden ${
                     isDone
                       ? 'bg-stone-100/60 dark:bg-white/[0.03] border-[var(--border-hairline)] opacity-60'
+                      : overlapEvent
+                      ? 'bg-rose-500/[0.08] dark:bg-rose-500/[0.12] border-rose-400/50 dark:border-rose-500/40 shadow-xs ring-1 ring-rose-500/20'
                       : task.isPinnedToday
                       ? 'bg-gradient-to-r from-amber-500/[0.12] via-orange-400/[0.06] to-indigo-500/[0.04] border-amber-400/50 dark:border-amber-500/40 shadow-glow-amber'
                       : 'bg-white dark:bg-[var(--bg-surface-l2)] border-stone-200/90 dark:border-white/10'
@@ -393,7 +575,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                     </button>
 
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span
                           className={`text-xs font-semibold truncate ${
                             isDone
@@ -406,6 +588,25 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         {task.isPinnedToday && !isDone && (
                           <span className="text-[9px] font-bold text-amber-500 shrink-0">
                             ★ Focus
+                          </span>
+                        )}
+                        {!isDone && classifyTaskCognitiveIntensity(task) === 'deep' && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 shrink-0">
+                            🧠 Deep
+                          </span>
+                        )}
+                        {!isDone && classifyTaskCognitiveIntensity(task) === 'admin' && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-stone-500/15 text-stone-600 dark:text-stone-300 shrink-0">
+                            ⚡ Admin
+                          </span>
+                        )}
+                        {overlapEvent && !isDone && (
+                          <span
+                            title={`Overlaps with external calendar meeting: ${overlapEvent.title}`}
+                            className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 shrink-0 flex items-center gap-0.5 animate-pulse"
+                          >
+                            <AlertCircle size={9} />
+                            Meeting Conflict: {overlapEvent.title}
                           </span>
                         )}
                       </div>
@@ -421,6 +622,62 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
                   {/* Right actions */}
                   <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {/* 15m Nudge Controls */}
+                    {!isDone && (
+                      <div className="hidden sm:flex items-center gap-0.5 mr-0.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newMin = Math.max(START_HOUR * 60, startMin - 15);
+                            const timeStr = minutesToTimeStr(newMin);
+                            updateTask(task.id, { scheduledStart: timeStr, dueTime: timeStr });
+                          }}
+                          title="Nudge 15m earlier"
+                          className="px-1 py-0.5 text-[9px] font-mono font-bold rounded bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-colors"
+                        >
+                          -15m
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newMin = Math.min((END_HOUR * 60) - duration, startMin + 15);
+                            const timeStr = minutesToTimeStr(newMin);
+                            updateTask(task.id, { scheduledStart: timeStr, dueTime: timeStr });
+                          }}
+                          title="Nudge 15m later"
+                          className="px-1 py-0.5 text-[9px] font-mono font-bold rounded bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-colors"
+                        >
+                          +15m
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Auto-Slot into Free Gap if conflict */}
+                    {overlapEvent && !isDone && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const nextGap = findNextFreeGap(
+                            duration,
+                            todayTasks.filter((t) => t.id !== task.id),
+                            calendarEvents,
+                            startMin
+                          );
+                          if (nextGap !== null) {
+                            const timeStr = minutesToTimeStr(nextGap);
+                            updateTask(task.id, { scheduledStart: timeStr, dueTime: timeStr });
+                          }
+                        }}
+                        title="Auto-slot into next free gap without conflicts"
+                        className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 border border-amber-500/30 transition-colors shrink-0"
+                      >
+                        Auto-Slot Free
+                      </button>
+                    )}
+
                     {!isDone && (
                       <button
                         onClick={() => onStartFocus(task.id)}
@@ -444,6 +701,116 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* External Calendar Overlay Modal */}
+      {isCalendarModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsCalendarModalOpen(false)}
+        >
+          <div
+            className="bg-[var(--bg-surface-l1)] border border-stone-200/90 dark:border-white/10 rounded-3xl p-6 max-w-lg w-full shadow-modal space-y-4 animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[var(--border-hairline)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text-primary)]">
+                    Private Calendar Overlay
+                  </h3>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Sync via iCal / Webcal (.ics link)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsCalendarModalOpen(false)}
+                className="p-1 rounded-lg text-stone-400 hover:text-[var(--text-primary)] transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                Overlay your work or personal meetings alongside your tasks. This connection is{' '}
+                <strong className="text-[var(--text-primary)]">read-only and 100% private</strong>—no OAuth permissions required, and events never leave your browser.
+              </p>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1">
+                  iCal / .ics Feed URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
+                  value={icsUrlInput}
+                  onChange={(e) => setIcsUrlInput(e.target.value)}
+                  className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] focus:border-indigo-500 text-[var(--text-primary)] outline-none font-mono"
+                />
+              </div>
+
+              {/* Instructions Callout */}
+              <div className="p-3 rounded-2xl bg-indigo-500/[0.06] border border-indigo-500/15 text-[11px] text-[var(--text-secondary)] space-y-1.5">
+                <div className="font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+                  <ExternalLink size={12} />
+                  Where to find your private link:
+                </div>
+                <ul className="list-disc pl-4 space-y-1 text-stone-600 dark:text-stone-300">
+                  <li><strong>Google Calendar:</strong> Settings → Click your calendar → scroll to &quot;Secret address in iCal format&quot;.</li>
+                  <li><strong>Outlook / Office 365:</strong> Settings → Calendar → Shared calendars → Publish a calendar → copy ICS.</li>
+                  <li><strong>Apple Calendar:</strong> Share Calendar → toggle Public/Webcal → copy URL.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-[var(--border-hairline)]">
+              {calendarIcsUrl ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCalendarIcsUrl('');
+                    setIcsUrlInput('');
+                    setIsCalendarModalOpen(false);
+                  }}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-semibold px-2 py-1"
+                >
+                  Disconnect Feed
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCalendarModalOpen(false)}
+                  className="text-xs px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const trimmed = icsUrlInput.trim();
+                    setCalendarIcsUrl(trimmed);
+                    setIsCalendarModalOpen(false);
+                    if (trimmed) {
+                      await refreshCalendarEvents();
+                    }
+                  }}
+                  className="text-xs font-bold px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors shadow-sm"
+                >
+                  Save & Sync
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
