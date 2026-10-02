@@ -262,7 +262,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'));
+    setThemeState((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      audioEngine.playToggleSound(next === 'light');
+      return next;
+    });
   }, []);
 
   const setSoundProfile = useCallback((p: SoundProfile) => {
@@ -274,6 +278,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSoundEnabledState((prev) => {
       const next = !prev;
       audioEngine.setSoundEnabled(next);
+      if (next) {
+        audioEngine.playToggleSound(true);
+      }
       return next;
     });
   }, []);
@@ -597,7 +604,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
       } else {
-        audioEngine.playClickSound();
+        audioEngine.playTaskUncheckSound();
       }
 
       pushUndo(isCompleting ? `Completed "${target.title}"` : `Reopened "${target.title}"`, prevTasks);
@@ -678,11 +685,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return false;
         }
         updateTask(id, { isPinnedToday: true, dueDate: todayStr });
-        audioEngine.playClickSound();
+        audioEngine.playToggleSound(true);
         return true;
       } else {
         updateTask(id, { isPinnedToday: false });
-        audioEngine.playClickSound();
+        audioEngine.playToggleSound(false);
         return true;
       }
     },
@@ -693,19 +700,24 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const toggleSubTask = useCallback(
     (taskId: string, subtaskId: string) => {
       let updatedTask: Task | undefined;
+      let isNowCompleted = false;
       setTasks((prev) =>
         prev.map((t) => {
           if (t.id === taskId) {
-            const nextSubs = t.subtasks.map((s) =>
-              s.id === subtaskId ? { ...s, completed: !s.completed } : s
-            );
+            const nextSubs = t.subtasks.map((s) => {
+              if (s.id === subtaskId) {
+                isNowCompleted = !s.completed;
+                return { ...s, completed: isNowCompleted };
+              }
+              return s;
+            });
             updatedTask = { ...t, subtasks: nextSubs };
             return updatedTask;
           }
           return t;
         })
       );
-      audioEngine.playClickSound();
+      audioEngine.playSubtaskToggle(isNowCompleted);
 
       if (user && updatedTask) {
         taskSyncService.saveTask(user.uid, updatedTask).catch((err) => {
@@ -893,6 +905,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('flowtask_active_timer_task_id');
     setActiveTimerTaskId(null);
     setActiveTimerSeconds(0);
+    audioEngine.playToggleSound(false);
     showToast(`Logged ${minutesToAdd}m of focus time.`);
   }, [activeTimerTaskId, activeTimerSeconds, showToast]);
 
@@ -904,7 +917,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setActiveTimerTaskId(taskId);
       setActiveTimerSeconds(0);
       localStorage.setItem('flowtask_active_timer_task_id', taskId);
-      audioEngine.playClickSound();
+      audioEngine.playToggleSound(true);
     },
     [activeTimerTaskId, stopTaskTimer]
   );

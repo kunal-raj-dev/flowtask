@@ -12,6 +12,12 @@ class AudioEngine {
   private soundProfile: SoundProfile = 'zen';
   private ambientSource: AudioNode | null = null;
   private ambientGain: GainNode | null = null;
+  private lastMajorSoundTime: number = 0;
+  private lastClickTime: number = 0;
+
+  public notifyMajorSound() {
+    this.lastMajorSoundTime = Date.now();
+  }
 
   constructor() {
     try {
@@ -78,6 +84,7 @@ class AudioEngine {
    */
   public playCompletionChime() {
     if (!this.isSoundEnabled || this.soundProfile === 'mute') return;
+    this.notifyMajorSound();
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -144,29 +151,173 @@ class AudioEngine {
   }
 
   /**
-   * Play a subtle click for toggling subtasks or buttons.
+   * Play a subtle, tactile click or pop tailored to the active sound profile.
+   * Suppressed if a major sound (completion chime/fanfare) just fired, and throttled to prevent audio overlap.
    */
   public playClickSound() {
-    if (!this.isSoundEnabled) return;
+    if (!this.isSoundEnabled || this.soundProfile === 'mute') return;
+    const nowMs = Date.now();
+    if (nowMs - this.lastMajorSoundTime < 70) return;
+    if (nowMs - this.lastClickTime < 30) return;
+    this.lastClickTime = nowMs;
+
     const ctx = this.getContext();
     if (!ctx) return;
 
     const now = ctx.currentTime;
+
+    if (this.soundProfile === 'bubble') {
+      // Soft organic water bubble pop: quick gentle upward sine sweep
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(420, now);
+      osc.frequency.exponentialRampToValueAtTime(740, now + 0.035);
+
+      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.045);
+      return;
+    }
+
+    if (this.soundProfile === 'mechanical') {
+      // Crisp mechanical key switch click
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1100, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.025);
+
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.025);
+      return;
+    }
+
+    // Default 'zen': gentle crystal singing glass tap (C6)
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1046.5, now);
 
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(600, now);
-    osc.frequency.exponentialRampToValueAtTime(120, now + 0.03);
-
-    gain.gain.setValueAtTime(0.08, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.03);
+    osc.stop(now + 0.04);
+  }
+
+  /**
+   * Play gentle, pleasing harmonic sound tones for stateful toggles (on vs off).
+   */
+  public playToggleSound(state: boolean) {
+    if (!this.isSoundEnabled || this.soundProfile === 'mute') return;
+    this.notifyMajorSound();
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+
+    if (this.soundProfile === 'bubble') {
+      // Gentle organic water bubble tones: ascending on ON, soft descending droplet on OFF
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+
+      if (state) {
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(680, now + 0.055);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
+      } else {
+        osc.frequency.setValueAtTime(620, now);
+        osc.frequency.exponentialRampToValueAtTime(320, now + 0.06);
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
+      }
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.075);
+      return;
+    }
+
+    if (this.soundProfile === 'mechanical') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      if (state) {
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(1400, now + 0.035);
+      } else {
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(500, now + 0.04);
+      }
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.04);
+      return;
+    }
+
+    // Default 'zen': gentle harmonic intervals
+    // On: C5 (523.25 Hz) -> E5 (659.25 Hz)
+    // Off: E5 (659.25 Hz) -> C5 (523.25 Hz)
+    const startFreq = state ? 523.25 : 659.25;
+    const endFreq = state ? 659.25 : 523.25;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(startFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.05);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.08);
+  }
+
+  public playToggleOn() {
+    this.playToggleSound(true);
+  }
+
+  public playToggleOff() {
+    this.playToggleSound(false);
+  }
+
+  /**
+   * Gentle micro-tone for checking / unchecking a subtask.
+   */
+  public playSubtaskToggle(completed: boolean) {
+    this.playToggleSound(completed);
+  }
+
+  /**
+   * Gentle pleasing tone for reopening / uncompleting a parent task.
+   */
+  public playTaskUncheckSound() {
+    this.playToggleSound(false);
   }
 
   /**
@@ -399,6 +550,7 @@ class AudioEngine {
    */
   public playRuleOf3Fanfare() {
     if (!this.isSoundEnabled) return;
+    this.notifyMajorSound();
     const ctx = this.getContext();
     if (!ctx) return;
 

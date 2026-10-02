@@ -30,9 +30,11 @@ import { formatLocalDate } from '../../utils/nlpParser';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { audioEngine } from '../../utils/audioEngine';
 import { getDiurnalPeriod, getDiurnalConfig, type DiurnalPeriod } from '../../utils/diurnalAura';
+import { useTactileAudioClicks } from '../../hooks/useTactileAudioClicks';
 import confetti from 'canvas-confetti';
 
 export const AppLayout: React.FC = () => {
+  useTactileAudioClicks();
   const {
     activeView,
     setActiveView,
@@ -314,7 +316,10 @@ export const AppLayout: React.FC = () => {
             {/* Zen Sidebar Collapse/Expand Toggle */}
             <button
               type="button"
-              onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+              onClick={() => {
+                audioEngine.playToggleSound(isSidebarCollapsed);
+                setIsSidebarCollapsed((prev) => !prev);
+              }}
               title="Toggle Sidebar ([)"
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >

@@ -128,10 +128,16 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
     },
   ];
 
-  const handleTestSound = (profile: SoundProfile) => {
+  const handleTestSound = (profile: SoundProfile, type: 'chime' | 'pop' | 'toggle' = 'chime') => {
     const prev = audioEngine.getSoundProfile();
     audioEngine.setSoundProfile(profile);
-    audioEngine.playCompletionChime();
+    if (type === 'pop') {
+      audioEngine.playClickSound();
+    } else if (type === 'toggle') {
+      audioEngine.playToggleSound(true);
+    } else {
+      audioEngine.playCompletionChime();
+    }
     audioEngine.setSoundProfile(prev);
   };
 
@@ -273,18 +279,44 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
                     </div>
 
                     {sp.id !== 'mute' && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTestSound(sp.id);
-                        }}
-                        title={`Preview ${sp.name}`}
-                        className="p-1.5 rounded-xl bg-stone-100 dark:bg-white/10 text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-white/15 transition-colors shrink-0 flex items-center gap-1 text-[10px] font-semibold"
-                      >
-                        <Play size={10} className="fill-current" />
-                        <span>Test</span>
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTestSound(sp.id, 'pop');
+                          }}
+                          title={`Preview ${sp.name} click/pop sound`}
+                          className="px-2 py-1 rounded-lg bg-stone-100 dark:bg-white/10 text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-white/15 transition-colors flex items-center gap-1 text-[10px] font-semibold"
+                        >
+                          <Play size={8} className="fill-current text-sky-500" />
+                          <span>Pop</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTestSound(sp.id, 'toggle');
+                          }}
+                          title={`Preview ${sp.name} toggle tone`}
+                          className="px-2 py-1 rounded-lg bg-stone-100 dark:bg-white/10 text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-white/15 transition-colors flex items-center gap-1 text-[10px] font-semibold"
+                        >
+                          <Play size={8} className="fill-current text-amber-500" />
+                          <span>Toggle</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTestSound(sp.id, 'chime');
+                          }}
+                          title={`Preview ${sp.name} completion chime`}
+                          className="px-2 py-1 rounded-lg bg-stone-100 dark:bg-white/10 text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-white/15 transition-colors flex items-center gap-1 text-[10px] font-semibold"
+                        >
+                          <Play size={8} className="fill-current text-emerald-500" />
+                          <span>Chime</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 );
