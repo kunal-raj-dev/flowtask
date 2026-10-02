@@ -61,6 +61,7 @@ export type ViewId =
   | 'today'
   | 'inbox'
   | 'upcoming'
+  | 'timeline'
   | 'someday'
   | 'matrix'
   | 'kanban'

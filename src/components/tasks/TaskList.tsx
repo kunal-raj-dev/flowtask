@@ -49,6 +49,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     updateTask,
     deleteTask,
     batchUpdateTasks,
+    batchDeleteTasks,
     showToast,
   } = useTaskContext();
 
@@ -239,12 +240,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const confirmClean = window.confirm(
-                      `Clean up ${completed.length} completed task(s) from "${project.name}"?\n\nThis keeps your project workspace fresh and uncluttered.`
-                    );
-                    if (confirmClean) {
-                      completed.forEach((t) => deleteTask(t.id));
-                    }
+                    batchDeleteTasks(completed.map((t) => t.id));
                   }}
                   title="Clean completed tasks from this project workspace"
                   className="px-2.5 py-1 rounded-xl text-xs font-semibold text-stone-600 dark:text-stone-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 border border-[var(--border-hairline)] transition-colors flex items-center gap-1 ml-auto sm:ml-0"

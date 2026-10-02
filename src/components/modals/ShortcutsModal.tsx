@@ -27,6 +27,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
     { key: 'Ctrl / ⌘ + Shift + V', desc: 'Voice-to-Task audio dictation' },
     { key: 'N', desc: 'Quick add task (focus Omnibar)' },
     { key: '[', desc: 'Toggle Sidebar (Zen Focus Mode)' },
+    { key: 'Ctrl / ⌘ + Z', desc: 'Undo last action (complete, delete, status)' },
     { key: 'Ctrl / ⌘ + K', desc: 'Open Command Palette' },
     { key: '?', desc: 'Show keyboard shortcuts' },
     { key: 'Esc', desc: 'Close any modal, drawer, or selection' },

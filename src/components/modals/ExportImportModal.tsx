@@ -40,7 +40,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   onClose,
   initialTab = 'standup',
 }) => {
-  const { tasks, projects, importTasks } = useTaskContext();
+  const { tasks, projects, importTasks, showToast } = useTaskContext();
   const [activeTab, setActiveTab] = useState<'standup' | 'markdown' | 'csv' | 'share' | 'json' | 'import' | 'snapshots'>(
     initialTab
   );
@@ -478,17 +478,18 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          const conf = window.confirm(
-                            `Restore data from "${snap.label}"?\n\nThis will replace your current workspace with the ${snap.taskCount} tasks from this snapshot.`
-                          );
-                          if (conf) {
-                            const restored = restoreSnapshot(snap.id);
-                            if (restored) {
-                              importTasks(restored.tasks, restored.projects);
-                              audioEngine.playCompletionChime();
-                              confetti({ particleCount: 40, spread: 50 });
-                              onClose();
-                            }
+                          const prevTasks = [...tasks];
+                          const prevProjects = [...projects];
+                          createLocalSnapshot(tasks, projects, 'Pre-Restore Auto-Backup', 'pre_batch');
+                          const restored = restoreSnapshot(snap.id);
+                          if (restored) {
+                            importTasks(restored.tasks, restored.projects);
+                            audioEngine.playCompletionChime();
+                            confetti({ particleCount: 40, spread: 50 });
+                            showToast(`Restored snapshot "${snap.label}"`, 'Undo', () => {
+                              importTasks(prevTasks, prevProjects);
+                            });
+                            onClose();
                           }
                         }}
                         className="px-2.5 py-1 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 font-bold text-[11px] shadow-xs hover:opacity-90 transition-opacity flex items-center gap-1"

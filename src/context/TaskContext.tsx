@@ -973,7 +973,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       audioEngine.playClickSound();
-      showToast(`Updated ${taskIds.length} tasks.`);
+      showToast(`Updated ${taskIds.length} tasks.`, 'Undo', undoLastAction);
       clearTaskSelection();
 
       if (user) {
@@ -982,7 +982,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
       }
     },
-    [tasks, projects, user, pushUndo, showToast, clearTaskSelection]
+    [tasks, projects, user, pushUndo, showToast, clearTaskSelection, undoLastAction]
   );
 
   const batchDeleteTasks = useCallback(
@@ -997,7 +997,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       audioEngine.playClickSound();
-      showToast(`Deleted ${taskIds.length} tasks.`);
+      showToast(`Deleted ${taskIds.length} tasks.`, 'Undo', undoLastAction);
       clearTaskSelection();
 
       if (user) {
@@ -1006,7 +1006,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
       }
     },
-    [tasks, projects, user, pushUndo, showToast, clearTaskSelection]
+    [tasks, projects, user, pushUndo, showToast, clearTaskSelection, undoLastAction]
   );
 
   const batchToggleStatus = useCallback(
@@ -1036,7 +1036,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       audioEngine.playCompletionChime();
-      showToast(`Updated status for ${taskIds.length} tasks.`);
+      showToast(`Updated status for ${taskIds.length} tasks.`, 'Undo', undoLastAction);
       clearTaskSelection();
 
       if (user) {
@@ -1045,7 +1045,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
       }
     },
-    [tasks, projects, user, pushUndo, showToast, clearTaskSelection]
+    [tasks, projects, user, pushUndo, showToast, clearTaskSelection, undoLastAction]
   );
 
   // Interruption Stash & Restore

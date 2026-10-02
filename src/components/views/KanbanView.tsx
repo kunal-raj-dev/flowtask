@@ -14,6 +14,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const { tasks, updateTask, addTask } = useTaskContext();
   const [mobileColumn, setMobileColumn] = useState<TaskStatus>('todo');
   const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
+  const [addingToStatus, setAddingToStatus] = useState<TaskStatus | null>(null);
+  const [quickTitle, setQuickTitle] = useState('');
 
   // Hotkey navigation: '1', '2', '3' or 'h', 'j', 'k', 'l' or Arrow keys
   useEffect(() => {
@@ -144,10 +146,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   const handleAddTaskToColumn = (status: TaskStatus) => {
-    const title = window.prompt(`Add new task to ${status.replace('_', ' ').toUpperCase()}:`);
-    if (title && title.trim()) {
-      addTask(title.trim(), { status });
-    }
+    setAddingToStatus(status);
+    setQuickTitle('');
   };
 
   return (
@@ -240,7 +240,54 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
               {/* Tasks List */}
               <div className="flex-1 space-y-2.5 overflow-y-auto">
-                {colTasks.length === 0 ? (
+                {addingToStatus === col.status && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (quickTitle.trim()) {
+                        addTask(quickTitle.trim(), { status: col.status });
+                        setQuickTitle('');
+                        setAddingToStatus(null);
+                      }
+                    }}
+                    className="p-3 bg-[var(--bg-surface-l2)] rounded-2xl border border-indigo-500/50 shadow-md space-y-2 animate-fade-in"
+                  >
+                    <input
+                      autoFocus
+                      type="text"
+                      value={quickTitle}
+                      onChange={(e) => setQuickTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setAddingToStatus(null);
+                          setQuickTitle('');
+                        }
+                      }}
+                      placeholder={`Add card to ${col.title}...`}
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddingToStatus(null);
+                          setQuickTitle('');
+                        }}
+                        className="px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={!quickTitle.trim()}
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </form>
+                )}
+                {colTasks.length === 0 && addingToStatus !== col.status ? (
                   <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-stone-200 dark:border-stone-800 rounded-2xl bg-[var(--bg-surface-l2)]/30">
                     Drop cards here
                   </div>

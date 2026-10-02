@@ -26,6 +26,7 @@ import { formatLocalDate } from '../../utils/nlpParser';
 import { checkTaskStaleness } from '../../utils/staleTaskDetector';
 import { isTaskBlocked } from '../../utils/dependencyUtils';
 import { audioEngine } from '../../utils/audioEngine';
+import { Badge } from '../ui/Badge';
 
 interface TaskCardProps {
   task: Task;
@@ -52,6 +53,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     toggleTaskTimer,
     selectedTaskIds,
     toggleTaskSelection,
+    showToast,
   } = useTaskContext();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -114,10 +116,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     e.stopPropagation();
     if (!isDone && blockedInfo.isBlocked) {
       const blockerTitles = blockedInfo.blockingTasks.map((t) => `"${t.title}"`).join(', ');
-      const proceed = window.confirm(
-        `This task is blocked by ${blockerTitles}.\n\nMark it as complete anyway?`
-      );
-      if (!proceed) return;
+      toggleTaskStatus(task.id);
+      showToast(`Completed blocked task (was blocked by ${blockerTitles})`, 'Undo', () => {
+        toggleTaskStatus(task.id);
+      });
+      return;
     }
     toggleTaskStatus(task.id);
   };
@@ -138,19 +141,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   // Subtask progress
   const totalSubtasks = task.subtasks?.length || 0;
   const completedSubtasks = task.subtasks?.filter((s) => s.completed).length || 0;
-
-  const getPriorityStyle = (priority: string) => {
-    switch (priority) {
-      case 'p1':
-        return 'text-rose-600 dark:text-rose-400 bg-gradient-to-r from-rose-500/15 to-red-500/10 border-rose-500/30';
-      case 'p2':
-        return 'text-amber-600 dark:text-amber-400 bg-gradient-to-r from-amber-500/15 to-orange-500/10 border-amber-500/30';
-      case 'p3':
-        return 'text-sky-600 dark:text-sky-400 bg-gradient-to-r from-sky-500/15 to-blue-500/10 border-sky-500/30';
-      default:
-        return 'text-[var(--text-muted)] bg-stone-500/10 border-stone-500/20';
-    }
-  };
 
   const formatDueDateLabel = (dueDateStr?: string) => {
     if (!dueDateStr) return null;
@@ -270,19 +260,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         e.preventDefault();
         setContextMenu({ x: e.clientX, y: e.clientY });
       }}
-      className={`group relative flex items-start gap-2.5 p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer ${
+      className={`group relative flex items-start gap-2.5 p-3 sm:p-3.5 rounded-xl border transition-all duration-150 cursor-pointer ${
         isSelected
-          ? 'ring-2 ring-indigo-500/80 dark:ring-indigo-400 bg-indigo-500/[0.07] dark:bg-indigo-500/[0.14] border-indigo-400/60 dark:border-indigo-400/40 shadow-sm'
+          ? 'ring-2 ring-indigo-500/80 bg-indigo-500/[0.06] border-indigo-400/50 shadow-sm'
           : isKeyboardFocused
-          ? 'ring-2 ring-amber-500/80 dark:ring-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.22)] -translate-y-[1px]'
+          ? 'ring-2 ring-amber-500/80 dark:ring-amber-400 shadow-sm -translate-y-[0.5px]'
           : ''
       } ${
         isDone
-          ? 'bg-[var(--bg-surface-l1)]/60 border-[var(--border-hairline)] opacity-60'
+          ? 'bg-[var(--bg-surface-l1)]/50 border-[var(--border-hairline)] opacity-60'
           : task.isPinnedToday && !isSelected
-          ? 'bg-gradient-to-r from-amber-500/[0.10] via-orange-400/[0.05] to-indigo-500/[0.03] dark:from-amber-500/[0.08] dark:via-amber-500/[0.03] dark:to-transparent border-amber-400/60 dark:border-amber-500/40 shadow-[0_4px_22px_-2px_rgba(245,158,11,0.18)] dark:shadow-glow-amber card-surface hover:border-amber-500/80 hover:-translate-y-[1px]'
+          ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.04] border-[var(--border-subtle)] border-l-[3px] border-l-amber-500 dark:border-l-amber-400 hover:border-amber-500/40 hover:shadow-subtle hover:-translate-y-[0.5px]'
           : !isSelected
-          ? 'bg-white dark:bg-[var(--bg-surface-l2)] border-stone-200/80 dark:border-[var(--border-hairline)] shadow-card hover:border-stone-300 dark:hover:border-stone-700 hover:shadow-elevated hover:-translate-y-[1px] card-surface'
+          ? 'bg-[var(--bg-surface-l1)] border-[var(--border-subtle)] hover:border-[var(--border-strong)] hover:shadow-subtle hover:-translate-y-[0.5px]'
           : ''
       }`}
     >
@@ -294,12 +284,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           toggleTaskSelection(task.id);
         }}
         title="Select task for batch actions"
-        className={`mt-0.5 w-4 h-4 rounded-[5px] flex-shrink-0 flex items-center justify-center border transition-all duration-150 ${
+        className={`mt-0.5 w-4 h-4 rounded-md flex-shrink-0 flex items-center justify-center border transition-all duration-150 ${
           isSelected
             ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
             : selectedTaskIds.length > 0
-            ? 'border-stone-300 dark:border-stone-600 hover:border-indigo-500 bg-white dark:bg-stone-800'
-            : 'opacity-0 group-hover:opacity-100 border-stone-300 dark:border-stone-600 hover:border-indigo-500 bg-white dark:bg-stone-800'
+            ? 'border-[var(--border-strong)] hover:border-indigo-500 bg-[var(--bg-surface-l1)]'
+            : 'opacity-0 group-hover:opacity-100 border-[var(--border-strong)] hover:border-indigo-500 bg-[var(--bg-surface-l1)]'
         }`}
         aria-label={isSelected ? 'Deselect task' : 'Select task'}
       >
@@ -310,10 +300,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       <button
         type="button"
         onClick={handleToggleStatus}
-        className={`mt-0.5 w-5 h-5 rounded-[7px] flex-shrink-0 flex items-center justify-center border active:scale-90 transition-all duration-150 ${
+        className={`mt-0.5 w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center border active:scale-90 transition-all duration-150 ${
           isDone
-            ? 'bg-gradient-to-br from-stone-900 to-stone-800 dark:from-white dark:to-stone-200 border-stone-800 dark:border-white text-white dark:text-stone-950 shadow-xs'
-            : 'border-stone-300 dark:border-stone-600 hover:border-amber-500 dark:hover:border-amber-400 hover:ring-4 hover:ring-amber-500/15 dark:hover:ring-amber-400/20 group-hover:scale-105 bg-[var(--bg-surface-l2)]'
+            ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white text-white dark:text-stone-950 shadow-xs'
+            : 'border-[var(--border-strong)] hover:border-amber-500 hover:ring-2 hover:ring-amber-500/20 bg-[var(--bg-surface-l2)]'
         }`}
         aria-label={isDone ? 'Mark as incomplete' : 'Mark as complete'}
       >
@@ -356,7 +346,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 if (!isDone) setIsEditingTitle(true);
               }}
               title="Double-click to edit title"
-              className={`text-sm leading-snug font-semibold transition-all ${
+              className={`text-sm leading-snug font-medium transition-all ${
                 isDone
                   ? 'line-through text-[var(--text-muted)]'
                   : 'text-[var(--text-primary)]'
@@ -366,23 +356,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </span>
           )}
 
-          {/* Priority pip */}
+          {/* Priority indicator */}
           {task.priority !== 'p4' && !isDone && (
-            <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider shadow-xs shrink-0 ${getPriorityStyle(
-                task.priority
-              )}`}
+            <Badge
+              variant={
+                task.priority === 'p1' ? 'danger' :
+                task.priority === 'p2' ? 'focus' : 'brand'
+              }
+              size="xs"
             >
-              {task.priority}
-            </span>
+              {task.priority.toUpperCase()}
+            </Badge>
           )}
 
-          {/* Pinned Top 3 indicator */}
+          {/* Pinned Top 3 Focus indicator */}
           {task.isPinnedToday && !isDone && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/35 uppercase tracking-wider shadow-xs shrink-0">
-              <Star size={10} className="fill-amber-500 text-amber-500" />
-              Focus
-            </span>
+            <Badge variant="focus" size="xs">
+              <Star size={9} className="fill-amber-500 text-amber-500" />
+              MIT
+            </Badge>
           )}
         </div>
 
@@ -421,7 +413,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25 hover:border-rose-500/40'
                     : isToday
                     ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25 font-semibold hover:border-amber-500/40'
-                    : 'text-[var(--text-secondary)] border-[var(--border-subtle)] bg-[var(--bg-surface-l1)]/50 hover:border-amber-500/30'
+                    : 'text-[var(--text-secondary)] border-[var(--border-subtle)] bg-[var(--bg-surface-l2)] hover:border-amber-500/30'
                 }`}
               >
                 <Calendar size={11} />
@@ -439,7 +431,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   setIsSnoozeOpen((prev) => !prev);
                 }}
                 title="Quick schedule due date"
-                className="opacity-0 group-hover:opacity-100 sm:inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-dashed border-stone-300 dark:border-stone-700 hover:border-amber-500 text-[var(--text-muted)] hover:text-amber-500 transition-all cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 sm:inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-dashed border-[var(--border-strong)] hover:border-amber-500 text-[var(--text-muted)] hover:text-amber-500 transition-all cursor-pointer"
               >
                 <Calendar size={10} />
                 <span>+ Date</span>
@@ -450,32 +442,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Subtasks progress pill */}
           {totalSubtasks > 0 && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+            <Badge variant="neutral" size="xs">
               <ListTodo size={11} />
               {completedSubtasks}/{totalSubtasks}
-            </span>
+            </Badge>
           )}
 
           {/* Estimated duration */}
           {task.estimatedMinutes && !isDone && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--text-muted)]">
+            <Badge variant="neutral" size="xs">
               <Clock size={11} />
               {task.estimatedMinutes >= 60
                 ? `${task.estimatedMinutes / 60}h`
                 : `${task.estimatedMinutes}m`}
-            </span>
+            </Badge>
           )}
 
           {/* Recurring badge */}
           {task.recurrence && task.recurrence !== 'none' && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-600 dark:text-sky-400">
+            <Badge variant="brand" size="xs">
               <Repeat size={11} />
               <span className="capitalize">
                 {task.recurrence === 'custom' && task.customRecurrence
                   ? `Every ${task.customRecurrence.interval === 1 ? '' : task.customRecurrence.interval + ' '}${task.customRecurrence.unit}`
                   : task.recurrence}
               </span>
-            </span>
+            </Badge>
           )}
 
           {/* Custom Hashtags / Labels */}
@@ -485,7 +477,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               .map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-stone-500/10 text-stone-600 dark:text-stone-300 border border-stone-500/20"
+                  className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] border border-[var(--border-subtle)]"
                 >
                   #{tag}
                 </span>
@@ -495,24 +487,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* GTD Context Tags */}
           {task.contextTags && task.contextTags.length > 0 && !isDone && (
             task.contextTags.map((ctx) => (
-              <span
-                key={ctx}
-                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
-              >
+              <Badge key={ctx} variant="teal" size="xs">
                 @{ctx}
-              </span>
+              </Badge>
             ))
           )}
 
           {/* Blocked by Dependency Pill */}
           {!isDone && blockedInfo.isBlocked && (
-            <span
+            <Badge
+              variant="danger"
+              size="xs"
               title={`Blocked by: ${blockedInfo.blockingTasks.map((t) => t.title).join(', ')}`}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/25"
             >
-              <Lock size={11} className="text-rose-500 shrink-0" />
+              <Lock size={10} className="text-rose-500 shrink-0" />
               <span>Blocked ({blockedInfo.blockingTasks.length})</span>
-            </span>
+            </Badge>
           )}
 
           {/* Active Live Stopwatch pill */}
@@ -537,12 +527,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                const choice = window.confirm(
-                  `"${task.title}" has been postponed repeatedly.\n\nClick OK to park in Someday without guilt, or Cancel to keep working on it.`
-                );
-                if (choice) {
-                  updateTask(task.id, { dueDate: undefined, isPinnedToday: false });
-                }
+                const prevDueDate = task.dueDate;
+                const prevPinned = task.isPinnedToday;
+                updateTask(task.id, { dueDate: undefined, isPinnedToday: false });
+                showToast(`Parked "${task.title}" in Someday backlog`, 'Undo', () => {
+                  updateTask(task.id, { dueDate: prevDueDate, isPinnedToday: prevPinned });
+                });
               }}
               title="Postponed repeatedly. Click to park in Someday guilt-free or de-escalate."
               className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-700 dark:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded-md border border-purple-500/25 cursor-pointer transition-colors"
@@ -608,7 +598,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
       {/* Desktop hover action tools */}
       <div
-        className={`hidden sm:flex items-center gap-1 transition-opacity ${
+        className={`hidden sm:flex items-center gap-0.5 transition-opacity ${
           isActiveTimer ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -622,7 +612,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             className={`p-1.5 rounded-lg transition-all ${
               isActiveTimer
                 ? 'text-amber-600 bg-amber-500/20 hover:bg-amber-500/30'
-                : 'text-stone-400 hover:text-amber-500 hover:bg-stone-100 dark:hover:bg-stone-800'
+                : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-[var(--bg-surface-l2)]'
             }`}
           >
             {isActiveTimer ? (
@@ -642,7 +632,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             className={`p-1.5 rounded-lg transition-colors ${
               task.isPinnedToday
                 ? 'text-amber-500 hover:text-amber-600 bg-amber-500/10'
-                : 'text-stone-400 hover:text-amber-500 hover:bg-stone-100 dark:hover:bg-stone-800'
+                : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-[var(--bg-surface-l2)]'
             }`}
           >
             <Star size={14} className={task.isPinnedToday ? 'fill-current' : ''} />
@@ -655,7 +645,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             type="button"
             onClick={() => onStartFocus(task.id)}
             title="Start Focus Timer on this task"
-            className="p-1.5 rounded-lg text-stone-400 hover:text-indigo-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-l2)] transition-colors"
           >
             <Timer size={14} />
           </button>
@@ -670,7 +660,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             setContextMenu({ x: rect.right, y: rect.bottom });
           }}
           title="More options (or right click)"
-          className="p-1.5 rounded-lg text-stone-400 hover:text-[var(--text-primary)] hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-l2)] transition-colors"
         >
           <MoreHorizontal size={14} />
         </button>
@@ -680,7 +670,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           type="button"
           onClick={() => deleteTask(task.id)}
           title="Delete task"
-          className="p-1.5 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-500 hover:bg-[var(--bg-surface-l2)] transition-colors"
         >
           <Trash2 size={14} />
         </button>

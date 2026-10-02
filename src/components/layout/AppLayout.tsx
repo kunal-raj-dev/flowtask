@@ -3,6 +3,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import { Sidebar } from './Sidebar';
 import { TodayView } from '../views/TodayView';
 import { UpcomingView } from '../views/UpcomingView';
+import { TimelineView } from '../views/TimelineView';
 import { EisenhowerView } from '../views/EisenhowerView';
 import { KanbanView } from '../views/KanbanView';
 import { LogbookView } from '../views/LogbookView';
@@ -24,6 +25,7 @@ import { TemplatePickerModal } from '../modals/TemplatePickerModal';
 import { WeeklyReviewModal } from '../modals/WeeklyReviewModal';
 import { BatchActionBar } from '../tasks/BatchActionBar';
 import { Toast } from '../ui/Toast';
+import { Button } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
 import { Menu, Search, Sun, Moon, Palette, Share2, X, FileEdit, Pause, Plus } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
@@ -57,6 +59,7 @@ export const AppLayout: React.FC = () => {
     activeTimerTaskId,
     activeTimerSeconds,
     toggleTaskTimer,
+    undoLastAction,
   } = useTaskContext();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
@@ -126,12 +129,15 @@ export const AppLayout: React.FC = () => {
       } else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
         e.preventDefault();
         setIsScratchpadOpen((prev) => !prev);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        e.preventDefault();
+        undoLastAction();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [undoLastAction, setIsEveningShutdownOpen, setIsWeeklyReviewOpen]);
 
   const todayStr = formatLocalDate(new Date());
   const todayCount = tasks.filter(
@@ -161,6 +167,7 @@ export const AppLayout: React.FC = () => {
       case 'today': return 'My Day';
       case 'inbox': return 'Inbox';
       case 'upcoming': return 'Upcoming';
+      case 'timeline': return 'Timeline';
       case 'matrix': return 'Priority Matrix';
       case 'kanban': return 'Kanban Board';
       case 'insights': return 'Insights';
@@ -201,6 +208,16 @@ export const AppLayout: React.FC = () => {
           onStartFocus={handleStartFocus}
           onOpenBrainDump={() => setIsBrainDumpOpen(true)}
         />
+      );
+    }
+    if (activeView === 'timeline') {
+      return (
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-4 py-4 sm:py-6">
+          <TimelineView
+            onSelectTask={(id) => setSelectedTaskId(id)}
+            onStartFocus={handleStartFocus}
+          />
+        </div>
       );
     }
     if (activeView === 'matrix') {
@@ -376,8 +393,11 @@ export const AppLayout: React.FC = () => {
           {/* Right: Quick Tools */}
           <div className="flex items-center gap-1.5">
             {/* New Task Omnibar Summoner */}
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus size={13} />}
+              kbd="N"
               onClick={() => {
                 const omnibarInput = document.querySelector(
                   'input[placeholder*="task"], input[placeholder*="Task"]'
@@ -390,12 +410,9 @@ export const AppLayout: React.FC = () => {
                 }
               }}
               title="Add Task (N)"
-              className="px-2.5 py-1 text-xs font-semibold bg-stone-900 dark:bg-white text-white dark:text-stone-950 rounded-xl hover:opacity-90 shadow-xs transition-all flex items-center gap-1 active:scale-95"
             >
-              <Plus size={13} />
-              <span>New Task</span>
-              <kbd className="hidden lg:inline text-[9px] opacity-75 font-mono ml-0.5">N</kbd>
-            </button>
+              New Task
+            </Button>
 
             {/* Quick Sticky Scratchpad */}
             <button
@@ -679,28 +696,6 @@ export const AppLayout: React.FC = () => {
         onClose={() => setIsWeeklyReviewOpen(false)}
         onOpenTask={(id) => setSelectedTaskId(id)}
       />
-
-      {/* Global Quick-Action Floating Button (FAB) */}
-      <div className="fixed bottom-20 md:bottom-6 right-5 z-30 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            const omnibarInput = document.querySelector(
-              'input[placeholder*="task"], input[placeholder*="Task"]'
-            ) as HTMLInputElement | null;
-            if (omnibarInput) {
-              omnibarInput.focus();
-              omnibarInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-              setIsBrainDumpOpen(true);
-            }
-          }}
-          title="Quick Add Task (N)"
-          className="w-11 h-11 rounded-2xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 flex items-center justify-center shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all card-surface border border-[var(--border-subtle)]"
-        >
-          <Plus size={20} strokeWidth={2.5} />
-        </button>
-      </div>
 
       {/* Global Toast */}
       <Toast />

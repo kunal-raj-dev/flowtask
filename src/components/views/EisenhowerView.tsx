@@ -13,6 +13,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
 }) => {
   const { tasks, updateTask, addTask, toggleTaskStatus } = useTaskContext();
   const [mobileQuadrant, setMobileQuadrant] = useState<Priority>('p1');
+  const [addingToPriority, setAddingToPriority] = useState<Priority | null>(null);
+  const [quickTitle, setQuickTitle] = useState('');
 
   // Hotkey navigation: '1', '2', '3', '4' or ArrowLeft / ArrowRight to switch quadrants
   useEffect(() => {
@@ -122,10 +124,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   };
 
   const handleQuickAdd = (priority: Priority) => {
-    const title = window.prompt(`Add new task to ${priority.toUpperCase()}:`);
-    if (title && title.trim()) {
-      addTask(title.trim(), { priority });
-    }
+    setAddingToPriority(priority);
+    setQuickTitle('');
   };
 
   return (
@@ -299,7 +299,54 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
 
               {/* Quadrant Task List */}
               <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {quadTasks.length === 0 ? (
+                {addingToPriority === q.priority && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (quickTitle.trim()) {
+                        addTask(quickTitle.trim(), { priority: q.priority });
+                        setQuickTitle('');
+                        setAddingToPriority(null);
+                      }
+                    }}
+                    className="p-3 bg-[var(--bg-surface-l2)] rounded-xl border border-indigo-500/50 shadow-md space-y-2 mb-2 animate-fade-in"
+                  >
+                    <input
+                      autoFocus
+                      type="text"
+                      value={quickTitle}
+                      onChange={(e) => setQuickTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setAddingToPriority(null);
+                          setQuickTitle('');
+                        }
+                      }}
+                      placeholder={`Add task to ${q.title}...`}
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddingToPriority(null);
+                          setQuickTitle('');
+                        }}
+                        className="px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={!quickTitle.trim()}
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </form>
+                )}
+                {quadTasks.length === 0 && addingToPriority !== q.priority ? (
                   <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-stone-200 dark:border-stone-800 rounded-2xl bg-[var(--bg-surface-l1)]/20">
                     Drop tasks here
                   </div>

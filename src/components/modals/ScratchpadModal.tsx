@@ -23,7 +23,7 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { addTask } = useTaskContext();
+  const { addTask, showToast } = useTaskContext();
   const [content, setContent] = useState<string>(() => {
     return localStorage.getItem(STORAGE_KEY_SCRATCHPAD) || '';
   });
@@ -48,9 +48,12 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
   };
 
   const handleClear = () => {
-    if (content.trim() && window.confirm('Clear all scratchpad notes?')) {
-      setContent('');
-    }
+    if (!content.trim()) return;
+    const previous = content;
+    setContent('');
+    showToast('Cleared scratchpad notes', 'Undo', () => {
+      setContent(previous);
+    });
   };
 
   const handleExtractTasks = () => {

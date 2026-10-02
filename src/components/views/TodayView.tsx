@@ -18,7 +18,12 @@ import {
   Moon,
   FileText,
   Check,
+  Sparkles,
 } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { SegmentedControl } from '../ui/SegmentedControl';
+import { EmptyState } from '../ui/EmptyState';
 import { KeyboardHaloDock } from '../tasks/KeyboardHaloDock';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { audioEngine } from '../../utils/audioEngine';
@@ -71,6 +76,14 @@ export const TodayView: React.FC<TodayViewProps> = ({
   useEffect(() => {
     localStorage.setItem('flowtask_today_completed_collapsed', String(isCompletedCollapsed));
   }, [isCompletedCollapsed]);
+
+  const [isBriefingCollapsed, setIsBriefingCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem('flowtask_today_briefing_collapsed') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('flowtask_today_briefing_collapsed', String(isBriefingCollapsed));
+  }, [isBriefingCollapsed]);
 
   const [selectedContextTag, setSelectedContextTag] = useState<string | null>(null);
 
@@ -153,15 +166,15 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
-      {/* View Header with Date & Progress in a Luminous Horizon Card */}
+      {/* View Header with Date & Progress in a Crisp Enterprise Card */}
       <div className="mb-6">
-        <div className="p-3.5 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/[0.08] via-rose-500/[0.04] to-indigo-500/[0.06] dark:from-white/[0.04] dark:via-white/[0.02] dark:to-transparent border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        <div className="p-4 sm:p-5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-md shadow-amber-500/25 card-surface flex-shrink-0">
-              <Sun size={22} className="stroke-[2.2]" />
+            <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+              <Sun size={20} className="stroke-[2.2]" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 My Day
               </h2>
               <p className="text-xs text-[var(--text-secondary)] font-medium">
@@ -174,59 +187,39 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           </div>
 
-          {/* Action Row: Standup Digest, Segmented Switcher & Dual-Gradient SVG Ring */}
+          {/* Action Row: Standup Digest, Segmented Switcher & Circular Ring */}
           <div className="flex items-center justify-between sm:justify-end gap-2.5 flex-wrap sm:flex-nowrap">
-            {/* Standup Digest Copier Button */}
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={handleCopyStandup}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/80 dark:bg-[var(--bg-surface-l2)] border border-stone-200/80 dark:border-[var(--border-hairline)] text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-indigo-400/50 shadow-subtle card-surface transition-all active:scale-95"
+              leftIcon={
+                copiedStandup ? (
+                  <Check size={13} className="text-emerald-500 stroke-[2.5]" />
+                ) : (
+                  <FileText size={13} className="text-indigo-500" />
+                )
+              }
               title="Copy Daily Standup digest formatted for Slack / Discord / Notion"
             >
-              {copiedStandup ? (
-                <>
-                  <Check size={13} className="text-emerald-500 stroke-[2.5]" />
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Copied!</span>
-                </>
-              ) : (
-                <>
-                  <FileText size={13} className="text-indigo-500" />
-                  <span>Standup Digest</span>
-                </>
-              )}
-            </button>
+              {copiedStandup ? 'Copied!' : 'Standup'}
+            </Button>
 
-            {/* List vs Timeline Mode Switcher */}
-            <div className="flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] shadow-inner">
-              <button
-                type="button"
-                onClick={() => setDisplayMode('list')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                  displayMode === 'list'
-                    ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <List size={13} />
-                <span>List</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDisplayMode('timeline')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                  displayMode === 'timeline'
-                    ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <Clock size={13} />
-                <span>Timeline</span>
-              </button>
-            </div>
+            {/* List vs Timeline Mode Segmented Control */}
+            <SegmentedControl<'list' | 'timeline'>
+              items={[
+                { id: 'list', label: 'List', icon: <List size={13} /> },
+                { id: 'timeline', label: 'Timeline', icon: <Clock size={13} /> },
+              ]}
+              value={displayMode}
+              onChange={(mode) => setDisplayMode(mode)}
+              size="sm"
+            />
 
-            {/* Daily Progress Widget with Dual-Gradient SVG Ring (Now visible on mobile too) */}
+            {/* Daily Progress Ring */}
             {totalTodayCount > 0 && (
-              <div className="flex items-center gap-2.5 sm:gap-3 bg-white/80 dark:bg-[var(--bg-surface-l2)] px-3 py-1.5 rounded-2xl border border-stone-200/80 dark:border-[var(--border-hairline)] shadow-subtle card-surface backdrop-blur-sm">
+              <div className="flex items-center gap-2.5 bg-[var(--bg-surface-l2)] px-2.5 py-1.5 rounded-lg border border-[var(--border-hairline)] shadow-subtle">
                 <div className="text-right">
                   <div className="text-[11px] font-bold text-[var(--text-primary)] font-mono leading-tight">
                     {doneTodayCount}/{totalTodayCount}
@@ -235,8 +228,8 @@ export const TodayView: React.FC<TodayViewProps> = ({
                     {progressPercent}%
                   </div>
                 </div>
-                <div className="relative w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center">
-                  <svg className="w-7 h-7 sm:w-8 sm:h-8 -rotate-90 transform" viewBox="0 0 36 36">
+                <div className="relative w-7 h-7 flex items-center justify-center">
+                  <svg className="w-7 h-7 -rotate-90 transform" viewBox="0 0 36 36">
                     <defs>
                       <linearGradient id="todayProgressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#F59E0B" />
@@ -264,7 +257,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="absolute text-[8px] sm:text-[9px] font-bold text-amber-600 dark:text-amber-400 font-mono">
+                  <span className="absolute text-[8px] font-bold text-amber-600 dark:text-amber-400 font-mono">
                     {progressPercent}%
                   </span>
                 </div>
@@ -273,72 +266,118 @@ export const TodayView: React.FC<TodayViewProps> = ({
           </div>
         </div>
 
-        {/* Gentle Clean-Slate Overdue Triage Banner */}
-        {overdueTasks.length > 0 && !isTriageDismissed && (
-          <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/[0.08] via-amber-500/[0.04] to-transparent border border-amber-500/25 shadow-card card-surface flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex-shrink-0">
-                <CalendarClock size={18} />
+        {/* Unified Daily Briefing Ribbon */}
+        {(overdueTasks.length > 0 && !isTriageDismissed) || (doneTodayCount > 0 && !isShutdownDismissed) ? (
+          <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-l1)] shadow-subtle overflow-hidden transition-all animate-slide-down">
+            {/* Briefing Summary Header */}
+            <div className="px-3.5 py-2.5 flex items-center justify-between gap-3 bg-[var(--bg-surface-l2)]/60 border-b border-[var(--border-hairline)]">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-amber-500" />
+                  Daily Briefing
+                </span>
+                {overdueTasks.length > 0 && !isTriageDismissed && (
+                  <Badge variant="danger" dot size="xs">
+                    {overdueTasks.length} overdue
+                  </Badge>
+                )}
+                {doneTodayCount > 0 && !isShutdownDismissed && (
+                  <Badge variant="brand" dot size="xs">
+                    {doneTodayCount} completed
+                  </Badge>
+                )}
               </div>
-              <div>
-                <p className="text-xs font-medium text-[var(--text-primary)]">
-                  You have <span className="font-bold">{overdueTasks.length}</span> uncompleted tasks from earlier.
-                </p>
-                <p className="text-[11px] text-[var(--text-secondary)]">
-                  No stress. Keep your board clean with one click:
-                </p>
-              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsBriefingCollapsed(!isBriefingCollapsed)}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-1 font-medium transition-colors cursor-pointer"
+              >
+                <span>{isBriefingCollapsed ? 'Expand Actions' : 'Collapse'}</span>
+                {isBriefingCollapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+              </button>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => bulkRescheduleOverdue('today')}
-                className="px-3 py-1.5 text-xs font-semibold bg-stone-900 dark:bg-white text-white dark:text-stone-950 hover:bg-stone-800 dark:hover:bg-stone-100 rounded-xl shadow-xs transition-all active:scale-95 card-surface"
-              >
-                Push to Today
-              </button>
-              <button
-                onClick={() => bulkRescheduleOverdue('someday')}
-                className="px-3 py-1.5 text-xs font-medium bg-[var(--bg-surface-l2)] text-[var(--text-primary)] hover:bg-stone-100 dark:hover:bg-white/[0.06] border border-[var(--border-hairline)] rounded-xl transition-all card-surface"
-              >
-                Move to Someday
-              </button>
-              <button
-                onClick={() => bulkRescheduleOverdue('dismiss')}
-                className="px-2.5 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                Dismiss
-              </button>
-            </div>
+            {/* Briefing Action Body */}
+            {!isBriefingCollapsed && (
+              <div className="p-3.5 sm:p-4 space-y-3 divide-y divide-[var(--border-hairline)] text-xs">
+                {/* Overdue Section */}
+                {overdueTasks.length > 0 && !isTriageDismissed && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                        <CalendarClock size={16} />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[var(--text-primary)]">
+                          {overdueTasks.length} uncompleted task{overdueTasks.length > 1 ? 's' : ''} from earlier.
+                        </p>
+                        <p className="text-[11px] text-[var(--text-secondary)]">
+                          Keep your board clean with 1-click triage:
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="xs"
+                        onClick={() => bulkRescheduleOverdue('today')}
+                      >
+                        Push to Today
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => bulkRescheduleOverdue('someday')}
+                      >
+                        Move to Someday
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => bulkRescheduleOverdue('dismiss')}
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Evening Shutdown Section */}
+                {doneTodayCount > 0 && !isShutdownDismissed && (
+                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${overdueTasks.length > 0 && !isTriageDismissed ? 'pt-3' : ''}`}>
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+                        <Moon size={16} />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[var(--text-primary)]">
+                          Wrapping up? You completed {doneTodayCount} task{doneTodayCount > 1 ? 's' : ''} today.
+                        </p>
+                        <p className="text-[11px] text-[var(--text-secondary)]">
+                          Review progress and disconnect with your evening ritual.
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="brand"
+                      size="xs"
+                      onClick={() => setIsEveningShutdownOpen(true)}
+                    >
+                      Start Shutdown Ritual
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Symmetrical Evening Shutdown Banner */}
-        {doneTodayCount > 0 && !isShutdownDismissed && (
-          <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-500/[0.10] via-purple-500/[0.06] to-pink-500/[0.04] border border-indigo-500/25 shadow-card card-surface flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xs flex-shrink-0">
-                <Moon size={18} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[var(--text-primary)]">
-                  Wrapping up for today? You&apos;ve completed {doneTodayCount} task{doneTodayCount > 1 ? 's' : ''}!
-                </p>
-                <p className="text-[11px] text-[var(--text-secondary)]">
-                  Complete your evening shutdown ritual to close open loops and disconnect.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsEveningShutdownOpen(true)}
-              className="px-4 py-2 text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl shadow-xs transition-all active:scale-95 shrink-0"
-            >
-              Start Shutdown Ritual
-            </button>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Conditionally Render: Timeline View or List View */}
@@ -350,15 +389,15 @@ export const TodayView: React.FC<TodayViewProps> = ({
           <Omnibar onOpenBrainDump={onOpenBrainDump} />
 
           {/* Quick Filters */}
-          {/* Quick Filters */}
-          <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <button
+                type="button"
                 onClick={() => setQuickWinsOnly(!quickWinsOnly)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                   quickWinsOnly
                     ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-transparent hover:bg-stone-200/50 dark:hover:bg-white/[0.04]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-subtle)] bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l2)]'
                 }`}
               >
                 <Zap size={13} className={quickWinsOnly ? 'text-amber-500 fill-amber-500' : ''} />
@@ -368,7 +407,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
               <select
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value as any)}
-                className="text-xs bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-xl px-2.5 py-1.5 outline-none transition-colors card-surface cursor-pointer"
+                className="text-xs bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 outline-none transition-colors cursor-pointer"
               >
                 <option value="all">All Priorities</option>
                 <option value="p1">P1 Urgent only</option>
@@ -378,8 +417,8 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
 
             <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] font-mono">
-              <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 text-[10px]">j</kbd>
-              <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 text-[10px]">k</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[10px]">j</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[10px]">k</kbd>
               <span>to navigate</span>
             </div>
           </div>
@@ -393,10 +432,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedContextTag(null)}
-                className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all shrink-0 ${
                   selectedContextTag === null
                     ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
-                    : 'bg-stone-100 dark:bg-white/5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    : 'bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 All Contexts
@@ -406,14 +445,14 @@ export const TodayView: React.FC<TodayViewProps> = ({
                   key={tag}
                   type="button"
                   onClick={() => setSelectedContextTag(selectedContextTag === tag ? null : tag)}
-                  className={`px-2.5 py-1 rounded-xl font-mono text-xs flex items-center gap-1 transition-all shrink-0 ${
+                  className={`px-2.5 py-1 rounded-lg font-mono text-xs flex items-center gap-1 transition-all shrink-0 ${
                     selectedContextTag === tag
-                      ? 'bg-teal-600 text-white font-bold shadow-xs'
+                      ? 'bg-teal-600 text-white font-semibold shadow-xs'
                       : 'bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 border border-teal-500/20'
                   }`}
                 >
                   <span>@{tag}</span>
-                  <span className="text-[10px] opacity-75 font-sans font-semibold">({count})</span>
+                  <span className="text-[10px] opacity-75 font-sans font-medium">({count})</span>
                 </button>
               ))}
             </div>
@@ -438,7 +477,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
             {pinnedTasks.length === 0 ? (
               otherActiveTasks.length > 0 ? (
-                <div className="py-2.5 px-3 rounded-xl border border-stone-200/60 dark:border-white/[0.06] text-xs text-[var(--text-muted)] bg-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <div className="py-2.5 px-3.5 rounded-xl border border-dashed border-[var(--border-subtle)] text-xs text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <span className="flex items-center gap-1.5">
                     <Star size={13} className="text-amber-500 shrink-0" />
                     <span>Anchor your day with up to 3 Most Important Tasks.</span>
@@ -473,13 +512,16 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
 
             {otherActiveTasks.length === 0 && pinnedTasks.length === 0 ? (
-              <div className="text-center py-14 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-3xl border border-[var(--border-hairline)]">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                  <CheckCircle2 size={24} />
-                </div>
-                <p className="text-sm font-semibold text-[var(--text-primary)]">All clear for today!</p>
-                <p className="text-xs mt-1 text-[var(--text-secondary)]">Take a breath, reflect, or enjoy your well-deserved free time.</p>
-              </div>
+              <EmptyState
+                icon={<CheckCircle2 size={24} className="text-emerald-500" />}
+                title="All clear for today!"
+                description="Take a breath, reflect, or enjoy your well-deserved free time."
+                action={
+                  <Button variant="secondary" size="sm" onClick={onOpenBrainDump}>
+                    Open Brain Dump
+                  </Button>
+                }
+              />
             ) : (
               <div className="space-y-2.5">
                 {otherActiveTasks.map((task) => (

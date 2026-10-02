@@ -30,10 +30,12 @@ import {
   Trash2,
   FileEdit,
   Compass,
+  Clock,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
 import { useAuth } from '../../context/AuthContext';
+import { Badge } from '../ui';
 
 interface SidebarProps {
   onOpenPomodoro: () => void;
@@ -115,16 +117,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const navItems = [
+  const coreNavItems = [
     { id: 'today', label: 'Today', icon: Sun, count: todayCount, color: 'text-amber-500' },
     { id: 'inbox', label: 'Inbox', icon: Inbox, count: inboxCount, color: 'text-blue-500' },
     { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: upcomingCount, color: 'text-purple-500' },
-    { id: 'matrix', label: 'Priority Matrix', icon: Grid2X2, count: null, color: 'text-emerald-500' },
-    { id: 'kanban', label: 'Kanban Board', icon: Kanban, count: null, color: 'text-indigo-500' },
-    { id: 'insights', label: 'Insights & Stats', icon: TrendingUp, count: null, color: 'text-teal-500' },
-    { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-yellow-500' },
-    { id: 'logbook', label: 'Logbook', icon: CheckCircle2, count: doneCount, color: 'text-stone-400' },
   ];
+
+  const perspectiveNavItems = [
+    { id: 'timeline', label: 'Timeline', icon: Clock, count: null, color: 'text-teal-500' },
+    { id: 'kanban', label: 'Kanban Board', icon: Kanban, count: null, color: 'text-indigo-500' },
+    { id: 'matrix', label: 'Priority Matrix', icon: Grid2X2, count: null, color: 'text-emerald-500' },
+  ];
+
+  const reviewNavItems = [
+    { id: 'insights', label: 'Insights & Stats', icon: TrendingUp, count: null, color: 'text-teal-500' },
+    { id: 'logbook', label: 'Logbook', icon: CheckCircle2, count: doneCount, color: 'text-stone-400' },
+    { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-amber-500' },
+  ];
+
+  const allNavItems = [...coreNavItems, ...perspectiveNavItems, ...reviewNavItems];
 
   const getSmartViewIcon = (iconName: string) => {
     switch (iconName) {
@@ -161,25 +172,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Center: Nav Views */}
         <div className="flex flex-col items-center gap-1.5 my-auto overflow-y-auto max-h-[60vh] py-1 px-1">
-          {navItems.map((item) => {
+          {allNavItems.map((item, idx) => {
             const Icon = item.icon;
             const isActive = activeView === item.id;
+            const isSectionDivider = idx === 3 || idx === 6;
             return (
-              <button
-                key={item.id}
-                onClick={() => setActiveView(item.id as any)}
-                title={`${item.label}${item.count !== null && item.count > 0 ? ` (${item.count})` : ''}`}
-                className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                  isActive
-                    ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
-                    : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <Icon size={16} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
-                {item.count !== null && item.count > 0 && !isActive && (
-                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-500 ring-2 ring-[var(--bg-surface-l1)]" />
+              <React.Fragment key={item.id}>
+                {isSectionDivider && (
+                  <div className="w-5 h-[1px] bg-[var(--border-hairline)] my-1" />
                 )}
-              </button>
+                <button
+                  onClick={() => setActiveView(item.id as any)}
+                  title={`${item.label}${item.count !== null && item.count > 0 ? ` (${item.count})` : ''}`}
+                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                    isActive
+                      ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
+                      : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  <Icon size={16} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
+                  {item.count !== null && item.count > 0 && !isActive && (
+                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-500 ring-2 ring-[var(--bg-surface-l1)]" />
+                  )}
+                </button>
+              </React.Fragment>
             );
           })}
         </div>
@@ -233,6 +249,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
     );
   }
 
+  const renderNavItem = (item: { id: string; label: string; icon: any; count: number | null; color: string }) => {
+    const Icon = item.icon;
+    const isActive = activeView === item.id;
+    return (
+      <button
+        key={item.id}
+        onClick={() => {
+          setActiveView(item.id as any);
+          onItemClick?.();
+        }}
+        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+          isActive
+            ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
+            : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className={`p-1 rounded-lg ${isActive ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
+            <Icon size={14} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
+          </div>
+          <span>{item.label}</span>
+        </div>
+        {item.count !== null && item.count > 0 && (
+          <Badge
+            size="xs"
+            variant={isActive ? 'brand' : 'neutral'}
+            className="font-mono text-[10px]"
+          >
+            {item.count}
+          </Badge>
+        )}
+      </button>
+    );
+  };
+
   return (
     <aside className="w-64 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/80 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col select-none transition-colors duration-200">
       {/* Brand Header */}
@@ -275,51 +326,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation Views */}
-      <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-1">
-        <div className="text-[11px] font-semibold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-          Views
+      <div className="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-3.5">
+        {/* Core Execution Section */}
+        <div className="space-y-0.5">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
+            Workspaces
+          </div>
+          {coreNavItems.map(renderNavItem)}
         </div>
 
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveView(item.id as any);
-                onItemClick?.();
-              }}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-all ${
-                isActive
-                  ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
-                  : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`p-1 rounded-lg ${isActive ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
-                  <Icon size={15} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
-                </div>
-                <span>{item.label}</span>
-              </div>
-              {item.count !== null && item.count > 0 && (
-                <span
-                  className={`text-[11px] px-2 py-0.5 rounded-md font-mono border ${
-                    isActive
-                      ? 'bg-stone-100 dark:bg-white/10 text-[var(--text-primary)] font-semibold border-[var(--border-subtle)]'
-                      : 'text-[var(--text-muted)] border-transparent'
-                  }`}
-                >
-                  {item.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+        {/* Perspectives Section */}
+        <div className="space-y-0.5">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
+            Perspectives
+          </div>
+          {perspectiveNavItems.map(renderNavItem)}
+        </div>
+
+        {/* Review & Reports Section */}
+        <div className="space-y-0.5">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
+            Review & Reports
+          </div>
+          {reviewNavItems.map(renderNavItem)}
+        </div>
 
         {/* Smart Filter Views Section */}
-        <div className="pt-4 pb-1 flex items-center justify-between px-2.5">
-          <span className="text-[11px] font-semibold text-[var(--text-muted)] tracking-wider uppercase flex items-center gap-1.5">
+        <div className="pt-2 pb-0.5 flex items-center justify-between px-2.5">
+          <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase flex items-center gap-1.5">
             Smart Views
           </span>
           <button
@@ -327,7 +361,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="text-[var(--text-muted)] hover:text-indigo-500 p-0.5 rounded transition-colors"
             title="Create Smart Filter View"
           >
-            <Plus size={14} />
+            <Plus size={13} />
           </button>
         </div>
 
@@ -360,15 +394,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               <div className="flex items-center gap-1 shrink-0">
                 {count > 0 && (
-                  <span
-                    className={`text-[11px] px-2 py-0.5 rounded-md font-mono border ${
-                      isSelected
-                        ? 'bg-stone-100 dark:bg-white/10 text-[var(--text-primary)] font-semibold border-[var(--border-subtle)]'
-                        : 'text-[var(--text-muted)] border-transparent'
-                    }`}
+                  <Badge
+                    size="xs"
+                    variant={isSelected ? 'brand' : 'neutral'}
+                    className="font-mono text-[10px]"
                   >
                     {count}
-                  </span>
+                  </Badge>
                 )}
                 {!sv.isBuiltIn && (
                   <button
@@ -388,8 +420,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
 
         {/* Projects Section */}
-        <div className="pt-4 pb-1 flex items-center justify-between px-2.5">
-          <span className="text-[11px] font-semibold text-[var(--text-muted)] tracking-wider uppercase">
+        <div className="pt-2 pb-0.5 flex items-center justify-between px-2.5">
+          <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
             Projects
           </span>
           <button
@@ -397,7 +429,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors"
             title="Add Project"
           >
-            <Plus size={14} />
+            <Plus size={13} />
           </button>
         </div>
 
@@ -424,15 +456,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <div className="flex items-center gap-2.5 truncate">
                   <span
-                    className="w-2 h-2 rounded-full flex-shrink-0 ring-2 ring-stone-900/10 dark:ring-white/20"
+                    className="w-2 h-2 rounded-full flex-shrink-0 ring-1 ring-stone-900/10 dark:ring-white/20"
                     style={{ backgroundColor: project.color }}
                   />
                   <span className="truncate">{project.name}</span>
                 </div>
                 {projCount > 0 && (
-                  <span className="text-[11px] px-1.5 py-0.2 rounded-md font-mono text-[var(--text-muted)]">
+                  <Badge
+                    size="xs"
+                    variant={isSelected ? 'brand' : 'neutral'}
+                    className="font-mono text-[10px]"
+                  >
                     {projCount}
-                  </span>
+                  </Badge>
                 )}
               </button>
             );
@@ -501,7 +537,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsWeeklyReviewOpen(true);
             onItemClick?.();
           }}
-          className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-semibold transition-all border border-purple-500/25 shadow-subtle hover:border-purple-500/40 card-surface active:scale-[0.98]"
+          className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-[var(--bg-surface-l2)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] text-purple-700 dark:text-purple-300 text-xs font-semibold transition-all border border-purple-500/25 shadow-xs hover:border-purple-500/40 card-surface active:scale-[0.98]"
         >
           <div className="flex items-center gap-2">
             <Compass size={14} className="text-purple-500" />
@@ -512,9 +548,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={onOpenPomodoro}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/10 hover:from-amber-500/25 hover:to-rose-500/15 text-amber-900 dark:text-amber-300 text-xs font-bold transition-all border border-amber-500/35 shadow-subtle hover:border-amber-500/55 card-surface active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-[var(--bg-surface-l2)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] text-amber-900 dark:text-amber-300 text-xs font-semibold transition-all border border-amber-500/35 shadow-xs hover:border-amber-500/55 card-surface active:scale-[0.98]"
         >
-          <Timer size={14} />
+          <Timer size={14} className="text-amber-500" />
           <span>Focus Mode & Timer</span>
         </button>
       </div>

@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Circle,
   AlertCircle,
+  Undo2,
 } from 'lucide-react';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { formatLocalDate } from '../../utils/nlpParser';
@@ -61,6 +62,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setIsEveningShutdownOpen,
     setIsSmartFilterModalOpen,
     setIsWeeklyReviewOpen,
+    undoLastAction,
   } = useTaskContext();
 
   const [query, setQuery] = useState('');
@@ -201,6 +203,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       run: () => {
         onClose();
         onOpenScratchpad?.();
+      },
+    },
+    {
+      id: 'undo',
+      title: 'Undo Last Action (Ctrl+Z)',
+      icon: Undo2,
+      run: () => {
+        onClose();
+        undoLastAction();
       },
     },
     {
