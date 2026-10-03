@@ -1,159 +1,57 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import {
-  type User,
-  onAuthStateChanged,
-  signInAnonymously,
-  signInWithPopup,
-  linkWithPopup,
-  signOut,
-} from 'firebase/auth';
-import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
-
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { User } from 'firebase/auth';
 export interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  isAnonymous: boolean;
-  isConfigured: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signInAsGuest: () => Promise<void>;
-  signOutUser: () => Promise<void>;
-  authError: string | null;
-  clearAuthError: () => void;
+  user: User | null; loading: boolean; isAnonymous: boolean; isConfigured: boolean;
+  signInWithGoogle: () => Promise<void>; signInAsGuest: () => Promise<void>; signOutUser: () => Promise<void>;
+  authError: string | null; clearAuthError: () => void;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
+const configured = Boolean(import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_PROJECT_ID && import.meta.env.VITE_FIREBASE_API_KEY !== 'your_api_key_here');
+const connectionKey = 'flowtask_cloud_connected';
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [enabled, setEnabled] = useState(() => configured && localStorage.getItem(connectionKey) === 'true');
+  const [loading, setLoading] = useState(enabled);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-
-  const clearAuthError = useCallback(() => setAuthError(null), []);
-
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) {
-      setLoading(false);
-      return;
-    }
-
-    const firebaseAuth = auth;
-    const unsubscribe = onAuthStateChanged(firebaseAuth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        setLoading(false);
-      } else {
-        // Auto sign-in anonymously for zero-friction capture and offline-first cloud sync
-        try {
-          const anonCred = await signInAnonymously(firebaseAuth);
-          setUser(anonCred.user);
-        } catch (err: unknown) {
-          console.warn('Anonymous sign-in not available or failed:', err);
-          setUser(null);
-        } finally {
-          setLoading(false);
+    if (!enabled) return;
+    let cancelled = false;
+    let stop: (() => void) | undefined;
+    void Promise.all([import('firebase/auth'), import('../lib/firebase')]).then(([sdk, config]) => {
+      if (cancelled || !config.auth) return;
+      stop = sdk.onAuthStateChanged(config.auth!, current => { setUser(current); setLoading(false); });
+    }).catch(error => { if (!cancelled) { setAuthError(String(error.message || error)); setLoading(false); } });
+    return () => { cancelled = true; stop?.(); };
+  }, [enabled]);
+  async function signInWithGoogle() {
+    if (!configured) { setAuthError('Cloud sync is not configured for this installation.'); return; }
+    setLoading(true); setAuthError(null);
+    try {
+      const [sdk, config] = await Promise.all([import('firebase/auth'), import('../lib/firebase')]);
+      if (!config.auth || !config.googleProvider) throw new Error('Cloud connection is unavailable.');
+      await config.auth!.authStateReady();
+      let account: User;
+      if (config.auth!.currentUser?.isAnonymous) {
+        const guest = config.auth!.currentUser;
+        try { account = (await sdk.linkWithPopup(guest, config.googleProvider!)).user; }
+        catch (error) {
+          if ((error as { code?: string }).code !== 'auth/credential-already-in-use') throw error;
+          localStorage.setItem('flowtask_previous_guest_workspace', guest.uid);
+          account = (await sdk.signInWithPopup(config.auth!, config.googleProvider!)).user;
         }
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const signInWithGoogle = useCallback(async () => {
-    if (!isFirebaseConfigured || !auth || !googleProvider) {
-      setAuthError('Firebase is not configured yet. Check your environment variables.');
-      return;
-    }
-
-    setLoading(true);
-    setAuthError(null);
-
-    try {
-      if (user && user.isAnonymous) {
-        // If current session is guest, link it to the Google account so all tasks stay!
-        try {
-          const result = await linkWithPopup(user, googleProvider);
-          setUser(result.user);
-          return;
-        } catch (linkError: unknown) {
-          // If the credential is already in use by an existing account, fall back to standard sign in
-          const firebaseErr = linkError as { code?: string; message?: string };
-          if (firebaseErr?.code === 'auth/credential-already-in-use') {
-            const result = await signInWithPopup(auth, googleProvider);
-            setUser(result.user);
-            return;
-          }
-          throw linkError;
-        }
-      } else {
-        const result = await signInWithPopup(auth, googleProvider);
-        setUser(result.user);
-      }
-    } catch (err: unknown) {
-      const firebaseErr = err as { code?: string; message?: string };
-      console.error('Google sign-in error:', err);
-      if (firebaseErr?.code !== 'auth/popup-closed-by-user') {
-        setAuthError(firebaseErr?.message || 'Failed to sign in with Google');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const signInAsGuest = useCallback(async () => {
-    if (!isFirebaseConfigured || !auth) return;
-    setLoading(true);
-    setAuthError(null);
-    try {
-      const cred = await signInAnonymously(auth);
-      setUser(cred.user);
-    } catch (err: unknown) {
-      const firebaseErr = err as { message?: string };
-      setAuthError(firebaseErr?.message || 'Failed to sign in as guest');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const signOutUser = useCallback(async () => {
-    if (!isFirebaseConfigured || !auth) return;
-    setLoading(true);
-    setAuthError(null);
-    try {
-      await signOut(auth);
-      // After sign-out, sign in anonymously again so user can continue seamlessly
-      const anonCred = await signInAnonymously(auth);
-      setUser(anonCred.user);
-    } catch (err: unknown) {
-      const firebaseErr = err as { message?: string };
-      setAuthError(firebaseErr?.message || 'Failed to sign out');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        isAnonymous: user?.isAnonymous ?? true,
-        isConfigured: isFirebaseConfigured,
-        signInWithGoogle,
-        signInAsGuest,
-        signOutUser,
-        authError,
-        clearAuthError,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+      } else account = (await sdk.signInWithPopup(config.auth!, config.googleProvider!)).user;
+      localStorage.setItem(connectionKey, 'true'); setEnabled(true); setUser(account);
+    } catch (error) { setAuthError(error instanceof Error ? error.message : 'Could not connect your account.'); }
+    finally { setLoading(false); }
   }
-  return context;
+  async function signOutUser() {
+    setAuthError(null);
+    try {
+      const [sdk, config] = await Promise.all([import('firebase/auth'), import('../lib/firebase')]);
+      if (config.auth) await sdk.signOut(config.auth!);
+      localStorage.removeItem(connectionKey); setEnabled(false); setUser(null);
+    } catch (error) { setAuthError(error instanceof Error ? error.message : 'Could not disconnect.'); }
+  }
+  return <AuthContext.Provider value={{ user, loading, isAnonymous: user?.isAnonymous ?? true, isConfigured: configured, signInWithGoogle, signInAsGuest: async () => {}, signOutUser, authError, clearAuthError: () => setAuthError(null) }}>{children}</AuthContext.Provider>;
 };
+export function useAuth() { const context = useContext(AuthContext); if (!context) throw new Error('useAuth must be used within an AuthProvider'); return context; }

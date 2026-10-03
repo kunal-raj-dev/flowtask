@@ -1,25 +1,25 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useModal } from '../../context/ModalContext';
 import { useTaskContext } from '../../context/TaskContext';
 
 // Modals
-import { CommandPalette } from './CommandPalette';
-import { ShortcutsModal } from './ShortcutsModal';
-import { BrainDumpModal } from './BrainDumpModal';
-import { ExportImportModal } from './ExportImportModal';
-import { AestheticsModal } from './AestheticsModal';
-import { AuthModal } from './AuthModal';
-import { EveningShutdownModal } from './EveningShutdownModal';
-import { InterruptionModal } from './InterruptionModal';
-import { ScratchpadModal } from './ScratchpadModal';
-import { SmartFilterModal } from './SmartFilterModal';
-import { TemplatePickerModal } from './TemplatePickerModal';
-import { WeeklyReviewModal } from './WeeklyReviewModal';
-import { StudySessionModal } from './StudySessionModal';
-import { StudySprintRunnerModal } from '../focus/StudySprintRunnerModal';
-import { PomodoroModal } from '../focus/PomodoroModal';
-import { SettingsDrawer } from './SettingsDrawer';
-import { OnboardingFlow } from './OnboardingFlow';
+const CommandPalette = lazy(() => import('./CommandPalette').then(m => ({ default: m.CommandPalette })));
+const ShortcutsModal = lazy(() => import('./ShortcutsModal').then(m => ({ default: m.ShortcutsModal })));
+const BrainDumpModal = lazy(() => import('./BrainDumpModal').then(m => ({ default: m.BrainDumpModal })));
+const ExportImportModal = lazy(() => import('./ExportImportModal').then(m => ({ default: m.ExportImportModal })));
+const AestheticsModal = lazy(() => import('./AestheticsModal').then(m => ({ default: m.AestheticsModal })));
+const AuthModal = lazy(() => import('./AuthModal').then(m => ({ default: m.AuthModal })));
+const EveningShutdownModal = lazy(() => import('./EveningShutdownModal').then(m => ({ default: m.EveningShutdownModal })));
+const InterruptionModal = lazy(() => import('./InterruptionModal').then(m => ({ default: m.InterruptionModal })));
+const ScratchpadModal = lazy(() => import('./ScratchpadModal').then(m => ({ default: m.ScratchpadModal })));
+const SmartFilterModal = lazy(() => import('./SmartFilterModal').then(m => ({ default: m.SmartFilterModal })));
+const TemplatePickerModal = lazy(() => import('./TemplatePickerModal').then(m => ({ default: m.TemplatePickerModal })));
+const WeeklyReviewModal = lazy(() => import('./WeeklyReviewModal').then(m => ({ default: m.WeeklyReviewModal })));
+const StudySessionModal = lazy(() => import('./StudySessionModal').then(m => ({ default: m.StudySessionModal })));
+const StudySprintRunnerModal = lazy(() => import('../focus/StudySprintRunnerModal').then(m => ({ default: m.StudySprintRunnerModal })));
+const PomodoroModal = lazy(() => import('../focus/PomodoroModal').then(m => ({ default: m.PomodoroModal })));
+const SettingsDrawer = lazy(() => import('./SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
+const OnboardingFlow = lazy(() => import('./OnboardingFlow').then(m => ({ default: m.OnboardingFlow })));
 
 interface ModalRootProps {
   onSelectTask?: (taskId: string) => void;
@@ -43,7 +43,7 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
   const handleSelectTask = onSelectTask || ((id: string) => setSelectedTaskId(id));
 
   return (
-    <>
+    <Suspense fallback={<div role="status" className="fixed inset-0 z-50 bg-black/30 grid place-items-center"><p className="bg-white text-black p-5 rounded-xl">Opening…</p></div>}>
       {/* Centralized Settings Slide-Over Panel */}
       {isModalOpen('settings') && (
         <SettingsDrawer
@@ -181,6 +181,6 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
 
       {/* Template Picker */}
       <TemplatePickerModal />
-    </>
+    </Suspense>
   );
 };

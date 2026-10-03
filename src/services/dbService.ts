@@ -1,208 +1,82 @@
 import { openDB, type IDBPDatabase } from 'idb';
-import type { Task, Project } from '../types/task';
-import { DEFAULT_PROJECTS, getInitialTasks } from '../utils/storage';
+import type { WorkspaceRecord } from '../types/workspace';
+import { DEFAULT_PROJECTS } from '../utils/storage';
+import { validateWorkspaceData } from '../utils/workspaceValidation';
 import { formatLocalDate } from '../utils/nlpParser';
-
-const DB_NAME = 'flowtask_storage_v2';
-const DB_VERSION = 1;
-
-let dbPromise: Promise<IDBPDatabase> | null = null;
-
-function isIndexedDBSupported(): boolean {
-  return typeof indexedDB !== 'undefined' && typeof window !== 'undefined';
+export type { WorkspaceRecord } from '../types/workspace';
+let database: Promise<IDBPDatabase> | undefined;
+export function getDatabase() {
+  if (!database) database = openDB('flowtask_storage_v2', 1, { upgrade(db) {
+    for (const name of ['workspaces', 'snapshots', 'legacy_backups', 'outbox']) {
+      if (!db.objectStoreNames.contains(name)) {
+        const store = db.createObjectStore(name, { keyPath: name === 'workspaces' ? 'workspaceId' : 'id' });
+        if (name === 'snapshots' || name === 'outbox') store.createIndex('by_workspace', 'workspaceId');
+      }
+    }
+  }}).catch(error => { database = undefined; throw error; });
+  return database;
 }
-
-function getDatabase(): Promise<IDBPDatabase> {
-  if (!dbPromise) {
-    dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains('workspaces')) {
-          db.createObjectStore('workspaces', { keyPath: 'workspaceId' });
-        }
-        if (!db.objectStoreNames.contains('snapshots')) {
-          const store = db.createObjectStore('snapshots', { keyPath: 'id' });
-          store.createIndex('by_workspace', 'workspaceId');
-        }
-        if (!db.objectStoreNames.contains('legacy_backups')) {
-          db.createObjectStore('legacy_backups', { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains('outbox')) {
-          const outbox = db.createObjectStore('outbox', { keyPath: 'id' });
-          outbox.createIndex('by_workspace', 'workspaceId');
-        }
-      },
-    });
-  }
-  return dbPromise;
+export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
+  return { schemaVersion: 3, workspaceId, tasks: [], projects: DEFAULT_PROJECTS.filter(p => p.id !== 'ideas'), customViews: [], preferences: {}, pending: [], undo: [], updatedAt: 0 };
 }
-
-export interface WorkspaceRecord {
-  workspaceId: string;
-  tasks: Task[];
-  projects: Project[];
-  customViews?: unknown[];
-  updatedAt: number;
+function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
+  const data = validateWorkspaceData(raw.tasks || [], raw.projects || DEFAULT_PROJECTS);
+  const date = formatLocalDate(new Date());
+  return { ...emptyWorkspace(id), ...raw, ...data, workspaceId: id, schemaVersion: 3,
+    tasks: data.tasks.map(t => ({ ...t, isSomeday: t.isSomeday || t.projectId === 'ideas', topThreeDate: t.topThreeDate || (t.isPinnedToday ? t.plannedDate || t.dueDate || date : undefined) })) };
 }
-
 export const dbService = {
-  /**
-   * Migrate legacy localStorage tasks & projects to scoped v2 format with raw backup
-   */
-  async ensureLegacyMigrated(workspaceId: string = 'local'): Promise<WorkspaceRecord> {
-    const rawLegacyTasks = localStorage.getItem('flowtask_tasks_v1');
-    const rawLegacyProjects = localStorage.getItem('flowtask_projects_v1');
-    const alreadyMigrated = localStorage.getItem(`flowtask_migrated_${workspaceId}`);
-
-    // If already migrated, load existing workspace
-    const existing = await this.loadWorkspace(workspaceId);
-    if (existing && alreadyMigrated) {
-      return existing;
+  async loadWorkspace(id: string): Promise<WorkspaceRecord | null> {
+    if (typeof indexedDB !== 'undefined') {
+      // A failed read must not be mistaken for an empty workspace.
+      const db = await getDatabase();
+      const record = await db.get('workspaces', id);
+      if (record) return normalize(record, id);
     }
-
-    let tasks: Task[] = [];
-    let projects: Project[] = DEFAULT_PROJECTS;
-
-    if (rawLegacyTasks) {
-      try {
-        // 1. Preserve raw legacy backup before ANY modifications
-        const rawBackup = {
-          id: `legacy_backup_${Date.now()}`,
-          timestamp: Date.now(),
-          rawTasks: rawLegacyTasks,
-          rawProjects: rawLegacyProjects,
-        };
-
-        if (isIndexedDBSupported()) {
-          try {
-            const db = await getDatabase();
-            await db.put('legacy_backups', rawBackup);
-          } catch (e) {
-            console.warn('Could not store raw backup in IndexedDB, saving to localStorage:', e);
-            localStorage.setItem('flowtask_legacy_backup_raw', JSON.stringify(rawBackup));
-          }
-        } else {
-          localStorage.setItem('flowtask_legacy_backup_raw', JSON.stringify(rawBackup));
-        }
-
-        const parsedTasks = JSON.parse(rawLegacyTasks) as Task[];
-        const todayStr = formatLocalDate(new Date());
-
-        // 2. Migrate legacy tasks: copy legacy dueDate into plannedDate, tag ideas as someday
-        tasks = parsedTasks.map((t) => {
-          const plannedDate = t.plannedDate || t.dueDate;
-          const isSomeday = t.isSomeday || t.projectId === 'ideas';
-          const topThreeDate = t.topThreeDate || (t.isPinnedToday ? todayStr : undefined);
-
-          return {
-            ...t,
-            plannedDate,
-            isSomeday,
-            topThreeDate,
-            isPinnedToday: Boolean(t.isPinnedToday || (topThreeDate && topThreeDate === todayStr)),
-          };
-        });
-      } catch (err) {
-        console.error('Failed to parse legacy tasks during migration:', err);
+    const raw = localStorage.getItem(`flowtask_ws_${id}`);
+    return raw ? normalize(JSON.parse(raw), id) : null;
+  },
+  async ensureLegacyMigrated(id = 'local'): Promise<WorkspaceRecord> {
+    const existing = await this.loadWorkspace(id);
+    if (existing) return existing;
+    const record = emptyWorkspace(id);
+    // Unscoped legacy data belongs only to the local workspace, never a new account.
+    if (id === 'local') {
+      const tasks = localStorage.getItem('flowtask_tasks_v1');
+      const projects = localStorage.getItem('flowtask_projects_v1');
+      if (tasks || projects) {
+        localStorage.setItem('flowtask_legacy_backup_raw', JSON.stringify({ tasks, projects }));
+        Object.assign(record, normalize({ tasks: tasks ? JSON.parse(tasks) : [], projects: projects ? JSON.parse(projects) : DEFAULT_PROJECTS }, id));
       }
-    }
-
-    if (rawLegacyProjects) {
-      try {
-        projects = JSON.parse(rawLegacyProjects) as Project[];
-      } catch (err) {
-        console.error('Failed to parse legacy projects:', err);
+      const legacyKeys: Record<string, string> = { settings: 'flowtask_workflow_settings_v1', templates: 'flowtask_custom_templates', scratchpad: 'flowtask_scratchpad_v1', calendarUrl: 'flowtask_calendar_ics_url' };
+      for (const [key, storageKey] of Object.entries(legacyKeys)) {
+        const value = localStorage.getItem(storageKey);
+        if (value) { try { record.preferences[key] = JSON.parse(value); } catch { record.preferences[key] = value; } }
       }
+      const views = localStorage.getItem('flowtask_custom_smart_views');
+      if (views) record.customViews = JSON.parse(views);
     }
-
-    if (tasks.length === 0) {
-      tasks = getInitialTasks();
-    }
-
-    const record: WorkspaceRecord = {
-      workspaceId,
-      tasks,
-      projects,
-      updatedAt: Date.now(),
-    };
-
-    await this.saveWorkspace(workspaceId, record);
-    localStorage.setItem(`flowtask_migrated_${workspaceId}`, 'true');
+    await this.saveWorkspace(id, record);
     return record;
   },
-
-  /**
-   * Load workspace data for a specific workspace/account
-   */
-  async loadWorkspace(workspaceId: string): Promise<WorkspaceRecord | null> {
-    if (isIndexedDBSupported()) {
-      try {
-        const db = await getDatabase();
-        const record = await db.get('workspaces', workspaceId);
-        if (record) return record;
-      } catch (err) {
-        console.warn('IndexedDB load failed, trying localStorage fallback:', err);
-      }
+  async saveWorkspace(id: string, data: Partial<WorkspaceRecord> & Pick<WorkspaceRecord, 'tasks' | 'projects'>): Promise<void> {
+    const record = { ...emptyWorkspace(id), ...data, workspaceId: id };
+    if (typeof indexedDB !== 'undefined') {
+      const db = await getDatabase();
+      const tx = db.transaction(['workspaces', 'outbox'], 'readwrite');
+      await tx.objectStore('workspaces').put(record);
+      const pending = tx.objectStore('outbox');
+      const old = await pending.index('by_workspace').getAllKeys(id);
+      for (const key of old) await pending.delete(key);
+      for (const operation of record.pending) await pending.put({ ...operation, workspaceId: id });
+      await tx.done;
+      return;
     }
-
-    // LocalStorage fallback namespaced by workspaceId
-    try {
-      const raw = localStorage.getItem(`flowtask_ws_${workspaceId}`);
-      if (raw) {
-        return JSON.parse(raw) as WorkspaceRecord;
-      }
-    } catch (err) {
-      console.error('Failed to load workspace from localStorage:', err);
-    }
-
-    return null;
+    // One scoped fallback; errors are returned to the UI.
+    localStorage.setItem(`flowtask_ws_${id}`, JSON.stringify(record));
   },
-
-  /**
-   * Save workspace data for a specific workspace/account
-   */
-  async saveWorkspace(workspaceId: string, data: { tasks: Task[]; projects: Project[]; customViews?: unknown[] }): Promise<void> {
-    const record: WorkspaceRecord = {
-      workspaceId,
-      tasks: data.tasks,
-      projects: data.projects,
-      customViews: data.customViews,
-      updatedAt: Date.now(),
-    };
-
-    // Save to localStorage as immediate sync / fallback
-    try {
-      localStorage.setItem(`flowtask_ws_${workspaceId}`, JSON.stringify(record));
-      // For local workspace, also keep legacy keys updated for backwards compatibility
-      if (workspaceId === 'local') {
-        localStorage.setItem('flowtask_tasks_v1', JSON.stringify(data.tasks));
-        localStorage.setItem('flowtask_projects_v1', JSON.stringify(data.projects));
-      }
-    } catch (err) {
-      console.error('LocalStorage write error:', err);
-    }
-
-    if (isIndexedDBSupported()) {
-      try {
-        const db = await getDatabase();
-        await db.put('workspaces', record);
-      } catch (err) {
-        console.warn('IndexedDB write error:', err);
-      }
-    }
-  },
-
-  /**
-   * Delete a workspace (e.g. on complete reset)
-   */
-  async deleteWorkspace(workspaceId: string): Promise<void> {
-    localStorage.removeItem(`flowtask_ws_${workspaceId}`);
-    if (isIndexedDBSupported()) {
-      try {
-        const db = await getDatabase();
-        await db.delete('workspaces', workspaceId);
-      } catch (err) {
-        console.warn('IndexedDB delete error:', err);
-      }
-    }
+  async deleteWorkspace(id: string) {
+    if (typeof indexedDB !== 'undefined') await (await getDatabase()).delete('workspaces', id);
+    localStorage.removeItem(`flowtask_ws_${id}`);
   },
 };

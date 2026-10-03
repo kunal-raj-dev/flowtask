@@ -35,7 +35,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
 
   // Filter completed tasks
   const allCompletedTasks = tasks
-    .filter((t) => t.status === 'done')
+    .filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done')
     .sort((a, b) => (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt));
 
   const filteredTasks = allCompletedTasks.filter((t) => {
@@ -68,7 +68,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
   });
 
   const totalFilteredMinutes = filteredTasks.reduce(
-    (acc, t) => acc + (t.timeSpentMinutes || t.estimatedMinutes || 25),
+    (acc, t) => acc + (t.timeSpentMinutes || 0),
     0
   );
   const totalFilteredHours = (totalFilteredMinutes / 60).toFixed(1);
@@ -246,10 +246,21 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
       {filteredTasks.length === 0 ? (
         <div className="text-center py-16 bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] card-surface">
           <FileText size={36} className="mx-auto mb-2 text-stone-400 opacity-60" />
-          <p className="text-sm font-bold text-[var(--text-primary)]">No completed tasks match your filter</p>
-          <p className="text-xs text-[var(--text-secondary)] mt-1">
-            Try adjusting your search query, project, or time horizon.
-          </p>
+          {allCompletedTasks.length === 0 ? (
+            <>
+              <p className="text-sm font-bold text-[var(--text-primary)]">No completed tasks yet</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                Tasks you mark as done will appear here automatically.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-bold text-[var(--text-primary)]">No completed tasks match your filter</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                Try adjusting your search query, project, or time horizon.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <>

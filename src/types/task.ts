@@ -46,6 +46,7 @@ export interface SessionMetadata {
 }
 
 export interface Task {
+  recurrenceSourceId?: string;
   id: string;
   title: string;
   description?: string;
@@ -80,6 +81,7 @@ export interface Task {
 }
 
 export interface Project {
+  revision?: number;
   id: string;
   name: string;
   color: string; // hex or tailwind color class
@@ -104,6 +106,7 @@ export type ViewId =
   | 'review'
   | 'all'
   | 'trash'
+  | 'archive'
   | 'settings'
   | `project:${string}`
   | `smart:${string}`;
@@ -123,6 +126,7 @@ export interface ParsedTaskInput {
 }
 
 export interface CalendarEvent {
+  date?: string;
   id: string;
   title: string;
   startTime: string; // HH:mm (e.g. '10:00')

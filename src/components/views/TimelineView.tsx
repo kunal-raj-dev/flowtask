@@ -10,8 +10,6 @@ import {
   analyzeCognitiveTopology,
   findOverlappingCalendarEvent,
   findNextFreeGap,
-  TIMELINE_START_HOUR,
-  TIMELINE_END_HOUR,
   TIMELINE_HOUR_HEIGHT_PX,
 } from '../../utils/timelineUtils';
 import { computeAutoSlotSchedule } from '../../utils/autoSlotAlgorithm';
@@ -51,7 +49,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     toggleTaskStatus,
     projects,
     addTask,
-    calendarEvents,
+    calendarEvents: allCalendarEvents,
     calendarIcsUrl,
     setCalendarIcsUrl,
     refreshCalendarEvents,
@@ -83,17 +81,20 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const todayStr = formatLocalDate(new Date());
   const effectiveDateStr = selectedDateStr || todayStr;
 
+  const calendarEvents = allCalendarEvents.filter(event => !event.date || event.date === effectiveDateStr);
+  useEffect(() => { void refreshCalendarEvents(effectiveDateStr); }, [effectiveDateStr, refreshCalendarEvents]);
+
   // Filter tasks belonging to the selected date
   const todayTasks = tasks.filter((t) => {
     if (t.deletedAt || t.archivedAt) return false;
     const matchesPlanned = t.plannedDate === effectiveDateStr;
-    const matchesDue = t.dueDate === effectiveDateStr;
+    const matchesDue = !t.plannedDate && t.dueDate === effectiveDateStr;
     const matchesTopThree = t.isPinnedToday && (t.topThreeDate === effectiveDateStr || (!t.topThreeDate && effectiveDateStr === todayStr));
     return matchesPlanned || matchesDue || matchesTopThree;
   });
 
-  const START_HOUR = TIMELINE_START_HOUR;
-  const END_HOUR = TIMELINE_END_HOUR;
+  const START_HOUR = settings.timelineStartHour;
+  const END_HOUR = settings.timelineEndHour;
   const TOTAL_HOURS = END_HOUR - START_HOUR;
   const HOUR_HEIGHT_PX = TIMELINE_HOUR_HEIGHT_PX;
 
@@ -102,7 +103,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const unscheduledTasks: Task[] = [];
 
   todayTasks.forEach((task) => {
-    const effectiveTimeStr = task.scheduledStart || task.dueTime;
+    const effectiveTimeStr = task.scheduledStart;
     const startMin = parseTimeToMinutes(effectiveTimeStr);
     const duration = task.estimatedMinutes || 30;
 
@@ -144,8 +145,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     }
     const timeStr = `${hour.toString().padStart(2, '0')}:00`;
     addTask(quickAddTitle.trim(), {
-      dueDate: todayStr,
-      dueTime: timeStr,
+      plannedDate: effectiveDateStr,
       scheduledStart: timeStr,
       estimatedMinutes: 45,
     });
@@ -157,7 +157,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     const timeStr = `${hour.toString().padStart(2, '0')}:00`;
     updateTask(task.id, {
       scheduledStart: timeStr,
-      dueTime: timeStr,
     });
   };
 
@@ -165,7 +164,6 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     e.stopPropagation();
     updateTask(task.id, {
       scheduledStart: undefined,
-      dueTime: undefined,
     });
   };
 
@@ -178,13 +176,13 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       {
         startHour: START_HOUR,
         endHour: END_HOUR,
-        bufferMinutes: 5,
+        bufferMinutes: settings.autoSlotBufferMinutes,
         maxCapacityMinutes: Math.round(targetWorkCapacityHours * 60),
       }
     );
 
-    result.slotted.forEach(({ taskId, scheduledStart, dueTime }) => {
-      updateTask(taskId, { scheduledStart, dueTime });
+    result.slotted.forEach(({ taskId, scheduledStart }) => {
+      updateTask(taskId, { scheduledStart, plannedDate: effectiveDateStr });
     });
 
     showToast(result.message);
@@ -195,8 +193,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     scheduledTasks.forEach(({ task }) => {
       updateTask(task.id, {
         scheduledStart: undefined,
-        dueTime: undefined,
-      });
+        });
     });
     showToast(`Cleared timeline slots for ${scheduledTasks.length} tasks`);
   };
@@ -256,7 +253,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 }`}
               >
                 <Calendar size={13} />
-                <span>{calendarIcsUrl ? 'Calendar Connected' : 'Sync Calendar (.ics)'}</span>
+                <span>{calendarIcsUrl ? 'Calendar overlay connected' : 'Calendar overlay (.ics)'}</span>
               </button>
               {calendarIcsUrl && (
                 <button
@@ -548,7 +545,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             })}
 
             {/* Current Time Indicator Red Pulsing Line */}
-            {currentTimeMinutes >= START_HOUR * 60 && currentTimeMinutes <= END_HOUR * 60 && (
+            {effectiveDateStr === todayStr && currentTimeMinutes >= START_HOUR * 60 && currentTimeMinutes <= END_HOUR * 60 && (
               <div
                 className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
                 style={{
@@ -735,7 +732,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                             e.stopPropagation();
                             const newMin = Math.max(START_HOUR * 60, startMin - 15);
                             const timeStr = minutesToTimeStr(newMin);
-                            updateTask(task.id, { scheduledStart: timeStr, dueTime: timeStr });
+                            updateTask(task.id, { scheduledStart: timeStr });
                           }}
                           title="Nudge 15m earlier"
                           className="px-1 py-0.5 text-[9px] font-mono font-bold rounded bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-colors"
@@ -748,7 +745,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                             e.stopPropagation();
                             const newMin = Math.min((END_HOUR * 60) - duration, startMin + 15);
                             const timeStr = minutesToTimeStr(newMin);
-                            updateTask(task.id, { scheduledStart: timeStr, dueTime: timeStr });
+                            updateTask(task.id, { scheduledStart: timeStr });
                           }}
                           title="Nudge 15m later"
                           className="px-1 py-0.5 text-[9px] font-mono font-bold rounded bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-colors"
@@ -772,7 +769,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                           );
                           if (nextGap !== null) {
                             const timeStr = minutesToTimeStr(nextGap);
-                            updateTask(task.id, { scheduledStart: timeStr, dueTime: timeStr });
+                            updateTask(task.id, { scheduledStart: timeStr });
                           }
                         }}
                         title="Auto-slot into next free gap without conflicts"

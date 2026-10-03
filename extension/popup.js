@@ -31,6 +31,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  document.getElementById('export-tasks').addEventListener('click', async () => {
+    try {
+      const stored = await chrome.storage.local.get(['flowtask_captured_tasks']);
+      const payload = { version: 3, tasks: stored.flowtask_captured_tasks || [], projects: [{ id: 'inbox', name: 'Inbox', color: '#64748B' }] };
+      const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+      const link = document.createElement('a'); link.href = url; link.download = 'flowtask-captures.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch { statusMsg.textContent = 'Could not export captures. Retry without closing this popup.'; statusMsg.style.display = 'block'; }
+  });
   // Save task
   saveBtn.addEventListener('click', async () => {
     const title = titleInput.value.trim();
@@ -40,7 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const taskPayload = {
-      id: 'ext-' + Date.now(),
+      id: 'ext-' + crypto.randomUUID(),
+      subtasks: [],
       title,
       description: urlInput.value.trim(),
       priority: selectedPriority,
@@ -58,12 +67,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         await chrome.storage.local.set({ flowtask_captured_tasks: tasks });
       }
     } catch (e) {
-      console.warn('Storage save error:', e);
+      statusMsg.textContent = 'Could not save capture. Keep this popup open and retry.';
+      statusMsg.style.display = 'block';
+      return;
     }
 
     statusMsg.style.display = 'block';
-    setTimeout(() => {
-      window.close();
-    }, 600);
+
   });
 });

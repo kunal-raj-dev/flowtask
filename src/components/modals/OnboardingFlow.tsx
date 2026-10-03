@@ -13,7 +13,7 @@ interface OnboardingFlowProps {
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const {
-    addTask,
+    addMultipleTasks,
     updateSettings,
     settings,
     theme,
@@ -49,15 +49,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
     const todayStr = formatLocalDate(new Date());
     const tasksToAdd = [task1.trim(), task2.trim(), task3.trim()].filter(Boolean);
 
-    tasksToAdd.forEach((title) => {
-      addTask(title, {
+    if (tasksToAdd.length > 0) {
+      addMultipleTasks(tasksToAdd, {
         priority: 'p1',
         isPinnedToday: true,
         dueDate: todayStr,
         plannedDate: todayStr,
         estimatedMinutes: 45,
       });
-    });
+    }
 
     audioEngine.playCompletionChime();
     confetti({
@@ -74,7 +74,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
       {/* Backdrop with ambient blur */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300"
-        onClick={handleSkip}
+        onClick={onClose}
         aria-hidden="true"
       />
 

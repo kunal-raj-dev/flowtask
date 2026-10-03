@@ -148,6 +148,7 @@ export function calculateNextDueDate(
   }
 
   const next = new Date(baseDate);
+  const addMonths = (count: number) => { const day = next.getDate(); next.setDate(1); next.setMonth(next.getMonth() + count); const last = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate(); next.setDate(Math.min(day, last)); };
 
   if (freq === 'daily') {
     next.setDate(next.getDate() + 1);
@@ -160,9 +161,9 @@ export function calculateNextDueDate(
   } else if (freq === 'biweekly') {
     next.setDate(next.getDate() + 14);
   } else if (freq === 'monthly') {
-    next.setMonth(next.getMonth() + 1);
+    addMonths(1);
   } else if (freq === 'yearly') {
-    next.setFullYear(next.getFullYear() + 1);
+    addMonths(12);
   } else if (freq === 'custom' && customRule) {
     const interval = Math.max(1, customRule.interval || 1);
     if (customRule.unit === 'days') {
@@ -184,7 +185,7 @@ export function calculateNextDueDate(
         next.setDate(next.getDate() + interval * 7);
       }
     } else if (customRule.unit === 'months') {
-      next.setMonth(next.getMonth() + interval);
+      addMonths(interval);
     }
   }
 

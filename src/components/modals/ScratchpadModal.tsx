@@ -17,22 +17,21 @@ interface ScratchpadModalProps {
   onClose: () => void;
 }
 
-const STORAGE_KEY_SCRATCHPAD = 'flowtask_scratchpad_v1';
 
 export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { addTask, showToast } = useTaskContext();
+  const { workspacePreferences, setWorkspacePreference, addMultipleTasks, showToast } = useTaskContext();
   const [content, setContent] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEY_SCRATCHPAD) || '';
+    return (workspacePreferences.scratchpad as string) || '';
   });
   const [copied, setCopied] = useState(false);
   const [extractedCount, setExtractedCount] = useState<number | null>(null);
 
   // Autosave to localStorage on every change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_SCRATCHPAD, content);
+    if (workspacePreferences.scratchpad !== content) setWorkspacePreference('scratchpad', content);
   }, [content]);
 
   if (!isOpen) return null;
@@ -60,22 +59,18 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
     const lines = content.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
     if (lines.length === 0) return;
 
-    let created = 0;
-    lines.forEach((line) => {
-      // Strip markdown bullets / numbers
-      const cleanLine = line.replace(/^[-*•]\s+/, '').replace(/^\d+[\.\)]\s+/, '').trim();
-      if (cleanLine.length > 0) {
-        addTask(cleanLine);
-        created++;
-      }
-    });
+    const cleanLines = lines
+      .map((line) => line.replace(/^[-*•]\s+/, '').replace(/^\d+[\.\)]\s+/, '').trim())
+      .filter((line) => line.length > 0);
 
-    if (created > 0) {
-      audioEngine.playCompletionChime();
-      confetti({ particleCount: 35, spread: 50, origin: { y: 0.6 } });
-      setExtractedCount(created);
-      setTimeout(() => setExtractedCount(null), 3000);
-    }
+    if (cleanLines.length === 0) return;
+
+    addMultipleTasks(cleanLines);
+
+    audioEngine.playCompletionChime();
+    confetti({ particleCount: 35, spread: 50, origin: { y: 0.6 } });
+    setExtractedCount(cleanLines.length);
+    setTimeout(() => setExtractedCount(null), 3000);
   };
 
   return (

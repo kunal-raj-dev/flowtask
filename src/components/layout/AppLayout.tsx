@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { isTodayTask } from '../../utils/taskSelectors';
+import { RecoveryView } from '../views/RecoveryView';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { Sidebar } from './Sidebar';
 import { TodayView } from '../views/TodayView';
-import { UpcomingView } from '../views/UpcomingView';
-import { TimelineView } from '../views/TimelineView';
-import { EisenhowerView } from '../views/EisenhowerView';
-import { KanbanView } from '../views/KanbanView';
-import { ProjectsView } from '../views/ProjectsView';
-import { ReviewView } from '../views/ReviewView';
+const UpcomingView = lazy(() => import('../views/UpcomingView').then(m => ({ default: m.UpcomingView })));
+const TimelineView = lazy(() => import('../views/TimelineView').then(m => ({ default: m.TimelineView })));
+const EisenhowerView = lazy(() => import('../views/EisenhowerView').then(m => ({ default: m.EisenhowerView })));
+const KanbanView = lazy(() => import('../views/KanbanView').then(m => ({ default: m.KanbanView })));
+const ProjectsView = lazy(() => import('../views/ProjectsView').then(m => ({ default: m.ProjectsView })));
+const ReviewView = lazy(() => import('../views/ReviewView').then(m => ({ default: m.ReviewView })));
 import { TaskList } from '../tasks/TaskList';
 import { TaskDrawer } from '../tasks/TaskDrawer';
 import { QuickAddModal } from '../tasks/QuickAddModal';
@@ -52,7 +54,6 @@ export const AppLayout: React.FC = () => {
     pauseFocusSession,
     resumeFocusSession,
     stopFocusSession,
-    settings,
     syncStatus,
     setIsAuthModalOpen,
   } = useTaskContext();
@@ -74,17 +75,6 @@ export const AppLayout: React.FC = () => {
       mainScrollRef.current.scrollTop = 0;
     }
   }, [activeView]);
-
-  // Guided onboarding auto-launch for first-time visitors with no tasks
-  useEffect(() => {
-    const legacyFlag = localStorage.getItem('flowtask_onboarding_completed');
-    if (!legacyFlag && tasks.length === 0 && !settings?.onboardingCompleted) {
-      const t = setTimeout(() => {
-        openModal('onboarding');
-      }, 600);
-      return () => clearTimeout(t);
-    }
-  }, [settings?.onboardingCompleted, tasks.length, openModal]);
 
   // Diurnal Ambient Shift dynamic listener & interval
   useEffect(() => {
@@ -187,15 +177,7 @@ export const AppLayout: React.FC = () => {
   const todayStr = formatLocalDate(new Date());
 
   // Count active tasks for views with exact view-selector parity
-  const todayCount = tasks.filter((t) => {
-    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
-    const isPlannedToday = t.plannedDate === todayStr;
-    const isPinnedForToday =
-      t.isPinnedToday &&
-      (t.topThreeDate === todayStr || (!t.topThreeDate && isPlannedToday));
-    const isLegacyDueToday = !t.plannedDate && t.dueDate === todayStr;
-    return isPlannedToday || isPinnedForToday || isLegacyDueToday;
-  }).length;
+  const todayCount = tasks.filter(t => isTodayTask(t, todayStr)).length;
 
   const inboxCount = tasks.filter(
     (t) =>
@@ -236,11 +218,11 @@ export const AppLayout: React.FC = () => {
 
   const getViewTitle = () => {
     switch (activeView) {
-      case 'today': return 'My Day';
+      case 'today': return 'Today';
       case 'inbox': return 'Inbox';
       case 'upcoming': return 'Upcoming';
       case 'projects': return 'Projects';
-      case 'review': return 'Review & Retrospective';
+      case 'review': return 'Review';
       case 'all': return 'All Tasks';
       case 'someday': return 'Someday';
       case 'timeline': return 'Timeline';
@@ -248,6 +230,8 @@ export const AppLayout: React.FC = () => {
       case 'kanban': return 'Kanban Board';
       case 'insights': return 'Insights';
       case 'logbook': return 'Logbook';
+      case 'trash': return 'Trash';
+      case 'archive': return 'Archive';
       default:
         if (activeView.startsWith('project:')) {
           const p = projects.find((proj) => proj.id === activeView.split(':')[1]);
@@ -270,6 +254,7 @@ export const AppLayout: React.FC = () => {
   };
 
   const renderActiveView = () => {
+    if (activeView === 'trash' || activeView === 'archive') return <RecoveryView mode={activeView} />;
     if (activeView === 'today') {
       return (
         <TodayView
@@ -326,7 +311,7 @@ export const AppLayout: React.FC = () => {
       activeView === 'insights' ||
       activeView === 'logbook'
     ) {
-      return <ReviewView onSelectTask={(id) => setSelectedTaskId(id)} />;
+      return <ReviewView key={activeView} initialTab={activeView === 'insights' ? 'insights' : 'logbook'} onSelectTask={(id) => setSelectedTaskId(id)} />;
     }
     if (activeView === 'timeline') {
       return (
@@ -839,7 +824,7 @@ export const AppLayout: React.FC = () => {
             </div>
           )}
 
-          {renderActiveView()}
+          <Suspense fallback={<p role="status" className="p-6">Opening view…</p>}>{renderActiveView()}</Suspense>
         </div>
       </main>
 

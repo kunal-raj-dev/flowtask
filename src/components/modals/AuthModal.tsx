@@ -22,12 +22,12 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { user, isAnonymous, isConfigured, signInWithGoogle, signOutUser, loading, authError, clearAuthError } = useAuth();
-  const { syncStatus, lastSyncedAt, forceSyncToCloud, tasks, projects } = useTaskContext();
+  const { syncStatus, lastSyncedAt, forceSyncToCloud, tasks, projects, importLocalWorkspace, showToast, downloadWorkspaceBackup } = useTaskContext();
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" aria-label="Account and sync" className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
@@ -63,6 +63,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         {/* Modal Body */}
         <div className="p-6 space-y-5">
+          {user && <div className="p-4 border rounded-lg text-sm space-y-3"><p>Your device workspace is kept separately. Importing adds tasks whose IDs are not already in this account.</p><button className="underline" onClick={() => void importLocalWorkspace().catch(error => showToast(error.message))}>Import device workspace into this account</button><button className="underline block" onClick={downloadWorkspaceBackup}>Download account backup</button></div>}
           {/* Auth Error Banner */}
           {authError && (
             <div className="flex items-start gap-3 p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">

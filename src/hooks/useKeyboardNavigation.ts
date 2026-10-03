@@ -36,6 +36,7 @@ export function useKeyboardNavigation({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      if (document.querySelector('[aria-modal="true"], [data-overlay-open="true"]')) return;
       if (!enabled || tasks.length === 0) return;
 
       // Ignore when user is actively typing in form inputs, textareas, or contenteditables

@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock,
   Star,
-  Award,
   Zap,
   Brain,
   Gauge,
@@ -48,7 +47,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   }
 
   // Completed tasks
-  const completedTasks = tasks.filter((t) => t.status === 'done');
+  const completedTasks = tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done');
 
   // Map of dateStr -> completed tasks count
   const activityMap: Record<string, { count: number; minutes: number }> = {};
@@ -62,7 +61,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
       : t.dueDate || todayStr;
     if (activityMap[completedDate]) {
       activityMap[completedDate].count += 1;
-      activityMap[completedDate].minutes += t.timeSpentMinutes || t.estimatedMinutes || 25;
+      activityMap[completedDate].minutes += t.timeSpentMinutes || 0;
     }
   });
 
@@ -80,14 +79,14 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
 
   // Total Focus Minutes logged
   const totalFocusMinutes = completedTasks.reduce(
-    (acc, t) => acc + (t.timeSpentMinutes || t.estimatedMinutes || 25),
+    (acc, t) => acc + (t.timeSpentMinutes || 0),
     0
   );
   const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
 
   // Rule of 3 Focus Execution Rate
   const totalPinned = tasks.filter((t) => t.isPinnedToday).length;
-  const completedPinned = tasks.filter((t) => t.isPinnedToday && t.status === 'done').length;
+  const completedPinned = tasks.filter((t) => t.isPinnedToday && !t.deletedAt && !t.archivedAt && t.status === 'done').length;
   const focusExecutionRate = totalPinned > 0 ? Math.round((completedPinned / totalPinned) * 100) : 100;
 
   // Estimation Accuracy & Velocity Metrics
@@ -119,7 +118,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   completedTasks.forEach((t) => {
     if (t.completedAt) {
       const h = new Date(t.completedAt).getHours();
-      const mins = t.timeSpentMinutes || t.estimatedMinutes || 25;
+      const mins = t.timeSpentMinutes || 0;
       hourlyCounts[h]++;
       hourlyMinutes[h] += mins;
       if (h >= 6 && h < 12) {
@@ -161,7 +160,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
     for (const w of rollingWeeks) {
       if (time >= w.start && time < w.end) {
         w.tasks++;
-        w.minutes += t.timeSpentMinutes || t.estimatedMinutes || 25;
+        w.minutes += t.timeSpentMinutes || 0;
         break;
       }
     }
@@ -210,11 +209,6 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
               Real-time analytics on your execution velocity, consistency, and focus habits
             </p>
           </div>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-subtle card-surface">
-          <Award size={15} className="text-amber-500" />
-          <span className="text-xs font-semibold text-[var(--text-primary)]">Pro Analytics</span>
         </div>
       </div>
 
@@ -317,7 +311,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
                 </div>
               </div>
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                {accuracyMetrics.accuracyPercent}% Accuracy
+                {accuracyMetrics.completedSampleCount ? `${accuracyMetrics.accuracyPercent}% accuracy · ${accuracyMetrics.completedSampleCount} tasks` : 'No timed sample yet'}
               </span>
             </div>
 
@@ -552,12 +546,18 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
                 </div>
               </div>
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                {peakBucket.label}
+                {completedTasks.length ? peakBucket.label : 'No completion data yet'}
               </span>
             </div>
 
             <p className="text-xs text-[var(--text-muted)] mt-3 leading-relaxed">
-              Your highest velocity and completion rate concentrates in <strong className="text-[var(--text-primary)]">{peakBucket.label}</strong> ({peakBucket.time}), accounting for <strong className="text-[var(--text-primary)]">{Math.round((peakBucket.count / totalChronoCount) * 100)}%</strong> of finished work.
+              {completedTasks.length > 0 ? (
+                <>
+                  Your highest velocity and completion rate concentrates in <strong className="text-[var(--text-primary)]">{peakBucket.label}</strong> ({peakBucket.time}), accounting for <strong className="text-[var(--text-primary)]">{Math.round((peakBucket.count / totalChronoCount) * 100)}%</strong> of finished work.
+                </>
+              ) : (
+                'No recorded observations yet. Complete tasks to uncover your chronobiological peak focus window.'
+              )}
             </p>
 
             {/* 24-Hour Energy Completion Arc */}
@@ -660,7 +660,9 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
 
           <div className="mt-4 pt-3 border-t border-[var(--border-hairline)] flex items-center justify-between text-[11px] text-[var(--text-secondary)]">
             <span>Optimal deep work scheduling</span>
-            <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">{peakBucket.time}</span>
+            <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">
+              {completedTasks.length > 0 ? peakBucket.time : 'No recorded observations yet'}
+            </span>
           </div>
         </div>
 

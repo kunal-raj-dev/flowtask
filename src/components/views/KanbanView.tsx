@@ -13,7 +13,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   projectId,
 }) => {
   const { tasks: allTasks, updateTask, addTask, toggleTaskStatus } = useTaskContext();
-  const tasks = projectId ? allTasks.filter((t) => t.projectId === projectId) : allTasks;
+  const tasks = allTasks.filter(t => !t.deletedAt && !t.archivedAt && (!projectId || t.projectId === projectId));
   const [mobileColumn, setMobileColumn] = useState<TaskStatus>('todo');
   const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
   const [addingToStatus, setAddingToStatus] = useState<TaskStatus | null>(null);
@@ -22,6 +22,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   // Hotkey navigation: '1', '2', '3' or 'h', 'j', 'k', 'l' or Arrow keys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.querySelector('[aria-modal="true"], [data-overlay-open="true"]')) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&

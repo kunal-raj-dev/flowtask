@@ -51,6 +51,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   } = useTaskContext();
 
   const [input, setInput] = useState(initialDraft);
+  const [showDetails, setShowDetails] = useState(false);
   const [isMultiline, setIsMultiline] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -93,9 +94,9 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
   // Effective values: Explicit override > Parsed token > Context default
   const effectiveProjectId = explicitProjectId || parsed.projectTag || defaultProjectId;
-  const projectObj = projects.find((p) => p.id === effectiveProjectId || p.name.toLowerCase() === effectiveProjectId.toLowerCase()) || projects[0];
+  const projectObj = projects.find((p) => p.id === effectiveProjectId || p.name.toLowerCase() === effectiveProjectId.toLowerCase()) || projects.find(p => p.id === 'inbox') || { id: 'inbox', name: 'Inbox', color: '#64748B' };
 
-  const effectivePlannedDate = explicitPlannedDate !== null ? explicitPlannedDate : parsed.plannedDate || parsed.dueDate || defaultPlannedDate;
+  const effectivePlannedDate = explicitPlannedDate !== null ? explicitPlannedDate : parsed.plannedDate || defaultPlannedDate;
   const effectiveDueDate = explicitDueDate !== null ? explicitDueDate : parsed.dueDate;
   const effectivePriority = explicitPriority || parsed.priority || 'p4';
   const effectiveDuration = explicitDuration !== null ? explicitDuration : parsed.estimatedMinutes;
@@ -175,6 +176,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
     } else {
       addTask(parsed.cleanTitle || input, {
         projectId: projectObj.id,
+        dueTime: parsed.dueTime,
+        tags: parsed.tags,
+        contextTags: parsed.contextTags,
+        customRecurrence: parsed.customRecurrence,
         plannedDate: effectivePlannedDate,
         dueDate: effectiveDueDate,
         priority: effectivePriority,
@@ -258,13 +263,14 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                 />
               )}
 
+              <button type="button" className="mt-2 text-xs text-[var(--text-secondary)] underline" aria-expanded={showDetails} onClick={() => setShowDetails(!showDetails)}>{showDetails ? 'Hide details' : 'Task details'}</button>
               {/* Editable Chips Bar (Only in Single Task mode) */}
-              {!isMultiline && (
+              {!isMultiline && showDetails && (
                 <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-[var(--border-hairline)] text-xs">
                   {/* Project Chip */}
                   <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
                     <Folder size={12} style={{ color: projectObj.color }} />
-                    <select
+                    <select aria-label="Project"
                       value={projectObj.id}
                       onChange={(e) => setExplicitProjectId(e.target.value)}
                       className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
@@ -282,6 +288,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     <Calendar size={12} className="text-amber-500" />
                     <span className="text-[11px]">Plan:</span>
                     <input
+                      aria-label="Planned date"
                       type="date"
                       value={effectivePlannedDate || ''}
                       onChange={(e) => setExplicitPlannedDate(e.target.value || null)}
@@ -304,6 +311,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     <Clock size={12} className="text-purple-500" />
                     <span className="text-[11px]">Due:</span>
                     <input
+                      aria-label="Deadline"
                       type="date"
                       value={effectiveDueDate || ''}
                       onChange={(e) => setExplicitDueDate(e.target.value || null)}

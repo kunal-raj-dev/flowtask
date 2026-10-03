@@ -32,7 +32,7 @@ interface ParsedStagingItem {
 }
 
 export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
-  const { addTask } = useTaskContext();
+  const { addMultipleTasks } = useTaskContext();
   const [text, setText] = useState('');
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   const [stagingItems, setStagingItems] = useState<ParsedStagingItem[]>([]);
@@ -91,9 +91,7 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
 
     if (itemsToImport.length === 0) return;
 
-    itemsToImport.forEach((item) => {
-      addTask(item.originalText);
-    });
+    addMultipleTasks(itemsToImport.map((item) => item.originalText));
 
     try {
       confetti({

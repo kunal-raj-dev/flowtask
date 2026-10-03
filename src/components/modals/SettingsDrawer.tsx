@@ -116,7 +116,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Preferences & Settings</h2>
               <p className="text-xs text-[var(--text-secondary)]">
-                Calibrate capacity, diurnal aesthetics, calendar sync, and data integrity
+                Calibrate capacity, diurnal aesthetics, calendar overlay, and data integrity
               </p>
             </div>
           </div>

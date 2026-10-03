@@ -38,7 +38,7 @@ export const commandService = {
     const plannedDate =
       overrides?.plannedDate !== undefined
         ? overrides.plannedDate
-        : parsed.plannedDate || parsed.dueDate || currentContext?.defaultPlannedDate;
+        : parsed.plannedDate || currentContext?.defaultPlannedDate;
 
     const dueDate =
       overrides?.dueDate !== undefined ? overrides.dueDate : parsed.dueDate;
@@ -56,6 +56,10 @@ export const commandService = {
       plannedDate,
       dueDate,
       dueTime: overrides?.dueTime || parsed.dueTime,
+      scheduledStart: overrides?.scheduledStart,
+      scheduledEnd: overrides?.scheduledEnd,
+      isEvening: overrides?.isEvening,
+      sessionMetadata: overrides?.sessionMetadata,
       estimatedMinutes: overrides?.estimatedMinutes ?? parsed.estimatedMinutes,
       timeSpentMinutes: 0,
       subtasks: overrides?.subtasks || [],
@@ -151,7 +155,7 @@ export const commandService = {
         ...task,
         status: 'done',
         completedAt: now,
-        isPinnedToday: false, // Clean up Top 3 pin upon completion
+        isPinnedToday: task.isPinnedToday, // Preserve historical Top 3 membership
         revision: (task.revision || 1) + 1,
         updatedAt: now,
       };
@@ -167,10 +171,12 @@ export const commandService = {
           now
         );
 
-        if (nextDueDate) {
+        if (nextDueDate && !tasks.some(t => t.recurrenceSourceId === task.id)) {
           nextRecurringTask = {
             ...task,
-            id: `task-${now}-${Math.random().toString(36).substring(2, 7)}`,
+            id: `${task.id}-next`,
+            recurrenceSourceId: task.id,
+            timeSpentMinutes: 0,
             status: 'todo',
             plannedDate: nextDueDate,
             dueDate: task.dueDate ? nextDueDate : undefined,

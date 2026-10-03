@@ -20,10 +20,11 @@ import { SegmentedControl } from '../ui/SegmentedControl';
 import { Button } from '../ui/Button';
 
 interface ReviewViewProps {
+  initialTab?: 'logbook' | 'insights' | 'standup' | 'export';
   onSelectTask: (taskId: string) => void;
 }
 
-export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask }) => {
+export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab = 'logbook' }) => {
   const {
     tasks,
     projects,
@@ -32,7 +33,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask }) => {
     showToast,
   } = useTaskContext();
 
-  const [activeTab, setActiveTab] = useState<'logbook' | 'insights' | 'standup' | 'export'>('logbook');
+  const [activeTab, setActiveTab] = useState<'logbook' | 'insights' | 'standup' | 'export'>(initialTab);
   const [copiedStandup, setCopiedStandup] = useState(false);
 
   const handleCopyStandup = async () => {

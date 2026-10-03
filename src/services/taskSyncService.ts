@@ -29,6 +29,8 @@ const OPTIONAL_TASK_FIELDS: (keyof Task)[] = [
   'deletedAt',
   'isSomeday',
   'isPinnedToday',
+  'isEvening',
+  'recurrenceSourceId',
   'tags',
   'contextTags',
   'blockedBy',

@@ -22,6 +22,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
   const {
     tasks,
     updateTask,
+    batchUpdateTasks,
     toggleTaskStatus,
     dismissShutdown,
   } = useTaskContext();
@@ -60,7 +61,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
 
   // Metrics
   const totalFocusMinutes = completedToday.reduce(
-    (acc, t) => acc + (t.timeSpentMinutes || t.estimatedMinutes || 25),
+    (acc, t) => acc + (t.timeSpentMinutes || 0),
     0
   );
   const focusHours = (totalFocusMinutes / 60).toFixed(1);
@@ -84,16 +85,16 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = formatLocalDate(tomorrow);
 
-    incompleteToday.forEach((t) => {
-      updateTask(t.id, { plannedDate: tomorrowStr, isPinnedToday: false });
-    });
+    if (incompleteToday.length > 0) {
+      batchUpdateTasks(incompleteToday.map((t) => t.id), { plannedDate: tomorrowStr, isPinnedToday: false });
+    }
     audioEngine.playClickSound();
   };
 
   const handleMoveAllToSomeday = () => {
-    incompleteToday.forEach((t) => {
-      updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
-    });
+    if (incompleteToday.length > 0) {
+      batchUpdateTasks(incompleteToday.map((t) => t.id), { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
+    }
     audioEngine.playClickSound();
   };
 

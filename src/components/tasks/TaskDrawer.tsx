@@ -75,6 +75,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     toggleTaskPinToday,
     toggleSubTask,
     addSubTask,
+    addSubTasks,
     deleteSubTask,
     promoteSubTaskToTask,
     moveSubTask,
@@ -230,12 +231,13 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     setIsDecomposing(true);
     setTimeout(() => {
       const suggested = suggestSubtasks(task.title, task.description);
-      suggested.forEach((sub) => {
-        const exists = task.subtasks?.some((s) => s.title.toLowerCase() === sub.title.toLowerCase());
-        if (!exists) {
-          addSubTask(task.id, sub.title);
-        }
-      });
+      const newItems = suggested
+        .filter((sub) => !task.subtasks?.some((s) => s.title.toLowerCase() === sub.title.toLowerCase()))
+        .map((sub) => ({ title: sub.title }));
+
+      if (newItems.length > 0) {
+        addSubTasks(task.id, newItems);
+      }
 
       if (!task.estimatedMinutes) {
         updateTask(task.id, { estimatedMinutes: suggestDuration(task.title) });
@@ -834,7 +836,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   onClick={handleMagicBreakdown}
                   disabled={isDecomposing}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[var(--color-brand)]/10 hover:bg-[var(--color-brand)]/20 text-[var(--color-brand)] border border-[var(--color-brand)]/30 shadow-xs transition-all active:scale-95 disabled:opacity-50"
-                  title="Automatically suggest action steps with AI"
+                  title="Suggested steps — generated locally"
                 >
                   <Sparkles
                     size={11}
@@ -1759,7 +1761,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <div className="flex items-center gap-2">
                 <History size={14} className="text-amber-500" />
                 <span className="text-xs font-semibold text-[var(--text-primary)]">
-                  Activity & Audit Trail
+                  Task details
                 </span>
                 <span className="text-[11px] text-[var(--text-muted)] font-mono">
                   {task.status === 'done' ? 'Completed' : 'Active'}

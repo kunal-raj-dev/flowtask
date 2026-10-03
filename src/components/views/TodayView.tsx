@@ -1,3 +1,4 @@
+import { isTodayTask } from '../../utils/taskSelectors';
 import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
@@ -40,6 +41,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
     toggleTaskStatus,
     toggleTaskPinToday,
     updateTask,
+    batchUpdateTasks,
     deleteTask,
     settings,
     showToast,
@@ -75,14 +77,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   const todayStr = formatLocalDate(new Date());
 
   // Tasks planned for today or with Top 3 pin scoped to today
-  const activeTodayTasks = tasks.filter((t) => {
-    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
-    const isPlannedToday = t.plannedDate === todayStr;
-    const isPinnedForToday = t.isPinnedToday && (t.topThreeDate === todayStr || (!t.topThreeDate && isPlannedToday));
-    // Backwards compatibility: fallback to dueDate === todayStr if plannedDate not set
-    const isLegacyDueToday = !t.plannedDate && t.dueDate === todayStr;
-    return isPlannedToday || isPinnedForToday || isLegacyDueToday;
-  });
+  const activeTodayTasks = tasks.filter(t => isTodayTask(t, todayStr));
 
   // Filter tasks based on global filters (Quick Wins & Priority)
   const filteredActiveTasks = activeTodayTasks.filter((t) => {
@@ -153,17 +148,17 @@ export const TodayView: React.FC<TodayViewProps> = ({
     tmr.setDate(tmr.getDate() + 1);
     const tmrStr = formatLocalDate(tmr);
 
-    daytimeTasks.forEach((t) => {
-      updateTask(t.id, { plannedDate: tmrStr, isPinnedToday: false });
-    });
-    showToast(`Pushed ${daytimeTasks.length} non-focus tasks to Tomorrow`);
+    if (daytimeTasks.length > 0) {
+      batchUpdateTasks(daytimeTasks.map(t => t.id), { plannedDate: tmrStr, isPinnedToday: false });
+      showToast(`Pushed ${daytimeTasks.length} non-focus tasks to Tomorrow`);
+    }
   };
 
   const handleMoveNonMitToEvening = () => {
-    daytimeTasks.forEach((t) => {
-      updateTask(t.id, { isEvening: true });
-    });
-    showToast(`Moved ${daytimeTasks.length} tasks to This Evening`);
+    if (daytimeTasks.length > 0) {
+      batchUpdateTasks(daytimeTasks.map(t => t.id), { isEvening: true });
+      showToast(`Moved ${daytimeTasks.length} tasks to This Evening`);
+    }
   };
 
   return (

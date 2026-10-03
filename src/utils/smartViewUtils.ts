@@ -93,6 +93,7 @@ export function filterTasksByPredicate(
   const weekEndStr = formatLocalDate(weekEnd);
 
   return tasks.filter((task) => {
+    if (task.deletedAt || task.archivedAt) return false;
     // 1. Status Filter
     const targetStatus = predicate.status || 'active';
     if (targetStatus === 'active' && task.status === 'done') return false;
@@ -134,7 +135,7 @@ export function filterTasksByPredicate(
       const taskDate = task.dueDate || task.plannedDate;
       switch (predicate.dueRange) {
         case 'today':
-          if (taskDate !== todayStr && !task.isPinnedToday) return false;
+          if (taskDate !== todayStr && !(task.isPinnedToday && task.topThreeDate === todayStr)) return false;
           break;
         case 'tomorrow':
           if (taskDate !== tomorrowStr) return false;

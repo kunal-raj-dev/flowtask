@@ -1,3 +1,4 @@
+import { isTodayTask } from '../../utils/taskSelectors';
 import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import {
@@ -95,10 +96,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     () => localStorage.getItem('flowtask_sidebar_more_collapsed') === 'true'
   );
   const [isPerspectivesCollapsed, setIsPerspectivesCollapsed] = useState<boolean>(
-    () => localStorage.getItem('flowtask_sidebar_perspectives_collapsed') === 'true'
+    () => localStorage.getItem('flowtask_sidebar_perspectives_collapsed') !== 'false'
   );
   const [isSmartViewsCollapsed, setIsSmartViewsCollapsed] = useState<boolean>(
-    () => localStorage.getItem('flowtask_sidebar_smartviews_collapsed') === 'true'
+    () => localStorage.getItem('flowtask_sidebar_smartviews_collapsed') !== 'false'
   );
   const [isProjectsCollapsed, setIsProjectsCollapsed] = useState<boolean>(
     () => localStorage.getItem('flowtask_sidebar_projects_collapsed') === 'true'
@@ -133,15 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const todayStr = formatLocalDate(new Date());
 
   // Count active tasks for views with strict view-selector parity
-  const todayCount = tasks.filter((t) => {
-    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
-    const isPlannedToday = t.plannedDate === todayStr;
-    const isPinnedForToday =
-      t.isPinnedToday &&
-      (t.topThreeDate === todayStr || (!t.topThreeDate && isPlannedToday));
-    const isLegacyDueToday = !t.plannedDate && t.dueDate === todayStr;
-    return isPlannedToday || isPinnedForToday || isLegacyDueToday;
-  }).length;
+  const todayCount = tasks.filter(t => isTodayTask(t, todayStr)).length;
 
   const inboxCount = tasks.filter(
     (t) =>
@@ -206,7 +199,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Secondary "More" Hub
   const secondaryNavItems: SidebarNavItem[] = [
-    { id: 'review', label: 'Review & Stats', icon: TrendingUp, count: null, color: 'text-teal-500' },
+    { id: 'trash', label: 'Trash', icon: Trash2, count: null, color: 'text-stone-400' },
+    { id: 'archive', label: 'Archive', icon: Archive, count: null, color: 'text-stone-400' },
+    { id: 'review', label: 'Review', icon: TrendingUp, count: null, color: 'text-teal-500' },
     { id: 'all', label: 'All Tasks', icon: CheckCircle2, count: allCount, color: 'text-stone-400' },
     { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-amber-500' },
   ];

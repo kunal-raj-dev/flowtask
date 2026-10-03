@@ -27,7 +27,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   onSelectTask,
   projectId,
 }) => {
-  const { tasks: allTasks, updateTask, addTask, toggleTaskStatus, showToast } = useTaskContext();
+  const { tasks: allTasks, updateTask, batchUpdateTasks, addTask, toggleTaskStatus, showToast } = useTaskContext();
   const tasks = projectId ? allTasks.filter((t) => t.projectId === projectId) : allTasks;
   const [mobileQuadrant, setMobileQuadrant] = useState<Priority>('p1');
   const [addingToPriority, setAddingToPriority] = useState<Priority | null>(null);
@@ -54,6 +54,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   // Hotkey navigation: '1', '2', '3', '4' or ArrowLeft / ArrowRight to switch quadrants
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.querySelector('[aria-modal="true"], [data-overlay-open="true"]')) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -93,7 +94,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const activeTasks = useMemo(() => tasks.filter((t) => t.status !== 'done'), [tasks]);
+  const activeTasks = useMemo(() => tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status !== 'done'), [tasks]);
   const todayStr = formatLocalDate(new Date());
   const tomorrowDate = new Date();
   tomorrowDate.setDate(tomorrowDate.getDate() + 1);
@@ -119,8 +120,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   }[] = [
     {
       priority: 'p1',
-      title: 'Do First (Urgent & Important)',
-      subtitle: 'Crises, immediate deadlines, pressing problems',
+      title: 'P1: Urgent & Critical (Do First)',
+      subtitle: 'Immediate deadlines, emergencies, top priorities',
       icon: Flame,
       color: 'text-rose-500',
       badgeColor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
@@ -128,8 +129,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     },
     {
       priority: 'p2',
-      title: 'Schedule (Important, Not Urgent)',
-      subtitle: 'Strategic goals, deep work, health, relationships',
+      title: 'P2: Important & Planned (Schedule)',
+      subtitle: 'Strategic work, major milestones, deep focus',
       icon: Target,
       color: 'text-amber-500',
       badgeColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
@@ -137,8 +138,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     },
     {
       priority: 'p3',
-      title: 'Delegate / Quick Wins (Urgent, Not Important)',
-      subtitle: 'Interruptive requests, quick administrative tasks',
+      title: 'P3: Quick Wins (Low Effort)',
+      subtitle: 'Fast administrative tasks, small follow-ups',
       icon: Zap,
       color: 'text-blue-500',
       badgeColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
@@ -146,8 +147,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     },
     {
       priority: 'p4',
-      title: "Don't Do / Someday (Neither)",
-      subtitle: 'Time wasters, low-yield ideas, backlog items',
+      title: 'P4: Backlog (Someday)',
+      subtitle: 'Ideas to review later, low priority backlog',
       icon: Coffee,
       color: 'text-stone-400',
       badgeColor: 'bg-stone-500/10 text-stone-600 dark:text-stone-400 border-stone-500/20',
@@ -182,17 +183,23 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
 
   // Auto-align all tasks to their multi-factor suggested quadrants
   const handleAutoAlignAll = () => {
-    let alignedCount = 0;
+    const updates: { id: string; priority: Priority }[] = [];
     activeTasks.forEach((t) => {
       const score = taskScores.get(t.id);
       if (score && score.suggestedQuadrant !== t.priority) {
-        updateTask(t.id, { priority: score.suggestedQuadrant });
-        alignedCount++;
+        updates.push({ id: t.id, priority: score.suggestedQuadrant });
       }
     });
 
-    if (alignedCount > 0) {
-      showToast(`Auto-aligned ${alignedCount} task${alignedCount === 1 ? '' : 's'} to multi-factor priority quadrants`);
+    if (updates.length > 0) {
+      const byPriority: Record<Priority, string[]> = { p1: [], p2: [], p3: [], p4: [] };
+      updates.forEach((u) => byPriority[u.priority].push(u.id));
+      (Object.keys(byPriority) as Priority[]).forEach((p) => {
+        if (byPriority[p].length > 0) {
+          batchUpdateTasks(byPriority[p], { priority: p });
+        }
+      });
+      showToast(`Auto-aligned ${updates.length} task${updates.length === 1 ? '' : 's'} to multi-factor priority quadrants`);
     } else {
       showToast('All tasks already aligned with optimal quadrants');
     }
@@ -208,7 +215,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-              <span>Eisenhower Priority Matrix</span>
+              <span>Priority Matrix</span>
               {scoringMode === 'smart' && (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/30">
                   ⚡ Smart Mode
@@ -428,10 +435,10 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) => updateTask(t.id, { plannedDate: todayStr }));
+                        if (quadTasks.length > 0) batchUpdateTasks(quadTasks.map((t) => t.id), { plannedDate: todayStr });
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-[11px] transition-colors"
-                      title="Schedule all Q1 tasks for Today"
+                      title="Schedule all P1 tasks for Today"
                     >
                       <Calendar size={11} className="stroke-[2.2]" />
                       <span>All to Today</span>
@@ -441,10 +448,10 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) => updateTask(t.id, { plannedDate: tomorrowStr }));
+                        if (quadTasks.length > 0) batchUpdateTasks(quadTasks.map((t) => t.id), { plannedDate: tomorrowStr });
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-semibold text-[11px] transition-colors"
-                      title="Schedule all Q2 tasks for Tomorrow"
+                      title="Schedule all P2 tasks for Tomorrow"
                     >
                       <Calendar size={11} className="stroke-[2.2]" />
                       <span>All for Tomorrow</span>
@@ -454,10 +461,10 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) => updateTask(t.id, { plannedDate: todayStr }));
+                        if (quadTasks.length > 0) batchUpdateTasks(quadTasks.map((t) => t.id), { plannedDate: todayStr });
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-semibold text-[11px] transition-colors"
-                      title="Batch focus Q3 tasks for Today"
+                      title="Batch focus P3 tasks for Today"
                     >
                       <Zap size={11} className="stroke-[2.2]" />
                       <span>All to Today</span>
@@ -467,9 +474,9 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) =>
-                          updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false })
-                        );
+                        if (quadTasks.length > 0) {
+                          batchUpdateTasks(quadTasks.map((t) => t.id), { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
+                        }
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-500/10 hover:bg-stone-500/20 text-stone-600 dark:text-stone-400 font-semibold text-[11px] transition-colors"
                       title="Park all in Someday backlog"

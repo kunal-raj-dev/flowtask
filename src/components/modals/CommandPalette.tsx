@@ -108,7 +108,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     if (dsl.status) pool = pool.filter((t) => t.status === dsl.status);
     if (dsl.isOverdue) pool = pool.filter((t) => t.status !== 'done' && Boolean(t.dueDate && t.dueDate < todayStr));
     if (dsl.isPinned) pool = pool.filter((t) => Boolean(t.isPinnedToday));
-    if (dsl.isRecurring) pool = pool.filter((t) => Boolean(t.recurrence || t.customRecurrence));
+    if (dsl.isRecurring) pool = pool.filter((t) => Boolean((t.recurrence && t.recurrence !== 'none') || t.customRecurrence));
     if (dsl.contextTag) {
       pool = pool.filter((t) => t.contextTags && t.contextTags.some((c) => c.toLowerCase().includes(dsl.contextTag!)));
     }
@@ -161,7 +161,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
     {
       id: 'today',
-      title: 'Go to Today (My Day)',
+      title: 'Go to Today',
       icon: Sun,
       run: () => setActiveView('today'),
     },

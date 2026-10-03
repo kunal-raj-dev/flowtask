@@ -60,7 +60,7 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
   const { addStudySessions, projects } = useTaskContext();
 
   const [activeTab, setActiveTab] = useState<'paste' | 'builder'>('paste');
-  const [rawText, setRawText] = useState(SAMPLE_STUDY_LOG);
+  const [rawText, setRawText] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => formatLocalDate(new Date()));
   const [selectedProjectId, setSelectedProjectId] = useState(() => {
     return projects.find((p) => p.id === 'work')?.id || projects[0]?.id || 'inbox';
@@ -68,27 +68,10 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
 
   // Visual builder state
   const [builderSessionNum, setBuilderSessionNum] = useState(1);
-  const [builderTopic, setBuilderTopic] = useState('DSA Practice & LeetCode Sprint');
+  const [builderTopic, setBuilderTopic] = useState('');
   const [builderStartTime, setBuilderStartTime] = useState('08:30');
   const [builderEndTime, setBuilderEndTime] = useState('11:30');
-  const [builderTargets, setBuilderTargets] = useState<ParsedSessionTarget[]>([
-    {
-      id: 'target-1',
-      problemNumber: '1',
-      difficulty: 'EASY',
-      title: '#1 Two Sum',
-      url: 'https://leetcode.com/problems/two-sum',
-      tags: ['Array', 'Hash Table'],
-    },
-    {
-      id: 'target-2',
-      problemNumber: '15',
-      difficulty: 'MEDIUM',
-      title: '#15 3Sum',
-      url: 'https://leetcode.com/problems/3sum',
-      tags: ['Array', 'Two Pointers'],
-    },
-  ]);
+  const [builderTargets, setBuilderTargets] = useState<ParsedSessionTarget[]>([]);
   const [newTargetTitle, setNewTargetTitle] = useState('');
   const [newTargetUrl, setNewTargetUrl] = useState('');
   const [newTargetDiff, setNewTargetDiff] = useState<TargetDifficulty>('MEDIUM');

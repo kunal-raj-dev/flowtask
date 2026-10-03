@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { exportToMarkdown, exportToJSON, exportToCSV } from '../../utils/storage';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { generateSnapshotShareUrl } from '../../utils/snapshotShare';
+import { validateWorkspaceData } from '../../utils/workspaceValidation';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from 'canvas-confetti';
 import {
@@ -48,7 +49,29 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [standupFormat, setStandupFormat] = useState<'slack' | 'markdown' | 'plain'>('slack');
   const [importJsonText, setImportJsonText] = useState('');
+  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [importError, setImportError] = useState('');
+
+  const validationPreview = useMemo(() => {
+    if (!importJsonText.trim()) return null;
+    try {
+      const parsed = JSON.parse(importJsonText);
+      const rawTasks = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
+      const rawProjects = Array.isArray(parsed) ? [] : (parsed.projects || []);
+      if (!Array.isArray(rawTasks)) {
+        return { valid: false as const, error: 'Backup JSON must contain a tasks array.' };
+      }
+      const validated = validateWorkspaceData(rawTasks, rawProjects);
+      return {
+        valid: true as const,
+        tasksCount: validated.tasks.length,
+        projectsCount: validated.projects.length,
+        data: validated,
+      };
+    } catch (err: any) {
+      return { valid: false as const, error: err.message || 'Invalid JSON format or schema.' };
+    }
+  }, [importJsonText]);
 
   const markdownContent = exportToMarkdown(tasks, projects);
   const csvContent = exportToCSV(tasks, projects);
@@ -77,24 +100,42 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleImportSubmit = (e: React.FormEvent) => {
+  const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setImportError('');
+    if (!validationPreview || !validationPreview.valid || !validationPreview.data) {
+      setImportError('Please provide valid workspace backup JSON before restoring.');
+      return;
+    }
+
     try {
-      const parsed = JSON.parse(importJsonText);
-      if (!parsed.tasks || !Array.isArray(parsed.tasks)) {
-        throw new Error('Invalid JSON format: missing "tasks" array');
+      const prevTasks = [...tasks];
+      const prevProjects = [...projects];
+
+      if (importMode === 'replace') {
+        createLocalSnapshot(tasks, projects, 'Pre-Import Replace Safety Snapshot', 'pre_batch');
       }
-      importTasks(parsed.tasks, parsed.projects);
+
+      await importTasks(validationPreview.data.tasks, validationPreview.data.projects, importMode === 'replace');
       audioEngine.playCompletionChime();
+      confetti({ particleCount: 40, spread: 50 });
+
+      showToast(
+        importMode === 'replace' ? 'Workspace replaced from backup' : `Imported ${validationPreview.data.tasks.length} tasks`,
+        'Undo',
+        () => {
+          void importTasks(prevTasks, prevProjects, true).catch((err: Error) => showToast(err.message));
+        }
+      );
       onClose();
     } catch (err: any) {
-      setImportError(err.message || 'Invalid JSON');
+      setImportError(err.message || 'Failed to import backup');
     }
   };
 
   return (
     <div
+      role="dialog" aria-modal="true" aria-label="Backups and export"
       className="fixed inset-0 z-50 bg-black/40 dark:bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
     >
@@ -389,23 +430,85 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               id="import-backup-textarea"
               name="importBackup"
               aria-label="Paste JSON backup"
-              rows={8}
+              rows={6}
               value={importJsonText}
-              onChange={(e) => setImportJsonText(e.target.value)}
+              onChange={(e) => {
+                setImportJsonText(e.target.value);
+                setImportError('');
+              }}
               placeholder="Paste your JSON backup data here..."
               className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-lg outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-[var(--color-brand)]"
             />
+
+            {/* Validation Feedback & Preview */}
+            {validationPreview && (
+              validationPreview.valid ? (
+                <div className="space-y-2">
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                    <Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-semibold">
+                      Validated: {validationPreview.tasksCount} task{validationPreview.tasksCount === 1 ? '' : 's'} and {validationPreview.projectsCount} project{validationPreview.projectsCount === 1 ? '' : 's'} ready
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-stone-50 dark:bg-white/[0.03] border border-stone-200/70 dark:border-white/5 space-y-2 text-xs">
+                    <span className="font-bold text-stone-900 dark:text-stone-100 block">Restore Strategy:</span>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="merge"
+                        checked={importMode === 'merge'}
+                        onChange={() => setImportMode('merge')}
+                        className="mt-0.5 accent-amber-600"
+                      />
+                      <div>
+                        <span className="font-semibold text-stone-900 dark:text-stone-100">Merge with existing tasks</span>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                          Adds backup tasks alongside your current workspace without removing existing items.
+                        </p>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="replace"
+                        checked={importMode === 'replace'}
+                        onChange={() => setImportMode('replace')}
+                        className="mt-0.5 accent-amber-600"
+                      />
+                      <div>
+                        <span className="font-semibold text-stone-900 dark:text-stone-100">
+                          Replace workspace (pre-action safety snapshot created automatically)
+                        </span>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                          Replaces current tasks and projects. A safety rollback snapshot is automatically captured first.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2">
+                  <X size={14} className="shrink-0 mt-0.5" />
+                  <span>{validationPreview.error}</span>
+                </div>
+              )
+            )}
+
             {importError && (
               <p className="text-xs text-rose-500 font-semibold">{importError}</p>
             )}
+
             <div className="flex items-center justify-end gap-2">
               <button
                 type="submit"
-                disabled={!importJsonText.trim()}
+                disabled={!validationPreview || !validationPreview.valid}
                 className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-lg text-xs font-bold hover:bg-stone-800 dark:hover:bg-white disabled:opacity-40 shadow-xs transition-all"
               >
                 <Upload size={14} />
-                <span>Restore Data</span>
+                <span>{importMode === 'replace' ? 'Replace Workspace' : 'Merge Data'}</span>
               </button>
             </div>
           </form>
@@ -480,17 +583,17 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           const prevTasks = [...tasks];
                           const prevProjects = [...projects];
                           createLocalSnapshot(tasks, projects, 'Pre-Restore Auto-Backup', 'pre_batch');
                           const restored = restoreSnapshot(snap.id);
                           if (restored) {
-                            importTasks(restored.tasks, restored.projects);
+                            try { await importTasks(restored.tasks, restored.projects, true); } catch (error) { setImportError((error as Error).message); return; }
                             audioEngine.playCompletionChime();
                             confetti({ particleCount: 40, spread: 50 });
                             showToast(`Restored snapshot "${snap.label}"`, 'Undo', () => {
-                              importTasks(prevTasks, prevProjects);
+                              void importTasks(prevTasks, prevProjects, true).catch(error => showToast(error.message));
                             });
                             onClose();
                           }

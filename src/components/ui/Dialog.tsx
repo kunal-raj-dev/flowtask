@@ -1,4 +1,4 @@
-import React, { useEffect, useId } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -33,27 +33,39 @@ export const Dialog: React.FC<DialogProps> = ({
   closeOnBackdropClick = true,
   className = '',
 }) => {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose); closeRef.current = onClose;
   const titleId = useId();
   const descId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
-
+    const previous = document.activeElement as HTMLElement | null;
+    const root = rootRef.current;
+    const focusables = () => [...(root?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]') || [])].filter(el => el.getClientRects().length > 0);
+    const overflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
+    (focusables()[0] || root)?.focus();
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onClose();
+      const dialogs = [...document.querySelectorAll('[aria-modal="true"]')];
+      if (dialogs.at(-1) !== root) return;
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); closeRef.current(); }
+      if (e.key === 'Tab') {
+        const items = focusables(), first = items[0], last = items.at(-1);
+        if (!first) { e.preventDefault(); root?.focus(); }
+        else if (e.shiftKey && (document.activeElement === first || document.activeElement === root)) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => { document.removeEventListener('keydown', handleKeyDown, true); document.body.style.overflow = overflow; if (previous?.isConnected) previous.focus(); };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
     <div
+      ref={rootRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}

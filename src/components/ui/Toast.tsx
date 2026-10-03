@@ -11,7 +11,7 @@ export const Toast: React.FC = () => {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-6 right-6 z-50 animate-slide-down flex items-center gap-3 px-4 py-3 bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 rounded-xl shadow-elevated border border-stone-800 dark:border-stone-200 text-sm font-medium"
+      className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 animate-slide-down flex items-center gap-3 px-4 py-3 bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 rounded-xl shadow-elevated border border-stone-800 dark:border-stone-200 text-sm font-medium"
     >
       <span className="leading-snug">{toast.message}</span>
       {toast.actionLabel && toast.onAction && (

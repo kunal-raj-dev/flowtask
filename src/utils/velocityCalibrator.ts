@@ -121,7 +121,7 @@ export function getVelocityCalibration(
  * Calculates aggregate estimation accuracy and cognitive intensity distribution
  */
 export function calculateEstimationAccuracy(tasks: Task[]): EstimationAccuracyMetrics {
-  const completedTasks = tasks.filter((t) => t.status === 'done');
+  const completedTasks = tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done');
 
   // Velocity accuracy sample
   const sample = completedTasks.filter(
@@ -129,7 +129,7 @@ export function calculateEstimationAccuracy(tasks: Task[]): EstimationAccuracyMe
   );
 
   let avgRatio = 1.0;
-  let accuracyPercent = 100;
+  let accuracyPercent = 0;
 
   if (sample.length > 0) {
     const totalEst = sample.reduce((acc, t) => acc + (t.estimatedMinutes || 0), 0);
@@ -147,7 +147,7 @@ export function calculateEstimationAccuracy(tasks: Task[]): EstimationAccuracyMe
   let mediumMinutes = 0;
 
   completedTasks.forEach((t) => {
-    const mins = t.timeSpentMinutes || t.estimatedMinutes || 30;
+    const mins = t.timeSpentMinutes || 0;
     const intensity = classifyTaskCognitiveIntensity(t);
     if (intensity === 'deep') deepMinutes += mins;
     else if (intensity === 'admin') adminMinutes += mins;
@@ -155,8 +155,8 @@ export function calculateEstimationAccuracy(tasks: Task[]): EstimationAccuracyMe
   });
 
   const totalCognitive = deepMinutes + adminMinutes + mediumMinutes;
-  const deepWorkPercent = totalCognitive > 0 ? Math.round((deepMinutes / totalCognitive) * 100) : 50;
-  const adminPercent = totalCognitive > 0 ? Math.round((adminMinutes / totalCognitive) * 100) : 30;
+  const deepWorkPercent = totalCognitive > 0 ? Math.round((deepMinutes / totalCognitive) * 100) : 0;
+  const adminPercent = totalCognitive > 0 ? Math.round((adminMinutes / totalCognitive) * 100) : 0;
 
   return {
     accuracyPercent,

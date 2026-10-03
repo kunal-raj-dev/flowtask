@@ -122,7 +122,7 @@ describe('commandService', () => {
     // 1. Parsed date without explicit override sets both plannedDate and dueDate
     const result1 = commandService.createTask([], 'Call client tomorrow');
     expect(result1.createdTask.dueDate).toBeDefined();
-    expect(result1.createdTask.plannedDate).toBe(result1.createdTask.dueDate);
+    expect(result1.createdTask.plannedDate).toBeUndefined();
 
     // 2. Explicit plannedDate overrides parsed date
     const result2 = commandService.createTask([], 'Call client tomorrow', {
@@ -138,7 +138,7 @@ describe('commandService', () => {
     expect(result3.createdTask.dueDate).toBeUndefined();
   });
 
-  it('toggleTaskStatus generates recurring task, unpins Top 3, and cleanly undos', () => {
+  it('toggleTaskStatus generates recurring task, preserves Top 3 history, and cleanly undos', () => {
     const recurringTask: Task = {
       ...initialTask,
       id: 'rec-1',
@@ -153,7 +153,7 @@ describe('commandService', () => {
     // Completed task should be done and unpinned from Top 3
     const completed = result.updatedTasks.find((t) => t.id === 'rec-1')!;
     expect(completed.status).toBe('done');
-    expect(completed.isPinnedToday).toBe(false);
+    expect(completed.isPinnedToday).toBe(true);
     expect(completed.completedAt).toBeDefined();
 
     // Next recurring task should be created

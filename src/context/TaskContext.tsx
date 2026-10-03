@@ -1,46 +1,30 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
-import confetti from 'canvas-confetti';
-import type {
-  Task,
-  SubTask,
-  Project,
-  ViewId,
-  Priority,
-  CalendarEvent,
-  InterruptionStash,
-  SmartFilterView,
-  SmartFilterPredicate,
-  FocusSession,
-  FocusSessionMode,
-} from '../types/task';
+import { createContext, useContext, useState, useEffect, useCallback, useSyncExternalStore, type ReactNode } from 'react';
+import type { Task, SubTask, Project, ViewId, Priority, CalendarEvent, InterruptionStash, SmartFilterView, SmartFilterPredicate, FocusSession, FocusSessionMode } from '../types/task';
 import { formatLocalDate } from '../utils/nlpParser';
 import { BUILT_IN_SMART_VIEWS } from '../utils/smartViewUtils';
 import { audioEngine, type SoundProfile } from '../utils/audioEngine';
-import {
-  loadTasksFromStorage,
-  loadProjectsFromStorage,
-  saveProjectsToStorage,
-} from '../utils/storage';
 import { useAuth } from './AuthContext';
-import { taskSyncService } from '../services/taskSyncService';
 import { fetchICSFeed } from '../services/calendarService';
-import { checkAndTriggerDailyAutoSnapshot } from '../utils/backupService';
 import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser';
-import { commandService } from '../services/commandService';
-import { dbService } from '../services/dbService';
+import { commandService, type CommandResult } from '../services/commandService';
+import { WorkspaceStore } from '../services/workspaceStore';
 import { focusSessionService } from '../services/focusSessionService';
-import { useWorkspaceSettings } from '../hooks/useWorkspaceSettings';
-import type { UserWorkflowSettings } from '../types/settings';
-
-interface UndoAction {
-  description: string;
-  undo: (currentTasks: Task[]) => Task[];
-}
+import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/settings';
+import { validateWorkspaceData } from '../utils/workspaceValidation';
+import { isActiveTask, isFocusTask } from '../utils/taskSelectors';
+import { dbService } from '../services/dbService';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local' | 'conflict' | 'error';
 export type AppTheme = 'light' | 'dark' | 'tokyo' | 'nord' | 'matcha';
 
 interface TaskContextType {
+  workspaceId: string;
+  workspacePreferences: Record<string, unknown>;
+  setWorkspacePreference: (key: string, value: unknown) => void;
+  downloadWorkspaceBackup: () => void;
+  resolveSyncConflict: (choice: 'local' | 'remote') => Promise<void>;
+  importLocalWorkspace: () => Promise<void>;
+
   tasks: Task[];
   projects: Project[];
   activeView: ViewId;
@@ -128,7 +112,7 @@ interface TaskContextType {
   calendarEvents: CalendarEvent[];
   calendarIcsUrl: string;
   setCalendarIcsUrl: (url: string) => void;
-  refreshCalendarEvents: () => Promise<void>;
+  refreshCalendarEvents: (date?: string) => Promise<void>;
 
   // Evening Shutdown Ritual
   isEveningShutdownOpen: boolean;
@@ -157,7 +141,7 @@ interface TaskContextType {
 
   // Core Task Actions (deterministic command driven)
   addTask: (input: string, explicitOverrides?: Partial<Task>) => Task;
-  addMultipleTasks: (lines: string[]) => void;
+  addMultipleTasks: (lines: string[], overrides?: Partial<Task>) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   permanentDeleteTask: (id: string) => void;
@@ -167,6 +151,7 @@ interface TaskContextType {
   toggleTaskPinToday: (id: string) => boolean;
   toggleSubTask: (taskId: string, subtaskId: string) => void;
   addSubTask: (taskId: string, title: string, estimatedMinutes?: number, extra?: Partial<SubTask>) => void;
+  addSubTasks: (taskId: string, newSubs: Array<{ title: string; estimatedMinutes?: number; extra?: Partial<SubTask> }>) => void;
   updateSubTask: (taskId: string, subtaskId: string, updates: Partial<SubTask>) => void;
   deleteSubTask: (taskId: string, subtaskId: string) => void;
   addStudySessions: (sessions: ParsedSession[], dateStr?: string, projectId?: string) => Task[];
@@ -187,1087 +172,240 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, isConfigured } = useAuth();
-  const workspaceId = user ? user.uid : 'local';
-
-  const [tasks, setTasks] = useState<Task[]>(() => loadTasksFromStorage());
-  const [projects, setProjects] = useState<Project[]>(() => loadProjectsFromStorage());
-  const [activeView, setActiveView] = useState<ViewId>('today');
+  const { user, loading } = useAuth();
+  if (loading) return <div role="status" className="p-10">Opening your workspace…</div>;
+  return <WorkspaceProvider key={user?.uid || 'local'} workspaceId={user?.uid || 'local'} connected={!!user}>{children}</WorkspaceProvider>;
+};
+const WorkspaceProvider = ({ children, workspaceId, connected }: { children: ReactNode; workspaceId: string; connected: boolean }) => {
+  const [store] = useState(() => new WorkspaceStore(workspaceId, connected));
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { tasks, projects, preferences, customViews: customSmartViews } = snapshot.record;
+  const current = () => store.getSnapshot().record;
+  const syncStatus = snapshot.sync;
+  const lastSyncedAt = syncStatus === 'synced' ? new Date(snapshot.record.updatedAt) : null;
+  const parseView = (): ViewId => {
+    const view = new URL(window.location.href).searchParams.get('view') || 'today';
+    return /^(today|inbox|upcoming|projects|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view) ? view as ViewId : 'today';
+  };
+  const [activeView, setActiveViewState] = useState<ViewId>(parseView);
+  const setActiveView = (view: ViewId) => { const url = new URL(window.location.href); url.searchParams.set('view', view); history.pushState({}, '', url); setActiveViewState(view); };
+  useEffect(() => { const navigate = () => setActiveViewState(parseView()); window.addEventListener('popstate', navigate); return () => window.removeEventListener('popstate', navigate); }, []);
   const [viewLayout, setViewLayout] = useState<'list' | 'kanban' | 'matrix'>('list');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all');
   const [quickWinsOnly, setQuickWinsOnly] = useState(false);
   const [isTriageDismissed, setIsTriageDismissed] = useState(false);
-  const [, setUndoStack] = useState<UndoAction[]>([]);
-  const undoStackRef = useRef<UndoAction[]>([]);
   const [toast, setToast] = useState<{ message: string; actionLabel?: string; onAction?: () => void } | null>(null);
-
-  // Cloud Sync state
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>(isConfigured ? 'syncing' : 'local');
-  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-
-  // Quick Add Composer State (preserves draft across views)
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddDraft, setQuickAddDraft] = useState('');
-
-  // Focus Session Engine (Mini-player & Timers)
-  const [focusSession, setFocusSession] = useState<FocusSession | null>(() =>
-    focusSessionService.getStoredSession()
-  );
-  const [focusElapsedSeconds, setFocusElapsedSeconds] = useState<number>(0);
-
-  // External Calendar ICS state
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [calendarIcsUrl, setCalendarIcsUrlState] = useState<string>(() => {
-    return localStorage.getItem('flowtask_calendar_ics_url') || '';
-  });
-
-  // Evening Shutdown Ritual state
-  const [isEveningShutdownOpen, setIsEveningShutdownOpen] = useState(false);
-  const [isShutdownDismissed, setIsShutdownDismissed] = useState(false);
-
-  // Multi-Select state
-  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
-
-  // Interruption Stash state
-  const [interruptionStash, setInterruptionStash] = useState<InterruptionStash | null>(() => {
-    try {
-      const saved = localStorage.getItem('flowtask_interruption_stash');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [isInterruptionModalOpen, setIsInterruptionModalOpen] = useState(false);
-
-  // User Workflow Settings & Preferences
-  const { settings, updateSettings, resetSettings } = useWorkspaceSettings();
-
-  // Smart Views state
-  const [customSmartViews, setCustomSmartViews] = useState<SmartFilterView[]>(() => {
-    try {
-      const saved = localStorage.getItem('flowtask_custom_smart_views');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [isSmartFilterModalOpen, setIsSmartFilterModalOpen] = useState(false);
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
   const [isWeeklyReviewOpen, setIsWeeklyReviewOpen] = useState(false);
-
-  // Theme state
-  const [theme, setThemeState] = useState<AppTheme>(() => {
+  const [isSmartFilterModalOpen, setIsSmartFilterModalOpen] = useState(false);
+  const [isInterruptionModalOpen, setIsInterruptionModalOpen] = useState(false);
+  const [isEveningShutdownOpen, setIsEveningShutdownOpen] = useState(false);
+  const [isShutdownDismissed, setIsShutdownDismissed] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [focusElapsedSeconds, setFocusElapsedSeconds] = useState(0);
+  const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('flowtask_theme') as AppTheme;
-    if (saved && ['light', 'dark', 'tokyo', 'nord', 'matcha'].includes(saved)) return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return ['light', 'dark', 'tokyo', 'nord', 'matcha'].includes(saved) ? saved : 'light';
   });
-
-  // Sound profile state
-  const [soundProfile, setSoundProfileState] = useState<SoundProfile>(() => audioEngine.getSoundProfile());
-  const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => audioEngine.getSoundEnabled());
-
-  // Initialize workspace from IndexedDB / legacy migration on mount and when account switches
+  const [soundEnabled, setSoundEnabled] = useState(audioEngine.getSoundEnabled());
+  const [soundProfile, setSoundProfileState] = useState<SoundProfile>(audioEngine.getSoundProfile());
+  const todayStr = formatLocalDate(new Date());
+  const settings = { ...DEFAULT_WORKFLOW_SETTINGS, ...(preferences.settings as Partial<UserWorkflowSettings> || {}) };
+  const focusSession = (preferences.focusSession as FocusSession | null) || null;
+  const interruptionStash = (preferences.interruptionStash as InterruptionStash | null) || null;
+  const calendarIcsUrl = (preferences.calendarUrl as string) || '';
+  const overdueTasks = tasks.filter(t => isActiveTask(t) && t.dueDate && t.dueDate < todayStr);
+  const showToast = useCallback((message: string, actionLabel?: string, onAction?: () => void) => setToast({ message, actionLabel, onAction }), []);
+  const clearToast = useCallback(() => setToast(null), []);
+  useEffect(() => { if (!toast) return; const timer = setTimeout(clearToast, 5000); return () => clearTimeout(timer); }, [toast, clearToast]);
   useEffect(() => {
-    let isMounted = true;
-
-    dbService.ensureLegacyMigrated(workspaceId).then((record) => {
-      if (!isMounted) return;
-      if (record && record.tasks) {
-        setTasks(record.tasks);
-        setProjects(record.projects);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [workspaceId]);
-
-  // Persist to scoped database whenever tasks or projects change
+    const abort = new AbortController();
+    let release: (() => void) | undefined;
+    if (navigator.locks) {
+      void navigator.locks.request('flowtask-workspace-' + workspaceId, { signal: abort.signal }, async () => {
+        await store.load();
+        if (abort.signal.aborted) return;
+        await new Promise<void>(resolve => { release = resolve; });
+        await store.settled().catch(() => {});
+      }).catch(() => {});
+    } else void store.load();
+    return () => { abort.abort(); release?.(); };
+  }, [store, workspaceId]);
   useEffect(() => {
-    dbService.saveWorkspace(workspaceId, { tasks, projects, customViews: customSmartViews });
-  }, [workspaceId, tasks, projects, customSmartViews]);
-
-  // Rolling local snapshot safety net
+    if (!connected || !snapshot.ready) return;
+    let cancelled = false;
+    let stop: (() => void) | undefined;
+    void import('../services/cloudWorkspace').then(({ createCloudAdapter, watchCloud }) => {
+      if (cancelled) return;
+      store.connect(createCloudAdapter(workspaceId));
+      stop = watchCloud(workspaceId, (kind, data) => store.receive(kind, data), error => showToast(`Cloud connection interrupted: ${error.message}`));
+    }).catch(error => showToast(String(error.message || error)));
+    const retry = () => { void store.flush(); };
+    window.addEventListener('online', retry);
+    return () => { cancelled = true; stop?.(); store.disconnect(); window.removeEventListener('online', retry); };
+  }, [connected, snapshot.ready, store, workspaceId, showToast]);
   useEffect(() => {
-    if (tasks.length > 0) {
-      checkAndTriggerDailyAutoSnapshot(tasks, projects);
-    }
-  }, [tasks, projects]);
-
-  // Focus Session Ticker
-  useEffect(() => {
-    if (!focusSession || focusSession.state !== 'running') {
-      setFocusElapsedSeconds(focusSession ? focusSessionService.getElapsedSeconds(focusSession) : 0);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setFocusElapsedSeconds(focusSessionService.getElapsedSeconds(focusSession));
-    }, 1000);
-
-    return () => clearInterval(interval);
+    const tick = () => setFocusElapsedSeconds(focusSession ? focusSessionService.getElapsedSeconds(focusSession) : 0);
+    tick(); if (focusSession?.state !== 'running') return;
+    const timer = setInterval(tick, 1000); return () => clearInterval(timer);
   }, [focusSession]);
-
-  // Cross-tab focus synchronization
-  useEffect(() => {
-    if (typeof BroadcastChannel === 'undefined') return;
-    const channel = new BroadcastChannel('flowtask_focus_channel');
-    channel.onmessage = (event) => {
-      if (event.data?.type === 'FOCUS_SESSION_UPDATE') {
-        setFocusSession(event.data.session);
-      }
-    };
-    return () => channel.close();
-  }, []);
-
-  // Theme attribute application
   useEffect(() => {
     document.documentElement.classList.remove('dark', 'theme-tokyo', 'theme-nord', 'theme-matcha');
-    if (theme === 'dark' || theme === 'tokyo' || theme === 'nord') {
-      document.documentElement.classList.add('dark');
-    }
-    if (theme === 'tokyo') document.documentElement.classList.add('theme-tokyo');
-    if (theme === 'nord') document.documentElement.classList.add('theme-nord');
-    if (theme === 'matcha') document.documentElement.classList.add('theme-matcha');
-
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('flowtask_theme', theme);
+    if (['dark', 'tokyo', 'nord'].includes(theme)) document.documentElement.classList.add('dark');
+    if (!['light', 'dark'].includes(theme)) document.documentElement.classList.add(`theme-${theme}`);
+    document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('flowtask_theme', theme);
   }, [theme]);
-
-  const setTheme = useCallback((t: AppTheme) => {
-    setThemeState(t);
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setThemeState((prev) => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      audioEngine.playToggleSound(next === 'light');
-      return next;
+  const setWorkspacePreference = (key: string, value: unknown) => store.run('Update workspace preference', r => ({ ...r, preferences: { ...r.preferences, [key]: value } }), false);
+  const updateSettings = (updates: Partial<UserWorkflowSettings>) => setWorkspacePreference('settings', { ...DEFAULT_WORKFLOW_SETTINGS, ...(current().preferences.settings as object || {}), ...updates });
+  const resetSettings = () => setWorkspacePreference('settings', DEFAULT_WORKFLOW_SETTINGS);
+  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+  const toggleSound = () => { audioEngine.setSoundEnabled(!soundEnabled); setSoundEnabled(!soundEnabled); };
+  const setSoundProfile = (profile: SoundProfile) => { audioEngine.setSoundProfile(profile); setSoundProfileState(profile); };
+  function execute(factory: (list: Task[]) => CommandResult) {
+    const result = factory(current().tasks);
+    store.run(result.description, r => ({ ...r, tasks: result.updatedTasks }));
+    return result;
+  }
+  const undoLastAction = () => { try { store.undo(); } catch (error) { showToast(String((error as Error).message)); } };
+  const addTask = (input: string, overrides?: Partial<Task>): Task => {
+    const result = commandService.createTask(current().tasks, input, overrides, { defaultPlannedDate: activeView === 'today' ? todayStr : undefined, defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox' });
+    if (!current().projects.some(p => p.id === result.createdTask.projectId)) result.createdTask.projectId = 'inbox';
+    store.run(result.description, r => ({ ...r, tasks: result.updatedTasks }));
+    return result.createdTask;
+  };
+  const addMultipleTasks = (lines: string[], overrides?: Partial<Task>) => {
+    store.run('Add multiple tasks', r => ({ ...r, tasks: lines.map(l => l.trim()).filter(Boolean).reduce((list, line) => commandService.createTask(list, line, { projectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox', ...overrides }, { defaultPlannedDate: activeView === 'today' ? todayStr : undefined }).updatedTasks, r.tasks) }));
+  };
+  const updateTask = (id: string, updates: Partial<Task>) => { execute(list => commandService.updateTask(list, id, updates)); };
+  const deleteTask = (id: string) => { execute(list => commandService.deleteTask(list, id)); showToast('Task moved to Trash', 'Undo', undoLastAction); };
+  const permanentDeleteTask = (id: string) => { execute(list => commandService.permanentDeleteTask(list, id)); };
+  const archiveTask = (id: string) => { execute(list => commandService.archiveTask(list, id)); showToast('Task archived', 'Undo', undoLastAction); };
+  const restoreTask = (id: string) => { execute(list => commandService.restoreTask(list, id)); };
+  const toggleTaskStatus = (id: string) => { execute(list => commandService.toggleTaskStatus(list, id)); audioEngine.playTaskComplete(); };
+  const toggleTaskPinToday = (id: string) => {
+    const task = current().tasks.find(t => t.id === id); if (!task || !isActiveTask(task)) return false;
+    const pinned = isFocusTask(task, todayStr);
+    if (!pinned && current().tasks.filter(t => isFocusTask(t, todayStr)).length >= 3) { showToast('Your Top 3 is full. Unpin a task first.'); return false; }
+    updateTask(id, { isPinnedToday: !pinned, topThreeDate: pinned ? undefined : todayStr, plannedDate: pinned ? task.plannedDate : todayStr }); return true;
+  };
+  const editSubtasks = (taskId: string, transform: (subs: SubTask[]) => SubTask[]) => {
+    const task = current().tasks.find(t => t.id === taskId); if (task) updateTask(taskId, { subtasks: transform(task.subtasks) });
+  };
+  const toggleSubTask = (taskId: string, subId: string) => editSubtasks(taskId, subs => subs.map(s => s.id === subId ? { ...s, completed: !s.completed } : s));
+  const addSubTask = (taskId: string, title: string, estimatedMinutes?: number, extra?: Partial<SubTask>) => editSubtasks(taskId, subs => [...subs, { ...extra, id: crypto.randomUUID(), title: title.trim(), estimatedMinutes, completed: false }]);
+  const addSubTasks = (taskId: string, newSubs: Array<{ title: string; estimatedMinutes?: number; extra?: Partial<SubTask> }>) => editSubtasks(taskId, subs => [...subs, ...newSubs.map(s => ({ ...s.extra, id: crypto.randomUUID(), title: s.title.trim(), estimatedMinutes: s.estimatedMinutes, completed: false }))]);
+  const updateSubTask = (taskId: string, subId: string, updates: Partial<SubTask>) => editSubtasks(taskId, subs => subs.map(s => s.id === subId ? { ...s, ...updates, id: s.id } : s));
+  const deleteSubTask = (taskId: string, subId: string) => editSubtasks(taskId, subs => subs.filter(s => s.id !== subId));
+  const moveSubTask = (taskId: string, subId: string, direction: 'up' | 'down') => editSubtasks(taskId, subs => {
+    const index = subs.findIndex(s => s.id === subId), target = index + (direction === 'up' ? -1 : 1);
+    if (index < 0 || target < 0 || target >= subs.length) return subs;
+    const next = [...subs]; [next[index], next[target]] = [next[target], next[index]]; return next;
+  });
+  const promoteSubTaskToTask = (taskId: string, subId: string) => {
+    store.run('Promote subtask', r => {
+      const parent = r.tasks.find(t => t.id === taskId), sub = parent?.subtasks.find(s => s.id === subId); if (!parent || !sub) return r;
+      const list = r.tasks.map(t => t.id === taskId ? { ...t, subtasks: t.subtasks.filter(s => s.id !== subId) } : t);
+      return { ...r, tasks: commandService.createTask(list, sub.title, { projectId: parent.projectId, plannedDate: parent.plannedDate, priority: parent.priority, estimatedMinutes: sub.estimatedMinutes }).updatedTasks };
     });
-  }, []);
-
-  const setSoundProfile = useCallback((p: SoundProfile) => {
-    setSoundProfileState(p);
-    audioEngine.setSoundProfile(p);
-  }, []);
-
-  const toggleSound = useCallback(() => {
-    setSoundEnabledState((prev) => {
-      const next = !prev;
-      audioEngine.setSoundEnabled(next);
-      if (next) {
-        audioEngine.playToggleSound(true);
-      }
-      return next;
+  };
+  const duplicateTask = (id: string): Task | null => {
+    const task = current().tasks.find(t => t.id === id); if (!task) return null;
+    return addTask(`${task.title} (Copy)`, { ...task, title: `${task.title} (Copy)`, isPinnedToday: false, topThreeDate: undefined, subtasks: task.subtasks.map(s => ({ ...s, id: crypto.randomUUID(), completed: false })) });
+  };
+  const mergeTasks = (target: string, source: string) => { execute(list => commandService.mergeTasks(list, target, source)); };
+  const addStudySessions = (sessions: ParsedSession[], date = todayStr, projectId = 'inbox') => {
+    const created = sessions.map(s => convertSessionToTask(s, date, projectId)); store.run('Add study sessions', r => ({ ...r, tasks: [...created, ...r.tasks] })); return created;
+  };
+  const batchUpdateTasks = (ids: string[], updates: Partial<Task>) => { execute(list => commandService.batchUpdate(list, ids, updates)); };
+  const batchDeleteTasks = (ids: string[]) => { execute(list => commandService.batchDelete(list, ids)); setSelectedTaskIds([]); showToast('Tasks moved to Trash', 'Undo', undoLastAction); };
+  const batchToggleStatus = (ids: string[]) => {
+    store.run('Change task completion', r => {
+      const allDone = r.tasks.filter(t => ids.includes(t.id)).every(t => t.status === 'done');
+      return { ...r, tasks: ids.reduce((list, id) => { const task = list.find(t => t.id === id); return task && (task.status === 'done') === allDone ? commandService.toggleTaskStatus(list, id).updatedTasks : list; }, r.tasks) };
     });
-  }, []);
-
-  const showToast = useCallback((message: string, actionLabel?: string, onAction?: () => void) => {
-    setToast({ message, actionLabel, onAction });
-    const timer = setTimeout(() => {
-      setToast(null);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const clearToast = useCallback(() => setToast(null), []);
-
-  const pushUndo = useCallback((description: string, undoFn: (currentTasks: Task[]) => Task[]) => {
-    const action: UndoAction = { description, undo: undoFn };
-    undoStackRef.current = [action, ...undoStackRef.current.slice(0, 9)];
-    setUndoStack(undoStackRef.current);
-  }, []);
-
-  const undoLastAction = useCallback(() => {
-    if (undoStackRef.current.length === 0) return;
-    const [actionToUndo, ...rest] = undoStackRef.current;
-    undoStackRef.current = rest;
-    setUndoStack(rest);
-
-    setTasks((currentTasks) => {
-      const reverted = actionToUndo.undo(currentTasks);
-      if (user) {
-        taskSyncService.batchMigrate(user.uid, reverted, projects).catch((err) => {
-          console.warn('Undo cloud sync error:', err);
-        });
-      }
-      return reverted;
-    });
-
-    showToast(`Undone: ${actionToUndo.description}`);
-  }, [user, projects, showToast]);
-
-  // Firebase Real-time Synchronization
-  useEffect(() => {
-    if (!isConfigured || !user) {
-      setSyncStatus('local');
-      return;
-    }
-
-    let isMounted = true;
-    setSyncStatus('syncing');
-
-    // Subscribe to tasks
-    const unsubTasks = taskSyncService.subscribeToTasks(
-      user.uid,
-      (remoteTasks, hasPendingWrites) => {
-        if (!isMounted) return;
-        setTasks(remoteTasks);
-        setSyncStatus(hasPendingWrites ? 'syncing' : 'synced');
-        setLastSyncedAt(new Date());
-      },
-      (err) => {
-        console.warn('Task sync listener reported error/offline:', err);
-        if (isMounted) setSyncStatus('offline');
-      }
-    );
-
-    // Subscribe to projects
-    const unsubProjects = taskSyncService.subscribeToProjects(
-      user.uid,
-      (remoteProjects) => {
-        if (!isMounted) return;
-        if (remoteProjects.length > 0) {
-          setProjects(remoteProjects);
-        }
-      },
-      (err) => {
-        console.warn('Project sync listener error:', err);
-      }
-    );
-
-    return () => {
-      isMounted = false;
-      unsubTasks();
-      unsubProjects();
-    };
-  }, [user, isConfigured]);
-
-  const forceSyncToCloud = useCallback(async () => {
-    if (!user) {
-      showToast('Offline mode: Sign in to sync across devices');
-      return;
-    }
-    setSyncStatus('syncing');
-    try {
-      await taskSyncService.batchMigrate(user.uid, tasks, projects);
-      setSyncStatus('synced');
-      setLastSyncedAt(new Date());
-      showToast('All tasks & projects synced to Cloud!');
-    } catch (err) {
-      console.error('Manual sync failed:', err);
-      setSyncStatus('offline');
-      showToast('Sync queued in offline cache');
-    }
-  }, [user, tasks, projects, showToast]);
-
-  // Compute overdue tasks
-  const todayStr = formatLocalDate(new Date());
-  const overdueTasks = tasks.filter(
-    (t) =>
-      !t.deletedAt &&
-      !t.archivedAt &&
-      t.status !== 'done' &&
-      t.dueDate &&
-      t.dueDate < todayStr &&
-      t.dueDate !== ''
-  );
-
-  // Core Task Actions via Command Service
-  const addTask = useCallback(
-    (input: string, explicitOverrides?: Partial<Task>): Task => {
-      const defaultPlanned = activeView === 'today' ? todayStr : undefined;
-      const defaultProj = activeView.startsWith('project:') ? activeView.split(':')[1] : undefined;
-
-      const result = commandService.createTask(tasks, input, explicitOverrides, {
-        defaultPlannedDate: defaultPlanned,
-        defaultProjectId: defaultProj,
-      });
-
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-      audioEngine.playClickSound();
-
-      if (user) {
-        taskSyncService.saveTask(user.uid, result.createdTask).catch((err) => {
-          console.warn('Cloud task sync queued offline:', err);
-        });
-      }
-
-      return result.createdTask;
-    },
-    [tasks, activeView, todayStr, pushUndo, user]
-  );
-
-  const addMultipleTasks = useCallback(
-    (lines: string[]) => {
-      const cleanLines = lines.map((l) => l.trim()).filter((l) => l.length > 0);
-      if (cleanLines.length === 0) return;
-
-      let currentList = tasks;
-      const created: Task[] = [];
-
-      for (const line of cleanLines) {
-        const res = commandService.createTask(currentList, line, undefined, {
-          defaultPlannedDate: activeView === 'today' ? todayStr : undefined,
-          defaultProjectId: activeView.startsWith('project:') ? activeView.split(':')[1] : 'inbox',
-        });
-        currentList = res.updatedTasks;
-        created.push(res.createdTask);
-      }
-
-      setTasks(currentList);
-      pushUndo(`Added ${created.length} tasks`, (curr) =>
-        curr.filter((t) => !created.some((c) => c.id === t.id))
-      );
-
-      if (user && created.length > 0) {
-        taskSyncService.batchMigrate(user.uid, created, []).catch((err) => {
-          console.warn('Batch task sync queued offline:', err);
-        });
-      }
-
-      showToast(`Added ${created.length} tasks`);
-    },
-    [tasks, activeView, todayStr, pushUndo, user, showToast]
-  );
-
-  const updateTask = useCallback(
-    (id: string, updates: Partial<Task>) => {
-      const result = commandService.updateTask(tasks, id, updates);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-
-      const updated = result.updatedTasks.find((t) => t.id === id);
-      if (user && updated) {
-        taskSyncService.saveTask(user.uid, updated).catch((err) => {
-          console.warn('Task update queued offline:', err);
-        });
-      }
-    },
-    [tasks, pushUndo, user]
-  );
-
-  const deleteTask = useCallback(
-    (id: string) => {
-      const result = commandService.deleteTask(tasks, id);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-      audioEngine.playTaskComplete();
-
-      const deleted = result.updatedTasks.find((t) => t.id === id);
-      if (user && deleted) {
-        taskSyncService.saveTask(user.uid, deleted).catch((err) => {
-          console.warn('Delete sync queued offline:', err);
-        });
-      }
-
-      showToast('Task moved to Trash', 'Undo', () => undoLastAction());
-    },
-    [tasks, pushUndo, user, showToast, undoLastAction]
-  );
-
-  const permanentDeleteTask = useCallback(
-    (id: string) => {
-      const result = commandService.permanentDeleteTask(tasks, id);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-
-      if (user) {
-        taskSyncService.deleteTask(user.uid, id).catch((err) => {
-          console.warn('Permanent delete sync queued offline:', err);
-        });
-      }
-
-      showToast('Task permanently deleted');
-    },
-    [tasks, pushUndo, user, showToast]
-  );
-
-  const archiveTask = useCallback(
-    (id: string) => {
-      const result = commandService.archiveTask(tasks, id);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-
-      const archived = result.updatedTasks.find((t) => t.id === id);
-      if (user && archived) {
-        taskSyncService.saveTask(user.uid, archived).catch((err) => {
-          console.warn('Archive sync queued offline:', err);
-        });
-      }
-
-      showToast('Task archived', 'Undo', () => undoLastAction());
-    },
-    [tasks, pushUndo, user, showToast, undoLastAction]
-  );
-
-  const restoreTask = useCallback(
-    (id: string) => {
-      const result = commandService.restoreTask(tasks, id);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-
-      const restored = result.updatedTasks.find((t) => t.id === id);
-      if (user && restored) {
-        taskSyncService.saveTask(user.uid, restored).catch((err) => {
-          console.warn('Restore sync queued offline:', err);
-        });
-      }
-
-      showToast('Task restored');
-    },
-    [tasks, pushUndo, user, showToast]
-  );
-
-  const toggleTaskStatus = useCallback(
-    (id: string) => {
-      const target = tasks.find((t) => t.id === id);
-      if (!target) return;
-
-      const result = commandService.toggleTaskStatus(tasks, id);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-
-      if (target.status !== 'done') {
-        audioEngine.playTaskComplete();
-        confetti({
-          particleCount: 25,
-          spread: 45,
-          origin: { y: 0.8 },
-          colors: ['#6366f1', '#10b981', '#f59e0b'],
-        });
-      }
-
-      if (user) {
-        const completed = result.updatedTasks.find((t) => t.id === id);
-        if (completed) {
-          taskSyncService.saveTask(user.uid, completed).catch((err) => {
-            console.warn('Task completion sync queued offline:', err);
-          });
-        }
-        if (result.sideEffects?.nextRecurringTaskId) {
-          const nextOccur = result.updatedTasks.find(
-            (t) => t.id === result.sideEffects!.nextRecurringTaskId
-          );
-          if (nextOccur) {
-            taskSyncService.saveTask(user.uid, nextOccur).catch((err) => {
-              console.warn('Recurring task sync queued offline:', err);
-            });
-          }
-        }
-      }
-    },
-    [tasks, pushUndo, user]
-  );
-
-  const toggleTaskPinToday = useCallback(
-    (id: string): boolean => {
-      const task = tasks.find((t) => t.id === id);
-      if (!task) return false;
-
-      const isPinnedForToday = task.isPinnedToday && task.topThreeDate === todayStr;
-
-      if (!isPinnedForToday) {
-        // Enforce Top 3 limit for today
-        const currentPinnedTodayCount = tasks.filter(
-          (t) =>
-            !t.deletedAt &&
-            !t.archivedAt &&
-            t.status !== 'done' &&
-            t.isPinnedToday &&
-            (t.topThreeDate === todayStr || (!t.topThreeDate && t.plannedDate === todayStr))
-        ).length;
-
-        if (currentPinnedTodayCount >= 3) {
-          showToast('Rule of 3: Focus on at most 3 core tasks per day for maximum depth.');
-          return false;
-        }
-
-        updateTask(id, {
-          isPinnedToday: true,
-          topThreeDate: todayStr,
-          plannedDate: task.plannedDate || todayStr,
-        });
-        audioEngine.playClickSound();
-      } else {
-        updateTask(id, { isPinnedToday: false, topThreeDate: undefined });
-      }
-
-      return true;
-    },
-    [tasks, todayStr, showToast, updateTask]
-  );
-
-  const toggleSubTask = useCallback(
-    (taskId: string, subtaskId: string) => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-
-      const subtasks = task.subtasks.map((s) =>
-        s.id === subtaskId ? { ...s, completed: !s.completed } : s
-      );
-
-      updateTask(taskId, { subtasks });
-      audioEngine.playClickSound();
-    },
-    [tasks, updateTask]
-  );
-
-  const addSubTask = useCallback(
-    (taskId: string, title: string, estimatedMinutes?: number, extra?: Partial<SubTask>) => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-
-      const newSub: SubTask = {
-        id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        title: title.trim(),
-        completed: false,
-        estimatedMinutes,
-        ...extra,
-      };
-
-      updateTask(taskId, { subtasks: [...task.subtasks, newSub] });
-      audioEngine.playClickSound();
-    },
-    [tasks, updateTask]
-  );
-
-  const updateSubTask = useCallback(
-    (taskId: string, subtaskId: string, updates: Partial<SubTask>) => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-
-      const subtasks = task.subtasks.map((s) =>
-        s.id === subtaskId ? { ...s, ...updates } : s
-      );
-
-      updateTask(taskId, { subtasks });
-    },
-    [tasks, updateTask]
-  );
-
-  const deleteSubTask = useCallback(
-    (taskId: string, subtaskId: string) => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-
-      const subtasks = task.subtasks.filter((s) => s.id !== subtaskId);
-      updateTask(taskId, { subtasks });
-    },
-    [tasks, updateTask]
-  );
-
-  const promoteSubTaskToTask = useCallback(
-    (taskId: string, subtaskId: string) => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-
-      const subtask = task.subtasks.find((s) => s.id === subtaskId);
-      if (!subtask) return;
-
-      // Remove from parent
-      deleteSubTask(taskId, subtaskId);
-
-      // Create new standalone task inheriting project and context
-      addTask(subtask.title, {
-        projectId: task.projectId,
-        plannedDate: task.plannedDate,
-        dueDate: task.dueDate,
-        priority: task.priority,
-        estimatedMinutes: subtask.estimatedMinutes || 15,
-        contextTags: task.contextTags,
-      });
-
-      showToast(`Promoted "${subtask.title}" to standalone task`);
-    },
-    [tasks, deleteSubTask, addTask, showToast]
-  );
-
-  const moveSubTask = useCallback(
-    (taskId: string, subtaskId: string, direction: 'up' | 'down') => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-
-      const index = task.subtasks.findIndex((s) => s.id === subtaskId);
-      if (index === -1) return;
-
-      const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      if (targetIndex < 0 || targetIndex >= task.subtasks.length) return;
-
-      const updated = [...task.subtasks];
-      const [moved] = updated.splice(index, 1);
-      updated.splice(targetIndex, 0, moved);
-
-      updateTask(taskId, { subtasks: updated });
-    },
-    [tasks, updateTask]
-  );
-
-  const duplicateTask = useCallback(
-    (taskId: string): Task | null => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return null;
-
-      const duplicated = addTask(`${task.title} (Copy)`, {
-        description: task.description,
-        priority: task.priority,
-        projectId: task.projectId,
-        plannedDate: task.plannedDate,
-        dueDate: task.dueDate,
-        dueTime: task.dueTime,
-        estimatedMinutes: task.estimatedMinutes,
-        recurrence: task.recurrence,
-        customRecurrence: task.customRecurrence,
-        tags: task.tags ? [...task.tags] : undefined,
-        contextTags: task.contextTags ? [...task.contextTags] : undefined,
-        subtasks: task.subtasks.map((s) => ({
-          ...s,
-          id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-          completed: false,
-        })),
-      });
-
-      showToast('Task duplicated');
-      return duplicated;
-    },
-    [tasks, addTask, showToast]
-  );
-
-  const mergeTasks = useCallback(
-    (targetTaskId: string, sourceTaskId: string) => {
-      const result = commandService.mergeTasks(tasks, targetTaskId, sourceTaskId);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-
-      if (user) {
-        taskSyncService.batchMigrate(user.uid, result.updatedTasks, projects).catch((err) => {
-          console.warn('Merge sync queued offline:', err);
-        });
-      }
-
-      showToast('Tasks merged successfully');
-    },
-    [tasks, pushUndo, user, projects, showToast]
-  );
-
-  const addStudySessions = useCallback(
-    (sessions: ParsedSession[], dateStr: string = todayStr, projectId: string = 'work'): Task[] => {
-      const created: Task[] = sessions.map((s) => convertSessionToTask(s, dateStr, projectId));
-      const updatedList = [...created, ...tasks];
-
-      setTasks(updatedList);
-      if (user && created.length > 0) {
-        taskSyncService.batchMigrate(user.uid, created, []).catch((err) => {
-          console.warn('Study sessions sync queued offline:', err);
-        });
-      }
-
-      showToast(`Added ${created.length} Study Sprint Sessions`);
-      return created;
-    },
-    [tasks, todayStr, user, showToast]
-  );
-
-  const bulkRescheduleOverdue = useCallback(
-    (action: 'today' | 'someday' | 'dismiss') => {
-      const overdueIds = overdueTasks.map((t) => t.id);
-      if (overdueIds.length === 0) return;
-
-      if (action === 'today') {
-        const result = commandService.batchUpdate(tasks, overdueIds, { plannedDate: todayStr });
-        setTasks(result.updatedTasks);
-        pushUndo(result.description, result.inverse);
-        showToast(`Moved ${overdueIds.length} overdue tasks to Today`);
-      } else if (action === 'someday') {
-        const result = commandService.batchUpdate(tasks, overdueIds, { isSomeday: true, plannedDate: undefined });
-        setTasks(result.updatedTasks);
-        pushUndo(result.description, result.inverse);
-        showToast(`Deferred ${overdueIds.length} overdue tasks to Someday`);
-      } else {
-        setIsTriageDismissed(true);
-      }
-    },
-    [overdueTasks, tasks, todayStr, pushUndo, showToast]
-  );
-
-  // Focus Session Controls (Mini-player, Stopwatch, Pomodoro)
-  const startFocusSession = useCallback(
-    (mode: FocusSessionMode, taskId?: string | null, title?: string | null, targetSec?: number) => {
-      const session = focusSessionService.startSession(mode, taskId, title, targetSec);
-      setFocusSession(session);
-      audioEngine.playClickSound();
-    },
-    []
-  );
-
-  const pauseFocusSession = useCallback(() => {
-    if (!focusSession) return;
-    const updated = focusSessionService.pauseSession(focusSession);
-    setFocusSession(updated);
-    audioEngine.playClickSound();
-  }, [focusSession]);
-
-  const resumeFocusSession = useCallback(() => {
-    if (!focusSession) return;
-    const updated = focusSessionService.resumeSession(focusSession);
-    setFocusSession(updated);
-    audioEngine.playClickSound();
-  }, [focusSession]);
-
-  const stopFocusSession = useCallback(() => {
-    if (!focusSession) return;
-    const { finalElapsedSeconds } = focusSessionService.stopSession(focusSession);
-    setFocusSession(null);
-
-    // If session was tied to a task, update its timeSpentMinutes idempotently
-    if (focusSession.taskId && finalElapsedSeconds > 10) {
-      const elapsedMinutes = Math.round(finalElapsedSeconds / 60);
-      const task = tasks.find((t) => t.id === focusSession.taskId);
-      if (task) {
-        updateTask(task.id, {
-          timeSpentMinutes: (task.timeSpentMinutes || 0) + (elapsedMinutes > 0 ? elapsedMinutes : 1),
-        });
-      }
-    }
-  }, [focusSession, tasks, updateTask]);
-
-  // Backwards-compatible stopwatch shortcuts
-  const activeTimerTaskId = focusSession?.taskId || null;
-  const activeTimerSeconds = focusElapsedSeconds;
-
-  const startTaskTimer = useCallback(
-    (taskId: string) => {
-      const task = tasks.find((t) => t.id === taskId);
-      startFocusSession('stopwatch', taskId, task?.title);
-    },
-    [tasks, startFocusSession]
-  );
-
-  const stopTaskTimer = useCallback(() => {
-    stopFocusSession();
-  }, [stopFocusSession]);
-
-  const toggleTaskTimer = useCallback(
-    (taskId: string) => {
-      if (focusSession && focusSession.taskId === taskId) {
-        if (focusSession.state === 'running') {
-          pauseFocusSession();
-        } else {
-          resumeFocusSession();
-        }
-      } else {
-        const task = tasks.find((t) => t.id === taskId);
-        startFocusSession('stopwatch', taskId, task?.title);
-      }
-    },
-    [focusSession, tasks, pauseFocusSession, resumeFocusSession, startFocusSession]
-  );
-
-  // Multi-Select Batch Actions
-  const toggleTaskSelection = useCallback((taskId: string) => {
-    setSelectedTaskIds((prev) =>
-      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
-    );
-  }, []);
-
-  const selectTask = useCallback((taskId: string) => {
-    setSelectedTaskIds((prev) => (prev.includes(taskId) ? prev : [...prev, taskId]));
-  }, []);
-
-  const deselectTask = useCallback((taskId: string) => {
-    setSelectedTaskIds((prev) => prev.filter((id) => id !== taskId));
-  }, []);
-
-  const selectAllTasks = useCallback((taskIds: string[]) => {
-    setSelectedTaskIds(taskIds);
-  }, []);
-
-  const clearTaskSelection = useCallback(() => {
-    setSelectedTaskIds([]);
-  }, []);
-
-  const batchUpdateTasks = useCallback(
-    (taskIds: string[], updates: Partial<Task>) => {
-      const result = commandService.batchUpdate(tasks, taskIds, updates);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-
-      if (user) {
-        const affected = result.updatedTasks.filter((t) => taskIds.includes(t.id));
-        taskSyncService.batchMigrate(user.uid, affected, []).catch((err) => {
-          console.warn('Batch update sync queued offline:', err);
-        });
-      }
-
-      showToast(`Updated ${taskIds.length} tasks`);
-    },
-    [tasks, pushUndo, user, showToast]
-  );
-
-  const batchDeleteTasks = useCallback(
-    (taskIds: string[]) => {
-      const result = commandService.batchDelete(tasks, taskIds);
-      setTasks(result.updatedTasks);
-      pushUndo(result.description, result.inverse);
-      clearTaskSelection();
-
-      if (user) {
-        const affected = result.updatedTasks.filter((t) => taskIds.includes(t.id));
-        taskSyncService.batchMigrate(user.uid, affected, []).catch((err) => {
-          console.warn('Batch delete sync queued offline:', err);
-        });
-      }
-
-      showToast(`Moved ${taskIds.length} tasks to Trash`, 'Undo', () => undoLastAction());
-    },
-    [tasks, pushUndo, clearTaskSelection, user, showToast, undoLastAction]
-  );
-
-  const batchToggleStatus = useCallback(
-    (taskIds: string[]) => {
-      const areAllDone = tasks
-        .filter((t) => taskIds.includes(t.id))
-        .every((t) => t.status === 'done');
-      const nextStatus = areAllDone ? 'todo' : 'done';
-
-      batchUpdateTasks(taskIds, {
-        status: nextStatus,
-        completedAt: nextStatus === 'done' ? Date.now() : undefined,
-      });
-
-      if (nextStatus === 'done') {
-        audioEngine.playTaskComplete();
-      }
-    },
-    [tasks, batchUpdateTasks]
-  );
-
-  // Interruption Stash & Restore
-  const stashActiveFocus = useCallback(
-    (overrideTask?: { id: string; title: string; projectId?: string }, overrideElapsed?: number) => {
-      const taskId = overrideTask?.id || focusSession?.taskId;
-      const title = overrideTask?.title || focusSession?.taskTitle || 'Current Focus';
-      const elapsed = overrideElapsed !== undefined ? overrideElapsed : focusElapsedSeconds;
-
-      if (!taskId) return;
-
-      const stash: InterruptionStash = {
-        taskId,
-        taskTitle: title,
-        elapsedSeconds: elapsed,
-        stashedAt: Date.now(),
-        projectId: overrideTask?.projectId || focusSession?.projectId || undefined,
-      };
-
-      setInterruptionStash(stash);
-      localStorage.setItem('flowtask_interruption_stash', JSON.stringify(stash));
-      stopFocusSession();
-      audioEngine.playClickSound();
-      showToast(`Stashed: "${title}" (${Math.floor(elapsed / 60)}m)`, 'View', () =>
-        setIsInterruptionModalOpen(true)
-      );
-    },
-    [focusSession, focusElapsedSeconds, stopFocusSession, showToast]
-  );
-
-  const restoreStashedFocus = useCallback(() => {
-    if (!interruptionStash) return;
-    startFocusSession('stopwatch', interruptionStash.taskId, interruptionStash.taskTitle);
-    setInterruptionStash(null);
-    localStorage.removeItem('flowtask_interruption_stash');
-    showToast(`Resumed focus: "${interruptionStash.taskTitle}"`);
-  }, [interruptionStash, startFocusSession, showToast]);
-
-  const clearInterruptionStash = useCallback(() => {
-    setInterruptionStash(null);
-    localStorage.removeItem('flowtask_interruption_stash');
-  }, []);
-
-  // Calendar External ICS
-  const setCalendarIcsUrl = useCallback((url: string) => {
-    setCalendarIcsUrlState(url);
-    localStorage.setItem('flowtask_calendar_ics_url', url);
-  }, []);
-
-  const refreshCalendarEvents = useCallback(async () => {
-    if (!calendarIcsUrl.trim()) {
-      setCalendarEvents([]);
-      return;
-    }
-    const events = await fetchICSFeed(calendarIcsUrl, todayStr);
-    setCalendarEvents(events);
-  }, [calendarIcsUrl, todayStr]);
-
-  useEffect(() => {
-    if (calendarIcsUrl) {
-      refreshCalendarEvents();
-    }
-  }, [calendarIcsUrl, refreshCalendarEvents]);
-
-  // Project Management Actions
-  const addProject = useCallback(
-    (name: string, color: string, icon?: string) => {
-      const newProj: Project = {
-        id: `proj-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        name: name.trim(),
-        color,
-        icon,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-
-      const updated = [...projects, newProj];
-      setProjects(updated);
-      saveProjectsToStorage(updated);
-
-      if (user) {
-        taskSyncService.saveProject(user.uid, newProj).catch((err) => {
-          console.warn('Project sync error:', err);
-        });
-      }
-
-      showToast(`Project "${newProj.name}" created`);
-    },
-    [projects, user, showToast]
-  );
-
-  const updateProject = useCallback(
-    (id: string, updates: Partial<Project>) => {
-      const updated = projects.map((p) =>
-        p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p
-      );
-      setProjects(updated);
-      saveProjectsToStorage(updated);
-
-      const modified = updated.find((p) => p.id === id);
-      if (user && modified) {
-        taskSyncService.saveProject(user.uid, modified).catch((err) => {
-          console.warn('Project update sync error:', err);
-        });
-      }
-    },
-    [projects, user]
-  );
-
-  const deleteProject = useCallback(
-    (id: string, reassignToProjectId: string = 'inbox') => {
-      if (['inbox', 'work', 'personal'].includes(id)) {
-        showToast('Default projects cannot be deleted');
-        return;
-      }
-
-      // Reassign any tasks belonging to this project
-      const tasksToReassign = tasks.filter((t) => t.projectId === id);
-      if (tasksToReassign.length > 0) {
-        batchUpdateTasks(
-          tasksToReassign.map((t) => t.id),
-          { projectId: reassignToProjectId }
-        );
-      }
-
-      const updatedProjects = projects.filter((p) => p.id !== id);
-      setProjects(updatedProjects);
-      saveProjectsToStorage(updatedProjects);
-
-      if (user) {
-        taskSyncService.deleteProject(user.uid, id).catch((err) => {
-          console.warn('Project deletion sync error:', err);
-        });
-      }
-
-      showToast(`Project deleted (tasks moved to ${reassignToProjectId})`);
-    },
-    [projects, tasks, batchUpdateTasks, user, showToast]
-  );
-
-  const archiveProject = useCallback(
-    (id: string) => {
-      updateProject(id, { isArchived: true, archivedAt: Date.now() });
-      showToast('Project archived');
-    },
-    [updateProject, showToast]
-  );
-
-  // Smart Views
-  const smartViews: SmartFilterView[] = [...BUILT_IN_SMART_VIEWS, ...customSmartViews];
-
-  const addSmartView = useCallback(
-    (name: string, icon: string, color: string, predicate: SmartFilterPredicate): SmartFilterView => {
-      const newView: SmartFilterView = {
-        id: `smart_${Date.now()}`,
-        name,
-        icon,
-        color,
-        predicate,
-      };
-
-      const updated = [...customSmartViews, newView];
-      setCustomSmartViews(updated);
-      localStorage.setItem('flowtask_custom_smart_views', JSON.stringify(updated));
-      showToast(`Smart View "${name}" saved`);
-      return newView;
-    },
-    [customSmartViews, showToast]
-  );
-
-  const deleteSmartView = useCallback(
-    (id: string) => {
-      const updated = customSmartViews.filter((v) => v.id !== id);
-      setCustomSmartViews(updated);
-      localStorage.setItem('flowtask_custom_smart_views', JSON.stringify(updated));
-      showToast('Smart View removed');
-    },
-    [customSmartViews, showToast]
-  );
-
-  // Import Tasks
-  const importTasks = useCallback(
-    async (importedTasks: Task[], importedProjects?: Project[], replace: boolean = false) => {
-      if (replace) {
-        // Snapshot current state before destructive replace
-        const newProjects = importedProjects && importedProjects.length > 0 ? importedProjects : projects;
-        setTasks(importedTasks);
-        setProjects(newProjects);
-
-        if (user) {
-          await taskSyncService.batchReplace(user.uid, importedTasks, newProjects);
-        }
-        showToast(`Replaced workspace with ${importedTasks.length} tasks`);
-      } else {
-        // Merge without duplicates
-        const existingIds = new Set(tasks.map((t) => t.id));
-        const nonDuplicateTasks = importedTasks.filter((t) => !existingIds.has(t.id));
-        const mergedTasks = [...nonDuplicateTasks, ...tasks];
-
-        setTasks(mergedTasks);
-        if (importedProjects && importedProjects.length > 0) {
-          const existingProjIds = new Set(projects.map((p) => p.id));
-          const newProjs = importedProjects.filter((p) => !existingProjIds.has(p.id));
-          if (newProjs.length > 0) {
-            const mergedProjs = [...projects, ...newProjs];
-            setProjects(mergedProjs);
-          }
-        }
-
-        if (user && nonDuplicateTasks.length > 0) {
-          await taskSyncService.batchMigrate(user.uid, nonDuplicateTasks, importedProjects || []);
-        }
-        showToast(`Imported ${nonDuplicateTasks.length} tasks`);
-      }
-    },
-    [tasks, projects, user, showToast]
-  );
-
-  const dismissShutdown = useCallback(() => setIsShutdownDismissed(true), []);
+  };
+  const bulkRescheduleOverdue = (action: 'today' | 'someday' | 'dismiss') => {
+    if (action === 'dismiss') { setIsTriageDismissed(true); return; }
+    batchUpdateTasks(current().tasks.filter(t => isActiveTask(t) && t.dueDate && t.dueDate < todayStr).map(t => t.id), action === 'today' ? { plannedDate: todayStr, isSomeday: false } : { plannedDate: undefined, isSomeday: true });
+  };
+  const toggleTaskSelection = (id: string) => setSelectedTaskIds(ids => ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]);
+  const selectTask = (id: string) => setSelectedTaskIds(ids => [...new Set([...ids, id])]);
+  const deselectTask = (id: string) => setSelectedTaskIds(ids => ids.filter(x => x !== id));
+  const selectAllTasks = (ids: string[]) => setSelectedTaskIds(ids);
+  const clearTaskSelection = () => setSelectedTaskIds([]);
+  function stopFocusSession() {
+    store.run('Log focus session', r => {
+      const session = r.preferences.focusSession as FocusSession | null; if (!session) return r;
+      const logs = (r.preferences.focusLogs || []) as { id: string; seconds: number; taskId: string | null; endedAt: number }[];
+      if (logs.some(log => log.id === session.id)) return { ...r, preferences: { ...r.preferences, focusSession: null } };
+      const seconds = focusSessionService.getElapsedSeconds(session);
+      return { ...r, tasks: r.tasks.map(t => t.id === session.taskId ? { ...t, timeSpentMinutes: (t.timeSpentMinutes || 0) + seconds / 60 } : t), preferences: { ...r.preferences, focusSession: null, focusLogs: [...logs, { id: session.id, seconds, taskId: session.taskId, endedAt: Date.now() }] } };
+    }, false);
+  }
+  function startFocusSession(mode: FocusSessionMode, taskId: string | null = null, title: string | null = null, targetSec = mode === 'pomodoro' ? 1500 : 0) {
+    if (current().preferences.focusSession) stopFocusSession();
+    const session: FocusSession = { id: crypto.randomUUID(), mode, taskId, taskTitle: title || 'Focus session', startedAt: Date.now(), accumulatedElapsedMs: 0, targetDurationSec: targetSec, state: 'running', pomodoroCycle: 1, pomodoroPhase: 'focus' };
+    setWorkspacePreference('focusSession', session);
+  }
+  const pauseFocusSession = () => { const session = current().preferences.focusSession as FocusSession | null; if (session?.state === 'running') setWorkspacePreference('focusSession', { ...session, accumulatedElapsedMs: session.accumulatedElapsedMs + Math.max(0, Date.now() - session.startedAt), pausedAt: Date.now(), state: 'paused' }); };
+  const resumeFocusSession = () => { const session = current().preferences.focusSession as FocusSession | null; if (session?.state === 'paused') setWorkspacePreference('focusSession', { ...session, startedAt: Date.now(), pausedAt: null, state: 'running' }); };
+  const activeTimerTaskId = focusSession?.taskId || null, activeTimerSeconds = focusElapsedSeconds;
+  const startTaskTimer = (id: string) => startFocusSession('stopwatch', id, current().tasks.find(t => t.id === id)?.title);
+  const stopTaskTimer = stopFocusSession;
+  const toggleTaskTimer = (id: string) => { const session = current().preferences.focusSession as FocusSession | null; if (session?.taskId !== id) startTaskTimer(id); else if (session.state === 'running') pauseFocusSession(); else resumeFocusSession(); };
+  const stashActiveFocus = (override?: { id: string; title: string; projectId?: string }, elapsed?: number) => {
+    const session = current().preferences.focusSession as FocusSession | null, id = override?.id || session?.taskId; if (!id) return;
+    setWorkspacePreference('interruptionStash', { taskId: id, taskTitle: override?.title || session?.taskTitle || 'Focus', elapsedSeconds: elapsed ?? focusElapsedSeconds, stashedAt: Date.now(), projectId: override?.projectId }); stopFocusSession();
+  };
+  const clearInterruptionStash = () => setWorkspacePreference('interruptionStash', null);
+  const restoreStashedFocus = () => { const stash = current().preferences.interruptionStash as InterruptionStash | null; if (stash) { startFocusSession('stopwatch', stash.taskId, stash.taskTitle); clearInterruptionStash(); } };
+  const setCalendarIcsUrl = (url: string) => setWorkspacePreference('calendarUrl', url);
+  const refreshCalendarEvents = useCallback(async (date = todayStr) => {
+    if (!calendarIcsUrl.trim()) { setCalendarEvents([]); return; }
+    try { setCalendarEvents(await fetchICSFeed(calendarIcsUrl, date)); } catch (error) { showToast(`Calendar could not refresh: ${(error as Error).message}`); }
+  }, [calendarIcsUrl, todayStr, showToast]);
+  useEffect(() => { void refreshCalendarEvents(); }, [refreshCalendarEvents]);
+  const addProject = (name: string, color: string, icon?: string) => { if (!name.trim()) return; store.run('Create project', r => ({ ...r, projects: [...r.projects, { id: crypto.randomUUID(), name: name.trim(), color, icon, createdAt: Date.now() }] })); };
+  const updateProject = (id: string, updates: Partial<Project>) => store.run('Update project', r => ({ ...r, projects: r.projects.map(p => p.id === id ? { ...p, ...updates, id } : p) }));
+  const deleteProject = (id: string, reassignToProjectId = 'inbox') => {
+    if (id === 'inbox' || id === reassignToProjectId || !current().projects.some(p => p.id === reassignToProjectId)) return;
+    store.run('Delete project and move its tasks', r => ({ ...r, projects: r.projects.filter(p => p.id !== id), tasks: r.tasks.map(t => t.projectId === id ? { ...t, projectId: reassignToProjectId } : t) }));
+  };
+  const archiveProject = (id: string) => { if (id !== 'inbox') updateProject(id, { isArchived: true, archivedAt: Date.now() }); };
+  const smartViews = [...BUILT_IN_SMART_VIEWS, ...customSmartViews];
+  const addSmartView = (name: string, icon: string, color: string, predicate: SmartFilterPredicate): SmartFilterView => {
+    const view = { id: crypto.randomUUID(), name, icon, color, predicate }; store.run('Save view', r => ({ ...r, customViews: [...r.customViews, view] }), false); return view;
+  };
+  const deleteSmartView = (id: string) => store.run('Remove saved view', r => ({ ...r, customViews: r.customViews.filter(v => v.id !== id) }), false);
+  async function importTasks(importedTasks: Task[], importedProjects?: Project[], replace = false) {
+    const before = current();
+    const nextProjects = replace ? importedProjects || before.projects : [...before.projects, ...(importedProjects || []).filter(p => !before.projects.some(old => old.id === p.id))];
+    const nextTasks = replace ? importedTasks : [...before.tasks, ...importedTasks.filter(t => !before.tasks.some(old => old.id === t.id))];
+    const validated = validateWorkspaceData(nextTasks, nextProjects);
+    localStorage.setItem(`flowtask_pre_import_${workspaceId}`, JSON.stringify(before));
+    store.run(replace ? 'Restore backup' : 'Import tasks', r => ({ ...r, ...validated }));
+    await store.settled(); showToast(`Saved ${importedTasks.length} imported tasks`);
+  }
+  const forceSyncToCloud = async () => { if (!connected) { setIsAuthModalOpen(true); return; } await store.retry(); };
+  const dismissShutdown = () => setIsShutdownDismissed(true);
+  const downloadWorkspaceBackup = () => {
+    const blob = new Blob([JSON.stringify({ ...current(), version: 3 }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = `flowtask-${workspaceId}-${todayStr}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const resolveSyncConflict = async (choice: 'local' | 'remote') => { try { await store.resolveConflict(choice); } catch (error) { showToast((error as Error).message); } };
+  const importLocalWorkspace = async () => { const local = await dbService.loadWorkspace('local'); if (local) await importTasks(local.tasks, local.projects); };
+  if (!snapshot.ready) return <div role="status" className="p-10"><p>{snapshot.error || 'Opening your saved workspace… If it is open in another tab, close that tab to continue here.'}</p>{snapshot.error && <button onClick={() => void store.load()}>Retry</button>}</div>;
 
   return (
     <TaskContext.Provider
       value={{
+        workspaceId, workspacePreferences: preferences, setWorkspacePreference, downloadWorkspaceBackup, resolveSyncConflict, importLocalWorkspace,
         tasks,
         projects,
         activeView,
@@ -1359,6 +497,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         toggleTaskPinToday,
         toggleSubTask,
         addSubTask,
+        addSubTasks,
         updateSubTask,
         deleteSubTask,
         addStudySessions,
@@ -1376,6 +515,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resetSettings,
       }}
     >
+      {(snapshot.error || snapshot.sync === 'offline') && <div role="alert" className="fixed top-0 left-0 right-0 z-[1000] bg-amber-100 text-amber-950 p-3 flex gap-3 items-center"><span>{snapshot.error || 'Cloud unavailable. Changes are saved on this device and queued for retry.'}</span><button onClick={() => void store.retry().catch(error => showToast(error.message))}>Retry</button><button onClick={downloadWorkspaceBackup}>Download backup</button>{snapshot.sync === 'conflict' && <><button onClick={() => void resolveSyncConflict('local')}>Keep device changes</button><button onClick={() => void resolveSyncConflict('remote')}>Use account changes</button></>}</div>}
       {children}
     </TaskContext.Provider>
   );
