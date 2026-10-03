@@ -164,21 +164,26 @@ export const TodayView: React.FC<TodayViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
       {/* View Header: Clean Single Heading & Progress Ring */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-hairline)]">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
             <Sun size={20} className="stroke-[2.2]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-              Today
-            </h1>
-            <p className="text-xs text-[var(--text-secondary)] font-medium">
-              {new Date().toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'short',
-                day: 'numeric',
-              })}
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                Today
+              </h1>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-secondary)] font-medium mt-0.5">
+              Focus on what moves the needle today
             </p>
           </div>
         </div>
@@ -188,7 +193,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
           {/* Capacity Pill & Calm Mode Toggle */}
           <div className="flex items-center gap-2">
             <div
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
                 isOverbooked
                   ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
                   : capacityPercent > 75
@@ -207,10 +212,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 setIsCalmMode((prev) => !prev);
                 setIsCalmModeExpanded(false);
               }}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
                 isCalmMode
-                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
-                  : 'bg-stone-100 dark:bg-stone-800 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-hairline)]'
+                  ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
+                  : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-hairline)]'
               }`}
               title={isCalmMode ? 'Calm Mode Active: Non-essential tasks hidden to reduce mental clutter' : 'Turn on Calm Mode to focus exclusively on Top 3'}
             >
@@ -229,8 +234,8 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 {progressPercent}% daily progress
               </span>
             </div>
-            <div className="w-11 h-11 relative flex items-center justify-center shrink-0">
-              <svg className="w-11 h-11 -rotate-90 transform" viewBox="0 0 36 36">
+            <div className="w-10 h-10 relative flex items-center justify-center shrink-0">
+              <svg className="w-10 h-10 -rotate-90 transform" viewBox="0 0 36 36">
                 <path
                   className="text-[var(--border-hairline)]"
                   strokeWidth="3.5"

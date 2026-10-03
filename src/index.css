@@ -12,6 +12,7 @@
 
   /* Borders */
   --border-color: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
   --border-hairline: rgba(0, 0, 0, 0.06);
   --border-subtle: rgba(0, 0, 0, 0.035);
 
@@ -49,6 +50,7 @@
 
   /* Borders */
   --border-color: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.14);
   --border-hairline: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.045);
 
@@ -84,6 +86,7 @@
   --bg-surface-l3: #1F2A40;
   --bg-surface-l4: #283652;
   --border-color: rgba(99, 102, 241, 0.18);
+  --border-strong: rgba(99, 102, 241, 0.28);
   --border-hairline: rgba(99, 102, 241, 0.12);
   --border-subtle: rgba(99, 102, 241, 0.06);
   --text-primary: #F1F5F9;
@@ -101,6 +104,7 @@
   --bg-surface-l3: #434C5E;
   --bg-surface-l4: #4C566A;
   --border-color: rgba(216, 222, 233, 0.14);
+  --border-strong: rgba(216, 222, 233, 0.22);
   --border-hairline: rgba(216, 222, 233, 0.09);
   --border-subtle: rgba(216, 222, 233, 0.05);
   --text-primary: #ECEFF4;
@@ -118,6 +122,7 @@
   --bg-surface-l3: #DFE8D5;
   --bg-surface-l4: #D3DFC8;
   --border-color: rgba(40, 60, 30, 0.1);
+  --border-strong: rgba(40, 60, 30, 0.18);
   --border-hairline: rgba(40, 60, 30, 0.06);
   --border-subtle: rgba(40, 60, 30, 0.035);
   --text-primary: #1A2416;

@@ -714,41 +714,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Utility Footer: Quick Preferences & System Settings */}
-      <div className="p-2.5 border-t border-[var(--border-hairline)] space-y-1 text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        {/* Row 1: Aesthetics & Quick Toggles */}
-        <div className="flex items-center justify-between px-1">
-          {onOpenAesthetics && (
-            <button
-              onClick={() => {
-                onOpenAesthetics();
-                onItemClick?.();
-              }}
-              title="Aesthetics & Sound Profiles"
-              aria-label="Aesthetics & Sound Profiles"
-              className="p-1.5 hover:text-purple-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Palette size={16} />
-            </button>
-          )}
-
-          <button
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            aria-label={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-
-          <button
-            onClick={toggleSound}
-            title={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
-            aria-label={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
-            className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-
+      <div className="p-2.5 border-t border-[var(--border-hairline)] space-y-2 text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {/* Row 1: Workspace Utilities with Labels */}
+        <div className="flex items-center justify-between px-1 text-[11px]">
           {onOpenScratchpad && (
             <button
               onClick={() => {
@@ -757,15 +725,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
               title="Sticky Scratchpad (Alt+N)"
               aria-label="Sticky Scratchpad"
-              className="p-1.5 hover:text-amber-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+              className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-amber-500 p-1 rounded-md hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
             >
-              <FileEdit size={16} />
+              <FileEdit size={13} />
+              <span>Scratchpad</span>
             </button>
           )}
-        </div>
 
-        {/* Row 2: Rituals, Shortcuts, Data & Settings */}
-        <div className="flex items-center justify-between px-1 pt-1 border-t border-[var(--border-hairline)]/50">
           <button
             onClick={() => {
               setIsWeeklyReviewOpen(true);
@@ -773,24 +739,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             title="Weekly Review & Retrospective (Ctrl+Shift+W)"
             aria-label="Weekly Review & Retrospective"
-            className="p-1.5 hover:text-teal-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-teal-500 p-1 rounded-md hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
           >
-            <Compass size={16} />
+            <Compass size={13} />
+            <span>Review</span>
           </button>
-
-          {onOpenShortcuts && !isMobileDrawer && (
-            <button
-              onClick={() => {
-                onOpenShortcuts();
-                onItemClick?.();
-              }}
-              title="Keyboard Shortcuts (?)"
-              aria-label="Keyboard Shortcuts"
-              className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Keyboard size={16} />
-            </button>
-          )}
 
           <button
             onClick={() => {
@@ -799,11 +752,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             title="Export / Import Data (Backup & Restore)"
             aria-label="Export or import data"
-            className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
           >
-            <DownloadCloud size={16} />
+            <DownloadCloud size={13} />
+            <span>Backup</span>
           </button>
+        </div>
 
+        {/* Row 2: Unified Settings Bar with Quick Toggles */}
+        <div className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-[var(--bg-surface-l2)]/70 border border-[var(--border-subtle)] card-surface">
           <button
             onClick={() => {
               if (onOpenSettings) {
@@ -815,10 +772,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             title="Preferences & Settings (Ctrl+,)"
             aria-label="Preferences and Settings"
-            className="p-1.5 hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-0.5"
           >
-            <Settings size={16} />
+            <Settings size={14} />
+            <span>Settings</span>
           </button>
+
+          <div className="flex items-center gap-0.5">
+            {onOpenAesthetics && (
+              <button
+                onClick={() => {
+                  onOpenAesthetics();
+                  onItemClick?.();
+                }}
+                title="Aesthetics & Sound Profiles"
+                aria-label="Aesthetics & Sound Profiles"
+                className="p-1.5 text-[var(--text-muted)] hover:text-purple-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+              >
+                <Palette size={14} />
+              </button>
+            )}
+
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+              aria-label={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
+
+            <button
+              onClick={toggleSound}
+              title={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
+              aria-label={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
+              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            </button>
+
+            {onOpenShortcuts && !isMobileDrawer && (
+              <button
+                onClick={() => {
+                  onOpenShortcuts();
+                  onItemClick?.();
+                }}
+                title="Keyboard Shortcuts (?)"
+                aria-label="Keyboard Shortcuts"
+                className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+              >
+                <Keyboard size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </aside>

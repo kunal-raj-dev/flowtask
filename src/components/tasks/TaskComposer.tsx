@@ -263,7 +263,17 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                 />
               )}
 
-              <button type="button" className="mt-2 text-xs text-[var(--text-secondary)] underline" aria-expanded={showDetails} onClick={() => setShowDetails(!showDetails)}>{showDetails ? 'Hide details' : 'Task details'}</button>
+              <button
+                type="button"
+                className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-2 py-0.5 rounded-md hover:bg-[var(--bg-surface-l2)] cursor-pointer"
+                aria-expanded={showDetails}
+                onClick={() => setShowDetails(!showDetails)}
+              >
+                <span>{showDetails ? '▾ Hide properties' : '▸ Set properties'}</span>
+                {!showDetails && (parsed.dueDate || parsed.priority || parsed.estimatedMinutes || parsed.projectTag) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title="Parsed tags available" />
+                )}
+              </button>
               {/* Editable Chips Bar (Only in Single Task mode) */}
               {!isMultiline && showDetails && (
                 <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-[var(--border-hairline)] text-xs">

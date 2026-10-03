@@ -454,6 +454,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             })}
           </div>
         </div>
+
+        {/* Raycast-Style Action Footer Bar */}
+        <div className="px-4 py-2.5 bg-[var(--bg-surface-l1)]/90 border-t border-[var(--border-hairline)] flex items-center justify-between text-[11px] text-[var(--text-muted)] select-none">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5">
+              <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] font-mono text-[10px] font-semibold text-[var(--text-secondary)] shadow-xs">↵</kbd>
+              <span>Run Action</span>
+            </span>
+            <span className="flex items-center gap-1.5 hidden sm:inline-flex">
+              <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] font-mono text-[10px] font-semibold text-[var(--text-secondary)] shadow-xs">Tab</kbd>
+              <span>Filter DSL</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5">
+              <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] font-mono text-[10px] font-semibold text-[var(--text-secondary)] shadow-xs">Esc</kbd>
+              <span>Close</span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

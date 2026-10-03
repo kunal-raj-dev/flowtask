@@ -473,10 +473,10 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             <button
               type="button"
               onClick={() => toggleTaskStatus(task.id)}
-              className={`w-5 h-5 rounded-md flex items-center justify-center border active:scale-90 transition-all duration-150 ${
+              className={`w-5 h-5 rounded-full flex items-center justify-center border active:scale-85 transition-all duration-150 ${
                 isDone
                   ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white text-white dark:text-stone-950 shadow-xs'
-                  : 'border-[var(--border-strong)] hover:border-amber-500 hover:ring-2 hover:ring-amber-500/20 bg-[var(--bg-surface-l2)]'
+                  : 'border-stone-400/80 dark:border-stone-500/80 hover:border-amber-500 hover:ring-2 hover:ring-amber-500/20 bg-transparent'
               }`}
               aria-label={isDone ? 'Mark as incomplete' : 'Mark as complete'}
             >

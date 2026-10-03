@@ -7,6 +7,7 @@ export type BadgeVariant =
   | 'focus'
   | 'success'
   | 'danger'
+  | 'blue'
   | 'teal'
   | 'purple';
 
@@ -25,14 +26,14 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 const variantStyles: Record<BadgeVariant, { container: string; dot: string }> = {
   neutral: {
     container: 'bg-stone-500/10 text-stone-700 dark:text-stone-300 border-stone-500/20',
-    dot: 'bg-stone-500',
+    dot: 'bg-stone-400 dark:bg-stone-500',
   },
   brand: {
-    container: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25',
-    dot: 'bg-indigo-500',
+    container: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/25',
+    dot: 'bg-amber-500',
   },
   focus: {
-    container: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
+    container: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30 shadow-xs',
     dot: 'bg-amber-500',
   },
   success: {
@@ -42,6 +43,10 @@ const variantStyles: Record<BadgeVariant, { container: string; dot: string }> = 
   danger: {
     container: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25',
     dot: 'bg-rose-500',
+  },
+  blue: {
+    container: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25',
+    dot: 'bg-sky-500',
   },
   teal: {
     container: 'bg-teal-500/10 text-teal-800 dark:text-teal-300 border-teal-500/25',

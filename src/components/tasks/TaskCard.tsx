@@ -264,19 +264,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         e.preventDefault();
         setContextMenu({ x: e.clientX, y: e.clientY });
       }}
-      className={`group relative flex items-start gap-2.5 p-3 sm:p-3.5 rounded-lg border transition-all duration-150 cursor-pointer ${
+      className={`group relative flex items-start gap-3 p-3 sm:px-3.5 sm:py-2.5 rounded-lg border transition-all duration-150 cursor-pointer ${
         isSelected
-          ? 'ring-2 ring-[var(--color-focus-ring)] bg-[var(--color-brand-subtle)] border-[var(--color-brand-border)] shadow-xs'
+          ? 'ring-1 ring-[var(--color-brand)] bg-[var(--color-brand-subtle)] border-[var(--color-brand-border)]'
           : isKeyboardFocused
-          ? 'ring-2 ring-amber-500/80 dark:ring-amber-400 shadow-sm -translate-y-[0.5px]'
+          ? 'ring-2 ring-amber-500/80 dark:ring-amber-400 border-amber-500/40 shadow-xs'
           : ''
       } ${
         isDone
-          ? 'bg-[var(--bg-surface-l1)]/50 border-[var(--border-hairline)] opacity-60'
+          ? 'bg-[var(--bg-surface-l1)]/40 border-[var(--border-subtle)] opacity-55 hover:opacity-75'
           : task.isPinnedToday && !isSelected
-          ? 'bg-[var(--bg-surface-l1)] border-[var(--border-subtle)] border-l-[3px] border-l-amber-500 dark:border-l-amber-400 hover:border-[var(--border-hairline)] hover:shadow-subtle hover:-translate-y-[0.5px]'
+          ? 'bg-[var(--bg-surface-l1)]/80 hover:bg-[var(--bg-surface-l1)] border-[var(--border-hairline)] border-l-[3px] border-l-amber-500 dark:border-l-amber-400 shadow-subtle hover:shadow-card'
           : !isSelected
-          ? 'bg-[var(--bg-surface-l1)] border-[var(--border-subtle)] hover:border-[var(--border-strong)] hover:shadow-subtle hover:-translate-y-[0.5px]'
+          ? 'bg-[var(--bg-surface-l2)]/90 hover:bg-[var(--bg-surface-l2)] border-[var(--border-hairline)] hover:border-[var(--border-strong)] shadow-subtle hover:shadow-card'
           : ''
       }`}
     >
@@ -292,22 +292,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           isSelected
             ? 'bg-[var(--color-brand)] border-[var(--color-brand)] text-white shadow-xs'
             : selectedTaskIds.length > 0
-            ? 'border-[var(--border-strong)] hover:border-[var(--color-brand)] bg-[var(--bg-surface-l1)]'
-            : 'opacity-0 group-hover:opacity-100 border-[var(--border-strong)] hover:border-[var(--color-brand)] bg-[var(--bg-surface-l1)]'
+            ? 'border-[var(--border-strong)] hover:border-[var(--color-brand)] bg-transparent'
+            : 'opacity-0 group-hover:opacity-100 border-[var(--border-strong)] hover:border-[var(--color-brand)] bg-transparent'
         }`}
         aria-label={isSelected ? 'Deselect task' : 'Select task'}
       >
         {isSelected && <Check size={10} className="stroke-[3]" />}
       </button>
 
-      {/* Tactile Micro-Spring Checkbox Button */}
+      {/* Tactile Micro-Spring Circular Checkbox Button (Things 3 / Linear Aesthetic) */}
       <button
         type="button"
         onClick={handleToggleStatus}
-        className={`mt-0.5 w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center border active:scale-90 transition-all duration-150 ${
+        className={`mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-150 active:scale-85 ${
           isDone
             ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white text-white dark:text-stone-950 shadow-xs'
-            : 'border-[var(--border-strong)] hover:border-amber-500 hover:ring-2 hover:ring-amber-500/20 bg-[var(--bg-surface-l2)]'
+            : 'border-stone-400/80 dark:border-stone-500/80 hover:border-amber-500 hover:ring-2 hover:ring-amber-500/20 bg-transparent'
         }`}
         aria-label={isDone ? 'Mark as incomplete' : 'Mark as complete'}
       >
@@ -365,7 +365,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <Badge
               variant={
                 task.priority === 'p1' ? 'danger' :
-                task.priority === 'p2' ? 'focus' : 'brand'
+                task.priority === 'p2' ? 'focus' : 'blue'
               }
               size="xs"
             >
@@ -383,8 +383,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Things 3-style This Evening indicator */}
           {task.isEvening && !isDone && (
-            <Badge variant="brand" size="xs">
-              <Moon size={9} className="text-indigo-500 fill-indigo-500/20" />
+            <Badge variant="blue" size="xs">
+              <Moon size={9} className="text-sky-500 fill-sky-500/20" />
               Evening
             </Badge>
           )}
