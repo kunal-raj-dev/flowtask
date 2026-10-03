@@ -71,7 +71,7 @@ export const Dialog: React.FC<DialogProps> = ({
       {/* Dialog Surface */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-modal card-surface z-10 animate-slide-down overflow-hidden ${sizeStyles[size]} ${className}`}
+        className={`relative w-full rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-modal card-surface z-10 animate-slide-down overflow-hidden ${sizeStyles[size]} ${className}`}
       >
         {/* Header */}
         {(title || description) && (

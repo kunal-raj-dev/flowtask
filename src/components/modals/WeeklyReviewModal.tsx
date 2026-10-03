@@ -92,20 +92,20 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] rounded-3xl shadow-2xl p-6 sm:p-7 text-[var(--text-primary)] card-surface relative animate-scale-in"
+        className="w-full max-w-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] rounded-xl shadow-2xl p-6 sm:p-7 text-[var(--text-primary)] card-surface relative animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
         >
           <X size={18} />
         </button>
 
         {/* Modal Header */}
         <div className="flex items-center gap-3.5 mb-6">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center">
             <Compass size={22} className="stroke-[2.2]" />
           </div>
           <div>
@@ -122,17 +122,17 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
         <div className="flex items-center gap-2 mb-6">
           <div
             className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
-              step >= 1 ? 'bg-indigo-600' : 'bg-stone-200 dark:bg-stone-800'
+              step >= 1 ? 'bg-[var(--color-brand)]' : 'bg-stone-200 dark:bg-stone-800'
             }`}
           />
           <div
             className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
-              step >= 2 ? 'bg-indigo-600' : 'bg-stone-200 dark:bg-stone-800'
+              step >= 2 ? 'bg-[var(--color-brand)]' : 'bg-stone-200 dark:bg-stone-800'
             }`}
           />
           <div
             className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
-              step >= 3 ? 'bg-indigo-600' : 'bg-stone-200 dark:bg-stone-800'
+              step >= 3 ? 'bg-[var(--color-brand)]' : 'bg-stone-200 dark:bg-stone-800'
             }`}
           />
         </div>
@@ -140,13 +140,13 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
         {/* STEP 1: CLEAR INBOXES */}
         {step === 1 && (
           <div className="space-y-4">
-            <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-start gap-3 text-xs">
-              <Inbox size={18} className="text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+            <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-3 text-xs">
+              <Inbox size={18} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
               <div>
-                <p className="font-bold text-indigo-900 dark:text-indigo-200">
+                <p className="font-bold text-amber-900 dark:text-amber-200">
                   Step 1: Clear the Mental Cache
                 </p>
-                <p className="text-indigo-700 dark:text-indigo-300 mt-0.5">
+                <p className="text-amber-700 dark:text-amber-300 mt-0.5">
                   Triage unscheduled inbox tasks. Assign dates or file them away so no open loops linger.
                 </p>
               </div>
@@ -154,7 +154,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
 
             <div className="max-h-72 overflow-y-auto space-y-2 pr-1 scrollbar-none">
               {inboxTasks.length === 0 ? (
-                <div className="text-center py-10 text-[var(--text-muted)] bg-[var(--bg-surface-l2)] rounded-2xl border border-[var(--border-hairline)]">
+                <div className="text-center py-10 text-[var(--text-muted)] bg-[var(--bg-surface-l2)] rounded-lg border border-[var(--border-hairline)]">
                   <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-500" />
                   <p className="text-xs font-bold text-[var(--text-primary)]">Inbox Zero achieved!</p>
                   <p className="text-[11px] mt-0.5 text-[var(--text-secondary)]">All captured thoughts are organized.</p>
@@ -163,14 +163,14 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                 inboxTasks.slice(0, 8).map((task) => (
                   <div
                     key={task.id}
-                    className="p-3 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                    className="p-3 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                   >
                     <div
                       className="min-w-0 cursor-pointer group"
                       onClick={() => onOpenTask(task.id)}
                       title="Open task details"
                     >
-                      <p className="text-xs font-bold text-[var(--text-primary)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate transition-colors">{task.title}</p>
+                      <p className="text-xs font-bold text-[var(--text-primary)] group-hover:text-amber-600 dark:group-hover:text-amber-400 truncate transition-colors">{task.title}</p>
                       <p className="text-[10px] text-[var(--text-muted)] mt-0.5 capitalize">
                         Project: {projects.find((p) => p.id === task.projectId)?.name || 'Inbox'}
                       </p>
@@ -221,7 +221,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
         {/* STEP 2: CELEBRATE ACCOMPLISHMENTS */}
         {step === 2 && (
           <div className="space-y-4 animate-fade-in">
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-indigo-500/10 border border-emerald-500/30">
+            <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={18} className="text-emerald-500" />
                 <h3 className="text-sm font-bold text-[var(--text-primary)]">
@@ -229,7 +229,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                 </h3>
               </div>
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                You completed <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{completedPastWeek.length} tasks</strong> representing approximately <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{weeklyHoursFormatted} hours</strong> of focus.
+                You completed <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{completedPastWeek.length} tasks</strong> representing approximately <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{weeklyHoursFormatted} hours</strong> of focus.
                 {topProject && (
                   <span> Your primary focus area was <strong className="text-[var(--text-primary)] font-bold">{topProject.name}</strong>.</span>
                 )}
@@ -238,7 +238,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
 
             <div className="max-h-72 overflow-y-auto space-y-2 pr-1 scrollbar-none">
               {completedPastWeek.length === 0 ? (
-                <div className="text-center py-8 text-[var(--text-muted)] bg-[var(--bg-surface-l2)] rounded-2xl border border-[var(--border-hairline)]">
+                <div className="text-center py-8 text-[var(--text-muted)] bg-[var(--bg-surface-l2)] rounded-lg border border-[var(--border-hairline)]">
                   <p className="text-xs font-semibold text-[var(--text-primary)]">No completed tasks logged this week.</p>
                   <p className="text-[11px] mt-0.5 text-[var(--text-secondary)]">Every new week is a fresh opportunity to build momentum.</p>
                 </div>
@@ -246,7 +246,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                 completedPastWeek.slice(0, 10).map((task) => (
                   <div
                     key={task.id}
-                    className="p-3 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] flex items-center justify-between gap-3"
+                    className="p-3 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
@@ -269,7 +269,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
         {/* STEP 3: SET STRATEGIC WEEKLY ANCHORS */}
         {step === 3 && (
           <div className="space-y-4 animate-fade-in">
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3 text-xs">
+            <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-3 text-xs">
               <Star size={18} className="text-amber-500 mt-0.5 shrink-0" />
               <div>
                 <p className="font-bold text-amber-900 dark:text-amber-200">
@@ -283,7 +283,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
 
             <div className="max-h-72 overflow-y-auto space-y-2 pr-1 scrollbar-none">
               {upcomingNextWeekTasks.length === 0 ? (
-                <div className="text-center py-8 text-[var(--text-muted)] bg-[var(--bg-surface-l2)] rounded-2xl border border-[var(--border-hairline)]">
+                <div className="text-center py-8 text-[var(--text-muted)] bg-[var(--bg-surface-l2)] rounded-lg border border-[var(--border-hairline)]">
                   <Calendar size={28} className="mx-auto mb-2 text-stone-400" />
                   <p className="text-xs font-semibold text-[var(--text-primary)]">No tasks scheduled for the next 7 days.</p>
                   <p className="text-[11px] mt-0.5 text-[var(--text-secondary)]">Schedule key deliverables to protect your focus.</p>
@@ -292,7 +292,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                 upcomingNextWeekTasks.slice(0, 10).map((task) => (
                   <div
                     key={task.id}
-                    className="p-3 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] flex items-center justify-between gap-3"
+                    className="p-3 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-[var(--text-primary)] truncate">{task.title}</p>
@@ -304,7 +304,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                     <button
                       type="button"
                       onClick={() => updateTask(task.id, { isPinnedToday: !task.isPinnedToday })}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold flex items-center gap-1 transition-all ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all ${
                         task.isPinnedToday
                           ? 'bg-amber-500 text-white shadow-xs'
                           : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-amber-500 border border-[var(--border-hairline)]'
@@ -325,7 +325,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-xl"
+            className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg"
           >
             Close
           </button>
@@ -333,7 +333,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
           <button
             type="button"
             onClick={handleNextStep}
-            className="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+            className="px-5 py-2 rounded-lg text-xs font-bold bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white shadow-xs flex items-center gap-1.5 transition-all active:scale-95"
           >
             <span>{step === 3 ? 'Complete Weekly Reset' : 'Next Step'}</span>
             <ArrowRight size={14} />

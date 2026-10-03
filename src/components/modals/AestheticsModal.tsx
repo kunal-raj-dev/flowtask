@@ -147,13 +147,13 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] rounded-3xl shadow-modal overflow-hidden card-surface animate-scale-up"
+        className="w-full max-w-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] rounded-xl shadow-modal overflow-hidden card-surface animate-scale-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-[var(--border-hairline)] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
               <Palette size={18} />
             </div>
             <div>
@@ -191,7 +191,7 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
                   <button
                     key={t.id}
                     onClick={() => setTheme(t.id)}
-                    className={`relative p-3.5 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between gap-3 card-surface ${
+                    className={`relative p-3.5 rounded-lg border text-left transition-all duration-200 flex flex-col justify-between gap-3 card-surface ${
                       isSelected
                         ? 'border-amber-500 ring-2 ring-amber-500/25 shadow-sm'
                         : 'border-[var(--border-hairline)] hover:border-stone-400 dark:hover:border-stone-600'
@@ -237,7 +237,7 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
 
               <button
                 onClick={toggleSound}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                   soundEnabled
                     ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                     : 'bg-stone-200/50 dark:bg-white/[0.04] text-[var(--text-muted)] border-transparent'
@@ -256,9 +256,9 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
                   <div
                     key={sp.id}
                     onClick={() => setSoundProfile(sp.id)}
-                    className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer card-surface ${
+                    className={`p-3 rounded-lg border transition-all flex items-center justify-between gap-3 cursor-pointer card-surface ${
                       isSelected
-                        ? 'border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500/20'
+                        ? 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500/20'
                         : 'border-[var(--border-hairline)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
                     }`}
                   >
@@ -268,7 +268,7 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
                           {sp.name}
                         </span>
                         {isSelected && (
-                          <span className="text-[9px] font-bold font-mono px-1.5 py-0.2 rounded bg-indigo-500 text-white">
+                          <span className="text-[9px] font-bold font-mono px-1.5 py-0.2 rounded bg-[var(--color-brand)] text-white">
                             Active
                           </span>
                         )}
@@ -369,7 +369,7 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
                     key={item.id}
                     type="button"
                     onClick={() => handleDiurnalSelect(item.id)}
-                    className={`p-2.5 rounded-2xl border text-left transition-all relative overflow-hidden card-surface ${
+                    className={`p-2.5 rounded-lg border text-left transition-all relative overflow-hidden card-surface ${
                       isSelected
                         ? 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500/25'
                         : 'border-[var(--border-hairline)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'

@@ -84,13 +84,13 @@ export const TemplatePickerModal: React.FC = () => {
       onClick={() => setIsTemplatePickerOpen(false)}
     >
       <div
-        className="w-full max-w-2xl bg-[var(--bg-surface-l2)] rounded-3xl border border-[var(--border-hairline)] shadow-modal overflow-hidden flex flex-col max-h-[85vh] card-surface animate-slide-down"
+        className="w-full max-w-2xl bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] shadow-modal overflow-hidden flex flex-col max-h-[85vh] card-surface animate-slide-down"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-5 border-b border-[var(--border-hairline)] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xs">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-[var(--color-brand)] border border-amber-500/20 shadow-xs">
               <LayoutTemplate size={20} />
             </div>
             <div>
@@ -106,7 +106,7 @@ export const TemplatePickerModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsTemplatePickerOpen(false)}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
           >
             <X size={18} />
           </button>
@@ -119,7 +119,7 @@ export const TemplatePickerModal: React.FC = () => {
             return (
               <div
                 key={tpl.id}
-                className="p-4 rounded-2xl bg-[var(--bg-surface-l1)]/70 hover:bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] transition-all card-surface"
+                className="p-4 rounded-lg bg-[var(--bg-surface-l1)]/70 hover:bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] transition-all card-surface"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div
@@ -127,7 +127,7 @@ export const TemplatePickerModal: React.FC = () => {
                     onClick={() => setExpandedTemplateId(isExpanded ? null : tpl.id)}
                   >
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-[var(--text-primary)] hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                      <h3 className="text-sm font-bold text-[var(--text-primary)] hover:text-[var(--color-brand)] transition-colors">
                         {tpl.name}
                       </h3>
                       {tpl.isCustom && (
@@ -174,7 +174,7 @@ export const TemplatePickerModal: React.FC = () => {
                         </span>
                       ))}
 
-                      <span className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5 ml-auto">
+                      <span className="text-[11px] text-[var(--color-brand)] hover:underline flex items-center gap-0.5 ml-auto">
                         <span>{isExpanded ? 'Hide Steps' : 'Preview Steps'}</span>
                         {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                       </span>
@@ -188,7 +188,7 @@ export const TemplatePickerModal: React.FC = () => {
                         type="button"
                         onClick={(e) => handleDeleteCustom(e, tpl.id)}
                         title="Delete custom template"
-                        className="p-2 text-[var(--text-muted)] hover:text-rose-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                        className="p-2 text-[var(--text-muted)] hover:text-rose-500 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
                       >
                         <Trash2 size={15} />
                       </button>
@@ -197,7 +197,7 @@ export const TemplatePickerModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleUseTemplate(tpl)}
-                      className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
+                      className="px-3.5 py-2 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
                     >
                       <Plus size={14} />
                       <span>Use Blueprint</span>

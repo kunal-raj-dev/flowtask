@@ -49,18 +49,18 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-[var(--bg-surface-l2)] rounded-3xl p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface"
+        className="w-full max-w-lg bg-[var(--bg-surface-l2)] rounded-xl p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
         >
           <X size={18} />
         </button>
 
         <div className="flex items-center gap-3 mb-5">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm card-surface">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs">
             <Keyboard size={20} className="stroke-[2.2]" />
           </div>
           <div>
@@ -82,10 +82,10 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
             {shortcuts.map((s) => (
               <div
                 key={s.key}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-xs card-surface"
+                className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-xs card-surface"
               >
                 <span className="text-[var(--text-secondary)]">{s.desc}</span>
-                <kbd className="px-2.5 py-0.5 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] font-mono text-[10px] text-[var(--text-primary)] font-semibold shadow-xs">
+                <kbd className="px-2.5 py-0.5 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] font-mono text-[10px] text-[var(--text-primary)] font-semibold shadow-xs">
                   {s.key}
                 </kbd>
               </div>
@@ -102,10 +102,10 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
             {nlpSyntax.map((n) => (
               <div
                 key={n.token}
-                className="p-2.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-xs flex items-center justify-between card-surface"
+                className="p-2.5 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-xs flex items-center justify-between card-surface"
               >
                 <span className="text-[var(--text-secondary)]">{n.desc}</span>
-                <span className="font-mono text-purple-600 dark:text-purple-400 font-semibold text-[11px]">
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold text-[11px]">
                   {n.token}
                 </span>
               </div>

@@ -355,7 +355,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 {doneTodayCount > 0 && !isShutdownDismissed && (
                   <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${overdueTasks.length > 0 && !isTriageDismissed ? 'pt-3' : ''}`}>
                     <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+                      <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
                         <Moon size={16} />
                       </div>
                       <div>
@@ -404,10 +404,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenStudySession}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 transition-all shadow-xs active:scale-95"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-subtle)] bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-xs active:scale-[0.98]"
                   title="Plan Study & Deep Work Sessions (DSA, LeetCode, Web Dev)"
                 >
-                  <Sparkles size={13} className="text-emerald-600 dark:text-emerald-400" />
+                  <Sparkles size={13} className="text-[var(--text-muted)]" />
                   <span>Study Sessions</span>
                 </button>
               )}
@@ -415,7 +415,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
               <button
                 type="button"
                 onClick={() => setQuickWinsOnly(!quickWinsOnly)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all active:scale-[0.98] ${
                   quickWinsOnly
                     ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-subtle)] bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l2)]'
@@ -426,6 +426,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
               </button>
 
               <select
+                id="priority-filter-select"
+                name="priorityFilter"
+                aria-label="Filter tasks by priority"
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value as any)}
                 className="text-xs bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 outline-none transition-colors cursor-pointer"

@@ -19,7 +19,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary:
     'bg-stone-900 dark:bg-white text-white dark:text-stone-950 hover:bg-stone-800 dark:hover:bg-stone-100 shadow-xs active:scale-[0.98]',
   brand:
-    'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs active:scale-[0.98]',
+    'bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white shadow-xs active:scale-[0.98]',
   secondary:
     'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] shadow-xs active:scale-[0.98]',
   outline:
@@ -36,7 +36,7 @@ const sizeStyles: Record<ButtonSize, string> = {
   xs: 'h-6 px-2 text-[11px] rounded-md gap-1',
   sm: 'h-8 px-2.5 text-xs rounded-lg gap-1.5',
   md: 'h-9 px-3.5 text-xs font-semibold rounded-lg gap-2',
-  lg: 'h-10 px-4 text-sm font-semibold rounded-xl gap-2',
+  lg: 'h-10 px-4 text-sm font-semibold rounded-lg gap-2',
   'icon-xs': 'w-6 h-6 p-0 rounded-md justify-center',
   'icon-sm': 'w-8 h-8 p-0 rounded-lg justify-center',
   'icon-md': 'w-9 h-9 p-0 rounded-lg justify-center',

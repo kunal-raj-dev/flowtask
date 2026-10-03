@@ -118,20 +118,20 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-[var(--bg-surface-l2)] rounded-3xl p-6 sm:p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface max-h-[90vh] flex flex-col"
+        className="w-full max-w-xl bg-[var(--bg-surface-l2)] rounded-xl p-6 sm:p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
         >
           <X size={18} />
         </button>
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-sm card-surface shrink-0">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs shrink-0">
             <Sparkles size={20} className="stroke-[2.2]" />
           </div>
           <div>
@@ -147,11 +147,11 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
         {/* View Mode Switcher */}
         {lineCount > 0 && (
           <div className="flex items-center justify-between border-b border-[var(--border-hairline)] pb-3 mb-3">
-            <div className="flex items-center gap-1.5 bg-[var(--bg-surface-l1)] p-1 rounded-xl border border-[var(--border-hairline)]">
+            <div className="flex items-center gap-1.5 bg-[var(--bg-surface-l1)] p-1 rounded-lg border border-[var(--border-hairline)]">
               <button
                 type="button"
                 onClick={() => setViewMode('edit')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
                   viewMode === 'edit'
                     ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -163,7 +163,7 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
               <button
                 type="button"
                 onClick={handleSwitchToPreview}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
                   viewMode === 'preview'
                     ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -178,7 +178,7 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
               <button
                 type="button"
                 onClick={handleToggleAll}
-                className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                className="text-xs text-amber-600 dark:text-amber-400 font-semibold hover:underline"
               >
                 {selectedCount === stagingItems.length ? 'Deselect All' : 'Select All'}
               </button>
@@ -191,11 +191,14 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
           {viewMode === 'edit' ? (
             <textarea
               autoFocus
+              id="brain-dump-textarea"
+              name="brainDumpNotes"
+              aria-label="Brain dump notes"
               rows={9}
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={`- [ ] Review architecture spec tomorrow morning p1 #work ~45m\n* Finish quarterly filing by friday #finance\n1. Pick up groceries and laundry tonight\nSchedule dentist cleaning next week`}
-              className="w-full text-xs p-4 bg-[var(--bg-surface-l1)]/60 text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-2xl outline-none focus:border-indigo-500 resize-none font-mono leading-relaxed card-surface h-full"
+              className="w-full text-xs p-4 bg-[var(--bg-surface-l1)]/60 text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-lg outline-none focus:border-[var(--color-brand)] resize-none font-mono leading-relaxed card-surface h-full"
             />
           ) : (
             <div className="space-y-2">
@@ -208,9 +211,9 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
                   <div
                     key={item.id}
                     onClick={() => handleToggleItem(item.id)}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                       item.isSelected
-                        ? 'bg-[var(--bg-surface-l1)] border-indigo-500/30 card-surface'
+                        ? 'bg-[var(--bg-surface-l1)] border-amber-500/30 card-surface'
                         : 'bg-[var(--bg-surface-l1)]/40 border-transparent opacity-60'
                     }`}
                   >
@@ -221,7 +224,7 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
                           e.stopPropagation();
                           handleToggleItem(item.id);
                         }}
-                        className="text-indigo-600 dark:text-indigo-400 shrink-0"
+                        className="text-amber-600 dark:text-amber-400 shrink-0"
                       >
                         {item.isSelected ? (
                           <CheckSquare size={16} />
@@ -255,7 +258,7 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
                         </span>
                       )}
                       {(item.dueDate || item.dueTime) && (
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-semibold">
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1 font-semibold">
                           <Calendar size={10} />
                           <span>{item.dueDate || 'Today'} {item.dueTime || ''}</span>
                         </span>
@@ -286,7 +289,7 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-xl transition-colors font-medium"
+              className="px-3.5 py-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors font-medium"
             >
               Cancel
             </button>
@@ -295,7 +298,7 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
               <button
                 type="button"
                 onClick={handleSwitchToPreview}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-surface-l1)] hover:bg-stone-200/60 dark:hover:bg-white/[0.08] text-[var(--text-primary)] rounded-xl text-xs font-semibold border border-[var(--border-hairline)] transition-all shadow-xs"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-surface-l1)] hover:bg-stone-200/60 dark:hover:bg-white/[0.08] text-[var(--text-primary)] rounded-lg text-xs font-semibold border border-[var(--border-hairline)] transition-all shadow-xs"
               >
                 <Eye size={13} />
                 <span>Preview Structure</span>
@@ -306,7 +309,7 @@ export const BrainDumpModal: React.FC<BrainDumpModalProps> = ({ onClose }) => {
               type="button"
               onClick={() => handleImport()}
               disabled={viewMode === 'preview' ? selectedCount === 0 : lineCount === 0}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-br from-stone-900 to-stone-800 dark:from-white dark:to-stone-100 text-white dark:text-stone-950 hover:opacity-95 rounded-xl text-xs font-bold shadow-xs transition-all disabled:opacity-40 active:scale-95 card-surface"
+              className="flex items-center gap-1.5 px-4 py-2 bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white rounded-lg text-xs font-bold shadow-xs transition-all disabled:opacity-40 active:scale-95 card-surface"
             >
               <span>Import {viewMode === 'preview' ? `(${selectedCount})` : lineCount > 0 ? `(${lineCount})` : ''}</span>
               <CornerDownLeft size={13} />

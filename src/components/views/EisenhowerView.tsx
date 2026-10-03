@@ -132,7 +132,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     <div className="max-w-6xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 sm:p-2.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm card-surface flex-shrink-0">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs flex-shrink-0">
             <Grid2X2 size={20} className="stroke-[2.2]" />
           </div>
           <div>
@@ -147,7 +147,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
 
         {/* Keyboard shortcut hint */}
         <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)]">
-          <Keyboard size={13} className="text-emerald-500" />
+          <Keyboard size={13} className="text-amber-500" />
           <span>Matrix Nav:</span>
           <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">1</kbd>
           <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">2</kbd>
@@ -160,7 +160,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
       </div>
 
       {/* Mobile Quadrant Switcher */}
-      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] mb-4 shadow-inner">
+      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner">
         {quadrants.map((q) => {
           const count = activeTasks.filter((t) => t.priority === q.priority).length;
           const isActive = mobileQuadrant === q.priority;
@@ -204,7 +204,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
               onDragOver={handleDragOver}
               className={`${
                 isVisibleOnMobile ? 'flex' : 'hidden md:flex'
-              } bg-[var(--bg-surface-l2)] rounded-3xl border border-[var(--border-hairline)] p-4 sm:p-5 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
+              } bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] p-4 sm:p-5 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
             >
               {/* Quadrant Header */}
               <div className="flex items-start justify-between pb-3.5 mb-3.5 border-b border-[var(--border-hairline)]">
@@ -309,10 +309,13 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                         setAddingToPriority(null);
                       }
                     }}
-                    className="p-3 bg-[var(--bg-surface-l2)] rounded-xl border border-indigo-500/50 shadow-md space-y-2 mb-2 animate-fade-in"
+                    className="p-3 bg-[var(--bg-surface-l2)] rounded-lg border border-[var(--color-brand)]/50 shadow-md space-y-2 mb-2 animate-fade-in"
                   >
                     <input
                       autoFocus
+                      id="quick-add-eisenhower-input"
+                      name="quickAddTitle"
+                      aria-label={`Add task to ${q.title}`}
                       type="text"
                       value={quickTitle}
                       onChange={(e) => setQuickTitle(e.target.value)}
@@ -323,7 +326,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                         }
                       }}
                       placeholder={`Add task to ${q.title}...`}
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand)]"
                     />
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -339,7 +342,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       <button
                         type="submit"
                         disabled={!quickTitle.trim()}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] disabled:opacity-50 text-white rounded-lg transition-colors"
                       >
                         Add
                       </button>
@@ -347,7 +350,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                   </form>
                 )}
                 {quadTasks.length === 0 && addingToPriority !== q.priority ? (
-                  <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-stone-200 dark:border-stone-800 rounded-2xl bg-[var(--bg-surface-l1)]/20">
+                  <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border-hairline)] rounded-lg bg-[var(--bg-surface-l1)]/20">
                     Drop tasks here
                   </div>
                 ) : (
@@ -357,7 +360,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)}
                       onClick={() => onSelectTask(task.id)}
-                      className="group p-3 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l2)] shadow-subtle cursor-grab active:cursor-grabbing transition-all flex items-center justify-between gap-2.5 card-surface hover:-translate-y-[0.5px]"
+                      className="group p-3 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l2)] shadow-subtle cursor-grab active:cursor-grabbing transition-all flex items-center justify-between gap-2.5 card-surface hover:-translate-y-[0.5px]"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <button

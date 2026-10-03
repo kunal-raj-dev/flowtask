@@ -130,9 +130,9 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 p-5 rounded-3xl bg-gradient-to-r from-emerald-500/[0.08] via-teal-500/[0.05] to-indigo-500/[0.06] border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 p-5 rounded-xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface">
         <div className="flex items-center gap-3.5">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20 card-surface flex-shrink-0">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs flex-shrink-0">
             <CheckCircle2 size={24} className="stroke-[2.2]" />
           </div>
           <div>
@@ -150,7 +150,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
             <button
               type="button"
               onClick={handleCopyWorklog}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-l1)] text-xs font-semibold text-[var(--text-primary)] shadow-xs transition-all card-surface active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-l1)] text-xs font-semibold text-[var(--text-primary)] shadow-xs transition-all card-surface active:scale-95"
               title="Copy formatted Markdown report to clipboard"
             >
               {copiedSummary ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-stone-400" />}
@@ -160,7 +160,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
             <button
               type="button"
               onClick={handleDownloadWorklog}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-l1)] text-xs font-semibold text-[var(--text-primary)] shadow-xs transition-all card-surface active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-l1)] text-xs font-semibold text-[var(--text-primary)] shadow-xs transition-all card-surface active:scale-95"
               title="Download worklog as .md file"
             >
               <Download size={14} className="text-stone-400" />
@@ -171,17 +171,20 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="mb-6 p-3.5 bg-[var(--bg-surface-l2)] rounded-2xl border border-[var(--border-hairline)] shadow-sm card-surface space-y-3">
+      <div className="mb-6 p-3.5 bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] shadow-sm card-surface space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           {/* Keyword Search */}
           <div className="relative flex-1">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             <input
               type="text"
+              id="logbook-search-input"
+              name="logbookSearch"
+              aria-label="Search accomplishments"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search completed accomplishments, notes, or tags..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] rounded-xl outline-none text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] rounded-lg outline-none text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--color-brand)] transition-colors"
             />
           </div>
 
@@ -189,9 +192,12 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
           <div className="flex items-center gap-1.5 shrink-0">
             <Filter size={14} className="text-[var(--text-muted)] hidden sm:inline" />
             <select
+              id="logbook-project-select"
+              name="logbookProject"
+              aria-label="Filter by project"
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="text-xs px-2.5 py-1.5 bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] rounded-xl outline-none text-[var(--text-primary)] font-medium cursor-pointer"
+              className="text-xs px-2.5 py-1.5 bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] rounded-lg outline-none text-[var(--text-primary)] font-medium cursor-pointer focus:border-[var(--color-brand)]"
             >
               <option value="all">All Projects</option>
               {projects.map((p) => (
@@ -218,7 +224,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
               key={h.id}
               type="button"
               onClick={() => setTimeHorizon(h.id as any)}
-              className={`px-3 py-1 rounded-xl font-semibold transition-all ${
+              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
                 timeHorizon === h.id
                   ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
                   : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04]'
@@ -235,7 +241,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
 
       {/* Task Sections */}
       {filteredTasks.length === 0 ? (
-        <div className="text-center py-16 bg-[var(--bg-surface-l2)] rounded-3xl border border-[var(--border-hairline)] card-surface">
+        <div className="text-center py-16 bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] card-surface">
           <FileText size={36} className="mx-auto mb-2 text-stone-400 opacity-60" />
           <p className="text-sm font-bold text-[var(--text-primary)]">No completed tasks match your filter</p>
           <p className="text-xs text-[var(--text-secondary)] mt-1">

@@ -61,10 +61,10 @@ export const BatchActionBar: React.FC = () => {
       aria-label="Bulk task actions"
       className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up"
     >
-      <div className="bg-[var(--bg-surface-l1)]/95 backdrop-blur-2xl border border-stone-200/90 dark:border-white/10 shadow-2xl rounded-2xl py-1.5 px-3 flex items-center gap-2 max-w-[95vw] overflow-x-auto card-surface">
+      <div className="bg-[var(--bg-surface-l1)]/95 backdrop-blur-2xl border border-stone-200/90 dark:border-white/10 shadow-2xl rounded-xl py-1.5 px-3 flex items-center gap-2 max-w-[95vw] overflow-x-auto card-surface">
         {/* Count pill */}
         <div className="flex items-center gap-1.5 pr-2 border-r border-[var(--border-hairline)] shrink-0">
-          <span className="w-5 h-5 rounded-full bg-amber-500 text-white font-mono font-bold text-[11px] flex items-center justify-center">
+          <span className="w-5 h-5 rounded-full bg-[var(--color-brand)] text-white font-mono font-bold text-[11px] flex items-center justify-center">
             {count}
           </span>
           <span className="text-xs font-semibold text-[var(--text-primary)]">
@@ -76,7 +76,7 @@ export const BatchActionBar: React.FC = () => {
         <button
           onClick={() => batchToggleStatus(selectedTaskIds)}
           title="Toggle completion status"
-          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-emerald-500 transition-colors font-medium shrink-0"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-emerald-500 transition-colors font-medium shrink-0"
         >
           <CheckCircle2 size={14} className="text-emerald-500" />
           <span>Status</span>
@@ -86,9 +86,9 @@ export const BatchActionBar: React.FC = () => {
         <button
           onClick={handleSetToday}
           title="Reschedule to Today"
-          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-amber-500 transition-colors font-medium shrink-0"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-[var(--color-brand)] transition-colors font-medium shrink-0"
         >
-          <Calendar size={14} className="text-amber-500" />
+          <Calendar size={14} className="text-[var(--color-brand)]" />
           <span>Today</span>
         </button>
 
@@ -96,9 +96,9 @@ export const BatchActionBar: React.FC = () => {
         <button
           onClick={handleSetTomorrow}
           title="Reschedule to Tomorrow"
-          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-indigo-500 transition-colors font-medium shrink-0"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-[var(--color-brand)] transition-colors font-medium shrink-0"
         >
-          <ArrowRight size={14} className="text-indigo-500" />
+          <ArrowRight size={14} className="text-[var(--color-brand)]" />
           <span>Tomorrow</span>
         </button>
 
@@ -106,7 +106,7 @@ export const BatchActionBar: React.FC = () => {
         <button
           onClick={handleSetSomeday}
           title="Move to Someday (remove date)"
-          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-purple-500 transition-colors font-medium shrink-0"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-purple-500 transition-colors font-medium shrink-0"
         >
           <Inbox size={14} className="text-purple-500" />
           <span>Someday</span>
@@ -120,19 +120,19 @@ export const BatchActionBar: React.FC = () => {
               setIsProjectDropdownOpen(false);
             }}
             title="Set priority"
-            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-amber-500 transition-colors font-medium"
+            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-[var(--color-brand)] transition-colors font-medium"
           >
             <Flag size={14} />
             <span>Priority</span>
           </button>
 
           {isPriorityDropdownOpen && (
-            <div className="absolute bottom-full mb-2 left-0 w-32 p-1.5 rounded-2xl bg-[var(--bg-surface-l1)] border border-stone-200/90 dark:border-white/10 shadow-modal space-y-1 animate-scale-up">
+            <div className="absolute bottom-full mb-2 left-0 w-32 p-1.5 rounded-lg bg-[var(--bg-surface-l1)] border border-stone-200/90 dark:border-white/10 shadow-modal space-y-1 animate-scale-up">
               {(['p1', 'p2', 'p3', 'p4'] as Priority[]).map((p) => (
                 <button
                   key={p}
                   onClick={() => handleSetPriority(p)}
-                  className="w-full text-left text-xs px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/[0.08] flex items-center justify-between"
+                  className="w-full text-left text-xs px-2.5 py-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-white/[0.08] flex items-center justify-between"
                 >
                   <span className="uppercase font-bold text-[11px] text-[var(--text-primary)]">
                     {p}
@@ -162,19 +162,19 @@ export const BatchActionBar: React.FC = () => {
               setIsPriorityDropdownOpen(false);
             }}
             title="Move to project"
-            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-amber-500 transition-colors font-medium"
+            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.08] text-[var(--text-secondary)] hover:text-[var(--color-brand)] transition-colors font-medium"
           >
             <Folder size={14} />
             <span>Move</span>
           </button>
 
           {isProjectDropdownOpen && (
-            <div className="absolute bottom-full mb-2 left-0 w-40 p-1.5 rounded-2xl bg-[var(--bg-surface-l1)] border border-stone-200/90 dark:border-white/10 shadow-modal space-y-1 animate-scale-up max-h-48 overflow-y-auto">
+            <div className="absolute bottom-full mb-2 left-0 w-40 p-1.5 rounded-lg bg-[var(--bg-surface-l1)] border border-stone-200/90 dark:border-white/10 shadow-modal space-y-1 animate-scale-up max-h-48 overflow-y-auto">
               {projects.map((proj) => (
                 <button
                   key={proj.id}
                   onClick={() => handleSetProject(proj.id)}
-                  className="w-full text-left text-xs px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/[0.08] flex items-center gap-2 truncate"
+                  className="w-full text-left text-xs px-2.5 py-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-white/[0.08] flex items-center gap-2 truncate"
                 >
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
@@ -193,7 +193,7 @@ export const BatchActionBar: React.FC = () => {
         <button
           onClick={() => batchDeleteTasks(selectedTaskIds)}
           title="Delete selected tasks"
-          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl hover:bg-rose-500/10 text-stone-400 hover:text-rose-500 transition-colors font-medium shrink-0"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg hover:bg-rose-500/10 text-stone-400 hover:text-rose-500 transition-colors font-medium shrink-0"
         >
           <Trash2 size={14} />
           <span>Delete</span>

@@ -538,7 +538,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 : 'Local Mode'}
             </span>
           </div>
-          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold px-1.5 py-0.5 rounded bg-blue-500/10 dark:bg-blue-500/15 shrink-0">
+          <span className="text-[10px] text-[var(--text-muted)] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shrink-0">
             {user && !isAnonymous ? 'Account' : 'Cloud'}
           </span>
         </button>
@@ -551,13 +551,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsWeeklyReviewOpen(true);
             onItemClick?.();
           }}
-          className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-[var(--bg-surface-l2)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] text-purple-700 dark:text-purple-300 text-xs font-semibold transition-all border border-purple-500/25 shadow-xs hover:border-purple-500/40 card-surface active:scale-[0.98]"
+          className="w-full flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-medium transition-all border border-[var(--border-hairline)] shadow-xs active:scale-[0.98]"
         >
           <div className="flex items-center gap-2">
-            <Compass size={14} className="text-purple-500" />
+            <Compass size={14} className="text-[var(--text-muted)]" />
             <span>Weekly Review</span>
           </div>
-          <span className="text-[10px] font-mono text-purple-600/70 dark:text-purple-300/70">^⇧W</span>
+          <span className="text-[10px] font-mono text-[var(--text-muted)]">^⇧W</span>
         </button>
 
         {onOpenStudySession && (
@@ -566,13 +566,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onOpenStudySession();
               onItemClick?.();
             }}
-            className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/15 hover:from-emerald-500/25 hover:to-teal-500/25 text-emerald-800 dark:text-emerald-300 text-xs font-semibold transition-all border border-emerald-500/35 shadow-xs hover:border-emerald-500/55 card-surface active:scale-[0.98]"
+            className="w-full flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-medium transition-all border border-[var(--border-hairline)] shadow-xs active:scale-[0.98]"
           >
             <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-emerald-600 dark:text-emerald-400" />
+              <Sparkles size={14} className="text-[var(--text-muted)]" />
               <span>Study Sessions</span>
             </div>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-mono">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-surface-l1)] text-[var(--text-muted)] font-mono border border-[var(--border-hairline)]">
               New
             </span>
           </button>
@@ -580,9 +580,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={onOpenPomodoro}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-[var(--bg-surface-l2)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] text-amber-900 dark:text-amber-300 text-xs font-semibold transition-all border border-amber-500/35 shadow-xs hover:border-amber-500/55 card-surface active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-medium transition-all border border-[var(--border-hairline)] shadow-xs active:scale-[0.98]"
         >
-          <Timer size={14} className="text-amber-500" />
+          <Timer size={14} className="text-[var(--text-muted)]" />
           <span>Focus Mode & Timer</span>
         </button>
       </div>

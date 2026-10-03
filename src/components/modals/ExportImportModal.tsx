@@ -99,18 +99,18 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-white dark:bg-[#12151D] rounded-3xl p-6 border border-stone-200/80 dark:border-white/10 shadow-2xl dark:shadow-black/70 card-surface relative"
+        className="w-full max-w-xl bg-white dark:bg-[#12151D] rounded-xl p-6 border border-stone-200/80 dark:border-white/10 shadow-2xl dark:shadow-black/70 card-surface relative"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
+          className="absolute top-5 right-5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
         >
           <X size={18} />
         </button>
 
         <div className="flex items-center gap-3.5 mb-4">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-teal-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shadow-xs">
             <Sparkles size={20} strokeWidth={2} />
           </div>
           <div>
@@ -124,10 +124,10 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex gap-1 p-1 bg-stone-100/80 dark:bg-white/[0.04] border border-stone-200/60 dark:border-white/5 rounded-2xl mb-4 text-xs font-semibold overflow-x-auto">
+        <div className="flex gap-1 p-1 bg-stone-100/80 dark:bg-white/[0.04] border border-stone-200/60 dark:border-white/5 rounded-xl mb-4 text-xs font-semibold overflow-x-auto">
           <button
             onClick={() => setActiveTab('standup')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'standup'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
@@ -137,7 +137,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('share')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'share'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
@@ -147,7 +147,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('markdown')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'markdown'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
@@ -157,7 +157,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('csv')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'csv'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
@@ -167,7 +167,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('json')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'json'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
@@ -177,7 +177,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('import')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'import'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
@@ -190,7 +190,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               setLocalSnapshots(getStoredSnapshots());
               setActiveTab('snapshots');
             }}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'snapshots'
                 ? 'bg-white dark:bg-[#1A1F2B] text-stone-900 dark:text-stone-100 shadow-sm card-surface'
                 : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
@@ -248,14 +248,14 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               readOnly
               rows={8}
               value={standupContent}
-              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-indigo-500/50"
+              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-lg outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-[var(--color-brand)]"
             />
 
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => handleCopyText(standupContent)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white rounded-lg text-xs font-bold shadow-xs transition-all"
               >
                 {copied ? <Check size={14} className="text-emerald-300" /> : <Copy size={14} />}
                 <span>{copied ? 'Copied to Clipboard!' : 'Copy Daily Standup'}</span>
@@ -275,14 +275,14 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               readOnly
               rows={5}
               value={shareUrl}
-              className="w-full text-[11px] p-3 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed select-all"
+              className="w-full text-[11px] p-3 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-lg outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed select-all"
             />
 
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => handleCopyText(shareUrl)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg text-xs font-bold shadow-xs hover:opacity-95 transition-all"
               >
                 {copied ? <Check size={14} className="text-emerald-200" /> : <Copy size={14} />}
                 <span>{copied ? 'Link Copied!' : 'Copy Share Link'}</span>
@@ -298,19 +298,19 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               readOnly
               rows={8}
               value={markdownContent}
-              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-indigo-500/50"
+              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-lg outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-[var(--color-brand)]"
             />
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => handleCopyText(markdownContent)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
               >
                 {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                 <span>{copied ? 'Copied!' : 'Copy to Clipboard'}</span>
               </button>
               <button
                 onClick={() => handleDownloadFile(markdownContent, 'FlowTask-Export.md', 'text/markdown')}
-                className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-xl text-xs font-bold hover:bg-stone-800 dark:hover:bg-white shadow-sm transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-lg text-xs font-bold hover:bg-stone-800 dark:hover:bg-white shadow-xs transition-all"
               >
                 <Download size={14} />
                 <span>Download .md</span>
@@ -326,7 +326,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               readOnly
               rows={8}
               value={csvContent}
-              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-indigo-500/50"
+              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-lg outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-[var(--color-brand)]"
             />
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-stone-500 dark:text-stone-400">
@@ -336,7 +336,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleCopyText(csvContent)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
                 >
                   {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                   <span>{copied ? 'Copied!' : 'Copy CSV'}</span>
@@ -344,7 +344,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDownloadFile(csvContent, 'FlowTask-Tasks.csv', 'text/csv;charset=utf-8;')}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-xl text-xs font-bold hover:bg-stone-800 dark:hover:bg-white shadow-sm transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-lg text-xs font-bold hover:bg-stone-800 dark:hover:bg-white shadow-xs transition-all"
                 >
                   <Download size={14} />
                   <span>Download .csv</span>
@@ -361,19 +361,19 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               readOnly
               rows={8}
               value={jsonContent}
-              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-indigo-500/50"
+              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-lg outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-[var(--color-brand)]"
             />
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => handleCopyText(jsonContent)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-stone-200/80 dark:border-white/10 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors card-surface"
               >
                 {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                 <span>{copied ? 'Copied!' : 'Copy JSON'}</span>
               </button>
               <button
                 onClick={() => handleDownloadFile(jsonContent, 'flowtask-backup.json', 'application/json')}
-                className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-xl text-xs font-bold hover:bg-stone-800 dark:hover:bg-white shadow-sm transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-lg text-xs font-bold hover:bg-stone-800 dark:hover:bg-white shadow-xs transition-all"
               >
                 <Download size={14} />
                 <span>Download JSON Backup</span>
@@ -386,11 +386,14 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         {activeTab === 'import' && (
           <form onSubmit={handleImportSubmit} className="space-y-3">
             <textarea
+              id="import-backup-textarea"
+              name="importBackup"
+              aria-label="Paste JSON backup"
               rows={8}
               value={importJsonText}
               onChange={(e) => setImportJsonText(e.target.value)}
               placeholder="Paste your JSON backup data here..."
-              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-2xl outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-indigo-500/50"
+              className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-lg outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-[var(--color-brand)]"
             />
             {importError && (
               <p className="text-xs text-rose-500 font-semibold">{importError}</p>
@@ -399,7 +402,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               <button
                 type="submit"
                 disabled={!importJsonText.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-xl text-xs font-bold hover:bg-stone-800 dark:hover:bg-white disabled:opacity-40 shadow-sm transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-lg text-xs font-bold hover:bg-stone-800 dark:hover:bg-white disabled:opacity-40 shadow-xs transition-all"
               >
                 <Upload size={14} />
                 <span>Restore Data</span>
@@ -427,7 +430,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                   setLocalSnapshots(getStoredSnapshots());
                   audioEngine.playCompletionChime();
                 }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all shrink-0"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-xs font-bold shadow-xs transition-all shrink-0"
               >
                 <Plus size={13} />
                 <span>Take Snapshot</span>
@@ -443,7 +446,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                 localSnapshots.map((snap) => (
                   <div
                     key={snap.id}
-                    className="p-3 rounded-2xl bg-stone-50 dark:bg-white/[0.03] border border-stone-200/70 dark:border-white/5 flex items-center justify-between gap-3 text-xs"
+                    className="p-3 rounded-lg bg-stone-50 dark:bg-white/[0.03] border border-stone-200/70 dark:border-white/5 flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -492,7 +495,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                             onClose();
                           }
                         }}
-                        className="px-2.5 py-1 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 font-bold text-[11px] shadow-xs hover:opacity-90 transition-opacity flex items-center gap-1"
+                        className="px-2.5 py-1 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-950 font-bold text-[11px] shadow-xs hover:opacity-90 transition-opacity flex items-center gap-1"
                       >
                         <ShieldCheck size={12} />
                         <span>Restore</span>

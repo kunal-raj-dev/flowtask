@@ -154,7 +154,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     <div className="max-w-7xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 sm:p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-sm card-surface flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
             <Kanban size={20} className="stroke-[2.2]" />
           </div>
           <div>
@@ -168,18 +168,18 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
         </div>
 
         {/* Keyboard shortcut hint */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)]">
-          <Keyboard size={13} className="text-indigo-500" />
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)] font-mono">
+          <Keyboard size={13} className="text-[var(--text-muted)]" />
           <span>Vim / Nav:</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">h j k l</kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[10px] font-bold text-[var(--text-primary)]">h j k l</kbd>
           <span>or</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">1-3</kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[10px] font-bold text-[var(--text-primary)]">1-3</kbd>
           <span>• Space advance</span>
         </div>
       </div>
 
       {/* Mobile Column Tab Switcher */}
-      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-2xl border border-[var(--border-hairline)] mb-4 shadow-inner">
+      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner">
         {columns.map((col) => {
           const count = tasks.filter((t) => t.status === col.status).length;
           const isActive = mobileColumn === col.status;
@@ -188,7 +188,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               key={col.status}
               type="button"
               onClick={() => setMobileColumn(col.status)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                 isActive
                   ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -215,7 +215,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               onDragOver={handleDragOver}
               className={`${
                 isVisibleOnMobile ? 'flex' : 'hidden md:flex'
-              } bg-[var(--bg-surface-l1)]/60 rounded-3xl p-3.5 sm:p-4 border border-[var(--border-hairline)] flex-col min-h-[360px] md:min-h-[520px] backdrop-blur-xs shadow-xs`}
+              } bg-[var(--bg-surface-l1)]/60 rounded-xl p-3.5 sm:p-4 border border-[var(--border-hairline)] flex-col min-h-[360px] md:min-h-[520px] backdrop-blur-xs shadow-xs`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between mb-3.5 px-1">
@@ -250,7 +250,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         setAddingToStatus(null);
                       }
                     }}
-                    className="p-3 bg-[var(--bg-surface-l2)] rounded-2xl border border-indigo-500/50 shadow-md space-y-2 animate-fade-in"
+                    className="p-3 bg-[var(--bg-surface-l2)] rounded-lg border border-amber-500/50 shadow-md space-y-2 animate-fade-in"
                   >
                     <input
                       autoFocus
@@ -264,7 +264,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         }
                       }}
                       placeholder={`Add card to ${col.title}...`}
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-amber-500"
                     />
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -280,7 +280,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                       <button
                         type="submit"
                         disabled={!quickTitle.trim()}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-stone-900 dark:bg-white text-white dark:text-stone-950 rounded-lg hover:bg-stone-800 dark:hover:bg-stone-100 disabled:opacity-50 transition-colors"
                       >
                         Add
                       </button>
@@ -288,7 +288,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   </form>
                 )}
                 {colTasks.length === 0 && addingToStatus !== col.status ? (
-                  <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-stone-200 dark:border-stone-800 rounded-2xl bg-[var(--bg-surface-l2)]/30">
+                  <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border-hairline)] rounded-lg bg-[var(--bg-surface-l2)]/30">
                     Drop cards here
                   </div>
                 ) : (
@@ -301,9 +301,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         setFocusedCardId(task.id);
                         onSelectTask(task.id);
                       }}
-                      className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-2xl border transition-all space-y-2 card-surface cursor-grab active:cursor-grabbing hover:-translate-y-[1px] ${
+                      className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-lg border transition-all space-y-2 card-surface cursor-grab active:cursor-grabbing hover:-translate-y-[0.5px] ${
                         focusedCardId === task.id
-                          ? 'border-indigo-500 ring-2 ring-indigo-500/40 shadow-elevated'
+                          ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-elevated'
                           : 'border-[var(--border-hairline)] shadow-card hover:border-stone-300 dark:hover:border-stone-700'
                       }`}
                     >

@@ -308,7 +308,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-[var(--bg-surface-l2)] rounded-3xl border border-[var(--border-hairline)] shadow-modal overflow-hidden card-surface"
+        className="w-full max-w-xl bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] shadow-modal overflow-hidden card-surface"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
@@ -317,13 +317,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <input
             ref={inputRef}
             type="text"
+            id="command-palette-input"
+            name="commandPaletteQuery"
+            aria-label="Command palette query"
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Type a command, task title, or DSL: p:p1, @focus, #tag, is:overdue..."
             className="w-full bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none"
           />
-          <kbd className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
+          <kbd className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-md bg-[var(--bg-surface-l1)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
             ESC
           </kbd>
         </div>
@@ -338,7 +341,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               key={chip.label}
               type="button"
               onClick={() => handleAppendQueryToken(chip.label)}
-              className="px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 border border-[var(--border-subtle)] text-[var(--text-secondary)] font-mono text-[10px] transition-colors shrink-0"
+              className="px-2 py-0.5 rounded-md bg-[var(--bg-surface-l2)] hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 border border-[var(--border-subtle)] text-[var(--text-secondary)] font-mono text-[10px] transition-colors shrink-0"
               title={`Append ${chip.label} (${chip.desc})`}
             >
               {chip.label}
@@ -371,7 +374,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     onSelectTask(task.id);
                     onClose();
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-left hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors gap-2"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs text-left hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors gap-2"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {task.status === 'done' ? (
@@ -423,9 +426,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     action.run();
                     onClose();
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
                 >
-                  <div className="p-1 rounded-lg bg-[var(--bg-surface-l1)]">
+                  <div className="p-1 rounded-md bg-[var(--bg-surface-l1)]">
                     <Icon size={15} className="text-[var(--text-muted)]" />
                   </div>
                   <span className="font-medium">{action.title}</span>

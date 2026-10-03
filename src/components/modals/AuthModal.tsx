@@ -35,12 +35,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-lg rounded-3xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-modal overflow-hidden z-10 transition-all card-surface animate-slide-down">
-        {/* Header with decorative gradient banner */}
-        <div className="relative p-6 pb-5 border-b border-[var(--border-hairline)] bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-purple-500/10 dark:from-blue-500/20 dark:via-indigo-500/15 dark:to-purple-500/20">
+      <div className="relative w-full max-w-lg rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-modal overflow-hidden z-10 transition-all card-surface animate-slide-down">
+        {/* Header */}
+        <div className="relative p-6 pb-5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/25 text-white">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shadow-xs">
                 <Cloud className="w-5 h-5" />
               </div>
               <div>
@@ -54,7 +54,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.08] transition-colors"
+              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.08] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -65,7 +65,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <div className="p-6 space-y-5">
           {/* Auth Error Banner */}
           {authError && (
-            <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
+            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="font-semibold">Authentication Notice</p>
@@ -81,7 +81,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           )}
 
           {/* Real-time Status Card */}
-          <div className="p-4 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] space-y-3">
+          <div className="p-4 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Sync Status
@@ -114,13 +114,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
-              <div className="p-3 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] card-surface">
+              <div className="p-3 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] card-surface">
                 <span className="text-[var(--text-muted)] block text-[11px]">Active Tasks</span>
                 <span className="text-base font-bold text-[var(--text-primary)] mt-0.5 block font-mono">
                   {tasks.length} tasks
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] card-surface">
+              <div className="p-3 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] card-surface">
                 <span className="text-[var(--text-muted)] block text-[11px]">Projects</span>
                 <span className="text-base font-bold text-[var(--text-primary)] mt-0.5 block font-mono">
                   {projects.length} projects
@@ -136,7 +136,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </span>
               <button
                 onClick={() => forceSyncToCloud()}
-                className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 inline-flex items-center gap-1 transition-colors cursor-pointer"
+                className="font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 inline-flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <RefreshCw className="w-3 h-3" />
                 Sync Now
@@ -145,7 +145,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Account Profile / Sign In Section */}
-          <div className="p-4 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] space-y-4">
+          <div className="p-4 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] space-y-4">
             {user && !isAnonymous ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -154,10 +154,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       <img
                         src={user.photoURL}
                         alt={user.displayName || 'User'}
-                        className="w-10 h-10 rounded-full border border-blue-500/30 object-cover shadow-sm"
+                        className="w-10 h-10 rounded-full border border-amber-500/30 object-cover shadow-xs"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                      <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
                         {user.displayName?.[0] || user.email?.[0] || 'U'}
                       </div>
                     )}
@@ -185,7 +185,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <button
                     onClick={() => signOutUser()}
                     disabled={loading}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Sign Out
@@ -195,7 +195,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                     <UserIcon className="w-4 h-4" />
                   </div>
                   <div className="flex-1">
@@ -208,8 +208,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center gap-2.5 text-xs text-blue-700 dark:text-blue-300">
-                  <Sparkles className="w-4 h-4 shrink-0 text-blue-500" />
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+                  <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
                   <span>
                     Link your Google account to sync seamlessly across phones, laptops, and prevent data loss if browser cookies are cleared.
                   </span>
@@ -219,10 +219,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <button
                     onClick={() => signInWithGoogle()}
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl font-medium text-xs text-stone-800 dark:text-white bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 shadow-sm hover:shadow hover:bg-stone-50 dark:hover:bg-stone-750 transition-all cursor-pointer card-surface active:scale-[0.99]"
+                    className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg font-medium text-xs text-stone-800 dark:text-white bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 shadow-xs hover:bg-stone-50 dark:hover:bg-stone-750 transition-all cursor-pointer card-surface active:scale-[0.99]"
                   >
                     {loading ? (
-                      <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />
+                      <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
                     ) : (
                       <>
                         <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -248,7 +248,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     )}
                   </button>
                 ) : (
-                  <div className="p-3 rounded-xl bg-[var(--bg-surface-l2)] text-xs text-[var(--text-muted)] text-center border border-[var(--border-hairline)]">
+                  <div className="p-3 rounded-lg bg-[var(--bg-surface-l2)] text-xs text-[var(--text-muted)] text-center border border-[var(--border-hairline)]">
                     Firebase configuration detected in offline demo mode.
                   </div>
                 )}
@@ -272,7 +272,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <div className="px-6 py-4 bg-[var(--bg-surface-l1)] border-t border-[var(--border-hairline)] flex items-center justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.08] transition-colors shadow-sm card-surface cursor-pointer"
+            className="px-4 py-2 rounded-lg text-xs font-semibold bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.08] transition-colors shadow-xs card-surface cursor-pointer"
           >
             Done
           </button>

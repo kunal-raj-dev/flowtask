@@ -151,10 +151,10 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
 
   // Shared Mode Selector Component
   const renderModeSelector = (isZen = false) => (
-    <div className={`flex justify-center gap-1.5 p-1 bg-[var(--bg-surface-l1)] rounded-2xl border border-[var(--border-subtle)] ${isZen ? 'max-w-sm' : 'max-w-xs mx-auto mb-6'}`}>
+    <div className={`flex justify-center gap-1.5 p-1 bg-[var(--bg-surface-l1)] rounded-lg border border-[var(--border-subtle)] ${isZen ? 'max-w-sm' : 'max-w-xs mx-auto mb-6'}`}>
       <button
         onClick={() => handleModeChange('focus')}
-        className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
           mode === 'focus'
             ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface'
             : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -164,7 +164,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       </button>
       <button
         onClick={() => handleModeChange('short_break')}
-        className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
           mode === 'short_break'
             ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface'
             : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -174,7 +174,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       </button>
       <button
         onClick={() => handleModeChange('long_break')}
-        className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
           mode === 'long_break'
             ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface'
             : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -201,7 +201,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
           key={snd.id}
           type="button"
           onClick={() => setAmbientSound(snd.id)}
-          className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all ${
+          className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
             ambientSound === snd.id
               ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-xs'
               : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
@@ -396,7 +396,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-[var(--bg-surface-l2)] rounded-3xl p-7 border border-[var(--border-hairline)] shadow-modal relative text-center card-surface"
+        className="w-full max-w-md bg-[var(--bg-surface-l2)] rounded-xl p-7 border border-[var(--border-hairline)] shadow-modal relative text-center card-surface"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Controls: Fullscreen toggle & Close Button */}
@@ -404,13 +404,13 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
           <button
             onClick={() => setIsFullscreen(true)}
             title="Zen Fullscreen Mode (F)"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
           >
             <Maximize2 size={16} />
           </button>
           <button
             onClick={onClose}
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
           >
             <X size={18} />
           </button>
@@ -424,7 +424,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
 
         {/* Linked Task Card */}
         {task && (
-          <div className="mb-6 p-3.5 bg-[var(--bg-surface-l1)]/60 rounded-2xl border border-[var(--border-hairline)] text-left flex items-center justify-between gap-3 card-surface">
+          <div className="mb-6 p-3.5 bg-[var(--bg-surface-l1)]/60 rounded-lg border border-[var(--border-hairline)] text-left flex items-center justify-between gap-3 card-surface">
             <div className="min-w-0">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Current Focus
@@ -435,7 +435,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
             </div>
             <button
               onClick={() => toggleTaskStatus(task.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all ${
                 task.status === 'done'
                   ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                   : 'bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-hairline)] card-surface shadow-xs'
@@ -470,14 +470,14 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
           <button
             onClick={resetTimer}
             title="Reset Timer"
-            className="p-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-2xl transition-colors"
+            className="p-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-xl transition-colors"
           >
             <RotateCcw size={18} />
           </button>
 
           <button
             onClick={toggleTimer}
-            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-stone-900 to-stone-800 dark:from-white dark:to-stone-200 text-white dark:text-stone-950 flex items-center justify-center hover:scale-105 active:scale-95 shadow-elevated transition-all card-surface"
+            className="w-16 h-16 rounded-xl bg-gradient-to-br from-stone-900 to-stone-800 dark:from-white dark:to-stone-200 text-white dark:text-stone-950 flex items-center justify-center hover:scale-105 active:scale-95 shadow-elevated transition-all card-surface"
           >
             {isRunning ? <Pause size={24} /> : <Play size={24} className="ml-1 fill-current" />}
           </button>
@@ -489,7 +489,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
               setAmbientSound(order[nextIdx]);
             }}
             title={`Ambient Soundscape: ${ambientSound === 'none' ? 'Off' : ambientSound.toUpperCase()} (Click to cycle)`}
-            className={`p-3.5 rounded-2xl transition-all ${
+            className={`p-3.5 rounded-xl transition-all ${
               ambientSound !== 'none'
                 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-glow-amber'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
@@ -508,7 +508,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
             <button
               onClick={handleStash}
               title="Stash focus session & park an interruption (Alt+S)"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-all shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-all shadow-xs"
             >
               <Flame size={13} />
               <span>Stash Focus & Park Interruption (Alt+S)</span>

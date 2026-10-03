@@ -104,13 +104,13 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-[var(--bg-surface-l1)] rounded-3xl p-6 sm:p-7 border border-stone-200/90 dark:border-white/10 shadow-modal space-y-5 animate-scale-up card-surface max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg bg-[var(--bg-surface-l1)] rounded-xl p-6 sm:p-7 border border-stone-200/90 dark:border-white/10 shadow-modal space-y-5 animate-scale-up card-surface max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--border-hairline)] pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-[var(--color-brand)] border border-amber-500/20">
               <Filter size={20} />
             </div>
             <div>
@@ -124,7 +124,7 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-stone-400 hover:text-[var(--text-primary)] hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors"
+            className="p-1.5 rounded-lg text-stone-400 hover:text-[var(--text-primary)] hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors"
           >
             <X size={18} />
           </button>
@@ -133,16 +133,19 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* View Name & Icon */}
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+            <label htmlFor="smart-filter-name-input" className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
               View Name
             </label>
             <input
+              id="smart-filter-name-input"
+              name="smartFilterName"
+              aria-label="Smart filter view name"
               type="text"
               autoFocus
               placeholder="e.g. High Priority Specs, Weekend Errand Sprint..."
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-sm px-3.5 py-2.5 rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] focus:border-indigo-500 text-[var(--text-primary)] outline-none shadow-xs"
+              className="w-full text-sm px-3.5 py-2.5 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] focus:border-[var(--color-brand)] text-[var(--text-primary)] outline-none shadow-xs"
             />
           </div>
 
@@ -159,9 +162,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                     key={id}
                     type="button"
                     onClick={() => setSelectedIcon(id)}
-                    className={`p-2 rounded-xl border transition-all ${
+                    className={`p-2 rounded-lg border transition-all ${
                       isSelected
-                        ? 'bg-indigo-500/15 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                        ? 'bg-[var(--color-brand)]/15 border-[var(--color-brand)] text-[var(--color-brand)] shadow-xs'
                         : 'border-[var(--border-hairline)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-100 dark:hover:bg-white/[0.04]'
                     }`}
                   >
@@ -188,7 +191,7 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                       c === 'text-emerald-500' ? 'bg-emerald-500' :
                       c === 'text-blue-500' ? 'bg-blue-500' :
                       c === 'text-purple-500' ? 'bg-purple-500' : 'bg-cyan-500'
-                    } ${isSelected ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110 shadow-xs' : 'opacity-70 hover:opacity-100'}`}
+                    } ${isSelected ? 'ring-2 ring-offset-2 ring-[var(--color-brand)] scale-110 shadow-xs' : 'opacity-70 hover:opacity-100'}`}
                   />
                 );
               })}
@@ -208,13 +211,13 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                     key={p}
                     type="button"
                     onClick={() => handleTogglePriority(p)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider border transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-all ${
                       isSelected
                         ? p === 'p1'
                           ? 'bg-rose-500/15 text-rose-600 border-rose-500 shadow-xs'
                           : p === 'p2'
                           ? 'bg-amber-500/15 text-amber-600 border-amber-500 shadow-xs'
-                          : 'bg-indigo-500/15 text-indigo-600 border-indigo-500 shadow-xs'
+                          : 'bg-[var(--color-brand)]/15 text-[var(--color-brand)] border-[var(--color-brand)] shadow-xs'
                         : 'border-[var(--border-hairline)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                     }`}
                   >
@@ -249,9 +252,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                   key={opt.id}
                   type="button"
                   onClick={() => setDurationMode(opt.id as any)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                     durationMode === opt.id
-                      ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500 font-semibold shadow-xs'
+                      ? 'bg-[var(--color-brand)]/15 text-[var(--color-brand)] border-[var(--color-brand)] font-semibold shadow-xs'
                       : 'border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
@@ -279,9 +282,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                   key={range.id}
                   type="button"
                   onClick={() => setDueRange(range.id as any)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-medium border transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
                     dueRange === range.id
-                      ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500 font-semibold shadow-xs'
+                      ? 'bg-[var(--color-brand)]/15 text-[var(--color-brand)] border-[var(--color-brand)] font-semibold shadow-xs'
                       : 'border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
@@ -307,9 +310,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                         key={proj.id}
                         type="button"
                         onClick={() => handleToggleProject(proj.id)}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
                           isSelected
-                            ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500 font-semibold shadow-xs'
+                            ? 'bg-[var(--color-brand)]/15 text-[var(--color-brand)] border-[var(--color-brand)] font-semibold shadow-xs'
                             : 'border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-white/[0.04]'
                         }`}
                       >
@@ -335,14 +338,14 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-xs px-3.5 py-2 rounded-xl border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors font-medium"
+                className="text-xs px-3.5 py-2 rounded-lg border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!name.trim()}
-                className="flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 shadow-sm"
+                className="flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white transition-colors disabled:opacity-50 shadow-sm"
               >
                 <Plus size={14} />
                 <span>Save Smart View</span>

@@ -92,19 +92,19 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-[var(--bg-surface-l2)] rounded-3xl p-6 sm:p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg bg-[var(--bg-surface-l2)] rounded-xl p-6 sm:p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
         >
           <X size={18} />
         </button>
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white shadow-md shadow-indigo-500/25 card-surface">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs">
             <Moon size={22} className="stroke-[2.2]" />
           </div>
           <div>
@@ -119,7 +119,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
 
         {/* Metrics Victory Reel */}
         <div className="grid grid-cols-3 gap-3 mb-5">
-          <div className="p-3 rounded-2xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-center card-surface">
+          <div className="p-3 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-center card-surface">
             <div className="flex items-center justify-center text-emerald-500 mb-1">
               <CheckCircle2 size={16} />
             </div>
@@ -127,15 +127,15 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
             <p className="text-[11px] text-[var(--text-secondary)] font-medium">Completed</p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-center card-surface">
-            <div className="flex items-center justify-center text-indigo-500 mb-1">
+          <div className="p-3 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-center card-surface">
+            <div className="flex items-center justify-center text-amber-500 mb-1">
               <Clock size={16} />
             </div>
             <p className="text-xl font-bold text-[var(--text-primary)] font-mono">{focusHours}h</p>
             <p className="text-[11px] text-[var(--text-secondary)] font-medium">Focus Logged</p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-center card-surface">
+          <div className="p-3 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-center card-surface">
             <div className="flex items-center justify-center text-amber-500 mb-1">
               <Star size={16} />
             </div>
@@ -148,7 +148,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
 
         {/* Incomplete Tasks Section */}
         {incompleteToday.length > 0 ? (
-          <div className="mb-5 p-4 rounded-2xl bg-amber-500/[0.06] border border-amber-500/20">
+          <div className="mb-5 p-4 rounded-lg bg-amber-500/[0.06] border border-amber-500/20">
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-xs font-bold text-amber-900 dark:text-amber-200">
                 {incompleteToday.length} task{incompleteToday.length > 1 ? 's' : ''} left on today&apos;s list:
@@ -197,7 +197,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
                         updateTask(t.id, { dueDate: formatLocalDate(tomorrow), isPinnedToday: false });
                       }}
                       title="Push to tomorrow"
-                      className="text-[var(--text-muted)] hover:text-indigo-500 p-1"
+                      className="text-[var(--text-muted)] hover:text-amber-500 p-1"
                     >
                       <ArrowRight size={12} />
                     </button>
@@ -207,8 +207,8 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
             </div>
           </div>
         ) : (
-          <div className="mb-5 p-4 rounded-2xl bg-emerald-500/[0.08] border border-emerald-500/25 flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500 text-white">
+          <div className="mb-5 p-4 rounded-lg bg-emerald-500/[0.08] border border-emerald-500/25 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-emerald-500 text-white">
               <CheckCircle2 size={16} />
             </div>
             <div>
@@ -223,8 +223,8 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
         )}
 
         {/* Mindful Affirmation Card */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-500/[0.06] via-purple-500/[0.04] to-pink-500/[0.06] border border-[var(--border-hairline)] mb-6 text-center card-surface">
-          <Coffee size={20} className="mx-auto text-indigo-500 mb-1.5 opacity-80" />
+        <div className="p-4 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] mb-6 text-center card-surface">
+          <Coffee size={20} className="mx-auto text-amber-500 mb-1.5 opacity-80" />
           <p className="text-xs font-medium text-[var(--text-primary)] italic leading-relaxed">
             &ldquo;Work is done for the day. Close your laptop, step away from screens, and give your mind the rest it deserves.&rdquo;
           </p>
@@ -235,7 +235,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
           <button
             type="button"
             onClick={handleFinishShutdown}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20 active:scale-95 transition-all"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-xs font-bold shadow-xs active:scale-95 transition-all"
           >
             Complete Shutdown & Disconnect
           </button>

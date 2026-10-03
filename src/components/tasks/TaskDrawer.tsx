@@ -238,7 +238,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
         parts.push(
           <code
             key={match.index}
-            className="px-1.5 py-0.5 rounded bg-stone-200/60 dark:bg-white/[0.08] font-mono text-[11px] text-indigo-700 dark:text-indigo-300"
+            className="px-1.5 py-0.5 rounded bg-stone-200/60 dark:bg-white/[0.08] font-mono text-[11px] text-[var(--color-brand)] font-semibold"
           >
             {token.slice(1, -1)}
           </code>
@@ -272,7 +272,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-0.5 font-medium underline-offset-2"
+            className="text-[var(--color-brand)] hover:underline inline-flex items-center gap-0.5 font-medium underline-offset-2"
           >
             {match[1]}
           </a>
@@ -285,7 +285,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-0.5 font-medium underline-offset-2"
+            className="text-[var(--color-brand)] hover:underline inline-flex items-center gap-0.5 font-medium underline-offset-2"
           >
             {match[3]}
           </a>
@@ -454,7 +454,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 onStartFocus(task.id);
               }}
               title="Start Focus Timer"
-              className="p-1.5 text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors"
+              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors"
             >
               <Timer size={15} />
             </button>
@@ -466,7 +466,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 onClose();
               }}
               title="Duplicate task (Clone)"
-              className="p-1.5 text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors"
+              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors"
             >
               <Copy size={15} />
             </button>
@@ -496,6 +496,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
         {/* Title & Tab Navigation Header */}
         <div className="px-5 pt-4 pb-3 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]">
           <input
+            id="task-drawer-title-input"
+            name="taskTitle"
+            aria-label="Task title"
             type="text"
             value={task.title}
             onChange={(e) => updateTask(task.id, { title: e.target.value })}
@@ -547,7 +550,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             <>
               {/* Study Session Sprint Banner */}
               {task.sessionMetadata?.isSession && (
-                <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-xs">
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3 shadow-xs">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
                       ⚡
@@ -590,10 +593,13 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               {/* Quick Project & Priority Row */}
               <div className="grid grid-cols-2 gap-3 p-3.5 bg-[var(--bg-surface-l2)]/60 rounded-xl border border-[var(--border-subtle)] text-xs card-surface">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <label htmlFor="task-project-select" className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
                     <Folder size={13} /> Project
                   </label>
                   <select
+                    id="task-project-select"
+                    name="taskProject"
+                    aria-label="Assign to project"
                     value={task.projectId}
                     onChange={(e) => updateTask(task.id, { projectId: e.target.value })}
                     className="w-full bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg px-2.5 py-1.5 outline-none card-surface cursor-pointer"
@@ -607,10 +613,13 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <label htmlFor="task-priority-select" className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
                     <Flag size={13} /> Priority
                   </label>
                   <select
+                    id="task-priority-select"
+                    name="taskPriority"
+                    aria-label="Set priority"
                     value={task.priority}
                     onChange={(e) => updateTask(task.id, { priority: e.target.value as Priority })}
                     className="w-full bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg px-2.5 py-1.5 outline-none card-surface cursor-pointer"
@@ -627,7 +636,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <div className="p-4 bg-[var(--bg-surface-l2)]/60 rounded-xl border border-[var(--border-subtle)] space-y-3 card-surface">
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
-                    <ListTodo size={13} className="text-indigo-500" />
+                    <ListTodo size={13} className="text-[var(--color-brand)]" />
                     <span>Subtasks {totalSubs > 0 && `(${completedSubs}/${totalSubs})`}</span>
                   </label>
 
@@ -646,10 +655,10 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                       type="button"
                       onClick={handleMagicBreakdown}
                       disabled={isDecomposing}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 shadow-xs transition-all active:scale-95 disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[var(--color-brand)]/10 hover:bg-[var(--color-brand)]/20 text-[var(--color-brand)] border border-[var(--color-brand)]/30 shadow-xs transition-all active:scale-95 disabled:opacity-50"
                       title="Automatically generate action steps with AI"
                     >
-                      <Sparkles size={11} className={isDecomposing ? 'animate-spin text-indigo-500' : 'text-indigo-500'} />
+                      <Sparkles size={11} className={isDecomposing ? 'animate-spin text-[var(--color-brand)]' : 'text-[var(--color-brand)]'} />
                       <span>{isDecomposing ? 'Decomposing...' : 'Magic Breakdown'}</span>
                     </button>
 
@@ -677,7 +686,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                         <button
                           type="button"
                           onClick={() => updateTask(task.id, { estimatedMinutes: totalSubMinutes })}
-                          className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                          className="text-[10px] font-bold text-[var(--color-brand)] hover:underline"
                           title={`Update parent task estimate to sum of subtasks (${totalSubMinutes}m)`}
                         >
                           Sync to Task ({totalSubMinutes}m)
@@ -759,7 +768,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 p-0.5 shrink-0"
+                            className="text-[var(--color-brand)] hover:opacity-80 p-0.5 shrink-0"
                             title="Open Problem Link"
                           >
                             <ExternalLink size={12} />
@@ -808,7 +817,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                           type="button"
                           onClick={() => promoteSubTaskToTask(task.id, sub.id)}
                           title="Promote subtask to independent task"
-                          className="text-[var(--text-muted)] hover:text-indigo-500 p-1 rounded-md transition-all"
+                          className="text-[var(--text-muted)] hover:text-[var(--color-brand)] p-1 rounded-md transition-all"
                         >
                           <ArrowUpRight size={13} />
                         </button>
@@ -827,6 +836,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 {/* Add subtask input */}
                 <form onSubmit={handleAddSub} className="mt-2 flex items-center gap-2">
                   <input
+                    id="new-subtask-title-input"
+                    name="newSubtaskTitle"
+                    aria-label="Add subtask"
                     type="text"
                     placeholder="Add subtask..."
                     value={newSubtaskTitle}
@@ -834,6 +846,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                     className="flex-1 text-xs px-3 py-1.5 bg-[var(--bg-surface-l1)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-lg outline-none focus:border-stone-400 dark:focus:border-stone-600 card-surface"
                   />
                   <input
+                    id="new-subtask-estimate-input"
+                    name="newSubtaskEstimate"
+                    aria-label="Subtask estimate in minutes"
                     type="number"
                     min="1"
                     step="5"
@@ -871,7 +886,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                         showToast(`Saved "${task.title}" as reusable workflow blueprint!`);
                       }}
                       title="Save current task and its subtasks as a reusable template"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 border border-indigo-500/25 transition-all active:scale-95 shadow-xs"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-[var(--color-brand)] hover:bg-[var(--color-brand)]/10 border border-[var(--color-brand)]/25 transition-all active:scale-95 shadow-xs"
                     >
                       <Bookmark size={12} />
                       <span>Save as Blueprint</span>
@@ -916,6 +931,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   </div>
                 ) : (
                   <textarea
+                    id="task-notes-textarea"
+                    name="taskNotes"
+                    aria-label="Task notes and description"
                     rows={5}
                     autoFocus
                     value={task.description || ''}
@@ -935,7 +953,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               {/* Due Date & Quick Scrubber */}
               <div className="p-4 bg-[var(--bg-surface-l2)]/60 rounded-xl border border-[var(--border-subtle)] space-y-3 card-surface text-xs">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
+                  <label htmlFor="task-due-date-input" className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
                     <Calendar size={13} className="text-amber-500" /> Due Date & Schedule
                   </label>
                   {task.dueDate && (
@@ -949,6 +967,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   )}
                 </div>
                 <input
+                  id="task-due-date-input"
+                  name="taskDueDate"
+                  aria-label="Due date"
                   type="date"
                   value={task.dueDate || ''}
                   onChange={(e) => updateTask(task.id, { dueDate: e.target.value || undefined })}
@@ -1030,20 +1051,23 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               {/* Recurrence Picker */}
               <div className="p-4 bg-[var(--bg-surface-l2)]/60 rounded-xl border border-[var(--border-subtle)] space-y-2.5 card-surface text-xs">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
+                  <label htmlFor="task-recurrence-select" className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
                     <Repeat size={13} className="text-sky-500" /> Recurrence Rule
                   </label>
                   {task.recurrence === 'custom' && task.customRecurrence && (
                     <button
                       type="button"
                       onClick={() => setIsRecurrenceModalOpen(true)}
-                      className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                      className="text-[10px] font-semibold text-[var(--color-brand)] hover:underline"
                     >
                       Edit Rule
                     </button>
                   )}
                 </div>
                 <select
+                  id="task-recurrence-select"
+                  name="taskRecurrence"
+                  aria-label="Recurrence rule"
                   value={task.recurrence || 'none'}
                   onChange={(e) => {
                     const val = e.target.value as RecurrenceFrequency;
@@ -1065,7 +1089,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   <option value="custom">Custom Rule...</option>
                 </select>
                 {task.recurrence === 'custom' && task.customRecurrence && (
-                  <div className="mt-1 text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">
+                  <div className="mt-1 text-[11px] text-[var(--color-brand)] font-medium">
                     Repeats every {task.customRecurrence.interval === 1 ? '' : task.customRecurrence.interval + ' '}
                     {task.customRecurrence.unit}
                     {task.customRecurrence.mode === 'completion' ? ' (after completion)' : ''}
@@ -1076,7 +1100,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               {/* Estimated Duration & Live Stopwatch */}
               <div className="p-4 bg-[var(--bg-surface-l2)]/60 rounded-xl border border-[var(--border-subtle)] space-y-3 card-surface text-xs">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
+                  <label htmlFor="task-estimated-minutes-input" className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
                     <Clock size={13} className="text-amber-500" /> Estimated Duration (minutes)
                   </label>
                   {!isDone && (
@@ -1101,6 +1125,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
                     <input
+                      id="task-estimated-minutes-input"
+                      name="taskEstimatedMinutes"
+                      aria-label="Estimated duration in minutes"
                       type="number"
                       min="0"
                       step="5"
@@ -1265,6 +1292,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 {/* Add Blocker Dropdown Selector */}
                 <div className="pt-0.5">
                   <select
+                    id="task-blocker-select"
+                    name="taskBlocker"
+                    aria-label="Add blocking task dependency"
                     value=""
                     onChange={(e) => {
                       const selectedId = e.target.value;
@@ -1291,8 +1321,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               {/* Tags & GTD Context Manager */}
               <div className="p-4 bg-[var(--bg-surface-l2)]/60 rounded-xl border border-[var(--border-subtle)] space-y-2.5 text-xs card-surface">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5 uppercase tracking-wider">
-                    <Tag size={13} className="text-indigo-500" />
+                  <label htmlFor="task-tag-input" className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5 uppercase tracking-wider">
+                    <Tag size={13} className="text-[var(--color-brand)]" />
                     <span>Tags & Context Labels</span>
                   </label>
                   <div className="text-[10px] text-[var(--text-muted)]">
@@ -1350,6 +1380,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 {/* Add tag form */}
                 <div className="flex items-center gap-2 pt-1">
                   <input
+                    id="task-tag-input"
+                    name="taskTag"
+                    aria-label="Add tag or context"
                     type="text"
                     placeholder="Add tag (e.g. #backend or @calls)..."
                     value={newTagInput}

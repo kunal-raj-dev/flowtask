@@ -84,13 +84,13 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-white dark:bg-[#12151D] rounded-3xl p-6 border border-stone-200/80 dark:border-white/10 shadow-2xl dark:shadow-black/70 card-surface relative flex flex-col max-h-[85vh]"
+        className="w-full max-w-2xl bg-white dark:bg-[#12151D] rounded-xl p-6 border border-stone-200/80 dark:border-white/10 shadow-2xl dark:shadow-black/70 card-surface relative flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-stone-200/60 dark:border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-[var(--color-brand)] border border-amber-500/20 shadow-xs">
               <FileEdit size={18} />
             </div>
             <div>
@@ -110,7 +110,7 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
+            className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
           >
             <X size={18} />
           </button>
@@ -119,13 +119,16 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
         {/* Text Area */}
         <div className="flex-1 py-4 min-h-[260px] flex flex-col">
           <textarea
+            id="scratchpad-textarea"
+            name="scratchpadContent"
+            aria-label="Scratchpad notes"
             autoFocus
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Jot down quick thoughts, meeting notes, code snippets, or task bullets...
 - Call Alex @calls p1 ~15m
 - Review PR #code tomorrow"
-            className="w-full flex-1 p-4 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/70 dark:border-white/5 rounded-2xl outline-none text-sm text-stone-900 dark:text-stone-100 resize-none font-mono leading-relaxed focus:border-amber-500/50 shadow-inner"
+            className="w-full flex-1 p-4 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/70 dark:border-white/5 rounded-lg outline-none text-sm text-stone-900 dark:text-stone-100 resize-none font-mono leading-relaxed focus:border-[var(--color-brand)] shadow-inner"
           />
         </div>
 
@@ -148,7 +151,7 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
               onClick={handleClear}
               disabled={!content.trim()}
               title="Clear scratchpad"
-              className="p-2 text-stone-400 hover:text-rose-500 rounded-xl hover:bg-stone-100 dark:hover:bg-white/5 transition-colors disabled:opacity-30"
+              className="p-2 text-stone-400 hover:text-rose-500 rounded-lg hover:bg-stone-100 dark:hover:bg-white/5 transition-colors disabled:opacity-30"
             >
               <Trash2 size={15} />
             </button>
@@ -157,7 +160,7 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
               type="button"
               onClick={handleCopy}
               disabled={!content.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200/70 dark:border-white/10 hover:bg-stone-100 dark:hover:bg-white/5 text-stone-700 dark:text-stone-300 font-medium transition-colors disabled:opacity-30"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200/70 dark:border-white/10 hover:bg-stone-100 dark:hover:bg-white/5 text-stone-700 dark:text-stone-300 font-medium transition-colors disabled:opacity-30"
             >
               {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
               <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -167,7 +170,7 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
               type="button"
               onClick={handleExtractTasks}
               disabled={!content.trim()}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xs transition-all active:scale-95 disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white font-bold shadow-xs transition-all active:scale-95 disabled:opacity-40"
             >
               <Sparkles size={13} />
               <span>Extract Tasks</span>

@@ -82,13 +82,13 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] rounded-3xl shadow-2xl p-6 text-[var(--text-primary)] card-surface animate-scale-in"
+        className="w-full max-w-md bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] rounded-xl shadow-2xl p-6 text-[var(--text-primary)] card-surface animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
               <Repeat size={20} />
             </div>
             <div>
@@ -103,7 +103,7 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
           >
             <X size={18} />
           </button>
@@ -118,28 +118,28 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
             <button
               type="button"
               onClick={() => applyPreset(3, 'days')}
-              className="px-2.5 py-1 text-xs rounded-xl bg-[var(--bg-surface-l2)] hover:bg-indigo-500/15 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 border border-[var(--border-hairline)] transition-colors"
+              className="px-2.5 py-1 text-xs rounded-lg bg-[var(--bg-surface-l2)] hover:bg-amber-500/15 text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 border border-[var(--border-hairline)] transition-colors"
             >
               Every 3 Days
             </button>
             <button
               type="button"
               onClick={() => applyPreset(1, 'weeks', [1, 3, 5])}
-              className="px-2.5 py-1 text-xs rounded-xl bg-[var(--bg-surface-l2)] hover:bg-indigo-500/15 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 border border-[var(--border-hairline)] transition-colors"
+              className="px-2.5 py-1 text-xs rounded-lg bg-[var(--bg-surface-l2)] hover:bg-amber-500/15 text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 border border-[var(--border-hairline)] transition-colors"
             >
               Mon, Wed, Fri
             </button>
             <button
               type="button"
               onClick={() => applyPreset(2, 'weeks')}
-              className="px-2.5 py-1 text-xs rounded-xl bg-[var(--bg-surface-l2)] hover:bg-indigo-500/15 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 border border-[var(--border-hairline)] transition-colors"
+              className="px-2.5 py-1 text-xs rounded-lg bg-[var(--bg-surface-l2)] hover:bg-amber-500/15 text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 border border-[var(--border-hairline)] transition-colors"
             >
               Every 2 Weeks
             </button>
             <button
               type="button"
               onClick={() => applyPreset(3, 'months')}
-              className="px-2.5 py-1 text-xs rounded-xl bg-[var(--bg-surface-l2)] hover:bg-indigo-500/15 text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 border border-[var(--border-hairline)] transition-colors"
+              className="px-2.5 py-1 text-xs rounded-lg bg-[var(--bg-surface-l2)] hover:bg-amber-500/15 text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 border border-[var(--border-hairline)] transition-colors"
             >
               Quarterly (3 Mo)
             </button>
@@ -155,16 +155,22 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
             <span className="text-xs text-[var(--text-secondary)] font-medium">Every</span>
             <input
               type="number"
+              id="recurrence-interval-input"
+              name="recurrenceInterval"
+              aria-label="Repeat interval"
               min={1}
               max={99}
               value={interval}
               onChange={(e) => setInterval(Math.max(1, parseInt(e.target.value, 10) || 1))}
-              className="w-16 px-2.5 py-1.5 text-center text-sm font-bold bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] rounded-xl outline-none focus:border-indigo-500 transition-colors"
+              className="w-16 px-2.5 py-1.5 text-center text-sm font-bold bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] rounded-lg outline-none focus:border-[var(--color-brand)] transition-colors"
             />
             <select
+              id="recurrence-unit-select"
+              name="recurrenceUnit"
+              aria-label="Repeat unit"
               value={unit}
               onChange={(e) => setUnit(e.target.value as any)}
-              className="flex-1 px-3 py-1.5 text-xs font-semibold bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] rounded-xl outline-none focus:border-indigo-500 transition-colors cursor-pointer"
+              className="flex-1 px-3 py-1.5 text-xs font-semibold bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] rounded-lg outline-none focus:border-[var(--color-brand)] transition-colors cursor-pointer"
             >
               <option value="days">Day{interval > 1 ? 's' : ''}</option>
               <option value="weeks">Week{interval > 1 ? 's' : ''}</option>
@@ -188,9 +194,9 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
                     type="button"
                     onClick={() => toggleDay(day.value)}
                     title={day.name}
-                    className={`w-9 h-9 rounded-xl font-bold text-xs flex items-center justify-center transition-all ${
+                    className={`w-9 h-9 rounded-md font-bold text-xs flex items-center justify-center transition-all ${
                       isSelected
-                        ? 'bg-indigo-600 text-white shadow-xs scale-105'
+                        ? 'bg-[var(--color-brand)] text-white shadow-xs scale-105'
                         : 'bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-hairline)]'
                     }`}
                   >
@@ -211,9 +217,9 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
             <button
               type="button"
               onClick={() => setMode('scheduled')}
-              className={`p-2.5 rounded-xl border text-left transition-all ${
+              className={`p-2.5 rounded-lg border text-left transition-all ${
                 mode === 'scheduled'
-                  ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-700 dark:text-indigo-300 font-semibold'
+                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300 font-semibold'
                   : 'bg-[var(--bg-surface-l2)] border-[var(--border-hairline)] text-[var(--text-secondary)]'
               }`}
             >
@@ -223,9 +229,9 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
             <button
               type="button"
               onClick={() => setMode('completion')}
-              className={`p-2.5 rounded-xl border text-left transition-all ${
+              className={`p-2.5 rounded-lg border text-left transition-all ${
                 mode === 'completion'
-                  ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-700 dark:text-indigo-300 font-semibold'
+                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300 font-semibold'
                   : 'bg-[var(--bg-surface-l2)] border-[var(--border-hairline)] text-[var(--text-secondary)]'
               }`}
             >
@@ -236,9 +242,9 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
         </div>
 
         {/* Preview Summary */}
-        <div className="mb-6 p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-2.5">
-          <Sparkles size={16} className="text-indigo-500 shrink-0" />
-          <span className="text-xs font-semibold text-indigo-900 dark:text-indigo-200">
+        <div className="mb-6 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5">
+          <Sparkles size={16} className="text-amber-500 shrink-0" />
+          <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
             {getSummary()}
           </span>
         </div>
@@ -248,14 +254,14 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-xl"
+            className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-lg"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-all flex items-center gap-1.5 active:scale-95"
+            className="px-4 py-2 text-xs font-bold text-white bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] rounded-lg shadow-xs transition-all flex items-center gap-1.5 active:scale-95"
           >
             <Check size={14} />
             <span>Apply Rule</span>

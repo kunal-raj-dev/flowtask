@@ -234,7 +234,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-md animate-fade-in"
     >
       <div
-        className={`relative w-full bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-modal rounded-3xl overflow-hidden flex flex-col transition-all ${
+        className={`relative w-full bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-modal rounded-xl overflow-hidden flex flex-col transition-all ${
           isFullscreen
             ? 'h-full max-w-none rounded-none'
             : 'max-w-4xl max-h-[92vh] card-surface'
@@ -292,7 +292,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
           <div className="lg:col-span-2 flex flex-col justify-between space-y-6">
             {/* Active Question Card */}
             {currentSubtask ? (
-              <div className="p-6 rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-elevated space-y-4">
+              <div className="p-6 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-elevated space-y-4">
                 {/* Question Metadata Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -318,7 +318,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                       href={currentSubtask.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm flex items-center gap-1.5 transition-colors shrink-0"
+                      className="px-3 py-1.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white font-semibold text-xs shadow-sm flex items-center gap-1.5 transition-colors shrink-0"
                     >
                       <span>Open on LeetCode</span>
                       <ExternalLink size={13} />
@@ -341,7 +341,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                 )}
 
                 {/* Question Live Pacer Timer */}
-                <div className="p-6 rounded-2xl bg-stone-900 text-stone-100 dark:bg-black/50 border border-stone-800 flex flex-col items-center justify-center space-y-3">
+                <div className="p-6 rounded-lg bg-stone-900 text-stone-100 dark:bg-black/50 border border-stone-800 flex flex-col items-center justify-center space-y-3">
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-400">
                     Question Target Budget ({targetBudgetMins}m)
                   </span>
@@ -385,7 +385,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                       type="button"
                       disabled={activeSubtaskIndex === 0}
                       onClick={() => setActiveSubtaskIndex((prev) => Math.max(0, prev - 1))}
-                      className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/10 disabled:opacity-40"
+                      className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/10 disabled:opacity-40"
                       title="Previous Question"
                     >
                       <ChevronLeft size={18} />
@@ -394,7 +394,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                       type="button"
                       disabled={activeSubtaskIndex >= subtasks.length - 1}
                       onClick={() => setActiveSubtaskIndex((prev) => Math.min(subtasks.length - 1, prev + 1))}
-                      className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/10 disabled:opacity-40"
+                      className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/10 disabled:opacity-40"
                       title="Next Question"
                     >
                       <ChevronRight size={18} />
@@ -418,9 +418,9 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
             )}
 
             {/* Ambient Noise Selector */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-xs">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-xs">
               <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                <Waves size={15} className="text-indigo-500" />
+                <Waves size={15} className="text-amber-500" />
                 <span className="font-semibold">Focus Soundscapes:</span>
               </div>
 
@@ -430,9 +430,9 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                     key={snd}
                     type="button"
                     onClick={() => handleAmbientChange(snd)}
-                    className={`px-2 py-1 rounded-lg text-xs font-semibold capitalize transition-colors ${
+                    className={`px-2 py-1 rounded-md text-xs font-semibold capitalize transition-colors ${
                       ambientSound === snd
-                        ? 'bg-indigo-600 text-white shadow-xs'
+                        ? 'bg-[var(--color-brand)] text-white shadow-xs'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/10'
                     }`}
                   >
@@ -446,7 +446,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
           {/* Session Overview & Question Queue (1 col) */}
           <div className="space-y-4">
             {/* Session Stats Card */}
-            <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] space-y-3">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                   Session Performance
@@ -474,7 +474,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
 
               {/* Banked Time & Pacing */}
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--border-hairline)] text-center">
-                <div className="p-2.5 rounded-xl bg-[var(--bg-surface-l1)]">
+                <div className="p-2.5 rounded-lg bg-[var(--bg-surface-l1)]">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                     Target Pace
                   </span>
@@ -483,7 +483,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-[var(--bg-surface-l1)]">
+                <div className="p-2.5 rounded-lg bg-[var(--bg-surface-l1)]">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                     Pace Budget
                   </span>
@@ -499,7 +499,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
             </div>
 
             {/* Questions Queue */}
-            <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] flex-1 space-y-2">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] flex-1 space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] block">
                 Questions Queue ({subtasks.length})
               </span>
@@ -511,7 +511,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                     <div
                       key={sub.id}
                       onClick={() => setActiveSubtaskIndex(idx)}
-                      className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                      className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-center justify-between gap-2 ${
                         isActive
                           ? 'border-amber-500 bg-amber-500/10 shadow-xs'
                           : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-stone-300 dark:hover:border-stone-700'
@@ -554,7 +554,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="p-1 text-indigo-500 hover:text-indigo-600"
+                            className="p-1 text-amber-600 hover:text-amber-700 dark:text-amber-400"
                           >
                             <ExternalLink size={12} />
                           </a>

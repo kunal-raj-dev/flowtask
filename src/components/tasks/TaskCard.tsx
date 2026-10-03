@@ -263,9 +263,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         e.preventDefault();
         setContextMenu({ x: e.clientX, y: e.clientY });
       }}
-      className={`group relative flex items-start gap-2.5 p-3 sm:p-3.5 rounded-xl border transition-all duration-150 cursor-pointer ${
+      className={`group relative flex items-start gap-2.5 p-3 sm:p-3.5 rounded-lg border transition-all duration-150 cursor-pointer ${
         isSelected
-          ? 'ring-2 ring-indigo-500/80 bg-indigo-500/[0.06] border-indigo-400/50 shadow-sm'
+          ? 'ring-2 ring-[var(--color-focus-ring)] bg-[var(--color-brand-subtle)] border-[var(--color-brand-border)] shadow-xs'
           : isKeyboardFocused
           ? 'ring-2 ring-amber-500/80 dark:ring-amber-400 shadow-sm -translate-y-[0.5px]'
           : ''
@@ -273,7 +273,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         isDone
           ? 'bg-[var(--bg-surface-l1)]/50 border-[var(--border-hairline)] opacity-60'
           : task.isPinnedToday && !isSelected
-          ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.04] border-[var(--border-subtle)] border-l-[3px] border-l-amber-500 dark:border-l-amber-400 hover:border-amber-500/40 hover:shadow-subtle hover:-translate-y-[0.5px]'
+          ? 'bg-[var(--bg-surface-l1)] border-[var(--border-subtle)] border-l-[3px] border-l-amber-500 dark:border-l-amber-400 hover:border-[var(--border-hairline)] hover:shadow-subtle hover:-translate-y-[0.5px]'
           : !isSelected
           ? 'bg-[var(--bg-surface-l1)] border-[var(--border-subtle)] hover:border-[var(--border-strong)] hover:shadow-subtle hover:-translate-y-[0.5px]'
           : ''
@@ -289,10 +289,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         title="Select task for batch actions"
         className={`mt-0.5 w-4 h-4 rounded-md flex-shrink-0 flex items-center justify-center border transition-all duration-150 ${
           isSelected
-            ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
+            ? 'bg-[var(--color-brand)] border-[var(--color-brand)] text-white shadow-xs'
             : selectedTaskIds.length > 0
-            ? 'border-[var(--border-strong)] hover:border-indigo-500 bg-[var(--bg-surface-l1)]'
-            : 'opacity-0 group-hover:opacity-100 border-[var(--border-strong)] hover:border-indigo-500 bg-[var(--bg-surface-l1)]'
+            ? 'border-[var(--border-strong)] hover:border-[var(--color-brand)] bg-[var(--bg-surface-l1)]'
+            : 'opacity-0 group-hover:opacity-100 border-[var(--border-strong)] hover:border-[var(--color-brand)] bg-[var(--bg-surface-l1)]'
         }`}
         aria-label={isSelected ? 'Deselect task' : 'Select task'}
       >

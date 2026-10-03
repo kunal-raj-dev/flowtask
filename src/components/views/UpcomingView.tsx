@@ -142,7 +142,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   return (
     <div className="max-w-3xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
       <div className="flex items-center gap-3 mb-4 sm:mb-6">
-        <div className="p-2 sm:p-2.5 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-sm card-surface flex-shrink-0">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs flex-shrink-0">
           <CalendarDays size={20} className="stroke-[2.2]" />
         </div>
         <div>
@@ -166,7 +166,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
           <button
             type="button"
             onClick={() => setSelectedContextTag(null)}
-            className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 ${
               selectedContextTag === null
                 ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
                 : 'bg-stone-100 dark:bg-white/5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -179,7 +179,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
               key={tag}
               type="button"
               onClick={() => setSelectedContextTag(selectedContextTag === tag ? null : tag)}
-              className={`px-2.5 py-1 rounded-xl font-mono text-xs flex items-center gap-1 transition-all shrink-0 ${
+              className={`px-2.5 py-1 rounded-lg font-mono text-xs flex items-center gap-1 transition-all shrink-0 ${
                 selectedContextTag === tag
                   ? 'bg-teal-600 text-white font-bold shadow-xs'
                   : 'bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 border border-teal-500/20'
@@ -193,10 +193,10 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
       )}
 
       {/* 7-Day Horizon Strip (Mini Week Planner) */}
-      <div className="mb-6 p-3 sm:p-4 rounded-3xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface">
+      <div className="mb-6 p-3 sm:p-4 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface">
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
-            <Calendar size={14} className="text-indigo-500" />
+            <Calendar size={14} className="text-amber-500" />
             <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
               7-Day Horizon
             </span>
@@ -205,7 +205,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
             <button
               type="button"
               onClick={() => setSelectedHorizonDate(null)}
-              className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline"
             >
               Show All Upcoming
             </button>
@@ -224,9 +224,9 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
                 onClick={() => {
                   setSelectedHorizonDate(isSelected ? null : day.dateStr);
                 }}
-                className={`flex flex-col items-center py-2 sm:py-2.5 px-1 rounded-2xl border transition-all duration-150 ${
+                className={`flex flex-col items-center py-2 sm:py-2.5 px-1 rounded-lg border transition-all duration-150 ${
                   isSelected
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-102'
+                    ? 'bg-[var(--color-brand)] text-white border-[var(--color-brand)] shadow-xs scale-102'
                     : isCurrentDay
                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
                     : 'bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l1)] border-[var(--border-hairline)] text-[var(--text-secondary)]'
@@ -243,7 +243,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
                     isSelected
                       ? 'bg-white/20 text-white'
                       : day.taskCount > 0
-                      ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                       : 'text-[var(--text-muted)]'
                   }`}
                 >
@@ -271,7 +271,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
             if (selectedContextTag && (!t.contextTags || !t.contextTags.includes(selectedContextTag))) return false;
             return true;
           }).length === 0 && (
-            <div className="text-center py-12 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-2xl border border-[var(--border-hairline)]">
+            <div className="text-center py-12 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-xl border border-[var(--border-hairline)]">
               <Sparkles size={28} className="mx-auto mb-2 text-stone-300 dark:text-stone-700" />
               <p className="text-xs font-semibold text-[var(--text-primary)]">No tasks scheduled for this day</p>
               <p className="text-[11px] mt-1 text-[var(--text-secondary)]">Use the Omnibar above to schedule a task.</p>
@@ -279,7 +279,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
           )}
         </div>
       ) : upcomingTasks.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-2xl border border-[var(--border-hairline)]">
+        <div className="text-center py-16 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-xl border border-[var(--border-hairline)]">
           <Calendar size={36} className="mx-auto mb-2 text-stone-300 dark:text-stone-700" />
           {selectedContextTag ? (
             <>
@@ -289,7 +289,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedContextTag(null)}
-                className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 transition-all card-surface"
+                className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-950 transition-all card-surface"
               >
                 Clear Context Filter
               </button>

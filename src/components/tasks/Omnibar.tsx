@@ -141,19 +141,22 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
     <div className="w-full mb-6">
       <form
         onSubmit={handleSubmit}
-        className={`relative rounded-2xl transition-all duration-200 border ${
+        className={`relative rounded-xl transition-all duration-150 border ${
           isFocused
-            ? 'bg-white dark:bg-[var(--bg-surface-l2)] border-indigo-400/70 dark:border-indigo-500/60 shadow-[0_8px_30px_-4px_rgba(99,102,241,0.18)] dark:shadow-[0_8px_30px_-4px_rgba(99,102,241,0.3)] ring-2 ring-indigo-500/20 card-surface'
-            : 'bg-white/95 dark:bg-[var(--bg-surface-l2)]/90 backdrop-blur-md border-stone-200/90 dark:border-[var(--border-hairline)] shadow-card hover:border-stone-300 dark:hover:border-[var(--border-color)] card-surface'
+            ? 'bg-white dark:bg-[var(--bg-surface-l2)] border-amber-500/60 dark:border-amber-400/50 shadow-elevated ring-2 ring-amber-500/20'
+            : 'bg-white dark:bg-[var(--bg-surface-l2)] border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-hairline)]'
         }`}
       >
         <div className="flex items-center px-4 py-3">
           <div className="text-[var(--text-muted)] mr-3 flex-shrink-0 transition-colors">
-            <Plus size={18} className={isFocused ? 'text-indigo-600 dark:text-indigo-400' : ''} />
+            <Plus size={18} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
           </div>
 
           <input
             ref={inputRef}
+            id="task-capture-input"
+            name="taskInput"
+            aria-label="Add a task"
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -185,7 +188,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
               type="button"
               onClick={() => setIsTemplatePickerOpen(true)}
               title="Workflow Blueprints & Templates"
-              className="p-1.5 text-[var(--text-muted)] hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
               <LayoutTemplate size={16} />
             </button>
@@ -208,7 +211,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({ onOpenBrainDump }) => {
             {input.trim() && (
               <button
                 type="submit"
-                className="flex items-center gap-1 px-3.5 py-1.5 bg-gradient-to-r from-stone-900 to-stone-800 dark:from-white dark:to-stone-100 hover:from-stone-800 hover:to-stone-700 dark:hover:from-stone-100 dark:hover:to-stone-200 text-white dark:text-stone-950 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 card-surface"
+                className="flex items-center gap-1 px-3 py-1.5 bg-stone-900 dark:bg-white hover:bg-stone-800 dark:hover:bg-stone-100 text-white dark:text-stone-950 rounded-lg text-xs font-semibold shadow-xs transition-all active:scale-[0.98]"
               >
                 <span>Add</span>
                 <CornerDownLeft size={12} />

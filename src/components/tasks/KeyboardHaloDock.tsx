@@ -26,10 +26,10 @@ export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
   onDismiss,
 }) => {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden sm:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-stone-900/95 dark:bg-stone-900/95 text-white border border-stone-700/70 shadow-2xl backdrop-blur-xl animate-slide-up select-none">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden sm:flex items-center gap-3 px-4 py-2.5 rounded-xl bg-stone-900/95 dark:bg-stone-900/95 text-white border border-stone-700/70 shadow-2xl backdrop-blur-xl animate-slide-up select-none">
       {/* Active task badge */}
       <div className="flex items-center gap-2 max-w-[200px] truncate border-r border-stone-700/80 pr-3">
-        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shrink-0" />
+        <span className="w-2 h-2 rounded-full bg-[var(--color-brand)] animate-pulse shrink-0" />
         <span className="text-xs font-semibold text-stone-200 truncate" title={task.title}>
           {task.title}
         </span>
@@ -63,10 +63,10 @@ export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
         <button
           type="button"
           onClick={onStartFocus}
-          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 hover:text-white transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--color-brand)]/20 hover:bg-[var(--color-brand)]/30 text-amber-300 hover:text-white transition-colors"
           title="Start Pomodoro focus session (P)"
         >
-          <kbd className="px-1 py-0.5 rounded bg-indigo-900/60 font-mono text-[9px] font-bold text-indigo-200">P</kbd>
+          <kbd className="px-1 py-0.5 rounded bg-amber-950/60 font-mono text-[9px] font-bold text-amber-200">P</kbd>
           <span>Focus</span>
         </button>
 
@@ -112,7 +112,7 @@ export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
               onClick={() => onSetPriority(p)}
               className={`w-5 h-5 rounded flex items-center justify-center font-mono text-[10px] font-bold transition-all ${
                 task.priority === p
-                  ? 'bg-amber-500 text-white font-extrabold shadow-xs scale-105'
+                  ? 'bg-[var(--color-brand)] text-white font-extrabold shadow-xs scale-105'
                   : 'text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
               title={`Set Priority ${idx + 1}`}

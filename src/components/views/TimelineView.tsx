@@ -164,10 +164,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   return (
     <div className="max-w-5xl mx-auto px-4 py-4 space-y-6">
       {/* Executive Workload Capacity Gauge Header */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-[var(--bg-surface-l1)]/90 border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md">
+      <div className="p-4 sm:p-5 rounded-xl bg-[var(--bg-surface-l1)]/90 border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs">
               <Clock size={20} />
             </div>
             <div>
@@ -177,7 +177,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   {scheduledTasks.length} scheduled
                 </span>
                 {calendarIcsUrl && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
                     {calendarEvents.length} calendar events
                   </span>
                 )}
@@ -211,7 +211,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 }}
                 className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all ${
                   calendarIcsUrl
-                    ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20'
+                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
                     : 'bg-stone-100 dark:bg-stone-800 text-[var(--text-secondary)] hover:text-amber-500 border-[var(--border-hairline)]'
                 }`}
               >
@@ -226,7 +226,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                     setTimeout(() => setIsRefreshingFeed(false), 600);
                   }}
                   title="Refresh calendar events"
-                  className="p-1.5 rounded-xl text-stone-500 hover:text-indigo-600 hover:bg-indigo-500/10 border border-[var(--border-hairline)] transition-colors"
+                  className="p-1.5 rounded-xl text-stone-500 hover:text-amber-600 hover:bg-amber-500/10 border border-[var(--border-hairline)] transition-colors"
                 >
                   <RefreshCw size={13} className={isRefreshingFeed ? 'animate-spin' : ''} />
                 </button>
@@ -291,7 +291,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
         {/* Buffer Guard Strain Alert */}
         {cognitiveTopology.hasHighCognitiveStrain && (
-          <div className="mt-3.5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-200 animate-slide-down">
+          <div className="mt-3.5 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-200 animate-slide-down">
             <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="font-medium">{cognitiveTopology.strainWarning}</span>
           </div>
@@ -302,7 +302,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       {/* Main Grid: Unscheduled Sidebar + Hourly Canvas */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Unscheduled Tasks Tray (Desktop: 4 cols) */}
-        <div className="lg:col-span-4 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-3xl p-4 card-surface space-y-3">
+        <div className="lg:col-span-4 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-xl p-4 card-surface space-y-3">
           <div className="flex items-center justify-between border-b border-[var(--border-hairline)] pb-2.5">
             <div className="flex items-center gap-1.5">
               <Calendar size={14} className="text-amber-500" />
@@ -326,7 +326,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   <div
                     key={task.id}
                     onClick={() => onSelectTask(task.id)}
-                    className="group p-3 rounded-2xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] hover:border-amber-500/40 transition-all card-surface cursor-pointer text-xs"
+                    className="group p-3 rounded-lg bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] hover:border-amber-500/40 transition-all card-surface cursor-pointer text-xs"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -390,10 +390,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         </div>
 
         {/* Right: Hourly Timeline (Desktop: 8 cols) */}
-        <div className="lg:col-span-8 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-3xl p-4 sm:p-6 card-surface overflow-hidden relative">
+        <div className="lg:col-span-8 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-xl p-4 sm:p-6 card-surface overflow-hidden relative">
           {/* All-Day Calendar Events if present */}
           {calendarEvents.some((e) => e.isAllDay) && (
-            <div className="mb-4 p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex flex-wrap items-center gap-2">
+            <div className="mb-4 p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 pl-1">
                 All-Day Events:
               </span>
@@ -403,7 +403,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   <span
                     key={ev.id}
                     title={ev.description || ev.title}
-                    className="text-xs px-2.5 py-1 rounded-xl bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 font-semibold border border-indigo-500/20 flex items-center gap-1.5"
+                    className="text-xs px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 font-semibold border border-indigo-500/20 flex items-center gap-1.5"
                   >
                     <Calendar size={11} />
                     {ev.title}
@@ -441,7 +441,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
                     {/* Inline Quick Add form */}
                     {quickAddHour === hour && (
-                      <div className="absolute top-1 left-2 right-2 z-30 p-2 rounded-xl bg-white dark:bg-[var(--bg-surface-l2)] border border-amber-500 shadow-lg animate-scale-up">
+                      <div className="absolute top-1 left-2 right-2 z-30 p-2 rounded-lg bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--color-brand)] shadow-lg animate-scale-up">
                         <form
                           onSubmit={(e) => {
                             e.preventDefault();
@@ -452,17 +452,20 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                           <input
                             type="text"
                             autoFocus
+                            id="timeline-quick-add-input"
+                            name="quickAddTimeline"
+                            aria-label={`Task at ${timeLabel}`}
                             placeholder={`Task at ${timeLabel}...`}
                             value={quickAddTitle}
                             onChange={(e) => setQuickAddTitle(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Escape') setQuickAddHour(null);
                             }}
-                            className="flex-1 text-xs px-2 py-1 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] outline-none"
+                            className="flex-1 text-xs px-2 py-1 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] outline-none focus:border-[var(--color-brand)]"
                           />
                           <button
                             type="submit"
-                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 text-white hover:bg-amber-600"
+                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)]"
                           >
                             Add
                           </button>
@@ -519,7 +522,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   <div
                     key={ev.id}
                     title={`${ev.title}${ev.location ? ' • ' + ev.location : ''}${ev.description ? '\n' + ev.description : ''}`}
-                    className="absolute left-16 right-2 rounded-2xl p-2.5 border border-dashed border-indigo-400/50 dark:border-indigo-400/30 bg-indigo-500/[0.08] dark:bg-indigo-500/[0.14] text-indigo-950 dark:text-indigo-200 flex items-start justify-between gap-3 overflow-hidden transition-all shadow-xs"
+                    className="absolute left-16 right-2 rounded-lg p-2.5 border border-dashed border-indigo-400/50 dark:border-indigo-400/30 bg-indigo-500/[0.08] dark:bg-indigo-500/[0.14] text-indigo-950 dark:text-indigo-200 flex items-start justify-between gap-3 overflow-hidden transition-all shadow-xs"
                     style={{
                       top: `${topPx}px`,
                       height: `${heightPx}px`,
@@ -564,13 +567,13 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 <div
                   key={task.id}
                   onClick={() => onSelectTask(task.id)}
-                  className={`absolute left-16 right-2 rounded-2xl p-2.5 border transition-all duration-150 cursor-pointer shadow-subtle hover:shadow-card hover:-translate-y-[1px] flex items-center justify-between gap-3 overflow-hidden ${
+                  className={`absolute left-16 right-2 rounded-lg p-2.5 border transition-all duration-150 cursor-pointer shadow-subtle hover:shadow-card hover:-translate-y-[1px] flex items-center justify-between gap-3 overflow-hidden ${
                     isDone
                       ? 'bg-stone-100/60 dark:bg-white/[0.03] border-[var(--border-hairline)] opacity-60'
                       : overlapEvent
                       ? 'bg-rose-500/[0.08] dark:bg-rose-500/[0.12] border-rose-400/50 dark:border-rose-500/40 shadow-xs ring-1 ring-rose-500/20'
                       : task.isPinnedToday
-                      ? 'bg-gradient-to-r from-amber-500/[0.12] via-orange-400/[0.06] to-indigo-500/[0.04] border-amber-400/50 dark:border-amber-500/40 shadow-glow-amber'
+                      ? 'bg-amber-500/[0.08] dark:bg-amber-500/[0.12] border-amber-400/50 dark:border-amber-500/40 shadow-xs'
                       : 'bg-white dark:bg-[var(--bg-surface-l2)] border-stone-200/90 dark:border-white/10'
                   }`}
                   style={{
@@ -759,12 +762,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           onClick={() => setIsCalendarModalOpen(false)}
         >
           <div
-            className="bg-[var(--bg-surface-l1)] border border-stone-200/90 dark:border-white/10 rounded-3xl p-6 max-w-lg w-full shadow-modal space-y-4 animate-scale-up"
+            className="bg-[var(--bg-surface-l1)] border border-stone-200/90 dark:border-white/10 rounded-xl p-6 max-w-lg w-full shadow-modal space-y-4 animate-scale-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border-hairline)] pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                   <Calendar size={18} />
                 </div>
                 <div>
@@ -791,21 +794,24 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               </p>
 
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1">
+                <label htmlFor="calendar-ics-url-input" className="block text-xs font-semibold text-[var(--text-primary)] mb-1">
                   iCal / .ics Feed URL
                 </label>
                 <input
                   type="url"
+                  id="calendar-ics-url-input"
+                  name="calendarIcsUrl"
+                  aria-label="iCal or .ics feed URL"
                   placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
                   value={icsUrlInput}
                   onChange={(e) => setIcsUrlInput(e.target.value)}
-                  className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] focus:border-indigo-500 text-[var(--text-primary)] outline-none font-mono"
+                  className="w-full text-xs px-3 py-2 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] focus:border-[var(--color-brand)] text-[var(--text-primary)] outline-none font-mono"
                 />
               </div>
 
               {/* Instructions Callout */}
-              <div className="p-3 rounded-2xl bg-indigo-500/[0.06] border border-indigo-500/15 text-[11px] text-[var(--text-secondary)] space-y-1.5">
-                <div className="font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+              <div className="p-3 rounded-lg bg-amber-500/[0.06] border border-amber-500/15 text-[11px] text-[var(--text-secondary)] space-y-1.5">
+                <div className="font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
                   <ExternalLink size={12} />
                   Where to find your private link:
                 </div>
@@ -836,7 +842,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCalendarModalOpen(false)}
-                  className="text-xs px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                  className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
                 >
                   Cancel
                 </button>
@@ -850,7 +856,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                       await refreshCalendarEvents();
                     }
                   }}
-                  className="text-xs font-bold px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors shadow-sm"
+                  className="text-xs font-bold px-4 py-1.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white transition-colors shadow-sm"
                 >
                   Save & Sync
                 </button>
