@@ -19,11 +19,30 @@ export interface CustomRecurrenceRule {
   mode?: 'scheduled' | 'completion';
 }
 
+export type TargetDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
+
 export interface SubTask {
   id: string;
   title: string;
   completed: boolean;
   estimatedMinutes?: number;
+  url?: string;
+  difficulty?: TargetDifficulty;
+  tags?: string[];
+  problemNumber?: number | string;
+}
+
+export interface SessionMetadata {
+  isSession: boolean;
+  sessionNumber?: number;
+  sessionTopic?: string;
+  focusArea?: string;
+  targetCount?: number;
+  targetPacingMinutes?: number;
+  pacingMinutesPerQuestion?: number;
+  targetUnit?: string;
+  secondaryMilestone?: string;
+  contingencyGoal?: string;
 }
 
 export interface Task {
@@ -46,6 +65,7 @@ export interface Task {
   tags?: string[]; // Flexible custom hashtags/labels, e.g. ['frontend', 'v2']
   contextTags?: string[]; // GTD context tags, e.g. ['calls', 'computer', 'errands']
   blockedBy?: string[]; // IDs of tasks that block this task
+  sessionMetadata?: SessionMetadata; // Study/Sprint Session configuration & pacing
   createdAt: number;
   completedAt?: number;
 }

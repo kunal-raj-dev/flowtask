@@ -11,12 +11,14 @@ interface UpcomingViewProps {
   onSelectTask: (taskId: string) => void;
   onStartFocus: (taskId: string) => void;
   onOpenBrainDump: () => void;
+  onStartSprint?: (taskId: string) => void;
 }
 
 export const UpcomingView: React.FC<UpcomingViewProps> = ({
   onSelectTask,
   onStartFocus,
   onOpenBrainDump,
+  onStartSprint,
 }) => {
   const {
     tasks,
@@ -128,6 +130,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
               task={task}
               onSelectTask={onSelectTask}
               onStartFocus={onStartFocus}
+              onStartSprint={onStartSprint}
               isKeyboardFocused={focusedTaskId === task.id}
             />
           ))}

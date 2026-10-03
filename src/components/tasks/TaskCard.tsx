@@ -21,6 +21,7 @@ import {
   Briefcase,
   Lightbulb,
   X,
+  Zap,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { checkTaskStaleness } from '../../utils/staleTaskDetector';
@@ -32,6 +33,7 @@ interface TaskCardProps {
   task: Task;
   onSelectTask: (taskId: string) => void;
   onStartFocus?: (taskId: string) => void;
+  onStartSprint?: (taskId: string) => void;
   isKeyboardFocused?: boolean;
 }
 
@@ -39,6 +41,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onSelectTask,
   onStartFocus,
+  onStartSprint,
   isKeyboardFocused = false,
 }) => {
   const {
@@ -448,6 +451,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </Badge>
           )}
 
+          {/* Study Session Indicator & Question Pacing */}
+          {task.sessionMetadata?.isSession && (
+            <Badge variant="teal" size="xs">
+              🎯 Session {task.sessionMetadata.sessionNumber || ''}
+            </Badge>
+          )}
+          {task.sessionMetadata?.pacingMinutesPerQuestion && (
+            <Badge variant="brand" size="xs">
+              ⚡ {task.sessionMetadata.pacingMinutesPerQuestion}m/Q
+            </Badge>
+          )}
+
           {/* Estimated duration */}
           {task.estimatedMinutes && !isDone && (
             <Badge variant="neutral" size="xs">
@@ -549,6 +564,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         className="flex sm:hidden items-center gap-0.5 shrink-0 ml-1"
         onClick={(e) => e.stopPropagation()}
       >
+        {!isDone && task.sessionMetadata?.isSession && onStartSprint && (
+          <button
+            type="button"
+            onClick={() => onStartSprint(task.id)}
+            title="Launch Study Sprint Cockpit"
+            aria-label="Launch Study Sprint Cockpit"
+            className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold text-xs flex items-center gap-1 active:scale-95"
+          >
+            <Zap size={14} className="fill-current text-emerald-500" />
+            <span className="text-[10px]">Sprint</span>
+          </button>
+        )}
+
         {!isDone && (
           <button
             type="button"
@@ -599,10 +627,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       {/* Desktop hover action tools */}
       <div
         className={`hidden sm:flex items-center gap-0.5 transition-opacity ${
-          isActiveTimer ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          isActiveTimer || (task.sessionMetadata?.isSession && !isDone) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Study Sprint Cockpit Launcher */}
+        {!isDone && task.sessionMetadata?.isSession && onStartSprint && (
+          <button
+            type="button"
+            onClick={() => onStartSprint(task.id)}
+            title="Launch Study Sprint Cockpit"
+            className="px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/35 font-bold text-xs flex items-center gap-1 transition-all mr-1 shadow-xs"
+          >
+            <Zap size={13} className="fill-current text-emerald-500" />
+            <span className="text-[11px]">Sprint</span>
+          </button>
+        )}
+
         {/* Live Stopwatch Play/Pause button */}
         {!isDone && (
           <button

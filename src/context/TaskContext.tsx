@@ -16,6 +16,7 @@ import { taskSyncService } from '../services/taskSyncService';
 import { fetchICSFeed } from '../services/calendarService';
 import { checkAndTriggerDailyAutoSnapshot } from '../utils/backupService';
 import { parseTimeToMinutes, minutesToTimeStr } from '../utils/timelineUtils';
+import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser';
 
 interface UndoAction {
   description: string;
@@ -128,9 +129,10 @@ interface TaskContextType {
   toggleTaskStatus: (id: string) => void;
   toggleTaskPinToday: (id: string) => boolean; // returns false if already 3 pinned
   toggleSubTask: (taskId: string, subtaskId: string) => void;
-  addSubTask: (taskId: string, title: string, estimatedMinutes?: number) => void;
+  addSubTask: (taskId: string, title: string, estimatedMinutes?: number, extra?: Partial<SubTask>) => void;
   updateSubTask: (taskId: string, subtaskId: string, updates: Partial<SubTask>) => void;
   deleteSubTask: (taskId: string, subtaskId: string) => void;
+  addStudySessions: (sessions: ParsedSession[], dateStr?: string, projectId?: string) => Task[];
   bulkRescheduleOverdue: (action: 'today' | 'someday' | 'dismiss') => void;
   undoLastAction: () => void;
   addProject: (name: string, color: string, icon?: string) => void;
@@ -729,13 +731,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 
   const addSubTask = useCallback(
-    (taskId: string, title: string, estimatedMinutes?: number) => {
+    (taskId: string, title: string, estimatedMinutes?: number, extra?: Partial<SubTask>) => {
       if (!title.trim()) return;
       const newSub: SubTask = {
         id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
         title: title.trim(),
         completed: false,
         estimatedMinutes: estimatedMinutes && estimatedMinutes > 0 ? estimatedMinutes : undefined,
+        ...extra,
       };
 
       let updatedTask: Task | undefined;
@@ -1282,6 +1285,41 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     [showToast, user, projects]
   );
 
+  // Study Sessions Importer
+  const addStudySessions = useCallback(
+    (sessions: ParsedSession[], dateStr?: string, projectId = 'work'): Task[] => {
+      if (sessions.length === 0) return [];
+      const effectiveDate = dateStr || todayStr;
+      const newTasks: Task[] = sessions.map((s) => convertSessionToTask(s, effectiveDate, projectId));
+
+      pushUndo(`Imported ${sessions.length} study sessions`, tasks);
+      setTasks((prev) => [...newTasks, ...prev]);
+
+      audioEngine.playRuleOf3Fanfare();
+      confetti({
+        particleCount: 50,
+        spread: 70,
+        origin: { y: 0.7 },
+      });
+
+      const totalTargets = sessions.reduce((acc, s) => acc + s.targets.length, 0);
+      showToast(
+        `Scheduled ${sessions.length} Study Sessions with ${totalTargets} targets!`,
+        'Undo',
+        undoLastAction
+      );
+
+      if (user) {
+        taskSyncService.batchMigrate(user.uid, [...newTasks, ...tasks], projects).catch((err) => {
+          console.warn('Study sessions sync queued offline:', err);
+        });
+      }
+
+      return newTasks;
+    },
+    [todayStr, pushUndo, tasks, showToast, undoLastAction, user, projects]
+  );
+
   return (
     <TaskContext.Provider
       value={{
@@ -1368,6 +1406,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         undoLastAction,
         addProject,
         importTasks,
+        addStudySessions,
         showToast,
         clearToast,
       }}

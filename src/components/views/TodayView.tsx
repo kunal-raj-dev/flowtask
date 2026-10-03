@@ -33,12 +33,16 @@ interface TodayViewProps {
   onSelectTask: (taskId: string) => void;
   onStartFocus: (taskId: string) => void;
   onOpenBrainDump: () => void;
+  onStartSprint?: (taskId: string) => void;
+  onOpenStudySession?: () => void;
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
   onSelectTask,
   onStartFocus,
   onOpenBrainDump,
+  onStartSprint,
+  onOpenStudySession,
 }) => {
   const {
     tasks,
@@ -382,7 +386,12 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
       {/* Conditionally Render: Timeline View or List View */}
       {displayMode === 'timeline' ? (
-        <TimelineView onSelectTask={onSelectTask} onStartFocus={onStartFocus} />
+        <TimelineView
+          onSelectTask={onSelectTask}
+          onStartFocus={onStartFocus}
+          onStartSprint={onStartSprint}
+          onOpenStudySession={onOpenStudySession}
+        />
       ) : (
         <>
           {/* Omnibar Quick Capture */}
@@ -391,6 +400,18 @@ export const TodayView: React.FC<TodayViewProps> = ({
           {/* Quick Filters */}
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2 flex-wrap">
+              {onOpenStudySession && (
+                <button
+                  type="button"
+                  onClick={onOpenStudySession}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 transition-all shadow-xs active:scale-95"
+                  title="Plan Study & Deep Work Sessions (DSA, LeetCode, Web Dev)"
+                >
+                  <Sparkles size={13} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>Study Sessions</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setQuickWinsOnly(!quickWinsOnly)}
@@ -496,6 +517,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                     task={task}
                     onSelectTask={onSelectTask}
                     onStartFocus={onStartFocus}
+                    onStartSprint={onStartSprint}
                     isKeyboardFocused={focusedTaskId === task.id}
                   />
                 ))}
@@ -530,6 +552,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                     task={task}
                     onSelectTask={onSelectTask}
                     onStartFocus={onStartFocus}
+                    onStartSprint={onStartSprint}
                     isKeyboardFocused={focusedTaskId === task.id}
                   />
                 ))}

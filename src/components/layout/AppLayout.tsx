@@ -23,11 +23,13 @@ import { SmartFilterModal } from '../modals/SmartFilterModal';
 import { ScratchpadModal } from '../modals/ScratchpadModal';
 import { TemplatePickerModal } from '../modals/TemplatePickerModal';
 import { WeeklyReviewModal } from '../modals/WeeklyReviewModal';
+import { StudySessionModal } from '../modals/StudySessionModal';
+import { StudySprintRunnerModal } from '../focus/StudySprintRunnerModal';
 import { BatchActionBar } from '../tasks/BatchActionBar';
 import { Toast } from '../ui/Toast';
 import { Button } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
-import { Menu, Search, Sun, Moon, Palette, Share2, X, FileEdit, Pause, Plus } from 'lucide-react';
+import { Menu, Search, Sun, Moon, Palette, Share2, X, FileEdit, Pause, Plus, Sparkles } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { audioEngine } from '../../utils/audioEngine';
@@ -72,6 +74,9 @@ export const AppLayout: React.FC = () => {
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
   const [isAestheticsOpen, setIsAestheticsOpen] = useState(false);
   const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
+  const [isStudySessionOpen, setIsStudySessionOpen] = useState(false);
+  const [studySprintTaskId, setStudySprintTaskId] = useState<string | null>(null);
+  const [isStudySprintOpen, setIsStudySprintOpen] = useState(false);
   const [pomodoroTaskId, setPomodoroTaskId] = useState<string | null>(null);
   const [isPomodoroOpen, setIsPomodoroOpen] = useState(false);
   const [pendingSnapshot, setPendingSnapshot] = useState<SnapshotPayload | null>(null);
@@ -191,6 +196,11 @@ export const AppLayout: React.FC = () => {
     setIsPomodoroOpen(true);
   };
 
+  const handleStartStudySprint = (taskId: string) => {
+    setStudySprintTaskId(taskId);
+    setIsStudySprintOpen(true);
+  };
+
   const renderActiveView = () => {
     if (activeView === 'today') {
       return (
@@ -198,6 +208,8 @@ export const AppLayout: React.FC = () => {
           onSelectTask={(id) => setSelectedTaskId(id)}
           onStartFocus={handleStartFocus}
           onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onStartSprint={handleStartStudySprint}
+          onOpenStudySession={() => setIsStudySessionOpen(true)}
         />
       );
     }
@@ -207,6 +219,7 @@ export const AppLayout: React.FC = () => {
           onSelectTask={(id) => setSelectedTaskId(id)}
           onStartFocus={handleStartFocus}
           onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onStartSprint={handleStartStudySprint}
         />
       );
     }
@@ -216,6 +229,8 @@ export const AppLayout: React.FC = () => {
           <TimelineView
             onSelectTask={(id) => setSelectedTaskId(id)}
             onStartFocus={handleStartFocus}
+            onStartSprint={handleStartStudySprint}
+            onOpenStudySession={() => setIsStudySessionOpen(true)}
           />
         </div>
       );
@@ -245,6 +260,7 @@ export const AppLayout: React.FC = () => {
         onSelectTask={(id) => setSelectedTaskId(id)}
         onStartFocus={handleStartFocus}
         onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+        onStartSprint={handleStartStudySprint}
       />
     );
   };
@@ -277,6 +293,7 @@ export const AppLayout: React.FC = () => {
           onOpenBrainDump={() => setIsBrainDumpOpen(true)}
           onOpenAesthetics={() => setIsAestheticsOpen(true)}
           onOpenScratchpad={() => setIsScratchpadOpen(true)}
+          onOpenStudySession={() => setIsStudySessionOpen(true)}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         />
@@ -319,6 +336,10 @@ export const AppLayout: React.FC = () => {
               onOpenScratchpad={() => {
                 setIsSidebarOpenMobile(false);
                 setIsScratchpadOpen(true);
+              }}
+              onOpenStudySession={() => {
+                setIsSidebarOpenMobile(false);
+                setIsStudySessionOpen(true);
               }}
             />
           </div>
@@ -424,6 +445,16 @@ export const AppLayout: React.FC = () => {
               <FileEdit size={16} />
             </button>
 
+            {/* Quick Study Sessions Planner */}
+            <button
+              type="button"
+              onClick={() => setIsStudySessionOpen(true)}
+              title="Study Sessions & Deep Work Sprints"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-emerald-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <Sparkles size={16} />
+            </button>
+
             {/* Quick Aesthetics / Ambient Audio */}
             <button
               type="button"
@@ -485,6 +516,16 @@ export const AppLayout: React.FC = () => {
               className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
             >
               {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+            </button>
+
+            {/* Quick Study Sessions */}
+            <button
+              onClick={() => setIsStudySessionOpen(true)}
+              title="Study Sessions"
+              aria-label="Study Sessions"
+              className="p-2 text-[var(--text-secondary)] hover:text-emerald-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+            >
+              <Sparkles size={18} />
             </button>
 
             {/* Quick Aesthetics / Sounds */}
@@ -611,6 +652,7 @@ export const AppLayout: React.FC = () => {
           taskId={selectedTaskId}
           onClose={() => setSelectedTaskId(null)}
           onStartFocus={handleStartFocus}
+          onStartSprint={handleStartStudySprint}
         />
       )}
 
@@ -621,6 +663,23 @@ export const AppLayout: React.FC = () => {
           onClose={() => setIsPomodoroOpen(false)}
         />
       )}
+
+      {/* Study Session Planner Modal */}
+      <StudySessionModal
+        isOpen={isStudySessionOpen}
+        onClose={() => setIsStudySessionOpen(false)}
+        onStartSprint={handleStartStudySprint}
+      />
+
+      {/* Study Sprint Runner Modal (Active Focus Cockpit) */}
+      <StudySprintRunnerModal
+        isOpen={isStudySprintOpen}
+        taskId={studySprintTaskId}
+        onClose={() => {
+          setIsStudySprintOpen(false);
+          setStudySprintTaskId(null);
+        }}
+      />
 
       <CommandPalette
         isOpen={isCommandPaletteOpen}
@@ -639,6 +698,10 @@ export const AppLayout: React.FC = () => {
         onOpenScratchpad={() => {
           setIsCommandPaletteOpen(false);
           setIsScratchpadOpen(true);
+        }}
+        onOpenStudySession={() => {
+          setIsCommandPaletteOpen(false);
+          setIsStudySessionOpen(true);
         }}
       />
 

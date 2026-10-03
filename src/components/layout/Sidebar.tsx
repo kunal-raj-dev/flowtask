@@ -44,6 +44,7 @@ interface SidebarProps {
   onOpenBrainDump: () => void;
   onOpenAesthetics?: () => void;
   onOpenScratchpad?: () => void;
+  onOpenStudySession?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   onItemClick?: () => void;
@@ -57,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenBrainDump,
   onOpenAesthetics,
   onOpenScratchpad,
+  onOpenStudySession,
   isCollapsed = false,
   onToggleCollapse,
   onItemClick,
@@ -212,6 +214,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Compass size={16} />
           </button>
+          {onOpenStudySession && (
+            <button
+              onClick={() => {
+                onOpenStudySession();
+                onItemClick?.();
+              }}
+              title="Study Sessions & Deep Work Sprints"
+              className="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/35 hover:bg-emerald-500/25 transition-colors"
+            >
+              <Sparkles size={16} />
+            </button>
+          )}
           <button
             onClick={onOpenPomodoro}
             title="Focus Mode & Timer"
@@ -545,6 +559,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <span className="text-[10px] font-mono text-purple-600/70 dark:text-purple-300/70">^⇧W</span>
         </button>
+
+        {onOpenStudySession && (
+          <button
+            onClick={() => {
+              onOpenStudySession();
+              onItemClick?.();
+            }}
+            className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/15 hover:from-emerald-500/25 hover:to-teal-500/25 text-emerald-800 dark:text-emerald-300 text-xs font-semibold transition-all border border-emerald-500/35 shadow-xs hover:border-emerald-500/55 card-surface active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-emerald-600 dark:text-emerald-400" />
+              <span>Study Sessions</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-mono">
+              New
+            </span>
+          </button>
+        )}
 
         <button
           onClick={onOpenPomodoro}

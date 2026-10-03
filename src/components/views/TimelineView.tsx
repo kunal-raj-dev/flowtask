@@ -25,16 +25,22 @@ import {
   RefreshCw,
   X,
   ExternalLink,
+  Sparkles,
+  Zap,
 } from 'lucide-react';
 
 interface TimelineViewProps {
   onSelectTask: (taskId: string) => void;
   onStartFocus: (taskId: string) => void;
+  onStartSprint?: (taskId: string) => void;
+  onOpenStudySession?: () => void;
 }
 
 export const TimelineView: React.FC<TimelineViewProps> = ({
   onSelectTask,
   onStartFocus,
+  onStartSprint,
+  onOpenStudySession,
 }) => {
   const {
     tasks,
@@ -184,8 +190,20 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
           {/* Sync Calendar & Workload Health Bar */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {/* Calendar Sync Button */}
-            <div className="flex items-center gap-1.5">
+            {/* Calendar Sync Button & Study Sessions Button */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {onOpenStudySession && (
+                <button
+                  type="button"
+                  onClick={onOpenStudySession}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-semibold transition-all shadow-xs active:scale-95"
+                  title="Plan Study & Deep Work Sessions (DSA, LeetCode, Web Dev)"
+                >
+                  <Sparkles size={13} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>Study Sessions</span>
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   setIcsUrlInput(calendarIcsUrl);
@@ -323,6 +341,16 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                                 style={{ backgroundColor: project.color }}
                               />
                               {project.name}
+                            </span>
+                          )}
+                          {task.sessionMetadata?.isSession && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/25">
+                              🎯 Session {task.sessionMetadata.sessionNumber || ''}
+                            </span>
+                          )}
+                          {task.sessionMetadata?.pacingMinutesPerQuestion && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+                              ⚡ {task.sessionMetadata.pacingMinutesPerQuestion}m/Q
                             </span>
                           )}
                           <span>~{task.estimatedMinutes || 30}m</span>
@@ -585,6 +613,16 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         >
                           {task.title}
                         </span>
+                        {task.sessionMetadata?.isSession && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30 shrink-0">
+                            🎯 Session {task.sessionMetadata.sessionNumber || ''}
+                          </span>
+                        )}
+                        {task.sessionMetadata?.pacingMinutesPerQuestion && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 shrink-0">
+                            ⚡ {task.sessionMetadata.pacingMinutesPerQuestion}m/Q
+                          </span>
+                        )}
                         {task.isPinnedToday && !isDone && (
                           <span className="text-[9px] font-bold text-amber-500 shrink-0">
                             ★ Focus
@@ -678,7 +716,17 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                       </button>
                     )}
 
-                    {!isDone && (
+                    {!isDone && task.sessionMetadata?.isSession && onStartSprint ? (
+                      <button
+                        type="button"
+                        onClick={() => onStartSprint(task.id)}
+                        title="Launch Study Sprint Cockpit"
+                        className="px-1.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 transition-all shadow-xs"
+                      >
+                        <Zap size={11} className="fill-current text-emerald-500" />
+                        <span>Sprint</span>
+                      </button>
+                    ) : !isDone ? (
                       <button
                         onClick={() => onStartFocus(task.id)}
                         title="Start Focus Timer"
@@ -686,7 +734,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                       >
                         <Timer size={13} />
                       </button>
-                    )}
+                    ) : null}
                     <button
                       onClick={(e) => handleUnschedule(task, e)}
                       title="Remove from timeline (unschedule)"

@@ -40,6 +40,7 @@ interface CommandPaletteProps {
   onOpenExportImport: () => void;
   onOpenAesthetics?: () => void;
   onOpenScratchpad?: () => void;
+  onOpenStudySession?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -51,6 +52,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenExportImport,
   onOpenAesthetics,
   onOpenScratchpad,
+  onOpenStudySession,
 }) => {
   const {
     tasks,
@@ -142,6 +144,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   };
 
   const actions = [
+    {
+      id: 'study-sessions',
+      title: 'Plan Study & Deep Work Sessions (DSA, LeetCode, Web Dev)',
+      icon: Sparkles,
+      run: () => {
+        onClose();
+        onOpenStudySession?.();
+      },
+    },
     {
       id: 'weekly-review',
       title: 'Weekly Review & Retrospective Wizard (Ctrl+Shift+W)',

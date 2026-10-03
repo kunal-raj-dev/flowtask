@@ -31,6 +31,7 @@ import {
   Tag,
   History,
   ListTodo,
+  ExternalLink,
 } from 'lucide-react';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Badge } from '../ui/Badge';
@@ -51,12 +52,14 @@ interface TaskDrawerProps {
   taskId: string;
   onClose: () => void;
   onStartFocus: (taskId: string) => void;
+  onStartSprint?: (taskId: string) => void;
 }
 
 export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   taskId,
   onClose,
   onStartFocus,
+  onStartSprint,
 }) => {
   const {
     tasks,
@@ -542,6 +545,48 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           {/* TAB 1: OVERVIEW & SUBTASKS */}
           {activeTab === 'overview' && (
             <>
+              {/* Study Session Sprint Banner */}
+              {task.sessionMetadata?.isSession && (
+                <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
+                      ⚡
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[var(--text-primary)]">
+                        Study Session {task.sessionMetadata.sessionNumber ? `#${task.sessionMetadata.sessionNumber}` : ''}
+                        {task.sessionMetadata.focusArea ? ` • ${task.sessionMetadata.focusArea}` : ''}
+                      </div>
+                      <div className="text-[11px] text-[var(--text-muted)] font-mono flex items-center gap-2 mt-0.5">
+                        {task.sessionMetadata.pacingMinutesPerQuestion && (
+                          <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                            ⚡ {task.sessionMetadata.pacingMinutesPerQuestion}m / question
+                          </span>
+                        )}
+                        {task.sessionMetadata.targetCount && (
+                          <span>• {completedSubs}/{task.sessionMetadata.targetCount} targets solved</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      if (onStartSprint) {
+                        onStartSprint(task.id);
+                      } else {
+                        onStartFocus(task.id);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95"
+                  >
+                    <Zap size={13} className="fill-current" />
+                    <span>Launch Sprint</span>
+                  </button>
+                </div>
+              )}
+
               {/* Quick Project & Priority Row */}
               <div className="grid grid-cols-2 gap-3 p-3.5 bg-[var(--bg-surface-l2)]/60 rounded-xl border border-[var(--border-subtle)] text-xs card-surface">
                 <div className="space-y-1.5">
@@ -674,6 +719,29 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                             </svg>
                           )}
                         </button>
+
+                        {/* Difficulty badge if problem target */}
+                        {sub.difficulty && (
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono shrink-0 ${
+                              sub.difficulty === 'HARD'
+                                ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                                : sub.difficulty === 'MEDIUM'
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                                : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                            }`}
+                          >
+                            {sub.difficulty}
+                          </span>
+                        )}
+
+                        {/* Problem Number if available */}
+                        {sub.problemNumber && (
+                          <span className="text-[10px] font-mono font-bold text-[var(--text-muted)] shrink-0">
+                            #{sub.problemNumber}
+                          </span>
+                        )}
+
                         <span
                           className={`text-xs ${
                             sub.completed
@@ -683,6 +751,35 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                         >
                           {sub.title}
                         </span>
+
+                        {/* Direct link to LeetCode / external target */}
+                        {sub.url && (
+                          <a
+                            href={sub.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 p-0.5 shrink-0"
+                            title="Open Problem Link"
+                          >
+                            <ExternalLink size={12} />
+                          </a>
+                        )}
+
+                        {/* Topic Tags */}
+                        {sub.tags && sub.tags.length > 0 && (
+                          <div className="hidden sm:flex items-center gap-1 shrink-0">
+                            {sub.tags.map((tg) => (
+                              <span
+                                key={tg}
+                                className="text-[9px] px-1.5 py-0.2 rounded bg-stone-200/60 dark:bg-stone-800 text-[var(--text-muted)] font-medium"
+                              >
+                                {tg}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
                         {sub.estimatedMinutes && (
                           <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--bg-surface-l1)] text-[var(--text-muted)] font-semibold border border-[var(--border-hairline)] shrink-0">
                             {sub.estimatedMinutes}m
