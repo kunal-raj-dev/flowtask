@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Task } from '../../types/task';
 import { TaskCard } from './TaskCard';
+import { VirtualTaskList } from './VirtualTaskList';
 import { Omnibar } from './Omnibar';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import {
@@ -442,8 +443,10 @@ export const TaskList: React.FC<TaskListProps> = ({
           )}
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {displayedTasks.map((task) => (
+        <VirtualTaskList
+          tasks={displayedTasks}
+          className="space-y-2.5"
+          renderTask={(task) => (
             <TaskCard
               key={task.id}
               task={task}
@@ -452,8 +455,8 @@ export const TaskList: React.FC<TaskListProps> = ({
               onStartSprint={onStartSprint}
               isKeyboardFocused={focusedTaskId === task.id}
             />
-          ))}
-        </div>
+          )}
+        />
       )}
 
       {/* Completed Accordion for this View */}
@@ -475,14 +478,18 @@ export const TaskList: React.FC<TaskListProps> = ({
           </button>
 
           {!isCompletedCollapsed && (
-            <div className="space-y-2 mt-3 animate-slide-down">
-              {completed.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onSelectTask={onSelectTask}
-                />
-              ))}
+            <div className="mt-3 animate-slide-down">
+              <VirtualTaskList
+                tasks={completed}
+                className="space-y-2"
+                renderTask={(task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onSelectTask={onSelectTask}
+                  />
+                )}
+              />
             </div>
           )}
         </div>

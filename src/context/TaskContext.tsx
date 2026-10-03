@@ -29,6 +29,8 @@ import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser
 import { commandService } from '../services/commandService';
 import { dbService } from '../services/dbService';
 import { focusSessionService } from '../services/focusSessionService';
+import { useWorkspaceSettings } from '../hooks/useWorkspaceSettings';
+import type { UserWorkflowSettings } from '../types/settings';
 
 interface UndoAction {
   description: string;
@@ -53,6 +55,11 @@ interface TaskContextType {
   overdueTasks: Task[];
   isTriageDismissed: boolean;
   toast: { message: string; actionLabel?: string; onAction?: () => void } | null;
+
+  // User Workflow Settings & Preferences
+  settings: UserWorkflowSettings;
+  updateSettings: (updates: Partial<UserWorkflowSettings>) => void;
+  resetSettings: () => void;
 
   // Cloud Sync & Auth Modal
   syncStatus: SyncStatus;
@@ -234,6 +241,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
   const [isInterruptionModalOpen, setIsInterruptionModalOpen] = useState(false);
+
+  // User Workflow Settings & Preferences
+  const { settings, updateSettings, resetSettings } = useWorkspaceSettings();
 
   // Smart Views state
   const [customSmartViews, setCustomSmartViews] = useState<SmartFilterView[]>(() => {
@@ -1361,6 +1371,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         importTasks,
         showToast,
         clearToast,
+        settings,
+        updateSettings,
+        resetSettings,
       }}
     >
       {children}

@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "FlowTask Quick Capture",
+  "version": "1.0.0",
+  "description": "One-click universal task capture into FlowTask from any webpage.",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Capture Task to FlowTask"
+  }
+}

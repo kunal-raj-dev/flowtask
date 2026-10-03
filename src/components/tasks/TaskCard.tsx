@@ -16,6 +16,7 @@ import {
   Pause,
   Lock,
   Sun,
+  Moon,
   Sunrise,
   Coffee,
   Briefcase,
@@ -379,6 +380,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               Top 3
             </Badge>
           )}
+
+          {/* Things 3-style This Evening indicator */}
+          {task.isEvening && !isDone && (
+            <Badge variant="brand" size="xs">
+              <Moon size={9} className="text-indigo-500 fill-indigo-500/20" />
+              Evening
+            </Badge>
+          )}
         </div>
 
         {/* Task description preview if present */}
@@ -609,6 +618,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </button>
         )}
 
+        {!isDone && (
+          <button
+            type="button"
+            onClick={() => updateTask(task.id, { isEvening: !task.isEvening })}
+            title={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
+            aria-label={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
+            className={`p-2 rounded-xl transition-colors ${
+              task.isEvening
+                ? 'text-indigo-500 bg-indigo-500/15'
+                : 'text-stone-400 hover:text-indigo-500 active:bg-stone-200/50 dark:active:bg-white/[0.06]'
+            }`}
+          >
+            <Moon size={16} className={task.isEvening ? 'fill-indigo-500/30' : ''} />
+          </button>
+        )}
+
         <button
           type="button"
           onClick={(e) => {
@@ -677,6 +702,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             }`}
           >
             <Star size={14} className={task.isPinnedToday ? 'fill-current' : ''} />
+          </button>
+        )}
+
+        {/* Things 3-style This Evening Toggle button */}
+        {!isDone && (
+          <button
+            type="button"
+            onClick={() => updateTask(task.id, { isEvening: !task.isEvening })}
+            title={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
+            className={`p-1.5 rounded-lg transition-colors ${
+              task.isEvening
+                ? 'text-indigo-500 hover:text-indigo-600 bg-indigo-500/15'
+                : 'text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-l2)]'
+            }`}
+          >
+            <Moon size={14} className={task.isEvening ? 'fill-indigo-500/30' : ''} />
           </button>
         )}
 

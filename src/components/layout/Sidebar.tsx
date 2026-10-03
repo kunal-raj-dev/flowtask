@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import {
   Sun,
@@ -33,6 +33,8 @@ import {
   Clock,
   Folder,
   Settings,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
@@ -90,6 +92,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+
+  const [isMoreCollapsed, setIsMoreCollapsed] = useState<boolean>(
+    () => localStorage.getItem('flowtask_sidebar_more_collapsed') === 'true'
+  );
+  const [isPerspectivesCollapsed, setIsPerspectivesCollapsed] = useState<boolean>(
+    () => localStorage.getItem('flowtask_sidebar_perspectives_collapsed') === 'true'
+  );
+  const [isSmartViewsCollapsed, setIsSmartViewsCollapsed] = useState<boolean>(
+    () => localStorage.getItem('flowtask_sidebar_smartviews_collapsed') === 'true'
+  );
+  const [isProjectsCollapsed, setIsProjectsCollapsed] = useState<boolean>(
+    () => localStorage.getItem('flowtask_sidebar_projects_collapsed') === 'true'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('flowtask_sidebar_more_collapsed', String(isMoreCollapsed));
+  }, [isMoreCollapsed]);
+  useEffect(() => {
+    localStorage.setItem('flowtask_sidebar_perspectives_collapsed', String(isPerspectivesCollapsed));
+  }, [isPerspectivesCollapsed]);
+  useEffect(() => {
+    localStorage.setItem('flowtask_sidebar_smartviews_collapsed', String(isSmartViewsCollapsed));
+  }, [isSmartViewsCollapsed]);
+  useEffect(() => {
+    localStorage.setItem('flowtask_sidebar_projects_collapsed', String(isProjectsCollapsed));
+  }, [isProjectsCollapsed]);
+
+  // Ensure current activeView section is expanded so user never loses their position
+  useEffect(() => {
+    if (['review', 'all', 'someday'].includes(activeView)) {
+      setIsMoreCollapsed(false);
+    } else if (['timeline', 'kanban', 'matrix'].includes(activeView)) {
+      setIsPerspectivesCollapsed(false);
+    } else if (activeView.startsWith('smart:')) {
+      setIsSmartViewsCollapsed(false);
+    } else if (activeView.startsWith('project:')) {
+      setIsProjectsCollapsed(false);
+    }
+  }, [activeView]);
 
   const todayStr = formatLocalDate(new Date());
 
@@ -178,6 +219,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'brain': return Brain;
       case 'flame': return Flame;
       case 'archive': return Archive;
+      case 'moon': return Moon;
+      case 'coffee': return Lightbulb;
       default: return Filter;
     }
   };
@@ -384,18 +427,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* More Hub */}
         <div className="space-y-0.5">
-          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            More
+          <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
+            <span>More</span>
+            <button
+              type="button"
+              onClick={() => setIsMoreCollapsed((prev) => !prev)}
+              className="p-0.5 rounded hover:text-[var(--text-primary)] transition-colors"
+              title={isMoreCollapsed ? 'Expand More' : 'Collapse More'}
+            >
+              {isMoreCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+            </button>
           </div>
-          {secondaryNavItems.map(renderNavItem)}
+          {!isMoreCollapsed && secondaryNavItems.map(renderNavItem)}
         </div>
 
         {/* Perspectives Section */}
         <div className="space-y-0.5">
-          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            Perspectives
+          <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
+            <span>Perspectives</span>
+            <button
+              type="button"
+              onClick={() => setIsPerspectivesCollapsed((prev) => !prev)}
+              className="p-0.5 rounded hover:text-[var(--text-primary)] transition-colors"
+              title={isPerspectivesCollapsed ? 'Expand Perspectives' : 'Collapse Perspectives'}
+            >
+              {isPerspectivesCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+            </button>
           </div>
-          {perspectiveNavItems.map(renderNavItem)}
+          {!isPerspectivesCollapsed && perspectiveNavItems.map(renderNavItem)}
         </div>
 
         {/* Smart Filter Views Section */}
@@ -403,123 +462,145 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase flex items-center gap-1.5">
             Smart Views
           </span>
-          <button
-            onClick={() => setIsSmartFilterModalOpen(true)}
-            className="text-[var(--text-muted)] hover:text-indigo-500 p-0.5 rounded transition-colors"
-            title="Create Smart Filter View"
-          >
-            <Plus size={13} />
-          </button>
-        </div>
-
-        {smartViews.map((sv) => {
-          const isSelected = activeView === `smart:${sv.id}`;
-          const count = filterTasksByPredicate(tasks, sv.predicate).length;
-          const Icon = getSmartViewIcon(sv.icon);
-
-          return (
-            <div
-              key={sv.id}
-              className={`group w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                isSelected
-                  ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
-                  : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
-              }`}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsSmartFilterModalOpen(true)}
+              className="text-[var(--text-muted)] hover:text-indigo-500 p-0.5 rounded transition-colors"
+              title="Create Smart Filter View"
             >
-              <button
-                onClick={() => {
-                  setActiveView(`smart:${sv.id}` as any);
-                  onItemClick?.();
-                }}
-                className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
-              >
-                <div className={`p-1 rounded-lg ${isSelected ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
-                  <Icon size={14} className={sv.color || 'text-indigo-500'} />
-                </div>
-                <span className="truncate">{sv.name}</span>
-              </button>
-
-              <div className="flex items-center gap-1 shrink-0">
-                {count > 0 && (
-                  <Badge
-                    size="xs"
-                    variant={isSelected ? 'brand' : 'neutral'}
-                    className="font-mono text-[10px]"
-                  >
-                    {count}
-                  </Badge>
-                )}
-                {!sv.isBuiltIn && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteSmartView(sv.id);
-                    }}
-                    title="Delete Smart View"
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-rose-500 text-[var(--text-muted)] transition-opacity"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Projects Section */}
-        <div className="pt-2 pb-0.5 flex items-center justify-between px-2.5">
-          <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
-            Projects
-          </span>
-          <button
-            onClick={() => setIsAddingProject(true)}
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors"
-            title="Add Project"
-          >
-            <Plus size={13} />
-          </button>
+              <Plus size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSmartViewsCollapsed((prev) => !prev)}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors"
+              title={isSmartViewsCollapsed ? 'Expand Smart Views' : 'Collapse Smart Views'}
+            >
+              {isSmartViewsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+            </button>
+          </div>
         </div>
 
-        {projects
-          .filter((p) => p.id !== 'inbox' && p.id !== 'ideas')
-          .map((project) => {
-            const isSelected = activeView === `project:${project.id}`;
-            const projCount = tasks.filter(
-              (t) => t.status !== 'done' && t.projectId === project.id
-            ).length;
+        {!isSmartViewsCollapsed &&
+          smartViews.map((sv) => {
+            const isSelected = activeView === `smart:${sv.id}`;
+            const count = filterTasksByPredicate(tasks, sv.predicate).length;
+            const Icon = getSmartViewIcon(sv.icon);
 
             return (
-              <button
-                key={project.id}
-                onClick={() => {
-                  setActiveView(`project:${project.id}`);
-                  onItemClick?.();
-                }}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              <div
+                key={sv.id}
+                className={`group w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   isSelected
                     ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
                     : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
                 }`}
               >
-                <div className="flex items-center gap-2.5 truncate">
-                  <span
-                    className="w-2 h-2 rounded-full flex-shrink-0 ring-1 ring-stone-900/10 dark:ring-white/20"
-                    style={{ backgroundColor: project.color }}
-                  />
-                  <span className="truncate">{project.name}</span>
+                <button
+                  onClick={() => {
+                    setActiveView(`smart:${sv.id}` as any);
+                    onItemClick?.();
+                  }}
+                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+                >
+                  <div className={`p-1 rounded-lg ${isSelected ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
+                    <Icon size={14} className={sv.color || 'text-indigo-500'} />
+                  </div>
+                  <span className="truncate">{sv.name}</span>
+                </button>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {count > 0 && (
+                    <Badge
+                      size="xs"
+                      variant={isSelected ? 'brand' : 'neutral'}
+                      className="font-mono text-[10px]"
+                    >
+                      {count}
+                    </Badge>
+                  )}
+                  {!sv.isBuiltIn && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSmartView(sv.id);
+                      }}
+                      title="Delete Smart View"
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-rose-500 text-[var(--text-muted)] transition-opacity"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
                 </div>
-                {projCount > 0 && (
-                  <Badge
-                    size="xs"
-                    variant={isSelected ? 'brand' : 'neutral'}
-                    className="font-mono text-[10px]"
-                  >
-                    {projCount}
-                  </Badge>
-                )}
-              </button>
+              </div>
             );
           })}
+
+        {/* Projects Section */}
+        <div className="pt-2 pb-0.5 flex items-center justify-between px-2.5">
+          <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
+            Projects ({activeProjectCount})
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsAddingProject(true)}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors"
+              title="Add Project"
+            >
+              <Plus size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsProjectsCollapsed((prev) => !prev)}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors"
+              title={isProjectsCollapsed ? 'Expand Projects' : 'Collapse Projects'}
+            >
+              {isProjectsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+            </button>
+          </div>
+        </div>
+
+        {!isProjectsCollapsed &&
+          projects
+            .filter((p) => p.id !== 'inbox' && p.id !== 'ideas')
+            .map((project) => {
+              const isSelected = activeView === `project:${project.id}`;
+              const projCount = tasks.filter(
+                (t) => t.status !== 'done' && t.projectId === project.id
+              ).length;
+
+              return (
+                <button
+                  key={project.id}
+                  onClick={() => {
+                    setActiveView(`project:${project.id}`);
+                    onItemClick?.();
+                  }}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                    isSelected
+                      ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
+                      : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0 ring-1 ring-stone-900/10 dark:ring-white/20"
+                      style={{ backgroundColor: project.color }}
+                    />
+                    <span className="truncate">{project.name}</span>
+                  </div>
+                  {projCount > 0 && (
+                    <Badge
+                      size="xs"
+                      variant={isSelected ? 'brand' : 'neutral'}
+                      className="font-mono text-[10px]"
+                    >
+                      {projCount}
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
 
         {/* Inline Add Project Input */}
         {isAddingProject && (

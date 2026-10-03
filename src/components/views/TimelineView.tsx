@@ -14,6 +14,7 @@ import {
   TIMELINE_END_HOUR,
   TIMELINE_HOUR_HEIGHT_PX,
 } from '../../utils/timelineUtils';
+import { computeAutoSlotSchedule } from '../../utils/autoSlotAlgorithm';
 import {
   Clock,
   CheckCircle2,
@@ -54,6 +55,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     calendarIcsUrl,
     setCalendarIcsUrl,
     refreshCalendarEvents,
+    settings,
+    showToast,
   } = useTaskContext();
 
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
@@ -121,8 +124,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   }, 0);
   const totalMeetingHours = (meetingMinutes / 60).toFixed(1);
 
-  // Calculate Capacity
-  const targetWorkCapacityHours = 6.0;
+  // Calculate Capacity from configured user settings
+  const targetWorkCapacityHours = settings?.targetWorkCapacityHours ?? 6.0;
 
   const taskMinutes = todayTasks.reduce((acc, t) => acc + (t.estimatedMinutes || 30), 0);
   const totalCombinedMinutes = taskMinutes + meetingMinutes;
@@ -164,6 +167,38 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       scheduledStart: undefined,
       dueTime: undefined,
     });
+  };
+
+  const handleAutoSlotDay = () => {
+    if (unscheduledTasks.length === 0) return;
+    const result = computeAutoSlotSchedule(
+      unscheduledTasks,
+      scheduledTasks,
+      calendarEvents,
+      {
+        startHour: START_HOUR,
+        endHour: END_HOUR,
+        bufferMinutes: 5,
+        maxCapacityMinutes: Math.round(targetWorkCapacityHours * 60),
+      }
+    );
+
+    result.slotted.forEach(({ taskId, scheduledStart, dueTime }) => {
+      updateTask(taskId, { scheduledStart, dueTime });
+    });
+
+    showToast(result.message);
+  };
+
+  const handleClearAllScheduledTimes = () => {
+    if (scheduledTasks.length === 0) return;
+    scheduledTasks.forEach(({ task }) => {
+      updateTask(task.id, {
+        scheduledStart: undefined,
+        dueTime: undefined,
+      });
+    });
+    showToast(`Cleared timeline slots for ${scheduledTasks.length} tasks`);
   };
 
   return (
@@ -315,7 +350,30 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 Unscheduled ({unscheduledTasks.length})
               </h4>
             </div>
-            <span className="text-[10px] text-[var(--text-muted)]">Click slot to assign</span>
+            <div className="flex items-center gap-1.5">
+              {unscheduledTasks.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={handleAutoSlotDay}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold transition-all shadow-xs active:scale-95"
+                  title="Automatically distribute unscheduled tasks into free timeline gaps without conflicts"
+                >
+                  <Zap size={11} className="fill-current text-amber-500" />
+                  <span>Auto-Slot Day</span>
+                </button>
+              ) : scheduledTasks.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={handleClearAllScheduledTimes}
+                  className="text-[10px] font-semibold text-stone-400 hover:text-rose-500 transition-colors px-1 py-0.5 rounded hover:bg-rose-500/10"
+                  title="Clear all scheduled times for today"
+                >
+                  Clear Times
+                </button>
+              ) : (
+                <span className="text-[10px] text-[var(--text-muted)]">Click slot to assign</span>
+              )}
+            </div>
           </div>
 
           {unscheduledTasks.length === 0 ? (

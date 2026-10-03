@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
 import {
@@ -25,6 +25,16 @@ interface InsightsViewProps {
 
 export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   const { tasks, projects } = useTaskContext();
+
+  const [hoveredScatterPoint, setHoveredScatterPoint] = useState<{
+    id: string;
+    title: string;
+    est: number;
+    actual: number;
+    ratio: number;
+  } | null>(null);
+
+  const [hoveredHour, setHoveredHour] = useState<number | null>(null);
 
   const today = new Date();
   const todayStr = formatLocalDate(today);
@@ -83,6 +93,21 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   // Estimation Accuracy & Velocity Metrics
   const accuracyMetrics = calculateEstimationAccuracy(tasks);
 
+  // Anti-Planning Fallacy Calibration Scatter Data
+  const timedCompletedTasks = completedTasks.filter(
+    (t) => (t.estimatedMinutes || 0) > 0 && (t.timeSpentMinutes || 0) > 0
+  );
+
+  const maxScatterDuration = Math.max(
+    60,
+    ...timedCompletedTasks.map((t) => Math.max(t.estimatedMinutes || 0, t.timeSpentMinutes || 0))
+  );
+
+  // 24-Hour Execution Distribution
+  const hourlyCounts: number[] = Array(24).fill(0);
+  const hourlyMinutes: number[] = Array(24).fill(0);
+  const currentHour = new Date().getHours();
+
   // Chronobiological Peak Performance Analysis
   const chronoBuckets = {
     morning: { count: 0, minutes: 0, label: 'Morning Surge', time: '06:00 – 12:00', icon: Sunrise, color: 'text-amber-500', barColor: 'bg-amber-500' },
@@ -95,6 +120,8 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
     if (t.completedAt) {
       const h = new Date(t.completedAt).getHours();
       const mins = t.timeSpentMinutes || t.estimatedMinutes || 25;
+      hourlyCounts[h]++;
+      hourlyMinutes[h] += mins;
       if (h >= 6 && h < 12) {
         chronoBuckets.morning.count++;
         chronoBuckets.morning.minutes += mins;
@@ -111,6 +138,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
     }
   });
 
+  const maxHourlyCount = Math.max(...hourlyCounts, 1);
   const totalChronoCount = Object.values(chronoBuckets).reduce((acc, b) => acc + b.count, 0) || 1;
   const peakChronoKey = (Object.keys(chronoBuckets) as (keyof typeof chronoBuckets)[]).reduce((best, key) =>
     chronoBuckets[key].count > chronoBuckets[best].count ? key : best,
@@ -311,6 +339,97 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
                 ? `Based on ${accuracyMetrics.completedSampleCount} completed tasks with logged duration. Automatic suggestions calibrate upcoming task estimates in task drawer.`
                 : 'Log focus duration on completed tasks to automatically calibrate your estimation velocity.'}
             </p>
+
+            {/* Interactive Anti-Planning Fallacy Calibration Curve */}
+            <div className="mt-3.5 p-3 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] relative">
+              <div className="flex items-center justify-between text-[11px] mb-1.5 font-medium">
+                <span className="text-[var(--text-secondary)]">Planned vs Actual (Parity: 1.0x)</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">Max: {maxScatterDuration}m</span>
+              </div>
+
+              <div className="relative">
+                <svg
+                  viewBox="0 0 260 110"
+                  className="w-full h-24 overflow-visible select-none"
+                  aria-label="Estimation Accuracy Scatter Chart"
+                >
+                  {/* Axis lines */}
+                  <line x1="25" y1="10" x2="25" y2="95" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1" />
+                  <line x1="25" y1="95" x2="255" y2="95" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1" />
+
+                  {/* 1.0x Parity Diagonal Line */}
+                  <line
+                    x1="25"
+                    y1="95"
+                    x2="255"
+                    y2="10"
+                    stroke="#6366F1"
+                    strokeWidth="1.5"
+                    strokeDasharray="3 3"
+                    strokeOpacity="0.75"
+                  />
+
+                  {/* Zone indicators */}
+                  <text x="30" y="20" fill="currentColor" fillOpacity="0.35" fontSize="7" fontWeight="600">
+                    ▲ Underestimated (+Time)
+                  </text>
+                  <text x="170" y="90" fill="currentColor" fillOpacity="0.35" fontSize="7" fontWeight="600">
+                    ▼ Overestimated
+                  </text>
+
+                  {/* Scatter Dots */}
+                  {timedCompletedTasks.slice(0, 30).map((t) => {
+                    const est = t.estimatedMinutes || 25;
+                    const actual = t.timeSpentMinutes || 25;
+                    const cx = 25 + (Math.min(est, maxScatterDuration) / maxScatterDuration) * 230;
+                    const cy = 95 - (Math.min(actual, maxScatterDuration) / maxScatterDuration) * 85;
+                    const ratio = est > 0 ? actual / est : 1;
+                    const isHovered = hoveredScatterPoint?.id === t.id;
+
+                    const color =
+                      ratio > 1.2
+                        ? '#F43F5E'
+                        : ratio < 0.8
+                        ? '#10B981'
+                        : '#6366F1';
+
+                    return (
+                      <g key={t.id} className="cursor-pointer">
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={isHovered ? 6 : 4}
+                          fill={color}
+                          stroke="#ffffff"
+                          strokeWidth={isHovered ? 2 : 1}
+                          className="transition-all duration-150"
+                          onMouseEnter={() =>
+                            setHoveredScatterPoint({
+                              id: t.id,
+                              title: t.title,
+                              est,
+                              actual,
+                              ratio,
+                            })
+                          }
+                          onMouseLeave={() => setHoveredScatterPoint(null)}
+                        />
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Interactive Tooltip Card */}
+                {hoveredScatterPoint && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-2.5 py-1.5 rounded-lg bg-stone-900 text-white text-[10px] shadow-lg border border-white/10 max-w-[220px] text-center animate-fade-in">
+                    <p className="font-semibold truncate">{hoveredScatterPoint.title}</p>
+                    <p className="text-stone-300 font-mono mt-0.5">
+                      Est: {hoveredScatterPoint.est}m → Actual: {hoveredScatterPoint.actual}m ({hoveredScatterPoint.ratio.toFixed(2)}x)
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-[var(--border-hairline)] flex items-center justify-between text-[11px] text-[var(--text-secondary)]">
@@ -440,6 +559,64 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
             <p className="text-xs text-[var(--text-muted)] mt-3 leading-relaxed">
               Your highest velocity and completion rate concentrates in <strong className="text-[var(--text-primary)]">{peakBucket.label}</strong> ({peakBucket.time}), accounting for <strong className="text-[var(--text-primary)]">{Math.round((peakBucket.count / totalChronoCount) * 100)}%</strong> of finished work.
             </p>
+
+            {/* 24-Hour Energy Completion Arc */}
+            <div className="mt-3.5 p-3 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
+              <div className="flex items-center justify-between text-[11px] mb-2 font-medium">
+                <span className="text-[var(--text-secondary)]">24-Hour Hourly Activity Arc</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold font-mono">
+                  {hoveredHour !== null
+                    ? `${hoveredHour.toString().padStart(2, '0')}:00 • ${hourlyCounts[hoveredHour]} task${hourlyCounts[hoveredHour] === 1 ? '' : 's'}`
+                    : `Current Hour: ${currentHour.toString().padStart(2, '0')}:00`}
+                </span>
+              </div>
+
+              <div className="flex items-end gap-0.5 h-12 pt-1 pb-1">
+                {hourlyCounts.map((count, h) => {
+                  const heightPercent = maxHourlyCount > 0 ? Math.max(8, Math.round((count / maxHourlyCount) * 100)) : 8;
+                  const isCurrent = h === currentHour;
+                  const isHovered = hoveredHour === h;
+
+                  const zoneColor =
+                    h >= 6 && h < 12
+                      ? 'bg-amber-500'
+                      : h >= 12 && h < 17
+                      ? 'bg-orange-500'
+                      : h >= 17 && h < 22
+                      ? 'bg-indigo-500'
+                      : 'bg-purple-500';
+
+                  return (
+                    <div
+                      key={h}
+                      onMouseEnter={() => setHoveredHour(h)}
+                      onMouseLeave={() => setHoveredHour(null)}
+                      className="flex-1 h-full flex items-end cursor-pointer group relative"
+                      title={`${h.toString().padStart(2, '0')}:00 — ${count} tasks`}
+                    >
+                      <div
+                        style={{ height: `${heightPercent}%` }}
+                        className={`w-full rounded-t-sm transition-all duration-150 ${zoneColor} ${
+                          isHovered
+                            ? 'opacity-100 ring-2 ring-white dark:ring-stone-900 scale-y-105'
+                            : isCurrent
+                            ? 'opacity-90 ring-1 ring-amber-400'
+                            : 'opacity-60 group-hover:opacity-100'
+                        }`}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between text-[9px] text-[var(--text-muted)] font-mono pt-1 border-t border-[var(--border-hairline)]">
+                <span>00:00</span>
+                <span>06:00</span>
+                <span>12:00</span>
+                <span>18:00</span>
+                <span>23:00</span>
+              </div>
+            </div>
 
             {/* 4 Periods Distribution */}
             <div className="grid grid-cols-2 gap-2 mt-4">

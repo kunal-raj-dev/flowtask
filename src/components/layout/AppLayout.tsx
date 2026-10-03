@@ -11,22 +11,9 @@ import { ReviewView } from '../views/ReviewView';
 import { TaskList } from '../tasks/TaskList';
 import { TaskDrawer } from '../tasks/TaskDrawer';
 import { QuickAddModal } from '../tasks/QuickAddModal';
-import { PomodoroModal } from '../focus/PomodoroModal';
-import { CommandPalette } from '../modals/CommandPalette';
-import { ShortcutsModal } from '../modals/ShortcutsModal';
-import { BrainDumpModal } from '../modals/BrainDumpModal';
-import { ExportImportModal } from '../modals/ExportImportModal';
-import { AestheticsModal } from '../modals/AestheticsModal';
-import { AuthModal } from '../modals/AuthModal';
-import { EveningShutdownModal } from '../modals/EveningShutdownModal';
-import { InterruptionModal } from '../modals/InterruptionModal';
-import { SmartFilterModal } from '../modals/SmartFilterModal';
-import { ScratchpadModal } from '../modals/ScratchpadModal';
-import { TemplatePickerModal } from '../modals/TemplatePickerModal';
-import { WeeklyReviewModal } from '../modals/WeeklyReviewModal';
-import { StudySessionModal } from '../modals/StudySessionModal';
-import { StudySprintRunnerModal } from '../focus/StudySprintRunnerModal';
 import { BatchActionBar } from '../tasks/BatchActionBar';
+import { ModalRoot } from '../modals/ModalRoot';
+import { useModal } from '../../context/ModalContext';
 import { Toast } from '../ui/Toast';
 import { Button } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -45,19 +32,15 @@ export const AppLayout: React.FC = () => {
     setActiveView,
     selectedTaskId,
     setSelectedTaskId,
-    isAuthModalOpen,
-    setIsAuthModalOpen,
     theme,
     toggleTheme,
     tasks,
     projects,
     smartViews,
+    isAuthModalOpen,
     isSmartFilterModalOpen,
-    setIsSmartFilterModalOpen,
     isEveningShutdownOpen,
-    setIsEveningShutdownOpen,
     isWeeklyReviewOpen,
-    setIsWeeklyReviewOpen,
     addTask,
     activeTimerTaskId,
     activeTimerSeconds,
@@ -70,25 +53,28 @@ export const AppLayout: React.FC = () => {
     pauseFocusSession,
     resumeFocusSession,
     stopFocusSession,
+    settings,
   } = useTaskContext();
+
+  const { openModal, closeModal, isModalOpen, hasAnyModalOpen } = useModal();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('flowtask_sidebar_collapsed') === 'true';
   });
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [isBrainDumpOpen, setIsBrainDumpOpen] = useState(false);
-  const [isExportImportOpen, setIsExportImportOpen] = useState(false);
-  const [isAestheticsOpen, setIsAestheticsOpen] = useState(false);
-  const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
-  const [isStudySessionOpen, setIsStudySessionOpen] = useState(false);
-  const [studySprintTaskId, setStudySprintTaskId] = useState<string | null>(null);
-  const [isStudySprintOpen, setIsStudySprintOpen] = useState(false);
-  const [pomodoroTaskId, setPomodoroTaskId] = useState<string | null>(null);
-  const [isPomodoroOpen, setIsPomodoroOpen] = useState(false);
   const [pendingSnapshot, setPendingSnapshot] = useState<SnapshotPayload | null>(null);
   const [diurnalPeriod, setDiurnalPeriod] = useState<DiurnalPeriod>(() => getDiurnalPeriod());
+
+  // Guided onboarding auto-launch for first-time visitors with no tasks
+  useEffect(() => {
+    const legacyFlag = localStorage.getItem('flowtask_onboarding_completed');
+    if (!legacyFlag && tasks.length === 0 && !settings?.onboardingCompleted) {
+      const t = setTimeout(() => {
+        openModal('onboarding');
+      }, 600);
+      return () => clearTimeout(t);
+    }
+  }, [settings?.onboardingCompleted, tasks.length, openModal]);
 
   // Diurnal Ambient Shift dynamic listener & interval
   useEffect(() => {
@@ -127,17 +113,9 @@ export const AppLayout: React.FC = () => {
 
       // Suspend all global single-key shortcuts while ANY modal or slide-over drawer is open
       const isAnyModalActive =
+        hasAnyModalOpen ||
         isQuickAddOpen ||
         isAuthModalOpen ||
-        isCommandPaletteOpen ||
-        isShortcutsOpen ||
-        isBrainDumpOpen ||
-        isExportImportOpen ||
-        isAestheticsOpen ||
-        isScratchpadOpen ||
-        isStudySessionOpen ||
-        isStudySprintOpen ||
-        isPomodoroOpen ||
         isEveningShutdownOpen ||
         isWeeklyReviewOpen ||
         isSmartFilterModalOpen ||
@@ -147,22 +125,26 @@ export const AppLayout: React.FC = () => {
 
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault();
-        setIsShortcutsOpen(true);
+        openModal('shortcuts');
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        setIsCommandPaletteOpen(true);
+        openModal('commandPalette');
       } else if (e.key === '[' || ((e.ctrlKey || e.metaKey) && e.key === '\\')) {
         e.preventDefault();
         setIsSidebarCollapsed((prev) => !prev);
       } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
         e.preventDefault();
-        setIsEveningShutdownOpen(true);
+        openModal('eveningShutdown');
       } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'W' || e.key === 'w')) {
         e.preventDefault();
-        setIsWeeklyReviewOpen(true);
+        openModal('weeklyReview');
       } else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
         e.preventDefault();
-        setIsScratchpadOpen((prev) => !prev);
+        if (isModalOpen('scratchpad')) {
+          closeModal('scratchpad');
+        } else {
+          openModal('scratchpad');
+        }
       } else if (e.key === 'n' || e.key === 'N' || e.key === 'c') {
         e.preventDefault();
         setIsQuickAddOpen(true);
@@ -176,24 +158,17 @@ export const AppLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     undoLastAction,
-    setIsEveningShutdownOpen,
-    setIsWeeklyReviewOpen,
     setIsQuickAddOpen,
     isQuickAddOpen,
     isAuthModalOpen,
-    isCommandPaletteOpen,
-    isShortcutsOpen,
-    isBrainDumpOpen,
-    isExportImportOpen,
-    isAestheticsOpen,
-    isScratchpadOpen,
-    isStudySessionOpen,
-    isStudySprintOpen,
-    isPomodoroOpen,
     isEveningShutdownOpen,
     isWeeklyReviewOpen,
     isSmartFilterModalOpen,
     selectedTaskId,
+    hasAnyModalOpen,
+    openModal,
+    closeModal,
+    isModalOpen,
   ]);
 
   const todayStr = formatLocalDate(new Date());
@@ -274,13 +249,11 @@ export const AppLayout: React.FC = () => {
   };
 
   const handleStartFocus = (taskId: string) => {
-    setPomodoroTaskId(taskId);
-    setIsPomodoroOpen(true);
+    openModal('pomodoro', { taskId });
   };
 
   const handleStartStudySprint = (taskId: string) => {
-    setStudySprintTaskId(taskId);
-    setIsStudySprintOpen(true);
+    openModal('studySprint', { taskId });
   };
 
   const renderActiveView = () => {
@@ -289,9 +262,9 @@ export const AppLayout: React.FC = () => {
         <TodayView
           onSelectTask={(id) => setSelectedTaskId(id)}
           onStartFocus={handleStartFocus}
-          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onOpenBrainDump={() => openModal('brainDump')}
           onStartSprint={handleStartStudySprint}
-          onOpenStudySession={() => setIsStudySessionOpen(true)}
+          onOpenStudySession={() => openModal('studySession')}
         />
       );
     }
@@ -301,7 +274,7 @@ export const AppLayout: React.FC = () => {
           filterInbox
           onSelectTask={(id) => setSelectedTaskId(id)}
           onStartFocus={handleStartFocus}
-          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onOpenBrainDump={() => openModal('brainDump')}
           onStartSprint={handleStartStudySprint}
         />
       );
@@ -311,7 +284,7 @@ export const AppLayout: React.FC = () => {
         <UpcomingView
           onSelectTask={(id) => setSelectedTaskId(id)}
           onStartFocus={handleStartFocus}
-          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onOpenBrainDump={() => openModal('brainDump')}
           onStartSprint={handleStartStudySprint}
         />
       );
@@ -349,7 +322,7 @@ export const AppLayout: React.FC = () => {
             onSelectTask={(id) => setSelectedTaskId(id)}
             onStartFocus={handleStartFocus}
             onStartSprint={handleStartStudySprint}
-            onOpenStudySession={() => setIsStudySessionOpen(true)}
+            onOpenStudySession={() => openModal('studySession')}
           />
         </div>
       );
@@ -366,7 +339,7 @@ export const AppLayout: React.FC = () => {
           filterSomeday
           onSelectTask={(id) => setSelectedTaskId(id)}
           onStartFocus={handleStartFocus}
-          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onOpenBrainDump={() => openModal('brainDump')}
           onStartSprint={handleStartStudySprint}
         />
       );
@@ -377,7 +350,7 @@ export const AppLayout: React.FC = () => {
           filterAll
           onSelectTask={(id) => setSelectedTaskId(id)}
           onStartFocus={handleStartFocus}
-          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onOpenBrainDump={() => openModal('brainDump')}
           onStartSprint={handleStartStudySprint}
         />
       );
@@ -386,7 +359,7 @@ export const AppLayout: React.FC = () => {
       <TaskList
         onSelectTask={(id) => setSelectedTaskId(id)}
         onStartFocus={handleStartFocus}
-        onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+        onOpenBrainDump={() => openModal('brainDump')}
         onStartSprint={handleStartStudySprint}
       />
     );
@@ -411,17 +384,14 @@ export const AppLayout: React.FC = () => {
       {/* Desktop Sidebar */}
       <div className="hidden md:block relative z-10 transition-all duration-200">
         <Sidebar
-          onOpenPomodoro={() => {
-            setPomodoroTaskId(null);
-            setIsPomodoroOpen(true);
-          }}
-          onOpenShortcuts={() => setIsShortcutsOpen(true)}
-          onOpenExportImport={() => setIsExportImportOpen(true)}
-          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
-          onOpenAesthetics={() => setIsAestheticsOpen(true)}
-          onOpenScratchpad={() => setIsScratchpadOpen(true)}
-          onOpenStudySession={() => setIsStudySessionOpen(true)}
-          onOpenSettings={() => setIsExportImportOpen(true)}
+          onOpenPomodoro={() => openModal('pomodoro')}
+          onOpenShortcuts={() => openModal('shortcuts')}
+          onOpenExportImport={() => openModal('exportImport')}
+          onOpenBrainDump={() => openModal('brainDump')}
+          onOpenAesthetics={() => openModal('aesthetics')}
+          onOpenScratchpad={() => openModal('scratchpad')}
+          onOpenStudySession={() => openModal('studySession')}
+          onOpenSettings={() => openModal('settings')}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         />
@@ -442,36 +412,35 @@ export const AppLayout: React.FC = () => {
               isMobileDrawer={true}
               onOpenPomodoro={() => {
                 setIsSidebarOpenMobile(false);
-                setPomodoroTaskId(null);
-                setIsPomodoroOpen(true);
+                openModal('pomodoro');
               }}
               onOpenShortcuts={() => {
                 setIsSidebarOpenMobile(false);
-                setIsShortcutsOpen(true);
+                openModal('shortcuts');
               }}
               onOpenExportImport={() => {
                 setIsSidebarOpenMobile(false);
-                setIsExportImportOpen(true);
+                openModal('exportImport');
               }}
               onOpenBrainDump={() => {
                 setIsSidebarOpenMobile(false);
-                setIsBrainDumpOpen(true);
+                openModal('brainDump');
               }}
               onOpenAesthetics={() => {
                 setIsSidebarOpenMobile(false);
-                setIsAestheticsOpen(true);
+                openModal('aesthetics');
               }}
               onOpenScratchpad={() => {
                 setIsSidebarOpenMobile(false);
-                setIsScratchpadOpen(true);
+                openModal('scratchpad');
               }}
               onOpenStudySession={() => {
                 setIsSidebarOpenMobile(false);
-                setIsStudySessionOpen(true);
+                openModal('studySession');
               }}
               onOpenSettings={() => {
                 setIsSidebarOpenMobile(false);
-                setIsExportImportOpen(true);
+                openModal('settings');
               }}
             />
           </div>
@@ -530,9 +499,9 @@ export const AppLayout: React.FC = () => {
                     if (focusSession.taskId) {
                       setSelectedTaskId(focusSession.taskId);
                     } else if (focusSession.mode === 'pomodoro') {
-                      setIsPomodoroOpen(true);
+                      openModal('pomodoro');
                     } else if (focusSession.mode === 'sprint') {
-                      setIsStudySprintOpen(true);
+                      openModal('studySprint');
                     }
                   }}
                   className="hover:underline truncate max-w-[150px]"
@@ -628,7 +597,7 @@ export const AppLayout: React.FC = () => {
             {/* Quick Sticky Scratchpad */}
             <button
               type="button"
-              onClick={() => setIsScratchpadOpen(true)}
+              onClick={() => openModal('scratchpad')}
               title="Sticky Scratchpad (Alt+N)"
               className="p-1.5 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
@@ -638,7 +607,7 @@ export const AppLayout: React.FC = () => {
             {/* Quick Study Sessions Planner */}
             <button
               type="button"
-              onClick={() => setIsStudySessionOpen(true)}
+              onClick={() => openModal('studySession')}
               title="Study Sessions & Deep Work Sprints"
               className="p-1.5 text-[var(--text-secondary)] hover:text-emerald-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
@@ -648,7 +617,7 @@ export const AppLayout: React.FC = () => {
             {/* Quick Aesthetics / Ambient Audio */}
             <button
               type="button"
-              onClick={() => setIsAestheticsOpen(true)}
+              onClick={() => openModal('aesthetics')}
               title="Aesthetics & Ambient Noise"
               className="p-1.5 text-[var(--text-secondary)] hover:text-purple-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
@@ -668,7 +637,7 @@ export const AppLayout: React.FC = () => {
             {/* Command Palette */}
             <button
               type="button"
-              onClick={() => setIsCommandPaletteOpen(true)}
+              onClick={() => openModal('commandPalette')}
               title="Command Palette (Ctrl+K)"
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
@@ -706,9 +675,9 @@ export const AppLayout: React.FC = () => {
                   if (focusSession.taskId) {
                     setSelectedTaskId(focusSession.taskId);
                   } else if (focusSession.mode === 'pomodoro') {
-                    setIsPomodoroOpen(true);
+                    openModal('pomodoro');
                   } else if (focusSession.mode === 'sprint') {
-                    setIsStudySprintOpen(true);
+                    openModal('studySprint');
                   }
                 }}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono text-[10px] font-bold border border-amber-500/30 shrink-0 mr-1"
@@ -744,7 +713,7 @@ export const AppLayout: React.FC = () => {
 
             {/* Quick Study Sessions */}
             <button
-              onClick={() => setIsStudySessionOpen(true)}
+              onClick={() => openModal('studySession')}
               title="Study Sessions"
               aria-label="Study Sessions"
               className="p-2 text-[var(--text-secondary)] hover:text-emerald-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
@@ -754,7 +723,7 @@ export const AppLayout: React.FC = () => {
 
             {/* Quick Aesthetics / Sounds */}
             <button
-              onClick={() => setIsAestheticsOpen(true)}
+              onClick={() => openModal('aesthetics')}
               title="Aesthetics & Sounds"
               aria-label="Aesthetics & Sounds"
               className="p-2 text-[var(--text-secondary)] hover:text-purple-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
@@ -764,7 +733,7 @@ export const AppLayout: React.FC = () => {
 
             {/* Quick Sticky Scratchpad */}
             <button
-              onClick={() => setIsScratchpadOpen(true)}
+              onClick={() => openModal('scratchpad')}
               title="Sticky Scratchpad (Alt+N)"
               aria-label="Sticky Scratchpad"
               className="p-2 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
@@ -774,7 +743,7 @@ export const AppLayout: React.FC = () => {
 
             {/* Search */}
             <button
-              onClick={() => setIsCommandPaletteOpen(true)}
+              onClick={() => openModal('commandPalette')}
               title="Search tasks"
               aria-label="Search tasks"
               className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
@@ -871,108 +840,13 @@ export const AppLayout: React.FC = () => {
         />
       )}
 
-      {/* Modals */}
-      {isPomodoroOpen && (
-        <PomodoroModal
-          taskId={pomodoroTaskId}
-          onClose={() => setIsPomodoroOpen(false)}
-        />
-      )}
-
-      {/* Study Session Planner Modal */}
-      <StudySessionModal
-        isOpen={isStudySessionOpen}
-        onClose={() => setIsStudySessionOpen(false)}
-        onStartSprint={handleStartStudySprint}
-      />
-
-      {/* Study Sprint Runner Modal (Active Focus Cockpit) */}
-      <StudySprintRunnerModal
-        isOpen={isStudySprintOpen}
-        taskId={studySprintTaskId}
-        onClose={() => {
-          setIsStudySprintOpen(false);
-          setStudySprintTaskId(null);
-        }}
-      />
-
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        onSelectTask={(id) => setSelectedTaskId(id)}
-        onOpenPomodoro={() => {
-          setPomodoroTaskId(null);
-          setIsPomodoroOpen(true);
-        }}
-        onOpenBrainDump={() => setIsBrainDumpOpen(true)}
-        onOpenExportImport={() => setIsExportImportOpen(true)}
-        onOpenAesthetics={() => {
-          setIsCommandPaletteOpen(false);
-          setIsAestheticsOpen(true);
-        }}
-        onOpenScratchpad={() => {
-          setIsCommandPaletteOpen(false);
-          setIsScratchpadOpen(true);
-        }}
-        onOpenStudySession={() => {
-          setIsCommandPaletteOpen(false);
-          setIsStudySessionOpen(true);
-        }}
-      />
-
-      {isShortcutsOpen && (
-        <ShortcutsModal onClose={() => setIsShortcutsOpen(false)} />
-      )}
-
-      {isBrainDumpOpen && (
-        <BrainDumpModal onClose={() => setIsBrainDumpOpen(false)} />
-      )}
-
-      {isExportImportOpen && (
-        <ExportImportModal onClose={() => setIsExportImportOpen(false)} />
-      )}
-
-      {/* Aesthetics & Themes Customization Modal */}
-      <AestheticsModal
-        isOpen={isAestheticsOpen}
-        onClose={() => setIsAestheticsOpen(false)}
-      />
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
-
-      {isEveningShutdownOpen && (
-        <EveningShutdownModal onClose={() => setIsEveningShutdownOpen(false)} />
-      )}
-
       {/* Batch Actions Dock */}
       <BatchActionBar />
 
-      {/* Interruption Stash & Scratchpad Modal */}
-      <InterruptionModal />
-
-      {/* Sticky Scratchpad Modal */}
-      <ScratchpadModal
-        isOpen={isScratchpadOpen}
-        onClose={() => setIsScratchpadOpen(false)}
-      />
-
-      {/* Smart Filter View Creator Modal */}
-      <SmartFilterModal
-        isOpen={isSmartFilterModalOpen}
-        onClose={() => setIsSmartFilterModalOpen(false)}
-      />
-
-      {/* Workflow Blueprints Template Modal */}
-      <TemplatePickerModal />
-
-      {/* Weekly Review & Retrospective Modal */}
-      <WeeklyReviewModal
-        isOpen={isWeeklyReviewOpen}
-        onClose={() => setIsWeeklyReviewOpen(false)}
-        onOpenTask={(id) => setSelectedTaskId(id)}
+      {/* Centralized Modal & Slide-Over Root */}
+      <ModalRoot
+        onSelectTask={(id) => setSelectedTaskId(id)}
+        onStartStudySprint={handleStartStudySprint}
       />
 
       {/* Global Toast */}

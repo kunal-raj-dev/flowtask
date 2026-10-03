@@ -97,7 +97,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
     return d && d > nextWeekEndStr;
   });
 
-  const { focusedTaskId } = useKeyboardNavigation({
+  const { focusedTaskId, setFocusedIndex } = useKeyboardNavigation({
     tasks: activeTasksToDisplay,
     onSelectTask,
     onToggleStatus: toggleTaskStatus,
@@ -266,7 +266,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
               onRescheduleTomorrow={() => updateTask(focusedTask.id, { plannedDate: tomorrowStr })}
               onRescheduleSomeday={() => updateTask(focusedTask.id, { isSomeday: true, plannedDate: undefined })}
               onSetPriority={(p) => updateTask(focusedTask.id, { priority: p })}
-              onDismiss={() => {}}
+              onDismiss={() => setFocusedIndex(-1)}
             />
           )}
         </>

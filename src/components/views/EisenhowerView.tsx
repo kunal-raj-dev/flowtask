@@ -1,8 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Priority } from '../../types/task';
-import { Grid2X2, Plus, ArrowUpRight, Flame, Target, Zap, Coffee, Keyboard, Calendar, Archive } from 'lucide-react';
+import {
+  Grid2X2,
+  Plus,
+  ArrowUpRight,
+  Flame,
+  Target,
+  Zap,
+  Coffee,
+  Calendar,
+  Archive,
+  Sparkles,
+  CheckCheck,
+  ArrowDownUp,
+} from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { calculateTaskPriorityScore } from '../../utils/priorityScoring';
 
 interface EisenhowerViewProps {
   onSelectTask: (taskId: string) => void;
@@ -13,11 +27,29 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   onSelectTask,
   projectId,
 }) => {
-  const { tasks: allTasks, updateTask, addTask, toggleTaskStatus } = useTaskContext();
+  const { tasks: allTasks, updateTask, addTask, toggleTaskStatus, showToast } = useTaskContext();
   const tasks = projectId ? allTasks.filter((t) => t.projectId === projectId) : allTasks;
   const [mobileQuadrant, setMobileQuadrant] = useState<Priority>('p1');
   const [addingToPriority, setAddingToPriority] = useState<Priority | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
+  const [dragOverQuadrant, setDragOverQuadrant] = useState<Priority | null>(null);
+
+  // Multi-Factor Prioritization settings
+  const [scoringMode, setScoringMode] = useState<'manual' | 'smart'>(() => {
+    return (localStorage.getItem('flowtask_eisenhower_mode') as 'manual' | 'smart') || 'manual';
+  });
+
+  const [sortByScore, setSortByScore] = useState<boolean>(() => {
+    return localStorage.getItem('flowtask_eisenhower_sort_score') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('flowtask_eisenhower_mode', scoringMode);
+  }, [scoringMode]);
+
+  useEffect(() => {
+    localStorage.setItem('flowtask_eisenhower_sort_score', String(sortByScore));
+  }, [sortByScore]);
 
   // Hotkey navigation: '1', '2', '3', '4' or ArrowLeft / ArrowRight to switch quadrants
   useEffect(() => {
@@ -61,11 +93,20 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const activeTasks = tasks.filter((t) => t.status !== 'done');
+  const activeTasks = useMemo(() => tasks.filter((t) => t.status !== 'done'), [tasks]);
   const todayStr = formatLocalDate(new Date());
   const tomorrowDate = new Date();
   tomorrowDate.setDate(tomorrowDate.getDate() + 1);
   const tomorrowStr = formatLocalDate(tomorrowDate);
+
+  // Compute multi-factor priority scores
+  const taskScores = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof calculateTaskPriorityScore>>();
+    activeTasks.forEach((t) => {
+      map.set(t.id, calculateTaskPriorityScore(t, allTasks));
+    });
+    return map;
+  }, [activeTasks, allTasks]);
 
   const quadrants: {
     priority: Priority;
@@ -81,9 +122,9 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
       title: 'Do First (Urgent & Important)',
       subtitle: 'Crises, immediate deadlines, pressing problems',
       icon: Flame,
-      color: 'text-red-500',
-      badgeColor: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
-      bgAccent: 'border-red-500/20',
+      color: 'text-rose-500',
+      badgeColor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+      bgAccent: 'border-rose-500/20',
     },
     {
       priority: 'p2',
@@ -105,7 +146,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     },
     {
       priority: 'p4',
-      title: 'Don\'t Do / Someday (Neither)',
+      title: "Don't Do / Someday (Neither)",
       subtitle: 'Time wasters, low-yield ideas, backlog items',
       icon: Coffee,
       color: 'text-stone-400',
@@ -116,14 +157,22 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
 
   const handleDrop = (e: React.DragEvent, priority: Priority) => {
     e.preventDefault();
+    setDragOverQuadrant(null);
     const taskId = e.dataTransfer.getData('text/plain');
     if (taskId) {
       updateTask(taskId, { priority });
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, priority: Priority) => {
     e.preventDefault();
+    if (dragOverQuadrant !== priority) {
+      setDragOverQuadrant(priority);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverQuadrant(null);
   };
 
   const handleQuickAdd = (priority: Priority) => {
@@ -131,41 +180,136 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     setQuickTitle('');
   };
 
+  // Auto-align all tasks to their multi-factor suggested quadrants
+  const handleAutoAlignAll = () => {
+    let alignedCount = 0;
+    activeTasks.forEach((t) => {
+      const score = taskScores.get(t.id);
+      if (score && score.suggestedQuadrant !== t.priority) {
+        updateTask(t.id, { priority: score.suggestedQuadrant });
+        alignedCount++;
+      }
+    });
+
+    if (alignedCount > 0) {
+      showToast(`Auto-aligned ${alignedCount} task${alignedCount === 1 ? '' : 's'} to multi-factor priority quadrants`);
+    } else {
+      showToast('All tasks already aligned with optimal quadrants');
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
+      {/* Top Header & Multi-Factor Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
         <div className="flex items-center gap-3">
           <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs flex-shrink-0">
             <Grid2X2 size={20} className="stroke-[2.2]" />
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
-              Eisenhower Priority Matrix
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+              <span>Eisenhower Priority Matrix</span>
+              {scoringMode === 'smart' && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/30">
+                  ⚡ Smart Mode
+                </span>
+              )}
             </h2>
             <p className="text-xs text-[var(--text-secondary)] font-medium">
-              Categorize and focus by urgency and importance
+              {scoringMode === 'smart'
+                ? 'Algorithmic grouping by deadline urgency & impact importance'
+                : 'Manual quadrant organization by urgency and importance'}
             </p>
           </div>
         </div>
 
-        {/* Keyboard shortcut hint */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)]">
-          <Keyboard size={13} className="text-amber-500" />
-          <span>Matrix Nav:</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">1</kbd>
-          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">2</kbd>
-          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">3</kbd>
-          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">4</kbd>
-          <span>or</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">←</kbd>
-          <kbd className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[10px] font-bold text-[var(--text-primary)]">→</kbd>
+        {/* View Controls & Action Tools */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Mode Toggle: Manual vs Multi-Factor Smart */}
+          <div className="flex items-center p-0.5 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-xs">
+            <button
+              type="button"
+              onClick={() => setScoringMode('manual')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                scoringMode === 'manual'
+                  ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+              title="Manual quadrant assignment based on task priority"
+            >
+              Manual
+            </button>
+            <button
+              type="button"
+              onClick={() => setScoringMode('smart')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                scoringMode === 'smart'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+              title="Smart multi-factor scoring (urgency + importance + blockers)"
+            >
+              <Sparkles size={12} />
+              <span>Smart Score</span>
+            </button>
+          </div>
+
+          {/* Sort by Score Toggle */}
+          <button
+            type="button"
+            onClick={() => setSortByScore((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              sortByScore
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                : 'bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-hairline)]'
+            }`}
+            title="Sort tasks within quadrants by composite priority score"
+          >
+            <ArrowDownUp size={12} />
+            <span className="hidden sm:inline">Rank by Score</span>
+          </button>
+
+          {/* Auto-Align All Button */}
+          <button
+            type="button"
+            onClick={handleAutoAlignAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shadow-xs transition-all active:scale-95"
+            title="Auto-align tasks to match their multi-factor suggested quadrants"
+          >
+            <CheckCheck size={13} />
+            <span className="hidden sm:inline">Align Quadrants</span>
+          </button>
         </div>
       </div>
+
+      {/* Smart Scoring Hint Banner */}
+      {scoringMode === 'smart' && (
+        <div className="mb-4 px-3.5 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-indigo-900 dark:text-indigo-200 flex items-center justify-between gap-3 animate-fade-in">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-indigo-500 shrink-0" />
+            <span>
+              <strong>Smart Scoring Active:</strong> Tasks are positioned according to composite deadline urgency, strategic impact, and dependency constraints.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleAutoAlignAll}
+            className="px-2 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] shrink-0"
+          >
+            Commit to Tasks
+          </button>
+        </div>
+      )}
 
       {/* Mobile Quadrant Switcher */}
       <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner">
         {quadrants.map((q) => {
-          const count = activeTasks.filter((t) => t.priority === q.priority).length;
+          const quadTasks = activeTasks.filter((t) => {
+            if (scoringMode === 'smart') {
+              return taskScores.get(t.id)?.suggestedQuadrant === q.priority;
+            }
+            return t.priority === q.priority;
+          });
           const isActive = mobileQuadrant === q.priority;
           const shortTitle =
             q.priority === 'p1'
@@ -187,30 +331,63 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
               }`}
             >
               <span>{shortTitle}</span>
-              <span className="text-[10px] font-mono font-bold opacity-75">({count})</span>
+              <span className="text-[10px] font-mono font-bold opacity-75">({quadTasks.length})</span>
             </button>
           );
         })}
+      </div>
+
+      {/* Cartesian 2D Coordinate Axis Banners (Desktop) */}
+      <div className="hidden md:grid grid-cols-2 gap-4 mb-2 text-center text-[11px] font-bold tracking-wider uppercase text-[var(--text-muted)] select-none">
+        <div className="flex items-center justify-center gap-1.5 py-1 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
+          <span>⚡ High Urgency (Immediate Action)</span>
+        </div>
+        <div className="flex items-center justify-center gap-1.5 py-1 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
+          <span>🕒 Low Urgency (Strategic / Planned)</span>
+        </div>
       </div>
 
       {/* 2x2 Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
         {quadrants.map((q) => {
           const Icon = q.icon;
-          const quadTasks = activeTasks.filter((t) => t.priority === q.priority);
+
+          // Filter tasks based on mode
+          let quadTasks = activeTasks.filter((t) => {
+            if (scoringMode === 'smart') {
+              return taskScores.get(t.id)?.suggestedQuadrant === q.priority;
+            }
+            return t.priority === q.priority;
+          });
+
+          // Sort by composite score if enabled
+          if (sortByScore) {
+            quadTasks = [...quadTasks].sort((a, b) => {
+              const scoreA = taskScores.get(a.id)?.compositeScore ?? 0;
+              const scoreB = taskScores.get(b.id)?.compositeScore ?? 0;
+              return scoreB - scoreA;
+            });
+          }
 
           const isVisibleOnMobile = mobileQuadrant === q.priority;
+          const isOver = dragOverQuadrant === q.priority;
+
           return (
             <div
               key={q.priority}
               onDrop={(e) => handleDrop(e, q.priority)}
-              onDragOver={handleDragOver}
+              onDragOver={(e) => handleDragOver(e, q.priority)}
+              onDragLeave={handleDragLeave}
               className={`${
                 isVisibleOnMobile ? 'flex' : 'hidden md:flex'
-              } bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] p-4 sm:p-5 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
+              } bg-[var(--bg-surface-l2)] rounded-xl border ${
+                isOver
+                  ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-500/[0.02]'
+                  : 'border-[var(--border-hairline)]'
+              } p-4 sm:p-5 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
             >
               {/* Quadrant Header */}
-              <div className="flex items-start justify-between pb-3.5 mb-3.5 border-b border-[var(--border-hairline)]">
+              <div className="flex items-start justify-between pb-3 mb-3 border-b border-[var(--border-hairline)]">
                 <div className="flex items-center gap-2.5">
                   <div className="p-1.5 rounded-xl bg-[var(--bg-surface-l1)]">
                     <Icon size={16} className={q.color} />
@@ -226,7 +403,9 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full border shadow-xs ${q.badgeColor}`}>
+                  <span
+                    className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full border shadow-xs ${q.badgeColor}`}
+                  >
                     {quadTasks.length}
                   </span>
                   <button
@@ -241,7 +420,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
 
               {/* Quadrant Batch Action Toolbar */}
               {quadTasks.length > 0 && (
-                <div className="flex items-center justify-between pb-2.5 mb-2.5 text-[11px] border-b border-[var(--border-hairline)]/70">
+                <div className="flex items-center justify-between pb-2 mb-2 text-[11px] border-b border-[var(--border-hairline)]/70">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                     Batch Action
                   </span>
@@ -251,7 +430,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       onClick={() => {
                         quadTasks.forEach((t) => updateTask(t.id, { plannedDate: todayStr }));
                       }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-semibold text-[11px] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-[11px] transition-colors"
                       title="Schedule all Q1 tasks for Today"
                     >
                       <Calendar size={11} className="stroke-[2.2]" />
@@ -288,7 +467,9 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) => updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false }));
+                        quadTasks.forEach((t) =>
+                          updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false })
+                        );
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-500/10 hover:bg-stone-500/20 text-stone-600 dark:text-stone-400 font-semibold text-[11px] transition-colors"
                       title="Park all in Someday backlog"
@@ -352,79 +533,100 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     </div>
                   </form>
                 )}
+
                 {quadTasks.length === 0 && addingToPriority !== q.priority ? (
                   <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border-hairline)] rounded-lg bg-[var(--bg-surface-l1)]/20">
                     Drop tasks here
                   </div>
                 ) : (
-                  quadTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      draggable
-                      onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)}
-                      onClick={() => onSelectTask(task.id)}
-                      className="group p-3 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l2)] shadow-subtle cursor-grab active:cursor-grabbing transition-all flex items-center justify-between gap-2.5 card-surface hover:-translate-y-[0.5px]"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleTaskStatus(task.id);
-                          }}
-                          className="w-4 h-4 rounded-[5px] border border-stone-300 dark:border-stone-600 hover:border-amber-500 flex-shrink-0 transition-colors"
-                        />
-                        <span className="text-xs font-medium text-[var(--text-primary)] truncate">
-                          {task.title}
-                        </span>
-                      </div>
-
-                      {/* Direct Quadrant Switcher and Quick Actions */}
-                      <div className="flex items-center gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <div
-                          className="flex items-center bg-stone-200/70 dark:bg-white/[0.08] p-0.5 rounded-lg gap-0.5"
-                          title="Move to quadrant"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {(['p1', 'p2', 'p3', 'p4'] as const).map((p, idx) => (
-                            <button
-                              key={p}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (task.priority !== p) {
-                                  updateTask(task.id, { priority: p });
-                                }
-                              }}
-                              title={`Move to Q${idx + 1}`}
-                              aria-label={`Move to Q${idx + 1}`}
-                              className={`w-4 h-4 text-[9px] font-bold rounded flex items-center justify-center transition-all ${
-                                task.priority === p
-                                  ? 'bg-white dark:bg-stone-700 text-[var(--text-primary)] shadow-xs scale-105'
-                                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-300/40 dark:hover:bg-white/10'
-                              }`}
-                            >
-                              {idx + 1}
-                            </button>
-                          ))}
-                        </div>
-
-                        {task.dueDate !== todayStr && (
+                  quadTasks.map((task) => {
+                    const score = taskScores.get(task.id);
+                    return (
+                      <div
+                        key={task.id}
+                        draggable
+                        onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)}
+                        onClick={() => onSelectTask(task.id)}
+                        className="group p-2.5 sm:p-3 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l2)] shadow-subtle cursor-grab active:cursor-grabbing transition-all flex items-center justify-between gap-2.5 card-surface hover:-translate-y-[0.5px]"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              updateTask(task.id, { dueDate: todayStr });
+                              toggleTaskStatus(task.id);
                             }}
-                            title="Move to Today"
-                            aria-label="Move to Today"
-                            className="p-1 text-[var(--text-muted)] hover:text-amber-500 rounded-md hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                            className="w-4 h-4 rounded-[5px] border border-stone-300 dark:border-stone-600 hover:border-amber-500 flex-shrink-0 transition-colors"
+                          />
+                          <div className="min-w-0">
+                            <span className="text-xs font-medium text-[var(--text-primary)] truncate block">
+                              {task.title}
+                            </span>
+                            {score && (
+                              <span className="text-[10px] text-[var(--text-muted)] truncate block sm:hidden">
+                                {score.urgencyReason}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Composite Score & Direct Quadrant Switcher */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {score && (
+                            <span
+                              className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                              title={`Priority Score: ${score.compositeScore}/100\nUrgency: ${score.urgencyScore}/50 (${score.urgencyReason})\nImportance: ${score.importanceScore}/50 (${score.importanceReason})`}
+                            >
+                              ⚡{score.compositeScore}
+                            </span>
+                          )}
+
+                          <div
+                            className="flex items-center bg-stone-200/70 dark:bg-white/[0.08] p-0.5 rounded-lg gap-0.5"
+                            title="Move to quadrant"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <ArrowUpRight size={13} />
-                          </button>
-                        )}
+                            {(['p1', 'p2', 'p3', 'p4'] as const).map((p, idx) => (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (task.priority !== p) {
+                                    updateTask(task.id, { priority: p });
+                                  }
+                                }}
+                                title={`Move to Q${idx + 1}`}
+                                aria-label={`Move to Q${idx + 1}`}
+                                className={`w-4 h-4 text-[9px] font-bold rounded flex items-center justify-center transition-all ${
+                                  task.priority === p
+                                    ? 'bg-white dark:bg-stone-700 text-[var(--text-primary)] shadow-xs scale-105'
+                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-300/40 dark:hover:bg-white/10'
+                                }`}
+                              >
+                                {idx + 1}
+                              </button>
+                            ))}
+                          </div>
+
+                          {task.dueDate !== todayStr && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTask(task.id, { dueDate: todayStr });
+                              }}
+                              title="Move to Today"
+                              aria-label="Move to Today"
+                              className="p-1 text-[var(--text-muted)] hover:text-amber-500 rounded-md hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                            >
+                              <ArrowUpRight size={13} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

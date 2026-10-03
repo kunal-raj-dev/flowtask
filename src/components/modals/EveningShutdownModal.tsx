@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import confetti from 'canvas-confetti';
 import {
@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock,
   Star,
-  ArrowRight,
   Lightbulb,
   X,
   Coffee,
@@ -23,10 +22,28 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
   const {
     tasks,
     updateTask,
+    toggleTaskStatus,
     dismissShutdown,
   } = useTaskContext();
 
   const todayStr = formatLocalDate(new Date());
+
+  const [reflection, setReflection] = useState<string>(() => {
+    try {
+      return localStorage.getItem(`flowtask_shutdown_reflection_${todayStr}`) || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const handleSaveReflection = (val: string) => {
+    setReflection(val);
+    try {
+      localStorage.setItem(`flowtask_shutdown_reflection_${todayStr}`, val);
+    } catch {
+      // ignore
+    }
+  };
 
   // Completed tasks today
   const completedToday = tasks.filter(
@@ -171,23 +188,26 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
               </div>
             </div>
 
-            <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
               {incompleteToday.map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-[var(--bg-surface-l2)]/80 border border-[var(--border-hairline)]"
+                  className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-[var(--bg-surface-l2)]/90 border border-[var(--border-hairline)] gap-2"
                 >
-                  <span className="truncate flex-1 font-medium text-[var(--text-primary)] mr-2">
+                  <span className="truncate flex-1 font-medium text-[var(--text-primary)]">
                     {t.title}
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
-                      onClick={() => updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false })}
-                      title="Move to someday"
-                      className="text-[var(--text-muted)] hover:text-amber-500 p-1"
+                      onClick={() => {
+                        toggleTaskStatus(t.id);
+                        audioEngine.playCompletionChime();
+                      }}
+                      title="Mark as completed today"
+                      className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/25 transition-colors"
                     >
-                      <Lightbulb size={12} />
+                      ✓ Done
                     </button>
                     <button
                       type="button"
@@ -195,11 +215,36 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
                         const tomorrow = new Date();
                         tomorrow.setDate(tomorrow.getDate() + 1);
                         updateTask(t.id, { plannedDate: formatLocalDate(tomorrow), isPinnedToday: false });
+                        audioEngine.playClickSound();
                       }}
                       title="Push to tomorrow"
-                      className="text-[var(--text-muted)] hover:text-amber-500 p-1"
+                      className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/25 transition-colors"
                     >
-                      <ArrowRight size={12} />
+                      Tmrw
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextWk = new Date();
+                        nextWk.setDate(nextWk.getDate() + 7);
+                        updateTask(t.id, { plannedDate: formatLocalDate(nextWk), isPinnedToday: false });
+                        audioEngine.playClickSound();
+                      }}
+                      title="Push to next week (+7 days)"
+                      className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-indigo-500/15 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-500/25 transition-colors"
+                    >
+                      +7d
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
+                        audioEngine.playClickSound();
+                      }}
+                      title="Park in Someday"
+                      className="p-1 text-[var(--text-muted)] hover:text-amber-500 rounded hover:bg-amber-500/10 transition-colors"
+                    >
+                      <Lightbulb size={12} />
                     </button>
                   </div>
                 </div>
@@ -221,6 +266,21 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
             </div>
           </div>
         )}
+
+        {/* Mindful Daily Reflection */}
+        <div className="mb-5 p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] space-y-1.5 card-surface">
+          <label htmlFor="shutdown-reflection-input" className="block text-xs font-semibold text-[var(--text-primary)]">
+            🌟 Daily Highlight or Gratitude (Optional)
+          </label>
+          <input
+            id="shutdown-reflection-input"
+            type="text"
+            value={reflection}
+            onChange={(e) => handleSaveReflection(e.target.value)}
+            placeholder="A meaningful win, learning, or moment from today..."
+            className="w-full text-xs px-3 py-2 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[var(--text-primary)] outline-none focus:border-[var(--color-brand)] placeholder:text-[var(--text-muted)]"
+          />
+        </div>
 
         {/* Mindful Affirmation Card */}
         <div className="p-4 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] mb-6 text-center card-surface">

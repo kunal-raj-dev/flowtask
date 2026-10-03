@@ -4,6 +4,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
 import {
   Sun,
+  Moon,
   Sunrise,
   Lightbulb,
   Star,
@@ -140,6 +141,24 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <span>Move to Today</span>
         </span>
         <kbd className="text-[9px] text-[var(--text-muted)] font-mono">t</kbd>
+      </button>
+
+      <button
+        onClick={() =>
+          handleAction(() =>
+            updateTask(task.id, {
+              plannedDate: todayStr,
+              isEvening: !task.isEvening,
+            })
+          )
+        }
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+      >
+        <span className="flex items-center gap-2.5">
+          <Moon size={14} className="text-indigo-500" />
+          <span>{task.isEvening ? 'Move to Daytime' : 'This Evening'}</span>
+        </span>
+        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">e</kbd>
       </button>
 
       <button

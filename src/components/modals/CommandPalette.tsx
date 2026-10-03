@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import {
   Search,
@@ -30,6 +30,7 @@ import { formatLocalDate } from '../../utils/nlpParser';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from 'canvas-confetti';
 import { parseSearchDSL } from '../../utils/searchDSL';
+import { searchTasksFuzzy, calculateFuzzyScore } from '../../utils/fuzzySearch';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -85,8 +86,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   const todayStr = formatLocalDate(new Date());
   const dsl = parseSearchDSL(query);
   const hasFilterActive = Boolean(
@@ -100,40 +99,41 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     dsl.isRecurring
   );
 
-  // Filter tasks based on Query DSL
-  const matchedTasks = hasFilterActive
-    ? tasks
-        .filter((t) => {
-          if (dsl.priority && t.priority !== dsl.priority) return false;
-          if (dsl.contextTag) {
-            const hasCtx = t.contextTags && t.contextTags.some((ctx) => ctx.toLowerCase().includes(dsl.contextTag!));
-            if (!hasCtx) return false;
-          }
-          if (dsl.tag) {
-            const hasTag = t.tags && t.tags.some((tag) => tag.toLowerCase().includes(dsl.tag!));
-            if (!hasTag) return false;
-          }
-          if (dsl.status) {
-            if (t.status !== dsl.status) return false;
-          }
-          if (dsl.isOverdue) {
-            if (t.status === 'done' || !t.dueDate || t.dueDate >= todayStr) return false;
-          }
-          if (dsl.isPinned) {
-            if (!t.isPinnedToday) return false;
-          }
-          if (dsl.isRecurring) {
-            if (!t.recurrence && !t.customRecurrence) return false;
-          }
-          if (dsl.text) {
-            const matchTitle = t.title.toLowerCase().includes(dsl.text.toLowerCase());
-            const matchDesc = t.description?.toLowerCase().includes(dsl.text.toLowerCase());
-            if (!matchTitle && !matchDesc) return false;
-          }
-          return true;
-        })
-        .slice(0, 8)
-    : [];
+  // Filter and rank tasks using Query DSL + Fuzzy Search Engine
+  const matchedTasks = useMemo(() => {
+    if (!hasFilterActive && !query.trim()) return [];
+
+    let pool = tasks;
+    if (dsl.priority) pool = pool.filter((t) => t.priority === dsl.priority);
+    if (dsl.status) pool = pool.filter((t) => t.status === dsl.status);
+    if (dsl.isOverdue) pool = pool.filter((t) => t.status !== 'done' && Boolean(t.dueDate && t.dueDate < todayStr));
+    if (dsl.isPinned) pool = pool.filter((t) => Boolean(t.isPinnedToday));
+    if (dsl.isRecurring) pool = pool.filter((t) => Boolean(t.recurrence || t.customRecurrence));
+    if (dsl.contextTag) {
+      pool = pool.filter((t) => t.contextTags && t.contextTags.some((c) => c.toLowerCase().includes(dsl.contextTag!)));
+    }
+    if (dsl.tag) {
+      pool = pool.filter((t) => t.tags && t.tags.some((tag) => tag.toLowerCase().includes(dsl.tag!)));
+    }
+
+    if (dsl.text) {
+      const fuzzyMatches = searchTasksFuzzy(pool, dsl.text, projects, 10);
+      return fuzzyMatches.map((res) => ({
+        ...res.task,
+        matchedField: res.matchedField,
+        projectName: res.projectName,
+      }));
+    }
+
+    return pool.slice(0, 10).map((t) => {
+      const proj = projects.find((p) => p.id === t.projectId);
+      return {
+        ...t,
+        matchedField: undefined as string | undefined,
+        projectName: proj?.name,
+      };
+    });
+  }, [tasks, projects, dsl, hasFilterActive, query, todayStr]);
 
   const handleAppendQueryToken = (token: string) => {
     setQuery((prev) => {
@@ -290,9 +290,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
   ];
 
-  const filteredActions = dsl.text
-    ? actions.filter((a) => a.title.toLowerCase().includes(dsl.text.toLowerCase()))
-    : actions;
+  const filteredActions = useMemo(() => {
+    if (!dsl.text) return actions;
+    return actions
+      .map((a) => ({ action: a, match: calculateFuzzyScore(dsl.text, a.title) }))
+      .filter(({ match }) => match.isMatch)
+      .sort((a, b) => b.match.score - a.match.score)
+      .map(({ action }) => action);
+  }, [actions, dsl.text]);
 
   const dslChips = [
     { label: 'p:p1', desc: 'Priority P1' },
@@ -301,6 +306,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { label: '@focus', desc: 'Context' },
     { label: '#work', desc: 'Tag' },
   ];
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -387,6 +394,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <span className={`font-medium truncate ${task.status === 'done' ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'}`}>
                       {task.title}
                     </span>
+                    {task.projectName && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-medium shrink-0 hidden sm:inline">
+                        {task.projectName}
+                      </span>
+                    )}
+                    {task.matchedField && task.matchedField !== 'title' && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-stone-200/60 dark:bg-stone-800 text-[var(--text-muted)] font-mono shrink-0 uppercase">
+                        in {task.matchedField}
+                      </span>
+                    )}
                     {task.contextTags && task.contextTags.length > 0 && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono shrink-0">
                         @{task.contextTags[0]}

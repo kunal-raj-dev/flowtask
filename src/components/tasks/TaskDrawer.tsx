@@ -9,6 +9,7 @@ import {
   Folder,
   Repeat,
   Star,
+  Moon,
   Timer,
   Trash2,
   Plus,
@@ -435,14 +436,14 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-40 bg-black/60 dark:bg-black/80 backdrop-blur-md flex items-end md:items-stretch md:justify-end"
+      className="fixed inset-0 z-40 bg-black/30 dark:bg-black/50 backdrop-blur-[2px] flex items-end md:items-stretch md:justify-end transition-all"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Task Details"
-        className="w-full md:max-w-xl h-[100dvh] md:h-full max-h-[100dvh] md:max-h-full bg-[var(--bg-surface-l1)] rounded-t-2xl md:rounded-none border-t md:border-t-0 md:border-l border-[var(--border-subtle)] shadow-modal flex flex-col overflow-hidden animate-slide-down"
+        className="w-full md:max-w-xl lg:max-w-2xl h-[100dvh] md:h-full max-h-[100dvh] md:max-h-full bg-[var(--bg-surface-l1)] rounded-t-2xl md:rounded-none border-t md:border-t-0 md:border-l border-[var(--border-subtle)] shadow-modal flex flex-col overflow-hidden animate-slide-down md:animate-slide-left"
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
           transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -497,6 +498,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           </div>
 
           <div className="flex items-center gap-1">
+            {/* Top 3 Star Pin button */}
             <button
               type="button"
               onClick={() => toggleTaskPinToday(task.id)}
@@ -508,6 +510,20 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               }`}
             >
               <Star size={15} className={task.isPinnedToday ? 'fill-current' : ''} />
+            </button>
+
+            {/* Things 3-style This Evening Toggle button */}
+            <button
+              type="button"
+              onClick={() => updateTask(task.id, { isEvening: !task.isEvening })}
+              title={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
+              className={`p-1.5 rounded-lg transition-all ${
+                task.isEvening
+                  ? 'text-indigo-500 bg-indigo-500/15 border border-indigo-500/30 shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-l2)]'
+              }`}
+            >
+              <Moon size={15} className={task.isEvening ? 'fill-indigo-500/30' : ''} />
             </button>
 
             <button

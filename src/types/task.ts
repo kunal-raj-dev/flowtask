@@ -58,6 +58,7 @@ export interface Task {
   topThreeDate?: string; // YYYY-MM-DD (Date-scoped Top 3 Focus)
   isPinnedToday?: boolean; // Backwards compatible with Top 3
   isSomeday?: boolean; // Intentional deferral separate from project
+  isEvening?: boolean; // Things 3-style "This Evening" designation for today's tasks
   archivedAt?: number; // Timestamp if archived (not counted as completed)
   deletedAt?: number; // Timestamp if moved to trash
   revision?: number; // Revision counter for conflict resolution
@@ -149,6 +150,11 @@ export interface SmartFilterPredicate {
   projectIds?: string[];
   status?: 'active' | 'done' | 'all';
   searchQuery?: string;
+  isBlocked?: boolean;
+  isStale?: boolean;
+  isEvening?: boolean;
+  contextTag?: string;
+  hasSubtasks?: boolean;
 }
 
 export interface SmartFilterView {

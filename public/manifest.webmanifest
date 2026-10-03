@@ -1,0 +1,19 @@
+{
+  "name": "FlowTask — Executive Focus Planner",
+  "short_name": "FlowTask",
+  "description": "Simple, deeply effective task planner combining Linear speed, Things 3 elegance, and Sunsama calm rituals.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090B0F",
+  "theme_color": "#D97706",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"]
+}

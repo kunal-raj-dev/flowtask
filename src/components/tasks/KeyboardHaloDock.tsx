@@ -11,6 +11,7 @@ interface KeyboardHaloDockProps {
   onRescheduleTomorrow: () => void;
   onRescheduleSomeday: () => void;
   onSetPriority: (priority: Priority) => void;
+  onToggleEvening?: () => void;
   onDismiss: () => void;
 }
 
@@ -23,6 +24,7 @@ export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
   onRescheduleTomorrow,
   onRescheduleSomeday,
   onSetPriority,
+  onToggleEvening,
   onDismiss,
 }) => {
   return (
@@ -102,6 +104,23 @@ export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
           <kbd className="px-1 py-0.5 rounded bg-stone-700 font-mono text-[9px] font-bold text-stone-200">S</kbd>
           <span>Someday</span>
         </button>
+
+        {/* Evening Toggle */}
+        {onToggleEvening && (
+          <button
+            type="button"
+            onClick={onToggleEvening}
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${
+              task.isEvening
+                ? 'bg-indigo-500/30 text-indigo-200 hover:bg-indigo-500/40'
+                : 'bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white'
+            }`}
+            title={task.isEvening ? 'Move to Daytime (E)' : 'Move to This Evening (E)'}
+          >
+            <kbd className="px-1 py-0.5 rounded bg-stone-700 font-mono text-[9px] font-bold text-stone-200">E</kbd>
+            <span>{task.isEvening ? '🌙 Eve' : '🌙 Eve'}</span>
+          </button>
+        )}
 
         {/* Priorities 1-4 */}
         <div className="flex items-center gap-0.5 pl-1 border-l border-stone-700/80">

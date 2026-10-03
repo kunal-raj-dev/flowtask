@@ -15,6 +15,9 @@ import {
   Star,
   Target,
   Plus,
+  Moon,
+  Coffee,
+  Lock,
 } from 'lucide-react';
 
 interface SmartFilterModalProps {
@@ -30,6 +33,9 @@ const AVAILABLE_ICONS = [
   { id: 'star', Icon: Star, label: 'Star' },
   { id: 'target', Icon: Target, label: 'Target' },
   { id: 'clock', Icon: Clock, label: 'Time' },
+  { id: 'moon', Icon: Moon, label: 'Evening' },
+  { id: 'coffee', Icon: Coffee, label: 'Stale' },
+  { id: 'lock', Icon: Lock, label: 'Blocked' },
   { id: 'briefcase', Icon: Briefcase, label: 'Work' },
   { id: 'sparkles', Icon: Sparkles, label: 'Magic' },
   { id: 'archive', Icon: Archive, label: 'Backlog' },
@@ -60,6 +66,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
   const [durationMode, setDurationMode] = useState<'any' | 'quick' | 'deep'>('any');
   const [dueRange, setDueRange] = useState<SmartFilterPredicate['dueRange']>('any');
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [onlyBlocked, setOnlyBlocked] = useState(false);
+  const [onlyStale, setOnlyStale] = useState(false);
+  const [onlyEvening, setOnlyEvening] = useState(false);
 
   if (!isOpen) return null;
 
@@ -69,6 +78,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
     minMinutes: durationMode === 'deep' ? 45 : undefined,
     dueRange: dueRange !== 'any' ? dueRange : undefined,
     projectIds: selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
+    isBlocked: onlyBlocked ? true : undefined,
+    isStale: onlyStale ? true : undefined,
+    isEvening: onlyEvening ? true : undefined,
     status: 'active',
   };
 
@@ -291,6 +303,53 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                   {range.label}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Special Focus Criteria */}
+          <div>
+            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+              Special Focus Criteria
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setOnlyEvening((prev) => !prev)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                  onlyEvening
+                    ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500 font-semibold shadow-xs'
+                    : 'border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-white/[0.04]'
+                }`}
+              >
+                <Moon size={12} className="text-indigo-500" />
+                <span>🌙 This Evening Only</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOnlyStale((prev) => !prev)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                  onlyStale
+                    ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500 font-semibold shadow-xs'
+                    : 'border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-white/[0.04]'
+                }`}
+              >
+                <Coffee size={12} className="text-purple-500" />
+                <span>💤 Needs Momentum (Stale)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOnlyBlocked((prev) => !prev)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                  onlyBlocked
+                    ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500 font-semibold shadow-xs'
+                    : 'border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-stone-100 dark:hover:bg-white/[0.04]'
+                }`}
+              >
+                <Lock size={12} className="text-rose-500" />
+                <span>🔒 Blocked Tasks</span>
+              </button>
             </div>
           </div>
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
+import { VirtualTaskList } from '../tasks/VirtualTaskList';
 import {
   CheckCircle2,
   Copy,
@@ -118,11 +119,13 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
         <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">
           {title} ({sectionTasks.length})
         </h3>
-        <div className="space-y-2.5">
-          {sectionTasks.map((task) => (
+        <VirtualTaskList
+          tasks={sectionTasks}
+          className="space-y-2.5"
+          renderTask={(task) => (
             <TaskCard key={task.id} task={task} onSelectTask={onSelectTask} />
-          ))}
-        </div>
+          )}
+        />
       </div>
     );
   };
