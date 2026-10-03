@@ -21,7 +21,18 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { user, isAnonymous, isConfigured, signInWithGoogle, signOutUser, loading, authError, clearAuthError } = useAuth();
+  const {
+    user,
+    isAnonymous,
+    isConfigured,
+    signInWithGoogle,
+    signInWithGoogleRedirect,
+    signOutUser,
+    loading,
+    authError,
+    authErrorCode,
+    clearAuthError,
+  } = useAuth();
   const { syncStatus, lastSyncedAt, forceSyncToCloud, tasks, projects, importLocalWorkspace, showToast, downloadWorkspaceBackup } = useTaskContext();
 
   if (!isOpen) return null;
@@ -64,20 +75,60 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         {/* Modal Body */}
         <div className="p-6 space-y-5">
           {user && <div className="p-4 border rounded-lg text-sm space-y-3"><p>Your device workspace is kept separately. Importing adds tasks whose IDs are not already in this account.</p><button className="underline" onClick={() => void importLocalWorkspace().catch(error => showToast(error.message))}>Import device workspace into this account</button><button className="underline block" onClick={downloadWorkspaceBackup}>Download account backup</button></div>}
-          {/* Auth Error Banner */}
+          {/* Auth Error Banner with Actionable Guidance */}
           {authError && (
-            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-semibold">Authentication Notice</p>
-                <p className="mt-0.5 leading-relaxed">{authError}</p>
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs space-y-2.5 animate-slide-down">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 font-bold text-sm text-rose-800 dark:text-rose-200">
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span>
+                    {authErrorCode === 'auth/unauthorized-domain'
+                      ? 'Domain Authorization Required'
+                      : authErrorCode === 'auth/popup-blocked'
+                      ? 'Sign-in Popup Blocked'
+                      : 'Authentication Notice'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearAuthError}
+                  className="text-rose-500 hover:text-rose-700 dark:hover:text-rose-300 p-0.5 rounded cursor-pointer font-bold"
+                  aria-label="Dismiss notice"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                onClick={clearAuthError}
-                className="text-rose-500 hover:text-rose-700 dark:hover:text-rose-300 font-bold"
-              >
-                ✕
-              </button>
+
+              <p className="leading-relaxed font-medium">{authError}</p>
+
+              {authErrorCode === 'auth/unauthorized-domain' && (
+                <div className="p-3 rounded-lg bg-[var(--bg-surface-l1)] border border-rose-500/20 text-[11px] space-y-2 text-[var(--text-secondary)]">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-[var(--text-primary)]">Domain to authorize:</span>
+                    <span className="px-2 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] font-mono font-bold text-amber-600 dark:text-amber-400">
+                      {typeof window !== 'undefined' ? window.location.hostname : 'localhost'}
+                    </span>
+                  </div>
+                  <ol className="list-decimal pl-4 space-y-1 text-[11px] text-[var(--text-muted)]">
+                    <li>Open <strong>Firebase Console</strong> → Select <strong>flowtask-kunal</strong></li>
+                    <li>Go to <strong>Authentication</strong> → <strong>Settings</strong> → <strong>Authorized domains</strong></li>
+                    <li>Click <strong>Add domain</strong> and enter <code className="text-amber-600 dark:text-amber-400 font-mono">{typeof window !== 'undefined' ? window.location.hostname : 'localhost'}</code></li>
+                    <li>Ensure <strong>Google</strong> is enabled under <strong>Sign-in method</strong></li>
+                  </ol>
+                </div>
+              )}
+
+              {authErrorCode === 'auth/popup-blocked' && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => signInWithGoogleRedirect()}
+                    className="px-3.5 py-1.5 rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors shadow-xs"
+                  >
+                    Continue with Full-Page Redirect
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -196,15 +247,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-stone-500/15 text-stone-600 dark:text-stone-300 flex items-center justify-center shrink-0">
                     <UserIcon className="w-4 h-4" />
                   </div>
                   <div className="flex-1">
                     <h4 className="text-sm font-bold text-[var(--text-primary)]">
-                      Guest Session (Anonymous Mode)
+                      Local Device Workspace
                     </h4>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
-                      You are using FlowTask without signing in. Your data is protected locally and synced to your private anonymous cloud partition.
+                      Your tasks and projects are stored securely on this device in high-speed IndexedDB.
                     </p>
                   </div>
                 </div>
@@ -212,42 +263,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300">
                   <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
                   <span>
-                    Link your Google account to sync seamlessly across phones, laptops, and prevent data loss if browser cookies are cleared.
+                    Sign in with your Google account to backup and sync your flow across multiple phones, laptops, and tablets.
                   </span>
                 </div>
 
                 {isConfigured ? (
-                  <button
-                    onClick={() => signInWithGoogle()}
-                    disabled={loading}
-                    className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg font-medium text-xs text-stone-800 dark:text-white bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 shadow-xs hover:bg-stone-50 dark:hover:bg-stone-750 transition-all cursor-pointer card-surface active:scale-[0.99]"
-                  >
-                    {loading ? (
-                      <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" viewBox="0 0 24 24">
-                          <path
-                            fill="#4285F4"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                          />
-                          <path
-                            fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                          />
-                        </svg>
-                        <span>Continue with Google</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => signInWithGoogle()}
+                      disabled={loading}
+                      className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg font-semibold text-xs text-stone-800 dark:text-white bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 shadow-xs hover:bg-stone-50 dark:hover:bg-stone-750 transition-all cursor-pointer card-surface active:scale-[0.99]"
+                    >
+                      {loading ? (
+                        <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" viewBox="0 0 24 24">
+                            <path
+                              fill="#4285F4"
+                              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            />
+                            <path
+                              fill="#34A853"
+                              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            />
+                            <path
+                              fill="#FBBC05"
+                              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                            />
+                            <path
+                              fill="#EA4335"
+                              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                            />
+                          </svg>
+                          <span>Continue with Google</span>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => signInWithGoogleRedirect()}
+                        disabled={loading}
+                        className="text-[11px] text-[var(--text-muted)] hover:text-amber-600 dark:hover:text-amber-400 underline transition-colors cursor-pointer"
+                      >
+                        Popup blocked or failing? Sign in with full-page redirect
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="p-3 rounded-lg bg-[var(--bg-surface-l2)] text-xs text-[var(--text-muted)] text-center border border-[var(--border-hairline)]">
                     Firebase configuration detected in offline demo mode.
