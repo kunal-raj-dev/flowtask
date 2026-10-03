@@ -17,7 +17,7 @@ import { useModal } from '../../context/ModalContext';
 import { Toast } from '../ui/Toast';
 import { Button } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
-import { Menu, Search, Share2, X, Pause, Play, Plus, Timer } from 'lucide-react';
+import { Menu, Search, Share2, X, Pause, Play, Plus, Timer, Settings } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { audioEngine } from '../../utils/audioEngine';
@@ -158,6 +158,9 @@ export const AppLayout: React.FC = () => {
       } else if (e.key === 'n' || e.key === 'N' || e.key === 'c') {
         e.preventDefault();
         setIsQuickAddOpen(true);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault();
+        openModal('settings');
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
         e.preventDefault();
         undoLastAction();
@@ -651,10 +654,20 @@ export const AppLayout: React.FC = () => {
             <button
               type="button"
               onClick={() => openModal('commandPalette')}
-              title="Search and commands"
+              title="Search and commands (Ctrl+K)"
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
               <Search size={16} />
+            </button>
+
+            {/* Application Settings & Preferences */}
+            <button
+              type="button"
+              onClick={() => openModal('settings')}
+              title="Preferences & Settings (Ctrl+,)"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <Settings size={16} />
             </button>
           </div>
         </header>
@@ -753,6 +766,16 @@ export const AppLayout: React.FC = () => {
               className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
             >
               <Search size={18} />
+            </button>
+
+            {/* Settings */}
+            <button
+              onClick={() => openModal('settings')}
+              title="Preferences & Settings"
+              aria-label="Preferences and Settings"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+            >
+              <Settings size={18} />
             </button>
           </div>
         </header>
