@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { TaskStatus } from '../../types/task';
-import { Kanban, Plus, Circle, Clock, CheckCircle2, Keyboard } from 'lucide-react';
+import { Kanban, Plus, Circle, Clock, CheckCircle2 } from 'lucide-react';
 
 interface KanbanViewProps {
   onSelectTask: (taskId: string) => void;
@@ -167,8 +167,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-4 py-4 sm:py-6 h-full flex flex-col min-h-0">
+      <div className="flex items-center justify-between mb-4 sm:mb-6 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
             <Kanban size={20} className="stroke-[2.2]" />
@@ -182,20 +182,10 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
             </p>
           </div>
         </div>
-
-        {/* Keyboard shortcut hint */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[11px] text-[var(--text-muted)] font-mono">
-          <Keyboard size={13} className="text-[var(--text-muted)]" />
-          <span>Vim / Nav:</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[10px] font-bold text-[var(--text-primary)]">h j k l</kbd>
-          <span>or</span>
-          <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[10px] font-bold text-[var(--text-primary)]">1-3</kbd>
-          <span>• Space advance</span>
-        </div>
       </div>
 
       {/* Mobile Column Tab Switcher */}
-      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner">
+      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner shrink-0">
         {columns.map((col) => {
           const count = tasks.filter((t) => t.status === col.status).length;
           const isActive = mobileColumn === col.status;
@@ -218,7 +208,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
       </div>
 
       {/* Columns Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 flex-1 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 flex-1 min-h-0 items-stretch">
         {columns.map((col) => {
           const colTasks = tasks.filter((t) => t.status === col.status);
           const ColIcon = col.icon;
@@ -231,10 +221,10 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               onDragOver={handleDragOver}
               className={`${
                 isVisibleOnMobile ? 'flex' : 'hidden md:flex'
-              } bg-[var(--bg-surface-l1)]/60 rounded-xl p-3.5 sm:p-4 border border-[var(--border-hairline)] flex-col min-h-[360px] md:min-h-[520px] backdrop-blur-xs shadow-xs`}
+              } bg-[var(--bg-surface-l1)]/60 rounded-xl p-3.5 sm:p-4 border border-[var(--border-hairline)] flex-col h-full max-h-full min-h-0 backdrop-blur-xs shadow-xs`}
             >
               {/* Column Header */}
-              <div className="flex items-center justify-between mb-3.5 px-1">
+              <div className="flex items-center justify-between mb-3.5 px-1 shrink-0">
                 <div className="flex items-center gap-2">
                   <ColIcon size={16} className={col.color} />
                   <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
@@ -255,7 +245,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               </div>
 
               {/* Tasks List */}
-              <div className="flex-1 space-y-2.5 overflow-y-auto">
+              <div className="flex-1 min-h-0 space-y-2.5 overflow-y-auto pr-1">
                 {addingToStatus === col.status && (
                   <form
                     onSubmit={(e) => {

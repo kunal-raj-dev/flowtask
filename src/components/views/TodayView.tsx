@@ -17,7 +17,6 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
-import { KeyboardHaloDock } from '../tasks/KeyboardHaloDock';
 
 interface TodayViewProps {
   onSelectTask: (taskId: string) => void;
@@ -119,7 +118,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   // Linear active list for keyboard navigation (j/k)
   const activeListTasks = [...topThreeTasks, ...daytimeTasks, ...eveningTasks];
 
-  const { focusedTaskId, setFocusedIndex } = useKeyboardNavigation({
+  const { focusedTaskId } = useKeyboardNavigation({
     tasks: activeListTasks,
     onSelectTask,
     onToggleStatus: toggleTaskStatus,
@@ -129,8 +128,6 @@ export const TodayView: React.FC<TodayViewProps> = ({
     onStartFocus,
     enabled: true,
   });
-
-  const focusedTask = activeListTasks.find((t) => t.id === focusedTaskId);
 
   // Progress metrics: unique IDs
   const totalPlannedCount = activeTodayTasks.length + completedTodayTasks.length;
@@ -511,26 +508,6 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           )}
         </div>
-      )}
-
-      {/* Keyboard Shortcut Halo Dock */}
-      {focusedTask && (
-        <KeyboardHaloDock
-          task={focusedTask}
-          onSelect={() => onSelectTask(focusedTask.id)}
-          onToggleStatus={() => toggleTaskStatus(focusedTask.id)}
-          onStartFocus={() => onStartFocus(focusedTask.id)}
-          onRescheduleToday={() => updateTask(focusedTask.id, { plannedDate: todayStr })}
-          onRescheduleTomorrow={() => {
-            const tmr = new Date();
-            tmr.setDate(tmr.getDate() + 1);
-            updateTask(focusedTask.id, { plannedDate: formatLocalDate(tmr) });
-          }}
-          onRescheduleSomeday={() => updateTask(focusedTask.id, { isSomeday: true, plannedDate: undefined })}
-          onSetPriority={(p) => updateTask(focusedTask.id, { priority: p })}
-          onToggleEvening={() => updateTask(focusedTask.id, { isEvening: !focusedTask.isEvening })}
-          onDismiss={() => setFocusedIndex(-1)}
-        />
       )}
     </div>
   );

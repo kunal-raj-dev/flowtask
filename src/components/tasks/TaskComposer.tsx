@@ -185,8 +185,8 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
     setInput('');
     if (onDraftChange) onDraftChange('');
-    // Reset explicit chips
-    setExplicitProjectId(null);
+    // Reset date/priority/duration/recurrence chips
+    // Keep explicitProjectId sticky across submissions until user explicitly changes it
     setExplicitPlannedDate(null);
     setExplicitDueDate(null);
     setExplicitPriority(null);
@@ -237,7 +237,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   }}
                   rows={4}
                   placeholder="Paste multi-line notes, meeting takeaways, or study topics..."
-                  className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none resize-none font-sans"
+                  className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none focus-visible:outline-none outline-none resize-none font-sans"
                 />
               ) : (
                 <input
@@ -254,7 +254,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     }
                   }}
                   placeholder="What needs to be done? (e.g. 'Draft report tomorrow #work p1 ~30m')"
-                  className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none font-sans"
+                  className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none focus-visible:outline-none outline-none font-sans"
                 />
               )}
 
@@ -267,7 +267,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     <select
                       value={projectObj.id}
                       onChange={(e) => setExplicitProjectId(e.target.value)}
-                      className="bg-transparent font-medium cursor-pointer focus:outline-none text-[11px]"
+                      className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
                     >
                       {projects.map((p) => (
                         <option key={p.id} value={p.id} className="bg-[var(--bg-surface-l1)] text-[var(--text-primary)]">
@@ -285,7 +285,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       type="date"
                       value={effectivePlannedDate || ''}
                       onChange={(e) => setExplicitPlannedDate(e.target.value || null)}
-                      className="bg-transparent font-medium cursor-pointer focus:outline-none text-[11px]"
+                      className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
                     />
                     {effectivePlannedDate && (
                       <button
@@ -307,7 +307,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       type="date"
                       value={effectiveDueDate || ''}
                       onChange={(e) => setExplicitDueDate(e.target.value || null)}
-                      className="bg-transparent font-medium cursor-pointer focus:outline-none text-[11px]"
+                      className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
                     />
                     {effectiveDueDate && (
                       <button

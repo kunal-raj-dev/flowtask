@@ -98,9 +98,6 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
                 <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 tracking-tight">
                   Sticky Scratchpad
                 </h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-stone-100 dark:bg-white/5 text-stone-500 border border-stone-200/60 dark:border-white/5">
-                  Alt+N
-                </span>
               </div>
               <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">
                 Fleeting thoughts, phone numbers, and raw notes. Autosaved locally.

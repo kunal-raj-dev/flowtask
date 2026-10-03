@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { Sidebar } from './Sidebar';
 import { TodayView } from '../views/TodayView';
@@ -17,9 +17,9 @@ import { useModal } from '../../context/ModalContext';
 import { Toast } from '../ui/Toast';
 import { Button } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
-import { Menu, Search, Sun, Moon, Palette, Share2, X, FileEdit, Pause, Play, Plus, Sparkles } from 'lucide-react';
-import { formatLocalDate } from '../../utils/nlpParser';
+import { Menu, Search, Share2, X, Pause, Play, Plus } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
+import { formatLocalDate } from '../../utils/nlpParser';
 import { audioEngine } from '../../utils/audioEngine';
 import { getDiurnalPeriod, getDiurnalConfig, type DiurnalPeriod } from '../../utils/diurnalAura';
 import { useTactileAudioClicks } from '../../hooks/useTactileAudioClicks';
@@ -32,8 +32,6 @@ export const AppLayout: React.FC = () => {
     setActiveView,
     selectedTaskId,
     setSelectedTaskId,
-    theme,
-    toggleTheme,
     tasks,
     projects,
     smartViews,
@@ -64,6 +62,14 @@ export const AppLayout: React.FC = () => {
   });
   const [pendingSnapshot, setPendingSnapshot] = useState<SnapshotPayload | null>(null);
   const [diurnalPeriod, setDiurnalPeriod] = useState<DiurnalPeriod>(() => getDiurnalPeriod());
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+
+  // Reset viewport scroll to top on activeView transition
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0;
+    }
+  }, [activeView]);
 
   // Guided onboarding auto-launch for first-time visitors with no tasks
   useEffect(() => {
@@ -581,64 +587,23 @@ export const AppLayout: React.FC = () => {
           </div>
 
           {/* Right: Quick Tools */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {/* New Task Summoner */}
             <Button
               variant="primary"
               size="sm"
               leftIcon={<Plus size={13} />}
-              kbd="N"
               onClick={() => setIsQuickAddOpen(true)}
-              title="Quick Add Task (N)"
+              title="Quick Add Task"
             >
               New Task
             </Button>
 
-            {/* Quick Sticky Scratchpad */}
-            <button
-              type="button"
-              onClick={() => openModal('scratchpad')}
-              title="Sticky Scratchpad (Alt+N)"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <FileEdit size={16} />
-            </button>
-
-            {/* Quick Study Sessions Planner */}
-            <button
-              type="button"
-              onClick={() => openModal('studySession')}
-              title="Study Sessions & Deep Work Sprints"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-emerald-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Sparkles size={16} />
-            </button>
-
-            {/* Quick Aesthetics / Ambient Audio */}
-            <button
-              type="button"
-              onClick={() => openModal('aesthetics')}
-              title="Aesthetics & Ambient Noise"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-purple-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Palette size={16} />
-            </button>
-
-            {/* Theme Toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} />}
-            </button>
-
-            {/* Command Palette */}
+            {/* Command Palette / Search */}
             <button
               type="button"
               onClick={() => openModal('commandPalette')}
-              title="Command Palette (Ctrl+K)"
+              title="Search and commands"
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
               <Search size={16} />
@@ -701,46 +666,6 @@ export const AppLayout: React.FC = () => {
               </button>
             )}
 
-            {/* Quick Theme Toggle directly in header */}
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-              aria-label="Toggle theme"
-              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
-            >
-              {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
-            </button>
-
-            {/* Quick Study Sessions */}
-            <button
-              onClick={() => openModal('studySession')}
-              title="Study Sessions"
-              aria-label="Study Sessions"
-              className="p-2 text-[var(--text-secondary)] hover:text-emerald-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
-            >
-              <Sparkles size={18} />
-            </button>
-
-            {/* Quick Aesthetics / Sounds */}
-            <button
-              onClick={() => openModal('aesthetics')}
-              title="Aesthetics & Sounds"
-              aria-label="Aesthetics & Sounds"
-              className="p-2 text-[var(--text-secondary)] hover:text-purple-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
-            >
-              <Palette size={18} />
-            </button>
-
-            {/* Quick Sticky Scratchpad */}
-            <button
-              onClick={() => openModal('scratchpad')}
-              title="Sticky Scratchpad (Alt+N)"
-              aria-label="Sticky Scratchpad"
-              className="p-2 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
-            >
-              <FileEdit size={18} />
-            </button>
-
             {/* Search */}
             <button
               onClick={() => openModal('commandPalette')}
@@ -754,7 +679,7 @@ export const AppLayout: React.FC = () => {
         </header>
 
         {/* View Viewport */}
-        <div className="flex-1 overflow-y-auto pb-24 md:pb-0">
+        <div ref={mainScrollRef} className="flex-1 overflow-y-auto pb-24 md:pb-0">
           {/* Incoming Shared Task Snapshot Banner */}
           {pendingSnapshot && (
             <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-500/15 via-teal-500/15 to-emerald-500/15 border border-indigo-500/30 shadow-card card-surface flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in">

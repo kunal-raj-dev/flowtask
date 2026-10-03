@@ -85,7 +85,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     toggleTaskTimer,
   } = useTaskContext();
 
-  const [isMarkdownPreview, setIsMarkdownPreview] = useState(true);
+  const [isMarkdownPreview, setIsMarkdownPreview] = useState(false);
   const [isRecurrenceExpanded, setIsRecurrenceExpanded] = useState(false);
   const [isDependenciesExpanded, setIsDependenciesExpanded] = useState(false);
   const [isTagsExpanded, setIsTagsExpanded] = useState(false);
@@ -1108,10 +1108,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 name="taskNotes"
                 aria-label="Task notes and description"
                 rows={5}
-                autoFocus
                 value={task.description || ''}
                 onChange={(e) => updateTask(task.id, { description: e.target.value })}
-                onBlur={() => setIsMarkdownPreview(true)}
                 placeholder="Add details, links, checklists (- [ ]), or code (`code`)..."
                 className="w-full text-xs p-3.5 bg-[var(--bg-surface-l1)]/50 text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-xl outline-none focus:border-stone-400 dark:focus:border-stone-600 resize-none leading-relaxed card-surface font-mono"
               />

@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
 import { isTaskBlocked } from '../../utils/dependencyUtils';
-import { KeyboardHaloDock } from './KeyboardHaloDock';
 import { checkTaskStaleness } from '../../utils/staleTaskDetector';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { audioEngine } from '../../utils/audioEngine';
@@ -184,7 +183,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     ? filtered.filter((t) => t.contextTags && t.contextTags.includes(selectedContextTag))
     : filtered;
 
-  const { focusedTaskId, setFocusedIndex } = useKeyboardNavigation({
+  const { focusedTaskId } = useKeyboardNavigation({
     tasks: displayedTasks,
     onSelectTask,
     onToggleStatus: toggleTaskStatus,
@@ -194,8 +193,6 @@ export const TaskList: React.FC<TaskListProps> = ({
     onStartFocus,
     enabled: true,
   });
-
-  const focusedTask = displayedTasks.find((t) => t.id === focusedTaskId);
 
   // Stale backlog tasks (>14 days untouched or overdue)
   const staleBacklogTasks = React.useMemo(() => {
@@ -493,25 +490,6 @@ export const TaskList: React.FC<TaskListProps> = ({
             </div>
           )}
         </div>
-      )}
-
-      {/* Keyboard Halo Dock for j/k spatial navigation */}
-      {focusedTask && (
-        <KeyboardHaloDock
-          task={focusedTask}
-          onSelect={() => onSelectTask(focusedTask.id)}
-          onToggleStatus={() => toggleTaskStatus(focusedTask.id)}
-          onStartFocus={() => onStartFocus(focusedTask.id)}
-          onRescheduleToday={() => updateTask(focusedTask.id, { plannedDate: formatLocalDate(new Date()) })}
-          onRescheduleTomorrow={() => {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            updateTask(focusedTask.id, { plannedDate: formatLocalDate(tomorrow) });
-          }}
-          onRescheduleSomeday={() => updateTask(focusedTask.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false })}
-          onSetPriority={(priority) => updateTask(focusedTask.id, { priority })}
-          onDismiss={() => setFocusedIndex(-1)}
-        />
       )}
     </div>
   );

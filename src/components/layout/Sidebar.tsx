@@ -12,7 +12,6 @@ import {
   Moon,
   Volume2,
   VolumeX,
-  Keyboard,
   DownloadCloud,
   Timer,
   Sparkles,
@@ -43,7 +42,7 @@ import { Badge } from '../ui';
 
 interface SidebarProps {
   onOpenPomodoro: () => void;
-  onOpenShortcuts: () => void;
+  onOpenShortcuts?: () => void;
   onOpenExportImport: () => void;
   onOpenBrainDump: () => void;
   onOpenAesthetics?: () => void;
@@ -58,7 +57,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({
   onOpenPomodoro,
-  onOpenShortcuts,
+  onOpenShortcuts: _onOpenShortcuts,
   onOpenExportImport,
   onOpenBrainDump,
   onOpenAesthetics,
@@ -285,7 +284,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               setIsWeeklyReviewOpen(true);
               onItemClick?.();
             }}
-            title="Weekly Review & Retrospective (Ctrl+Shift+W)"
+            title="Weekly Review & Retrospective"
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-colors"
           >
             <Compass size={16} />
@@ -321,7 +320,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {onOpenScratchpad && (
             <button
               onClick={onOpenScratchpad}
-              title="Sticky Scratchpad (Alt+N)"
+              title="Sticky Scratchpad"
               className="p-1.5 text-[var(--text-secondary)] hover:text-amber-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
             >
               <FileEdit size={15} />
@@ -401,7 +400,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title="Multi-line Brain Dump"
             className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
           >
-            <Sparkles size={15} />
+            <Zap size={15} />
           </button>
           {onToggleCollapse && !isMobileDrawer && (
             <button
@@ -671,7 +670,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Compass size={14} className="text-[var(--text-muted)]" />
             <span>Weekly Review</span>
           </div>
-          <span className="text-[10px] font-mono text-[var(--text-muted)]">^⇧W</span>
         </button>
 
         {onOpenStudySession && (
@@ -701,96 +699,81 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Utility Footer: Sound, Theme, Shortcuts, Export */}
+      {/* Utility Footer: Aesthetics, Theme, Sound, Scratchpad, Settings, Export */}
       <div className="p-3 border-t border-[var(--border-hairline)] flex items-center justify-between text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="flex items-center gap-1.5">
-          {onOpenAesthetics && (
-            <button
-              onClick={() => {
-                onOpenAesthetics();
-                onItemClick?.();
-              }}
-              title="Aesthetics & Sound Profiles"
-              aria-label="Aesthetics & Sound Profiles"
-              className="p-2 sm:p-1.5 hover:text-purple-500 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Palette size={17} />
-            </button>
-          )}
-
-          <button
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            aria-label={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-          </button>
-
-          <button
-            onClick={toggleSound}
-            title={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
-            aria-label={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
-            className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {onOpenScratchpad && (
-            <button
-              onClick={() => {
-                onOpenScratchpad();
-                onItemClick?.();
-              }}
-              title="Sticky Scratchpad (Alt+N)"
-              aria-label="Sticky Scratchpad"
-              className="p-2 sm:p-1.5 hover:text-amber-500 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <FileEdit size={17} />
-            </button>
-          )}
-
-          {!isMobileDrawer && (
-            <button
-              onClick={onOpenShortcuts}
-              title="Keyboard shortcuts (?)"
-              aria-label="Keyboard shortcuts"
-              className="hidden sm:inline-flex p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Keyboard size={17} />
-            </button>
-          )}
-
+        {onOpenAesthetics && (
           <button
             onClick={() => {
-              if (onOpenSettings) {
-                onOpenSettings();
-              } else {
-                onOpenExportImport();
-              }
+              onOpenAesthetics();
               onItemClick?.();
             }}
-            title="Settings & Data (Export / Import)"
-            aria-label="Settings and Data"
-            className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            title="Aesthetics & Sound Profiles"
+            aria-label="Aesthetics & Sound Profiles"
+            className="p-2 sm:p-1.5 hover:text-purple-500 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
           >
-            <Settings size={17} />
+            <Palette size={17} />
           </button>
+        )}
 
+        <button
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+          aria-label={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+          className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+        >
+          {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
+
+        <button
+          onClick={toggleSound}
+          title={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
+          aria-label={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
+          className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+        >
+          {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
+        </button>
+
+        {onOpenScratchpad && (
           <button
             onClick={() => {
+              onOpenScratchpad();
+              onItemClick?.();
+            }}
+            title="Sticky Scratchpad"
+            aria-label="Sticky Scratchpad"
+            className="p-2 sm:p-1.5 hover:text-amber-500 rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+          >
+            <FileEdit size={17} />
+          </button>
+        )}
+
+        <button
+          onClick={() => {
+            if (onOpenSettings) {
+              onOpenSettings();
+            } else {
               onOpenExportImport();
-              onItemClick?.();
-            }}
-            title="Export / Import data"
-            aria-label="Export or import data"
-            className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            <DownloadCloud size={17} />
-          </button>
-        </div>
+            }
+            onItemClick?.();
+          }}
+          title="Settings & Data (Export / Import)"
+          aria-label="Settings and Data"
+          className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+        >
+          <Settings size={17} />
+        </button>
+
+        <button
+          onClick={() => {
+            onOpenExportImport();
+            onItemClick?.();
+          }}
+          title="Export / Import data"
+          aria-label="Export or import data"
+          className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+        >
+          <DownloadCloud size={17} />
+        </button>
       </div>
     </aside>
   );

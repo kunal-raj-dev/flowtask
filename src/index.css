@@ -162,6 +162,13 @@ code, kbd, samp, pre, .font-mono {
   outline-offset: 2px;
 }
 
+/* Suppress redundant browser outline on form inputs, textareas, and selects that manage their own border/focus states */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
 .focus-ring {
   outline: none;
 }
