@@ -1,153 +1,149 @@
+import ICAL from 'ical.js';
 import type { CalendarEvent } from '../types/task';
 import { formatLocalDate } from '../utils/nlpParser';
 
 /**
- * Parses raw iCalendar (.ics / RFC 5545) text and extracts events for a target date.
+ * Parses raw iCalendar (.ics / RFC 5545) text using standards-compliant ical.js
+ * and extracts events for a target date (including recurring instances and timezone offsets).
  */
 export function parseICSFeed(
   icsContent: string,
   targetDateStr: string = formatLocalDate(new Date())
 ): CalendarEvent[] {
-  if (!icsContent || typeof icsContent !== 'string') return [];
-
-  const rawLines = icsContent.split(/\r\n|\n|\r/);
-  const unfoldedLines: string[] = [];
-
-  // 1. Unfold lines (RFC 5545 specifies that long lines can be split by CRLF followed by a space or tab)
-  for (let i = 0; i < rawLines.length; i++) {
-    const current = rawLines[i];
-    if (i > 0 && (current.startsWith(' ') || current.startsWith('\t'))) {
-      unfoldedLines[unfoldedLines.length - 1] += current.slice(1);
-    } else {
-      unfoldedLines.push(current);
-    }
+  if (!icsContent || typeof icsContent !== 'string' || !icsContent.includes('BEGIN:VCALENDAR')) {
+    return [];
   }
 
-  const events: CalendarEvent[] = [];
-  let inEvent = false;
-  let summary = '';
-  let dtstart = '';
-  let dtend = '';
-  let description = '';
-  let location = '';
+  try {
+    const jcalData = ICAL.parse(icsContent);
+    const vcalendar = new ICAL.Component(jcalData);
+    const vevents = vcalendar.getAllSubcomponents('vevent');
 
-  for (const line of unfoldedLines) {
-    const trimmed = line.trim();
-    if (trimmed === 'BEGIN:VEVENT') {
-      inEvent = true;
-      summary = '';
-      dtstart = '';
-      dtend = '';
-      description = '';
-      location = '';
-    } else if (trimmed === 'END:VEVENT') {
-      if (inEvent && dtstart && summary) {
-        const timing = parseICSTiming(dtstart, dtend, targetDateStr);
-        if (timing) {
-          events.push({
-            id: `ics_${Math.random().toString(36).substring(2, 9)}`,
-            title: cleanICSString(summary),
-            startTime: timing.startTime,
-            endTime: timing.endTime,
-            description: cleanICSString(description),
-            location: cleanICSString(location),
-            isAllDay: timing.isAllDay,
-          });
+    const targetDateParts = targetDateStr.split('-').map(Number);
+    const targetYear = targetDateParts[0];
+    const targetMonth = targetDateParts[1];
+
+    const events: CalendarEvent[] = [];
+
+    for (const vevent of vevents) {
+      try {
+        const event = new ICAL.Event(vevent);
+        const uid = event.uid || `ics_${Math.random().toString(36).substring(2, 9)}`;
+
+        if (event.isRecurring()) {
+          const iterator = event.iterator();
+          let nextTime: ICAL.Time | null;
+          // Look up to 100 occurrences or until past target date
+          let count = 0;
+          while ((nextTime = iterator.next()) && count < 150) {
+            count++;
+            const occurrenceDateStr = `${nextTime.year}-${String(nextTime.month).padStart(2, '0')}-${String(nextTime.day).padStart(2, '0')}`;
+            if (occurrenceDateStr === targetDateStr) {
+              const startHour = String(nextTime.hour).padStart(2, '0');
+              const startMinute = String(nextTime.minute).padStart(2, '0');
+              const startTime = `${startHour}:${startMinute}`;
+
+              let endTime = '';
+              if (event.duration) {
+                const end = nextTime.clone();
+                end.addDuration(event.duration);
+                endTime = `${String(end.hour).padStart(2, '0')}:${String(end.minute).padStart(2, '0')}`;
+              } else {
+                const nextHour = (nextTime.hour + 1) % 24;
+                endTime = `${String(nextHour).padStart(2, '0')}:${startMinute}`;
+              }
+
+              events.push({
+                id: `${uid}_${occurrenceDateStr}`,
+                title: event.summary || 'Untitled Event',
+                startTime,
+                endTime,
+                description: event.description || '',
+                location: event.location || '',
+                isAllDay: nextTime.isDate,
+              });
+              break;
+            }
+            if (nextTime.year > targetYear || (nextTime.year === targetYear && nextTime.month > targetMonth)) {
+              break;
+            }
+          }
+        } else {
+          // Single event
+          const startDate = event.startDate;
+          if (!startDate) continue;
+
+          const isAllDay = startDate.isDate;
+          const eventDateStr = `${startDate.year}-${String(startDate.month).padStart(2, '0')}-${String(startDate.day).padStart(2, '0')}`;
+
+          // Check if single day matches or multi-day event spans across targetDate
+          let matchesDate = eventDateStr === targetDateStr;
+          if (!matchesDate && event.endDate) {
+            const endDate = event.endDate;
+            const targetTime = ICAL.Time.fromDateString(targetDateStr);
+            if (startDate.compare(targetTime) <= 0 && endDate.compare(targetTime) >= 0) {
+              matchesDate = true;
+            }
+          }
+
+          if (matchesDate) {
+            const startHour = String(startDate.hour).padStart(2, '0');
+            const startMinute = String(startDate.minute).padStart(2, '0');
+            const startTime = isAllDay ? '09:00' : `${startHour}:${startMinute}`;
+
+            let endTime = '';
+            if (event.endDate && !isAllDay) {
+              const endHour = String(event.endDate.hour).padStart(2, '0');
+              const endMinute = String(event.endDate.minute).padStart(2, '0');
+              endTime = `${endHour}:${endMinute}`;
+            } else if (isAllDay) {
+              endTime = '10:00';
+            } else {
+              const nextHour = (startDate.hour + 1) % 24;
+              endTime = `${String(nextHour).padStart(2, '0')}:${startMinute}`;
+            }
+
+            events.push({
+              id: uid,
+              title: event.summary || 'Untitled Event',
+              startTime,
+              endTime,
+              description: event.description || '',
+              location: event.location || '',
+              isAllDay,
+            });
+          }
         }
-      }
-      inEvent = false;
-    } else if (inEvent) {
-      if (trimmed.startsWith('SUMMARY')) {
-        summary = extractPropValue(trimmed);
-      } else if (trimmed.startsWith('DTSTART')) {
-        dtstart = extractPropValue(trimmed);
-      } else if (trimmed.startsWith('DTEND')) {
-        dtend = extractPropValue(trimmed);
-      } else if (trimmed.startsWith('DESCRIPTION')) {
-        description = extractPropValue(trimmed);
-      } else if (trimmed.startsWith('LOCATION')) {
-        location = extractPropValue(trimmed);
+      } catch (err) {
+        console.warn('Skipping unparseable VEVENT:', err);
       }
     }
+
+    return events.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  } catch (err) {
+    console.warn('Failed to parse ICS with ical.js, trying fallback:', err);
+    return [];
   }
-
-  // Sort events chronologically by start time
-  return events.sort((a, b) => a.startTime.localeCompare(b.startTime));
-}
-
-function extractPropValue(line: string): string {
-  const colonIndex = line.indexOf(':');
-  if (colonIndex === -1) return '';
-  return line.slice(colonIndex + 1);
-}
-
-function cleanICSString(val: string): string {
-  return val
-    .replace(/\\n/g, '\n')
-    .replace(/\\,/g, ',')
-    .replace(/\\;/g, ';')
-    .replace(/\\\\/g, '\\')
-    .trim();
 }
 
 /**
- * Extracts and normalizes start and end times for the target date.
+ * Parses an uploaded local .ics file.
  */
-function parseICSTiming(
-  dtstartRaw: string,
-  dtendRaw: string,
-  targetDateStr: string
-): { startTime: string; endTime: string; isAllDay: boolean } | null {
-  // Check if all-day event: YYYYMMDD
-  const isAllDay = !dtstartRaw.includes('T');
-
-  if (isAllDay) {
-    if (dtstartRaw.length < 8) return null;
-    const year = dtstartRaw.substring(0, 4);
-    const month = dtstartRaw.substring(4, 6);
-    const day = dtstartRaw.substring(6, 8);
-    const eventDateStr = `${year}-${month}-${day}`;
-
-    if (eventDateStr !== targetDateStr) return null;
-    return { startTime: '09:00', endTime: '10:00', isAllDay: true };
+export async function parseICSFile(
+  file: File,
+  targetDateStr: string = formatLocalDate(new Date())
+): Promise<CalendarEvent[]> {
+  try {
+    const text = await file.text();
+    return parseICSFeed(text, targetDateStr);
+  } catch (err) {
+    console.error('Failed to read local ICS file:', err);
+    return [];
   }
-
-  // Format: YYYYMMDDTHHMMSS or YYYYMMDDTHHMMSSZ
-  const parts = dtstartRaw.split('T');
-  if (parts.length < 2 || parts[0].length < 8) return null;
-
-  const datePart = parts[0];
-  const timePart = parts[1].replace('Z', '');
-
-  const year = datePart.substring(0, 4);
-  const month = datePart.substring(4, 6);
-  const day = datePart.substring(6, 8);
-  const eventDateStr = `${year}-${month}-${day}`;
-
-  if (eventDateStr !== targetDateStr) return null;
-
-  const startHour = timePart.substring(0, 2);
-  const startMinute = timePart.substring(2, 4) || '00';
-  const startTime = `${startHour}:${startMinute}`;
-
-  let endTime = '';
-  if (dtendRaw && dtendRaw.includes('T')) {
-    const endParts = dtendRaw.split('T');
-    const endTimePart = endParts[1].replace('Z', '');
-    const endHour = endTimePart.substring(0, 2);
-    const endMinute = endTimePart.substring(2, 4) || '00';
-    endTime = `${endHour}:${endMinute}`;
-  } else {
-    // Default 45m duration if no end time
-    const endH = (parseInt(startHour, 10) + 1).toString().padStart(2, '0');
-    endTime = `${endH}:${startMinute}`;
-  }
-
-  return { startTime, endTime, isAllDay: false };
 }
 
 /**
- * Fetches and parses an ICS feed from a remote Webcal/HTTPS URL.
+ * Fetches and parses an ICS feed directly from an HTTPS/Webcal URL without untrusted third-party proxies.
  */
 export async function fetchICSFeed(
   feedUrl: string,
@@ -156,28 +152,27 @@ export async function fetchICSFeed(
   const cleanUrl = feedUrl.trim().replace(/^webcal:\/\//i, 'https://');
   if (!cleanUrl) return [];
 
-  // Try direct fetch first
+  // Security guard: only HTTPS or HTTP allowed
+  if (!cleanUrl.startsWith('https://') && !cleanUrl.startsWith('http://')) {
+    console.warn('Blocked non-http(s) calendar URL');
+    return [];
+  }
+
+  // Direct fetch without public proxy to protect calendar URL privacy
   try {
-    const response = await fetch(cleanUrl);
+    const response = await fetch(cleanUrl, {
+      headers: {
+        Accept: 'text/calendar, text/plain, */*',
+      },
+    });
     if (response.ok) {
       const text = await response.text();
       return parseICSFeed(text, targetDateStr);
     }
-  } catch {
-    // If CORS or network error, attempt via lightweight CORS proxy
-  }
-
-  // Fallback via CORS proxy
-  try {
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`;
-    const res = await fetch(proxyUrl);
-    if (res.ok) {
-      const text = await res.text();
-      return parseICSFeed(text, targetDateStr);
-    }
-  } catch {
-    // Both failed
+  } catch (err) {
+    console.warn('Direct calendar fetch failed (likely CORS on remote feed):', err);
   }
 
   return [];
 }
+

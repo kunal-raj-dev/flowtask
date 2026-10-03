@@ -52,16 +52,24 @@ export interface Task {
   status: TaskStatus;
   priority: Priority;
   projectId: string; // 'inbox', 'work', 'personal', etc.
-  dueDate?: string; // YYYY-MM-DD
+  plannedDate?: string; // YYYY-MM-DD (Planning date, distinct from deadline)
+  dueDate?: string; // YYYY-MM-DD (Actual deadline)
   dueTime?: string; // HH:mm
+  topThreeDate?: string; // YYYY-MM-DD (Date-scoped Top 3 Focus)
+  isPinnedToday?: boolean; // Backwards compatible with Top 3
+  isSomeday?: boolean; // Intentional deferral separate from project
+  archivedAt?: number; // Timestamp if archived (not counted as completed)
+  deletedAt?: number; // Timestamp if moved to trash
+  revision?: number; // Revision counter for conflict resolution
+  updatedAt?: number; // Last modification timestamp
   estimatedMinutes?: number;
   timeSpentMinutes?: number;
   subtasks: SubTask[];
   recurrence?: RecurrenceFrequency;
   customRecurrence?: CustomRecurrenceRule;
-  isPinnedToday?: boolean; // Rule of 3 (Top Focus for Today)
   scheduledStart?: string; // HH:mm (e.g. '09:30')
   scheduledEnd?: string; // HH:mm (e.g. '10:30')
+  timezone?: string; // Explicit timezone
   tags?: string[]; // Flexible custom hashtags/labels, e.g. ['frontend', 'v2']
   contextTags?: string[]; // GTD context tags, e.g. ['calls', 'computer', 'errands']
   blockedBy?: string[]; // IDs of tasks that block this task
@@ -75,23 +83,33 @@ export interface Project {
   name: string;
   color: string; // hex or tailwind color class
   icon?: string;
+  isArchived?: boolean;
+  archivedAt?: number;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export type ViewId =
   | 'today'
   | 'inbox'
   | 'upcoming'
+  | 'projects'
   | 'timeline'
   | 'someday'
   | 'matrix'
   | 'kanban'
   | 'insights'
   | 'logbook'
+  | 'review'
+  | 'all'
+  | 'trash'
+  | 'settings'
   | `project:${string}`
   | `smart:${string}`;
 
 export interface ParsedTaskInput {
   cleanTitle: string;
+  plannedDate?: string; // YYYY-MM-DD
   dueDate?: string; // YYYY-MM-DD
   dueTime?: string; // HH:mm
   priority?: Priority;
@@ -152,4 +170,55 @@ export interface TaskTemplate {
   contextTags?: string[];
   isCustom?: boolean;
 }
+
+export type FocusSessionMode = 'stopwatch' | 'pomodoro' | 'sprint';
+
+export interface FocusSessionSegment {
+  startedAt: number;
+  endedAt: number;
+  durationSeconds: number;
+}
+
+export interface FocusSession {
+  id: string;
+  mode: FocusSessionMode;
+  taskId: string | null;
+  taskTitle?: string;
+  subtaskId?: string;
+  projectId?: string;
+  startedAt: number;
+  pausedAt?: number | null;
+  accumulatedElapsedMs: number;
+  targetDurationSec: number;
+  state: 'idle' | 'running' | 'paused' | 'completed';
+  pomodoroCycle?: number;
+  pomodoroPhase?: 'focus' | 'short_break' | 'long_break';
+  loggedSegments?: FocusSessionSegment[];
+}
+
+export type CommandType =
+  | 'create_task'
+  | 'update_task'
+  | 'complete_task'
+  | 'schedule_task'
+  | 'move_task'
+  | 'merge_tasks'
+  | 'archive_task'
+  | 'delete_task'
+  | 'restore_task'
+  | 'bulk_update';
+
+export interface TaskCommand {
+  id: string;
+  type: CommandType;
+  timestamp: number;
+  payload: Record<string, unknown>;
+  description: string;
+}
+
+export interface InverseOperation {
+  description: string;
+  undo: () => void | Promise<void>;
+}
+
 

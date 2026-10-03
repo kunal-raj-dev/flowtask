@@ -20,7 +20,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
     { key: '1 - 4 or ← →', desc: 'Eisenhower matrix quadrant switch' },
     { key: 'Alt + S', desc: 'Stash focus & park interruption' },
     { key: 'Alt + R', desc: 'Restore stashed focus session' },
-    { key: 'Alt + B', desc: 'Magic Breakdown subtask splitter' },
+    { key: 'Alt + B', desc: 'Suggest action steps with AI' },
     { key: 'Alt + N', desc: 'Open sticky scratchpad & notes' },
     { key: 'Ctrl / ⌘ + Shift + D', desc: 'Evening Shutdown Ritual' },
     { key: 'Ctrl / ⌘ + Shift + W', desc: 'Weekly Review Wizard' },
@@ -35,7 +35,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
 
   const nlpSyntax = [
     { token: '#work', desc: 'Assigns task to #work project' },
-    { token: '@calls / @computer', desc: 'Assigns GTD context location tag' },
+    { token: '@calls / @computer', desc: 'Assigns context location tag' },
     { token: 'tomorrow morning', desc: 'Sets due date & relative time (9am)' },
     { token: 'next friday at 3pm', desc: 'Sets date & time automatically' },
     { token: 'every weekday', desc: 'Sets recurrence frequency' },

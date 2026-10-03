@@ -132,7 +132,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
 
       {/* Date reschedule options */}
       <button
-        onClick={() => handleAction(() => updateTask(task.id, { dueDate: todayStr }))}
+        onClick={() => handleAction(() => updateTask(task.id, { plannedDate: todayStr }))}
         className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
       >
         <span className="flex items-center gap-2.5">
@@ -143,7 +143,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       </button>
 
       <button
-        onClick={() => handleAction(() => updateTask(task.id, { dueDate: tomorrowStr }))}
+        onClick={() => handleAction(() => updateTask(task.id, { plannedDate: tomorrowStr }))}
         className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
       >
         <span className="flex items-center gap-2.5">
@@ -156,7 +156,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       <button
         onClick={() =>
           handleAction(() =>
-            updateTask(task.id, { dueDate: undefined, projectId: 'ideas' })
+            updateTask(task.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false })
           )
         }
         className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"

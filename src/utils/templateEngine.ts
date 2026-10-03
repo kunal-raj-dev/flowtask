@@ -48,7 +48,7 @@ export const BUILT_IN_TEMPLATES: TaskTemplate[] = [
   {
     id: 'tpl_weekly_reset',
     name: '🧹 Weekly Review & Mental Reset',
-    description: 'GTD weekly hygiene ritual to clear inboxes, triage backlogs, and plan the horizon.',
+    description: 'Weekly hygiene ritual to clear inboxes, triage backlogs, and plan the horizon.',
     defaultPriority: 'p2',
     defaultEstimatedMinutes: 30,
     subtaskTitles: [
@@ -62,12 +62,12 @@ export const BUILT_IN_TEMPLATES: TaskTemplate[] = [
   {
     id: 'tpl_morning_kickstart',
     name: '🌅 Morning Planning & Prioritization',
-    description: 'Quick 10-minute ritual to calibrate calendar and select Rule of 3 MITs.',
+    description: 'Quick 10-minute ritual to calibrate calendar and select Top 3 priorities.',
     defaultPriority: 'p1',
     defaultEstimatedMinutes: 15,
     subtaskTitles: [
       'Review calendar meetings and protect 2 focus blocks',
-      'Pin Top 3 Focus MITs for today',
+      'Pin Top 3 Focus for today',
       'Triage any overdue items without shame',
     ],
     contextTags: ['focus'],

@@ -2,23 +2,27 @@ import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
 import { Omnibar } from '../tasks/Omnibar';
+import { TimelineView } from './TimelineView';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
-import { Calendar, CalendarDays, Sparkles } from 'lucide-react';
+import { Calendar, CalendarDays, Clock, List } from 'lucide-react';
+import { SegmentedControl } from '../ui/SegmentedControl';
+import { EmptyState } from '../ui/EmptyState';
 import { KeyboardHaloDock } from '../tasks/KeyboardHaloDock';
 
 interface UpcomingViewProps {
   onSelectTask: (taskId: string) => void;
   onStartFocus: (taskId: string) => void;
-  onOpenBrainDump: () => void;
+  onOpenBrainDump?: () => void;
   onStartSprint?: (taskId: string) => void;
+  onOpenStudySession?: () => void;
 }
 
 export const UpcomingView: React.FC<UpcomingViewProps> = ({
   onSelectTask,
   onStartFocus,
-  onOpenBrainDump,
   onStartSprint,
+  onOpenStudySession,
 }) => {
   const {
     tasks,
@@ -28,49 +32,34 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
     deleteTask,
   } = useTaskContext();
 
+  const [presentationMode, setPresentationMode] = useState<'list' | 'timeline'>('list');
   const [selectedHorizonDate, setSelectedHorizonDate] = useState<string | null>(null);
-  const [selectedContextTag, setSelectedContextTag] = useState<string | null>(null);
 
   const today = new Date();
   const todayStr = formatLocalDate(today);
 
-  // Future incomplete tasks
-  const rawUpcomingTasks = tasks.filter(
-    (t) => t.status !== 'done' && t.dueDate && t.dueDate > todayStr
-  );
+  // Future incomplete tasks (plannedDate > todayStr or fallback dueDate > todayStr)
+  const rawUpcomingTasks = tasks.filter((t) => {
+    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
+    const taskDate = t.plannedDate || t.dueDate;
+    return taskDate && taskDate > todayStr;
+  });
 
-  // Extract available context tags for upcoming tasks
-  const availableContextTags = React.useMemo(() => {
-    const map = new Map<string, number>();
-    rawUpcomingTasks.forEach((t) => {
-      if (t.contextTags) {
-        t.contextTags.forEach((ctx) => {
-          map.set(ctx, (map.get(ctx) || 0) + 1);
-        });
-      }
-    });
-    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-  }, [rawUpcomingTasks]);
-
-  const upcomingTasks = selectedContextTag
-    ? rawUpcomingTasks.filter((t) => t.contextTags && t.contextTags.includes(selectedContextTag))
-    : rawUpcomingTasks;
-
-  // Generate 7-day horizon (Today + next 6 days)
-  const next7Days = Array.from({ length: 7 }).map((_, i) => {
+  // Generate 7-day horizon (Tomorrow + next 6 days)
+  const horizonDays = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(today);
-    d.setDate(d.getDate() + i);
+    d.setDate(d.getDate() + (i + 1));
     const dateStr = formatLocalDate(d);
     const dayTasks = tasks.filter((t) => {
-      if (t.status === 'done' || t.dueDate !== dateStr) return false;
-      if (selectedContextTag && (!t.contextTags || !t.contextTags.includes(selectedContextTag))) return false;
-      return true;
+      if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
+      const taskDate = t.plannedDate || t.dueDate;
+      return taskDate === dateStr;
     });
     const totalMinutes = dayTasks.reduce((acc, t) => acc + (t.estimatedMinutes || 25), 0);
     return {
       date: d,
       dateStr,
-      dayName: i === 0 ? 'Today' : i === 1 ? 'Tmrw' : d.toLocaleDateString(undefined, { weekday: 'short' }),
+      dayName: i === 0 ? 'Tmrw' : d.toLocaleDateString(undefined, { weekday: 'short' }),
       dayNumber: d.getDate(),
       taskCount: dayTasks.length,
       hoursText: totalMinutes > 0 ? `${(totalMinutes / 60).toFixed(1)}h` : 'Free',
@@ -89,49 +78,66 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
   const nextWeekEndStr = formatLocalDate(nextWeekEnd);
 
-  const tomorrowTasks = upcomingTasks.filter((t) => t.dueDate === tomorrowStr);
-  const thisWeekTasks = upcomingTasks.filter(
-    (t) => t.dueDate && t.dueDate > tomorrowStr && t.dueDate <= endOfWeekStr
-  );
-  const nextWeekTasks = upcomingTasks.filter(
-    (t) => t.dueDate && t.dueDate > endOfWeekStr && t.dueDate <= nextWeekEndStr
-  );
-  const laterTasks = upcomingTasks.filter(
-    (t) => t.dueDate && t.dueDate > nextWeekEndStr
-  );
+  // Filter tasks based on selected horizon date or full list
+  const activeTasksToDisplay = selectedHorizonDate
+    ? rawUpcomingTasks.filter((t) => (t.plannedDate || t.dueDate) === selectedHorizonDate)
+    : rawUpcomingTasks;
 
-  const { focusedTaskId, setFocusedIndex } = useKeyboardNavigation({
-    tasks: upcomingTasks,
+  const tomorrowTasks = activeTasksToDisplay.filter((t) => (t.plannedDate || t.dueDate) === tomorrowStr);
+  const thisWeekTasks = activeTasksToDisplay.filter((t) => {
+    const d = t.plannedDate || t.dueDate;
+    return d && d > tomorrowStr && d <= endOfWeekStr;
+  });
+  const nextWeekTasks = activeTasksToDisplay.filter((t) => {
+    const d = t.plannedDate || t.dueDate;
+    return d && d > endOfWeekStr && d <= nextWeekEndStr;
+  });
+  const laterTasks = activeTasksToDisplay.filter((t) => {
+    const d = t.plannedDate || t.dueDate;
+    return d && d > nextWeekEndStr;
+  });
+
+  const { focusedTaskId } = useKeyboardNavigation({
+    tasks: activeTasksToDisplay,
     onSelectTask,
     onToggleStatus: toggleTaskStatus,
     onTogglePinToday: toggleTaskPinToday,
     onUpdateTask: updateTask,
     onDeleteTask: deleteTask,
     onStartFocus,
-    enabled: true,
+    enabled: presentationMode === 'list',
   });
 
-  const focusedTask = upcomingTasks.find((t) => t.id === focusedTaskId);
+  const focusedTask = activeTasksToDisplay.find((t) => t.id === focusedTaskId);
 
-  const renderSection = (title: string, sectionTasks: typeof upcomingTasks, subtitle?: string) => {
+  const renderSection = (title: string, sectionTasks: typeof activeTasksToDisplay, subtitle?: string) => {
     if (sectionTasks.length === 0) return null;
     return (
       <div className="mb-7">
-        <div className="flex items-baseline justify-between mb-3">
-          <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
-            {title} ({sectionTasks.length})
-          </h3>
-          {subtitle && <span className="text-[11px] font-mono text-[var(--text-muted)]">{subtitle}</span>}
+        <div className="flex items-baseline justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              {title}
+            </h2>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-200 dark:bg-stone-800 text-[var(--text-secondary)] font-bold">
+              {sectionTasks.length}
+            </span>
+          </div>
+          {subtitle && (
+            <span className="text-[11px] text-[var(--text-muted)] font-medium">
+              {subtitle}
+            </span>
+          )}
         </div>
-        <div className="space-y-2.5">
+
+        <div className="space-y-2">
           {sectionTasks.map((task) => (
             <TaskCard
               key={task.id}
               task={task}
-              onSelectTask={onSelectTask}
-              onStartFocus={onStartFocus}
-              onStartSprint={onStartSprint}
               isKeyboardFocused={focusedTaskId === task.id}
+              onSelectTask={() => onSelectTask(task.id)}
+              onStartFocus={() => onStartFocus(task.id)}
             />
           ))}
         </div>
@@ -140,114 +146,68 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
-      <div className="flex items-center gap-3 mb-4 sm:mb-6">
-        <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs flex-shrink-0">
-          <CalendarDays size={20} className="stroke-[2.2]" />
+    <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
+      {/* View Header with Presentation Toggle */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
+            <CalendarDays size={20} className="stroke-[2.2]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+              Upcoming
+            </h1>
+            <p className="text-xs text-[var(--text-secondary)] font-medium">
+              {rawUpcomingTasks.length} planned future task{rawUpcomingTasks.length === 1 ? '' : 's'}
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
-            Upcoming Schedule
-          </h2>
-          <p className="text-xs text-[var(--text-secondary)] font-medium">
-            {upcomingTasks.length} scheduled tasks ahead
-          </p>
-        </div>
+
+        {/* List vs Timeline Presentation Switcher */}
+        <SegmentedControl<'list' | 'timeline'>
+          items={[
+            { id: 'list', label: 'List', icon: <List size={14} /> },
+            { id: 'timeline', label: 'Timeline', icon: <Clock size={14} /> },
+          ]}
+          value={presentationMode}
+          onChange={(mode) => setPresentationMode(mode)}
+        />
       </div>
 
-      <Omnibar onOpenBrainDump={onOpenBrainDump} />
-
-      {/* GTD Context Filter Rail */}
-      {availableContextTags.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1 mb-5 text-xs scrollbar-none animate-fade-in">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mr-1 shrink-0">
-            Context:
-          </span>
+      {/* 7-Day Planning Horizon Strip */}
+      <div className="mb-6 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 min-w-max">
           <button
             type="button"
-            onClick={() => setSelectedContextTag(null)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 ${
-              selectedContextTag === null
-                ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
-                : 'bg-stone-100 dark:bg-white/5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+            onClick={() => setSelectedHorizonDate(null)}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+              selectedHorizonDate === null
+                ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-hairline)]'
             }`}
           >
-            All Contexts
+            All Dates
           </button>
-          {availableContextTags.map(([tag, count]) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => setSelectedContextTag(selectedContextTag === tag ? null : tag)}
-              className={`px-2.5 py-1 rounded-lg font-mono text-xs flex items-center gap-1 transition-all shrink-0 ${
-                selectedContextTag === tag
-                  ? 'bg-teal-600 text-white font-bold shadow-xs'
-                  : 'bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 border border-teal-500/20'
-              }`}
-            >
-              <span>@{tag}</span>
-              <span className="text-[10px] opacity-75 font-sans font-semibold">({count})</span>
-            </button>
-          ))}
-        </div>
-      )}
 
-      {/* 7-Day Horizon Strip (Mini Week Planner) */}
-      <div className="mb-6 p-3 sm:p-4 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">
-            <Calendar size={14} className="text-amber-500" />
-            <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
-              7-Day Horizon
-            </span>
-          </div>
-          {selectedHorizonDate && (
-            <button
-              type="button"
-              onClick={() => setSelectedHorizonDate(null)}
-              className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline"
-            >
-              Show All Upcoming
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-          {next7Days.map((day) => {
-            const isSelected = selectedHorizonDate === day.dateStr;
-            const isCurrentDay = day.dateStr === todayStr;
-
+          {horizonDays.map((hd) => {
+            const isSelected = selectedHorizonDate === hd.dateStr;
             return (
               <button
-                key={day.dateStr}
+                key={hd.dateStr}
                 type="button"
-                onClick={() => {
-                  setSelectedHorizonDate(isSelected ? null : day.dateStr);
-                }}
-                className={`flex flex-col items-center py-2 sm:py-2.5 px-1 rounded-lg border transition-all duration-150 ${
+                onClick={() => setSelectedHorizonDate(isSelected ? null : hd.dateStr)}
+                className={`flex flex-col items-center px-3.5 py-1.5 rounded-xl text-xs transition-all border min-w-[70px] ${
                   isSelected
-                    ? 'bg-[var(--color-brand)] text-white border-[var(--color-brand)] shadow-xs scale-102'
-                    : isCurrentDay
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
-                    : 'bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l1)] border-[var(--border-hairline)] text-[var(--text-secondary)]'
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                    : 'bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--border-hairline)]'
                 }`}
               >
-                <span className={`text-[10px] sm:text-[11px] font-semibold ${isSelected ? 'text-white/80' : 'opacity-70'}`}>
-                  {day.dayName}
+                <span className={`text-[10px] font-semibold uppercase ${isSelected ? 'text-purple-200' : 'text-[var(--text-muted)]'}`}>
+                  {hd.dayName}
                 </span>
-                <span className={`text-sm sm:text-base font-black font-mono my-0.5 ${isSelected ? 'text-white' : 'text-[var(--text-primary)]'}`}>
-                  {day.dayNumber}
-                </span>
-                <span
-                  className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
-                    isSelected
-                      ? 'bg-white/20 text-white'
-                      : day.taskCount > 0
-                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                      : 'text-[var(--text-muted)]'
-                  }`}
-                >
-                  {day.taskCount > 0 ? `${day.taskCount}t` : '—'}
+                <span className="text-sm font-bold my-0.5">{hd.dayNumber}</span>
+                <span className={`text-[10px] ${isSelected ? 'text-purple-200' : 'text-[var(--text-secondary)]'}`}>
+                  {hd.taskCount > 0 ? `${hd.taskCount} tasks` : hd.hoursText}
                 </span>
               </button>
             );
@@ -255,76 +215,61 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
         </div>
       </div>
 
-      {selectedHorizonDate ? (
-        <div>
-          {renderSection(
-            `Tasks for ${selectedHorizonDate}`,
-            tasks.filter((t) => {
-              if (t.status === 'done' || t.dueDate !== selectedHorizonDate) return false;
-              if (selectedContextTag && (!t.contextTags || !t.contextTags.includes(selectedContextTag))) return false;
-              return true;
-            }),
-            selectedHorizonDate
-          )}
-          {tasks.filter((t) => {
-            if (t.status === 'done' || t.dueDate !== selectedHorizonDate) return false;
-            if (selectedContextTag && (!t.contextTags || !t.contextTags.includes(selectedContextTag))) return false;
-            return true;
-          }).length === 0 && (
-            <div className="text-center py-12 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-xl border border-[var(--border-hairline)]">
-              <Sparkles size={28} className="mx-auto mb-2 text-stone-300 dark:text-stone-700" />
-              <p className="text-xs font-semibold text-[var(--text-primary)]">No tasks scheduled for this day</p>
-              <p className="text-[11px] mt-1 text-[var(--text-secondary)]">Use the Omnibar above to schedule a task.</p>
-            </div>
-          )}
-        </div>
-      ) : upcomingTasks.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-xl border border-[var(--border-hairline)]">
-          <Calendar size={36} className="mx-auto mb-2 text-stone-300 dark:text-stone-700" />
-          {selectedContextTag ? (
-            <>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">
-                No upcoming tasks matching @{selectedContextTag}
-              </p>
-              <button
-                type="button"
-                onClick={() => setSelectedContextTag(null)}
-                className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-950 transition-all card-surface"
-              >
-                Clear Context Filter
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">No upcoming tasks scheduled</p>
-              <p className="text-xs mt-1 text-[var(--text-secondary)]">
-                Try adding a task like "Prepare slides next Monday at 10am #work"
-              </p>
-            </>
-          )}
+      {/* Presentation: Timeline vs List */}
+      {presentationMode === 'timeline' ? (
+        <div className="rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] p-4 sm:p-6 shadow-subtle">
+          <TimelineView
+            selectedDateStr={selectedHorizonDate || tomorrowStr}
+            onSelectTask={onSelectTask}
+            onStartFocus={onStartFocus}
+            onStartSprint={onStartSprint}
+            onOpenStudySession={onOpenStudySession}
+          />
         </div>
       ) : (
-        <div>
-          {renderSection('Tomorrow', tomorrowTasks, tomorrowStr)}
-          {renderSection('Later This Week', thisWeekTasks)}
-          {renderSection('Next Week', nextWeekTasks)}
-          {renderSection('Later & Future', laterTasks)}
-        </div>
-      )}
+        <>
+          {/* Quick Capture */}
+          <Omnibar />
 
-      {/* Keyboard Halo Dock for j/k spatial navigation */}
-      {focusedTask && (
-        <KeyboardHaloDock
-          task={focusedTask}
-          onSelect={() => onSelectTask(focusedTask.id)}
-          onToggleStatus={() => toggleTaskStatus(focusedTask.id)}
-          onStartFocus={() => onStartFocus(focusedTask.id)}
-          onRescheduleToday={() => updateTask(focusedTask.id, { dueDate: todayStr })}
-          onRescheduleTomorrow={() => updateTask(focusedTask.id, { dueDate: tomorrowStr })}
-          onRescheduleSomeday={() => updateTask(focusedTask.id, { dueDate: undefined, projectId: 'ideas' })}
-          onSetPriority={(priority) => updateTask(focusedTask.id, { priority })}
-          onDismiss={() => setFocusedIndex(-1)}
-        />
+          {/* Grouped Planning Sections */}
+          {selectedHorizonDate ? (
+            renderSection(
+              `Planned for ${selectedHorizonDate}`,
+              activeTasksToDisplay,
+              `${activeTasksToDisplay.length} tasks`
+            )
+          ) : (
+            <>
+              {renderSection('Tomorrow', tomorrowTasks, 'Next 24h')}
+              {renderSection('This Week', thisWeekTasks, 'Through Sunday')}
+              {renderSection('Next Week', nextWeekTasks, 'Following week')}
+              {renderSection('Later & Backlog', laterTasks, 'Future roadmap')}
+            </>
+          )}
+
+          {activeTasksToDisplay.length === 0 && (
+            <EmptyState
+              title={selectedHorizonDate ? 'No tasks on this date' : 'No upcoming tasks'}
+              description="Capture future work or schedule tasks from your Inbox."
+              icon={<Calendar size={28} className="text-purple-500" />}
+            />
+          )}
+
+          {/* Keyboard Halo Dock */}
+          {focusedTask && (
+            <KeyboardHaloDock
+              task={focusedTask}
+              onSelect={() => onSelectTask(focusedTask.id)}
+              onToggleStatus={() => toggleTaskStatus(focusedTask.id)}
+              onStartFocus={() => onStartFocus(focusedTask.id)}
+              onRescheduleToday={() => updateTask(focusedTask.id, { plannedDate: todayStr })}
+              onRescheduleTomorrow={() => updateTask(focusedTask.id, { plannedDate: tomorrowStr })}
+              onRescheduleSomeday={() => updateTask(focusedTask.id, { isSomeday: true, plannedDate: undefined })}
+              onSetPriority={(p) => updateTask(focusedTask.id, { priority: p })}
+              onDismiss={() => {}}
+            />
+          )}
+        </>
       )}
     </div>
   );

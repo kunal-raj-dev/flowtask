@@ -32,13 +32,13 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
   const completedToday = tasks.filter(
     (t) =>
       t.status === 'done' &&
-      (t.dueDate === todayStr ||
+      ((t.plannedDate || t.dueDate) === todayStr ||
         (t.completedAt && formatLocalDate(new Date(t.completedAt)) === todayStr))
   );
 
   // Incomplete tasks scheduled for today
   const incompleteToday = tasks.filter(
-    (t) => t.status !== 'done' && (t.dueDate === todayStr || t.isPinnedToday)
+    (t) => t.status !== 'done' && ((t.plannedDate || t.dueDate) === todayStr || t.isPinnedToday)
   );
 
   // Metrics
@@ -68,14 +68,14 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
     const tomorrowStr = formatLocalDate(tomorrow);
 
     incompleteToday.forEach((t) => {
-      updateTask(t.id, { dueDate: tomorrowStr, isPinnedToday: false });
+      updateTask(t.id, { plannedDate: tomorrowStr, isPinnedToday: false });
     });
     audioEngine.playClickSound();
   };
 
   const handleMoveAllToSomeday = () => {
     incompleteToday.forEach((t) => {
-      updateTask(t.id, { dueDate: undefined, isPinnedToday: false });
+      updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
     });
     audioEngine.playClickSound();
   };
@@ -183,7 +183,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
-                      onClick={() => updateTask(t.id, { dueDate: undefined, isPinnedToday: false })}
+                      onClick={() => updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false })}
                       title="Move to someday"
                       className="text-[var(--text-muted)] hover:text-amber-500 p-1"
                     >
@@ -194,7 +194,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
                       onClick={() => {
                         const tomorrow = new Date();
                         tomorrow.setDate(tomorrow.getDate() + 1);
-                        updateTask(t.id, { dueDate: formatLocalDate(tomorrow), isPinnedToday: false });
+                        updateTask(t.id, { plannedDate: formatLocalDate(tomorrow), isPinnedToday: false });
                       }}
                       title="Push to tomorrow"
                       className="text-[var(--text-muted)] hover:text-amber-500 p-1"

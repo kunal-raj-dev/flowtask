@@ -36,9 +36,9 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
   sevenDaysAgo.setDate(today.getDate() - 7);
   const sevenDaysAgoMs = sevenDaysAgo.getTime();
 
-  // Step 1: Open tasks in Inbox or without dueDate
+  // Step 1: Open tasks in Inbox or without planned/due date
   const inboxTasks = tasks.filter(
-    (t) => t.status !== 'done' && (t.projectId === 'inbox' || !t.dueDate)
+    (t) => t.status !== 'done' && (t.projectId === 'inbox' || (!t.plannedDate && !t.dueDate && !t.isSomeday))
   );
 
   // Step 2: Completed tasks in the past 7 days
@@ -65,9 +65,11 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
   nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
   const nextWeekEndStr = formatLocalDate(nextWeekEnd);
 
-  const upcomingNextWeekTasks = tasks.filter(
-    (t) => t.status !== 'done' && t.dueDate && t.dueDate >= todayStr && t.dueDate <= nextWeekEndStr
-  );
+  const upcomingNextWeekTasks = tasks.filter((t) => {
+    if (t.status === 'done') return false;
+    const targetDate = t.plannedDate || t.dueDate;
+    return targetDate && targetDate >= todayStr && targetDate <= nextWeekEndStr;
+  });
 
   const handleNextStep = () => {
     if (step === 1) {
@@ -179,7 +181,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         type="button"
-                        onClick={() => updateTask(task.id, { dueDate: todayStr })}
+                        onClick={() => updateTask(task.id, { plannedDate: todayStr, isSomeday: false })}
                         className="px-2 py-1 text-[10px] font-semibold bg-stone-900 dark:bg-white text-white dark:text-stone-950 rounded-lg shadow-xs hover:opacity-90"
                       >
                         Today
@@ -189,7 +191,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                         onClick={() => {
                           const tmrw = new Date();
                           tmrw.setDate(tmrw.getDate() + 1);
-                          updateTask(task.id, { dueDate: formatLocalDate(tmrw) });
+                          updateTask(task.id, { plannedDate: formatLocalDate(tmrw), isSomeday: false });
                         }}
                         className="px-2 py-1 text-[10px] font-medium bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg"
                       >
@@ -197,7 +199,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => updateTask(task.id, { projectId: 'ideas', dueDate: undefined })}
+                        onClick={() => updateTask(task.id, { isSomeday: true, plannedDate: undefined })}
                         className="px-2 py-1 text-[10px] font-medium bg-[var(--bg-surface-l1)] text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-[var(--border-hairline)] rounded-lg"
                       >
                         Someday
@@ -297,7 +299,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-[var(--text-primary)] truncate">{task.title}</p>
                       <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                        Due: {task.dueDate} • Priority: {task.priority.toUpperCase()}
+                        Date: {task.plannedDate || task.dueDate || 'No date'} • Priority: {task.priority.toUpperCase()}
                       </p>
                     </div>
 

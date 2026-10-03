@@ -33,6 +33,9 @@ interface TaskListProps {
   onStartFocus: (taskId: string) => void;
   onOpenBrainDump: () => void;
   onStartSprint?: (taskId: string) => void;
+  filterInbox?: boolean;
+  filterSomeday?: boolean;
+  filterAll?: boolean;
 }
 
 export const TaskList: React.FC<TaskListProps> = ({
@@ -40,6 +43,9 @@ export const TaskList: React.FC<TaskListProps> = ({
   onStartFocus,
   onOpenBrainDump,
   onStartSprint,
+  filterInbox,
+  filterSomeday,
+  filterAll,
 }) => {
   const {
     tasks,
@@ -59,6 +65,10 @@ export const TaskList: React.FC<TaskListProps> = ({
   const [selectedContextTag, setSelectedContextTag] = useState<string | null>(null);
   const [dismissedSweeperView, setDismissedSweeperView] = useState<string | null>(null);
 
+  const isInbox = filterInbox || activeView === 'inbox';
+  const isSomeday = filterSomeday || activeView === 'someday';
+  const isAll = filterAll || activeView === 'all';
+
   let viewTitle = 'Tasks';
   let viewSubtitle = '';
   let ViewIcon = Folder;
@@ -66,20 +76,50 @@ export const TaskList: React.FC<TaskListProps> = ({
   let filtered: Task[] = [];
   let completed: Task[] = [];
 
-  if (activeView === 'inbox') {
+  if (isInbox) {
     viewTitle = 'Inbox';
     viewSubtitle = 'Capture thoughts quickly and organize them later';
     ViewIcon = Inbox;
     gradientBg = 'from-blue-500 to-indigo-600';
-    filtered = tasks.filter((t) => t.status !== 'done' && t.projectId === 'inbox' && !t.dueDate);
-    completed = tasks.filter((t) => t.status === 'done' && t.projectId === 'inbox');
-  } else if (activeView === 'someday') {
+    filtered = tasks.filter(
+      (t) =>
+        t.status !== 'done' &&
+        !t.deletedAt &&
+        !t.archivedAt &&
+        t.projectId === 'inbox' &&
+        !t.dueDate &&
+        !t.plannedDate &&
+        !t.isSomeday
+    );
+    completed = tasks.filter(
+      (t) => t.status === 'done' && !t.deletedAt && !t.archivedAt && t.projectId === 'inbox'
+    );
+  } else if (isSomeday) {
     viewTitle = 'Someday / Maybe';
     viewSubtitle = 'Ideas, low-pressure backlog, and things to consider eventually';
     ViewIcon = Lightbulb;
     gradientBg = 'from-amber-400 to-yellow-500';
-    filtered = tasks.filter((t) => t.status !== 'done' && (t.projectId === 'ideas' || !t.dueDate));
-    completed = tasks.filter((t) => t.status === 'done' && t.projectId === 'ideas');
+    filtered = tasks.filter(
+      (t) =>
+        t.status !== 'done' &&
+        !t.deletedAt &&
+        !t.archivedAt &&
+        Boolean(t.isSomeday || (!t.dueDate && !t.plannedDate && t.projectId === 'ideas'))
+    );
+    completed = tasks.filter(
+      (t) =>
+        t.status === 'done' &&
+        !t.deletedAt &&
+        !t.archivedAt &&
+        Boolean(t.isSomeday || t.projectId === 'ideas')
+    );
+  } else if (isAll) {
+    viewTitle = 'All Tasks';
+    viewSubtitle = 'Complete workspace backlog and active tasks';
+    ViewIcon = CheckCircle2;
+    gradientBg = 'from-stone-700 to-stone-900';
+    filtered = tasks.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
+    completed = tasks.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
   } else if (activeView.startsWith('project:')) {
     const projId = activeView.split(':')[1];
     const project = projects.find((p) => p.id === projId);
@@ -87,8 +127,12 @@ export const TaskList: React.FC<TaskListProps> = ({
     viewSubtitle = 'Project workspace';
     ViewIcon = Folder;
     gradientBg = 'from-purple-500 to-indigo-600';
-    filtered = tasks.filter((t) => t.status !== 'done' && t.projectId === projId);
-    completed = tasks.filter((t) => t.status === 'done' && t.projectId === projId);
+    filtered = tasks.filter(
+      (t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt && t.projectId === projId
+    );
+    completed = tasks.filter(
+      (t) => t.status === 'done' && !t.deletedAt && !t.archivedAt && t.projectId === projId
+    );
   } else if (activeView.startsWith('smart:')) {
     const svId = activeView.split(':')[1];
     const smartView = smartViews.find((sv) => sv.id === svId);
@@ -111,8 +155,15 @@ export const TaskList: React.FC<TaskListProps> = ({
       gradientBg = 'from-indigo-500 to-blue-600';
     }
     const matching = smartView ? filterTasksByPredicate(tasks, smartView.predicate) : [];
-    filtered = matching.filter((t) => t.status !== 'done');
-    completed = matching.filter((t) => t.status === 'done');
+    filtered = matching.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
+    completed = matching.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
+  } else {
+    viewTitle = 'All Tasks';
+    viewSubtitle = 'Active workspace tasks';
+    ViewIcon = CheckCircle2;
+    gradientBg = 'from-stone-700 to-stone-900';
+    filtered = tasks.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
+    completed = tasks.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
   }
 
   // Extract available context tags for this list
@@ -158,14 +209,14 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   const handleArchiveStale = () => {
     const ids = staleBacklogTasks.map((t) => t.id);
-    batchUpdateTasks(ids, { status: 'done', completedAt: Date.now() });
-    audioEngine.playTaskComplete();
+    batchUpdateTasks(ids, { archivedAt: Date.now() });
+    audioEngine.playClickSound();
     showToast(`Archived ${ids.length} stale tasks.`);
   };
 
   const handleSweepToSomeday = () => {
     const ids = staleBacklogTasks.map((t) => t.id);
-    batchUpdateTasks(ids, { dueDate: undefined, projectId: 'ideas' });
+    batchUpdateTasks(ids, { isSomeday: true, plannedDate: undefined });
     audioEngine.playClickSound();
     showToast(`Moved ${ids.length} tasks to Someday backlog.`);
   };
@@ -173,7 +224,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   const handlePushToToday = () => {
     const todayStr = formatLocalDate(new Date());
     const ids = staleBacklogTasks.map((t) => t.id);
-    batchUpdateTasks(ids, { dueDate: todayStr });
+    batchUpdateTasks(ids, { plannedDate: todayStr });
     audioEngine.playClickSound();
     showToast(`Scheduled ${ids.length} tasks for Today!`);
   };
@@ -444,13 +495,13 @@ export const TaskList: React.FC<TaskListProps> = ({
           onSelect={() => onSelectTask(focusedTask.id)}
           onToggleStatus={() => toggleTaskStatus(focusedTask.id)}
           onStartFocus={() => onStartFocus(focusedTask.id)}
-          onRescheduleToday={() => updateTask(focusedTask.id, { dueDate: formatLocalDate(new Date()) })}
+          onRescheduleToday={() => updateTask(focusedTask.id, { plannedDate: formatLocalDate(new Date()) })}
           onRescheduleTomorrow={() => {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            updateTask(focusedTask.id, { dueDate: formatLocalDate(tomorrow) });
+            updateTask(focusedTask.id, { plannedDate: formatLocalDate(tomorrow) });
           }}
-          onRescheduleSomeday={() => updateTask(focusedTask.id, { dueDate: undefined, projectId: 'ideas' })}
+          onRescheduleSomeday={() => updateTask(focusedTask.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false })}
           onSetPriority={(priority) => updateTask(focusedTask.id, { priority })}
           onDismiss={() => setFocusedIndex(-1)}
         />

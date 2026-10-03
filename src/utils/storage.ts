@@ -237,14 +237,67 @@ export function exportToMarkdown(tasks: Task[], projects: Project[]): string {
 }
 
 /**
- * Exports data to JSON
+ * Exports data to JSON (supports v1 and v2 versioned export)
  */
-export function exportToJSON(tasks: Task[], projects: Project[]): string {
-  return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), tasks, projects }, null, 2);
+export function exportToJSON(
+  tasks: Task[],
+  projects: Project[],
+  version: number = 1,
+  options?: { customViews?: unknown[]; focusHistory?: unknown[] }
+): string {
+  return JSON.stringify(
+    {
+      version,
+      exportedAt: new Date().toISOString(),
+      tasks,
+      projects,
+      customViews: options?.customViews || [],
+      focusHistory: options?.focusHistory || [],
+    },
+    null,
+    2
+  );
 }
 
 /**
- * Exports tasks to RFC-4180 compliant CSV
+ * Parses and migrates imported JSON payload (supports version 1 and 2)
+ */
+export function parseImportPayload(rawJson: string): {
+  tasks: Task[];
+  projects: Project[];
+  version: number;
+} {
+  const data = JSON.parse(rawJson);
+  const version = typeof data.version === 'number' ? data.version : 1;
+  const rawTasks: Task[] = Array.isArray(data.tasks) ? data.tasks : [];
+  const rawProjects: Project[] = Array.isArray(data.projects) ? data.projects : DEFAULT_PROJECTS;
+
+  const todayStr = formatLocalDate(new Date());
+
+  // Migrate tasks: ensure plannedDate, Someday, and Top 3 are properly populated
+  const migratedTasks: Task[] = rawTasks.map((t) => {
+    const plannedDate = t.plannedDate || t.dueDate;
+    const isSomeday = t.isSomeday || t.projectId === 'ideas';
+    const topThreeDate = t.topThreeDate || (t.isPinnedToday ? todayStr : undefined);
+
+    return {
+      ...t,
+      plannedDate,
+      isSomeday,
+      topThreeDate,
+      isPinnedToday: Boolean(t.isPinnedToday || (topThreeDate && topThreeDate === todayStr)),
+    };
+  });
+
+  return {
+    tasks: migratedTasks,
+    projects: rawProjects,
+    version,
+  };
+}
+
+/**
+ * Exports tasks to RFC-4180 compliant CSV with OWASP formula injection protection
  */
 export function exportToCSV(tasks: Task[], projects: Project[]): string {
   const projectMap = new Map<string, string>();
@@ -252,7 +305,13 @@ export function exportToCSV(tasks: Task[], projects: Project[]): string {
 
   const escapeCSV = (val: any) => {
     if (val === undefined || val === null) return '';
-    const str = String(val);
+    let str = String(val);
+
+    // Prevent CSV formula injection by prepending single quote if starting with formula triggers
+    if (/^[=+\-@\t\r]/.test(str)) {
+      str = `'${str}`;
+    }
+
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
       return `"${str.replace(/"/g, '""')}"`;
     }
@@ -265,6 +324,7 @@ export function exportToCSV(tasks: Task[], projects: Project[]): string {
     'Status',
     'Priority',
     'Project',
+    'Planned Date',
     'Due Date',
     'Due Time',
     'Estimated (min)',
@@ -292,6 +352,7 @@ export function exportToCSV(tasks: Task[], projects: Project[]): string {
       escapeCSV(t.status),
       escapeCSV(t.priority.toUpperCase()),
       escapeCSV(projName),
+      escapeCSV(t.plannedDate || ''),
       escapeCSV(t.dueDate || ''),
       escapeCSV(t.dueTime || ''),
       escapeCSV(t.estimatedMinutes ?? ''),
@@ -307,3 +368,4 @@ export function exportToCSV(tasks: Task[], projects: Project[]): string {
 
   return [headers.join(','), ...rows].join('\n');
 }
+

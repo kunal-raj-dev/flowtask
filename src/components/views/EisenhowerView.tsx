@@ -6,12 +6,15 @@ import { formatLocalDate } from '../../utils/nlpParser';
 
 interface EisenhowerViewProps {
   onSelectTask: (taskId: string) => void;
+  projectId?: string;
 }
 
 export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   onSelectTask,
+  projectId,
 }) => {
-  const { tasks, updateTask, addTask, toggleTaskStatus } = useTaskContext();
+  const { tasks: allTasks, updateTask, addTask, toggleTaskStatus } = useTaskContext();
+  const tasks = projectId ? allTasks.filter((t) => t.projectId === projectId) : allTasks;
   const [mobileQuadrant, setMobileQuadrant] = useState<Priority>('p1');
   const [addingToPriority, setAddingToPriority] = useState<Priority | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
@@ -246,7 +249,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) => updateTask(t.id, { dueDate: todayStr }));
+                        quadTasks.forEach((t) => updateTask(t.id, { plannedDate: todayStr }));
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-semibold text-[11px] transition-colors"
                       title="Schedule all Q1 tasks for Today"
@@ -259,7 +262,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) => updateTask(t.id, { dueDate: tomorrowStr }));
+                        quadTasks.forEach((t) => updateTask(t.id, { plannedDate: tomorrowStr }));
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-semibold text-[11px] transition-colors"
                       title="Schedule all Q2 tasks for Tomorrow"
@@ -272,7 +275,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) => updateTask(t.id, { dueDate: todayStr }));
+                        quadTasks.forEach((t) => updateTask(t.id, { plannedDate: todayStr }));
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-semibold text-[11px] transition-colors"
                       title="Batch focus Q3 tasks for Today"
@@ -285,10 +288,10 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        quadTasks.forEach((t) => updateTask(t.id, { dueDate: undefined }));
+                        quadTasks.forEach((t) => updateTask(t.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false }));
                       }}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-500/10 hover:bg-stone-500/20 text-stone-600 dark:text-stone-400 font-semibold text-[11px] transition-colors"
-                      title="Clear due dates and park all in Someday"
+                      title="Park all in Someday backlog"
                     >
                       <Archive size={11} className="stroke-[2.2]" />
                       <span>Park in Someday</span>

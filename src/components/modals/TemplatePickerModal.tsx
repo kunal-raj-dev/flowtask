@@ -95,7 +95,7 @@ export const TemplatePickerModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
-                Workflow Blueprints & Templates
+                Workflow Templates
               </h2>
               <p className="text-xs text-[var(--text-secondary)]">
                 Pre-configured checklists and workflows to execute operations with zero setup
@@ -200,7 +200,7 @@ export const TemplatePickerModal: React.FC = () => {
                       className="px-3.5 py-2 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
                     >
                       <Plus size={14} />
-                      <span>Use Blueprint</span>
+                      <span>Use Template</span>
                     </button>
                   </div>
                 </div>

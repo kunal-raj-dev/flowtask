@@ -34,6 +34,7 @@ interface TimelineViewProps {
   onStartFocus: (taskId: string) => void;
   onStartSprint?: (taskId: string) => void;
   onOpenStudySession?: () => void;
+  selectedDateStr?: string;
 }
 
 export const TimelineView: React.FC<TimelineViewProps> = ({
@@ -41,6 +42,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onStartFocus,
   onStartSprint,
   onOpenStudySession,
+  selectedDateStr,
 }) => {
   const {
     tasks,
@@ -76,12 +78,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   }, []);
 
   const todayStr = formatLocalDate(new Date());
+  const effectiveDateStr = selectedDateStr || todayStr;
 
-  // Filter tasks belonging to Today
+  // Filter tasks belonging to the selected date
   const todayTasks = tasks.filter((t) => {
-    const isDueToday = t.dueDate === todayStr;
-    const isPinned = t.isPinnedToday;
-    return isDueToday || isPinned;
+    if (t.deletedAt || t.archivedAt) return false;
+    const matchesPlanned = t.plannedDate === effectiveDateStr;
+    const matchesDue = t.dueDate === effectiveDateStr;
+    const matchesTopThree = t.isPinnedToday && (t.topThreeDate === effectiveDateStr || (!t.topThreeDate && effectiveDateStr === todayStr));
+    return matchesPlanned || matchesDue || matchesTopThree;
   });
 
   const START_HOUR = TIMELINE_START_HOUR;

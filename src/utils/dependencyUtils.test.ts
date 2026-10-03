@@ -3,6 +3,9 @@ import {
   isTaskBlocked,
   getPotentialBlockingCandidates,
   mergeTaskData,
+  wouldCreateCycle,
+  getMergePreview,
+  redirectDependencies,
 } from './dependencyUtils';
 import type { Task } from '../types/task';
 
@@ -86,5 +89,194 @@ describe('dependencyUtils', () => {
     expect(merged.priority).toBe('p1'); // p1 wins
     expect(merged.contextTags).toEqual(['computer', 'desk']);
     expect(merged.estimatedMinutes).toBe(75);
+  });
+
+  describe('wouldCreateCycle', () => {
+    it('detects self-dependency cycle', () => {
+      expect(wouldCreateCycle('task-a', 'task-a', [blockingTask])).toBe(true);
+    });
+
+    it('detects 2-hop circular dependency', () => {
+      // taskA is blocked by taskB; attempting to set taskA as blocker for taskB creates a cycle
+      const taskA: Task = {
+        id: 'task-a',
+        title: 'Task A',
+        status: 'todo',
+        priority: 'p2',
+        projectId: 'work',
+        blockedBy: ['task-b'],
+        subtasks: [],
+        createdAt: 10,
+      };
+      const taskB: Task = {
+        id: 'task-b',
+        title: 'Task B',
+        status: 'todo',
+        priority: 'p2',
+        projectId: 'work',
+        subtasks: [],
+        createdAt: 20,
+      };
+
+      // Adding taskA as blocker for taskB (taskB blockedBy taskA) creates a cycle: B -> A -> B
+      expect(wouldCreateCycle('task-b', 'task-a', [taskA, taskB])).toBe(true);
+      // Adding taskB as blocker for taskA does not create a cycle since taskB has no dependencies
+      expect(wouldCreateCycle('task-a', 'task-b', [taskA, taskB])).toBe(false);
+    });
+
+    it('detects 3-hop transitive circular dependency', () => {
+      // Chain: A is blocked by B, B is blocked by C.
+      // If we attempt to set A as blocker for C (C blockedBy A), cycle C -> A -> B -> C is formed.
+      const taskA: Task = {
+        id: 'task-a',
+        title: 'Task A',
+        status: 'todo',
+        priority: 'p2',
+        projectId: 'work',
+        blockedBy: ['task-b'],
+        subtasks: [],
+        createdAt: 10,
+      };
+      const taskB: Task = {
+        id: 'task-b',
+        title: 'Task B',
+        status: 'todo',
+        priority: 'p2',
+        projectId: 'work',
+        blockedBy: ['task-c'],
+        subtasks: [],
+        createdAt: 20,
+      };
+      const taskC: Task = {
+        id: 'task-c',
+        title: 'Task C',
+        status: 'todo',
+        priority: 'p2',
+        projectId: 'work',
+        subtasks: [],
+        createdAt: 30,
+      };
+
+      const tasks = [taskA, taskB, taskC];
+      expect(wouldCreateCycle('task-c', 'task-a', tasks)).toBe(true);
+      expect(wouldCreateCycle('task-c', 'task-b', tasks)).toBe(true);
+    });
+
+    it('returns false for independent valid dependencies', () => {
+      const taskA: Task = {
+        id: 'task-a',
+        title: 'Task A',
+        status: 'todo',
+        priority: 'p2',
+        projectId: 'work',
+        subtasks: [],
+        createdAt: 10,
+      };
+      const taskB: Task = {
+        id: 'task-b',
+        title: 'Task B',
+        status: 'todo',
+        priority: 'p2',
+        projectId: 'work',
+        subtasks: [],
+        createdAt: 20,
+      };
+
+      expect(wouldCreateCycle('task-a', 'task-b', [taskA, taskB])).toBe(false);
+    });
+  });
+
+  describe('getMergePreview', () => {
+    it('detects project, priority, and date conflicts and previews redirects', () => {
+      const target: Task = {
+        id: 'target-1',
+        title: 'Main Feature',
+        status: 'todo',
+        priority: 'p3',
+        projectId: 'work',
+        dueDate: '2026-10-10',
+        subtasks: [{ id: 's1', title: 'Target Sub', completed: false }],
+        createdAt: 100,
+      };
+
+      const source: Task = {
+        id: 'source-1',
+        title: 'Duplicate Feature',
+        status: 'todo',
+        priority: 'p1',
+        projectId: 'personal',
+        dueDate: '2026-10-15',
+        subtasks: [{ id: 's2', title: 'Source Sub', completed: true }],
+        createdAt: 200,
+      };
+
+      const dependentTask: Task = {
+        id: 'dep-1',
+        title: 'Dependent Task',
+        status: 'todo',
+        priority: 'p2',
+        projectId: 'work',
+        blockedBy: ['source-1'],
+        subtasks: [],
+        createdAt: 300,
+      };
+
+      const allTasks = [target, source, dependentTask];
+      const preview = getMergePreview(target, source, allTasks);
+
+      // Conflicts
+      expect(preview.conflicts.length).toBe(3);
+      const projConflict = preview.conflicts.find((c) => c.field === 'Project');
+      expect(projConflict?.resolvedValue).toBe('work');
+
+      const prioConflict = preview.conflicts.find((c) => c.field === 'Priority');
+      expect(prioConflict?.resolvedValue).toBe('P1');
+
+      const dueConflict = preview.conflicts.find((c) => c.field === 'Due Date');
+      expect(dueConflict?.resolvedValue).toBe('2026-10-10');
+
+      // Redirected tasks
+      expect(preview.redirectedTasks.length).toBe(1);
+      expect(preview.redirectedTasks[0].taskId).toBe('dep-1');
+
+      // Combined updates
+      expect(preview.combinedTaskUpdates.subtasks?.length).toBe(2);
+      expect(preview.combinedTaskUpdates.priority).toBe('p1');
+    });
+  });
+
+  describe('redirectDependencies', () => {
+    it('redirects oldId to newId in blockedBy arrays and prevents self-block', () => {
+      const tasks: Task[] = [
+        {
+          id: 'task-1',
+          title: 'Task 1',
+          status: 'todo',
+          priority: 'p2',
+          projectId: 'work',
+          blockedBy: ['old-id', 'other-id'],
+          subtasks: [],
+          createdAt: 10,
+        },
+        {
+          id: 'new-id',
+          title: 'Target Task',
+          status: 'todo',
+          priority: 'p1',
+          projectId: 'work',
+          blockedBy: ['old-id'], // would become new-id, so should be filtered out to avoid self-block
+          subtasks: [],
+          createdAt: 20,
+        },
+      ];
+
+      const redirected = redirectDependencies(tasks, 'old-id', 'new-id');
+      const t1 = redirected.find((t) => t.id === 'task-1');
+      expect(t1?.blockedBy).toContain('new-id');
+      expect(t1?.blockedBy).not.toContain('old-id');
+
+      const target = redirected.find((t) => t.id === 'new-id');
+      expect(target?.blockedBy).not.toContain('new-id'); // Self block filtered out
+    });
   });
 });

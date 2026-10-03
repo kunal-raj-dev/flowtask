@@ -159,27 +159,27 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     audioEngine.playClickSound();
 
     if (action === 'today') {
-      updateTask(task.id, { dueDate: todayStr });
+      updateTask(task.id, { plannedDate: todayStr });
     } else if (action === 'tomorrow') {
       const tmrw = new Date();
       tmrw.setDate(tmrw.getDate() + 1);
-      updateTask(task.id, { dueDate: formatLocalDate(tmrw) });
+      updateTask(task.id, { plannedDate: formatLocalDate(tmrw) });
     } else if (action === 'weekend') {
       const sat = new Date();
       const day = sat.getDay();
       const diff = (6 - day + 7) % 7 || 7;
       sat.setDate(sat.getDate() + diff);
-      updateTask(task.id, { dueDate: formatLocalDate(sat) });
+      updateTask(task.id, { plannedDate: formatLocalDate(sat) });
     } else if (action === 'next_week') {
       const mon = new Date();
       const day = mon.getDay();
       const diff = (8 - day) % 7 || 7;
       mon.setDate(mon.getDate() + diff);
-      updateTask(task.id, { dueDate: formatLocalDate(mon) });
+      updateTask(task.id, { plannedDate: formatLocalDate(mon) });
     } else if (action === 'someday') {
-      updateTask(task.id, { dueDate: undefined, projectId: 'ideas', isPinnedToday: false });
+      updateTask(task.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
     } else if (action === 'clear') {
-      updateTask(task.id, { dueDate: undefined, dueTime: undefined, isPinnedToday: false });
+      updateTask(task.id, { plannedDate: undefined, dueDate: undefined, dueTime: undefined, isPinnedToday: false });
     }
   };
 
@@ -376,7 +376,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {task.isPinnedToday && !isDone && (
             <Badge variant="focus" size="xs">
               <Star size={9} className="fill-amber-500 text-amber-500" />
-              MIT
+              Top 3
             </Badge>
           )}
         </div>

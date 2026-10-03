@@ -126,7 +126,7 @@ export function useKeyboardNavigation({
           if (focusedTaskId && onUpdateTask) {
             e.preventDefault();
             const todayStr = formatLocalDate(new Date());
-            onUpdateTask(focusedTaskId, { dueDate: todayStr });
+            onUpdateTask(focusedTaskId, { plannedDate: todayStr });
           }
           break;
         }
@@ -137,7 +137,7 @@ export function useKeyboardNavigation({
             e.preventDefault();
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            onUpdateTask(focusedTaskId, { dueDate: formatLocalDate(tomorrow) });
+            onUpdateTask(focusedTaskId, { plannedDate: formatLocalDate(tomorrow) });
           }
           break;
         }
@@ -146,7 +146,7 @@ export function useKeyboardNavigation({
         case 's': {
           if (focusedTaskId && onUpdateTask) {
             e.preventDefault();
-            onUpdateTask(focusedTaskId, { dueDate: undefined, projectId: 'ideas' });
+            onUpdateTask(focusedTaskId, { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
           }
           break;
         }

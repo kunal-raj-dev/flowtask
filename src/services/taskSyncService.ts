@@ -3,6 +3,7 @@ import {
   doc,
   setDoc,
   deleteDoc,
+  deleteField,
   onSnapshot,
   writeBatch,
   getDocs,
@@ -10,6 +11,30 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Task, Project } from '../types/task';
+
+const OPTIONAL_TASK_FIELDS: (keyof Task)[] = [
+  'plannedDate',
+  'dueDate',
+  'dueTime',
+  'topThreeDate',
+  'description',
+  'recurrence',
+  'customRecurrence',
+  'scheduledStart',
+  'scheduledEnd',
+  'timezone',
+  'sessionMetadata',
+  'completedAt',
+  'archivedAt',
+  'deletedAt',
+  'isSomeday',
+  'isPinnedToday',
+  'tags',
+  'contextTags',
+  'blockedBy',
+  'estimatedMinutes',
+  'timeSpentMinutes',
+];
 
 /**
  * Removes undefined fields from an object so Firestore doesn't reject writes
@@ -32,6 +57,22 @@ export function sanitizeForFirestore<T>(data: T): Record<string, unknown> {
     }
   }
   return result;
+}
+
+/**
+ * Prepares task for Firestore merge write by assigning deleteField() to cleared optional fields.
+ */
+export function prepareTaskForFirestore(task: Task): Record<string, unknown> {
+  const sanitized = sanitizeForFirestore(task);
+
+  for (const field of OPTIONAL_TASK_FIELDS) {
+    const val = (task as unknown as Record<string, unknown>)[field];
+    if (val === undefined || val === null || val === '') {
+      sanitized[field] = deleteField();
+    }
+  }
+
+  return sanitized;
 }
 
 export const taskSyncService = {
@@ -98,13 +139,13 @@ export const taskSyncService = {
   },
 
   /**
-   * Upsert a single task in Firestore
+   * Upsert a single task in Firestore with deleteField() for cleared attributes
    */
   async saveTask(userId: string, task: Task): Promise<void> {
     if (!db) return;
     const taskDoc = doc(db, 'users', userId, 'tasks', task.id);
-    const sanitized = sanitizeForFirestore(task);
-    await setDoc(taskDoc, sanitized, { merge: true });
+    const payload = prepareTaskForFirestore(task);
+    await setDoc(taskDoc, payload, { merge: true });
   },
 
   /**
@@ -114,6 +155,19 @@ export const taskSyncService = {
     if (!db) return;
     const taskDoc = doc(db, 'users', userId, 'tasks', taskId);
     await deleteDoc(taskDoc);
+  },
+
+  /**
+   * Bulk delete tasks from Firestore
+   */
+  async batchDeleteTasks(userId: string, taskIds: string[]): Promise<void> {
+    if (!db || taskIds.length === 0) return;
+    const batch = writeBatch(db);
+    for (const id of taskIds) {
+      const taskDoc = doc(db, 'users', userId, 'tasks', id);
+      batch.delete(taskDoc);
+    }
+    await batch.commit();
   },
 
   /**
@@ -146,7 +200,7 @@ export const taskSyncService = {
   },
 
   /**
-   * Batch migrate local tasks & projects to Firestore (e.g. on first signup or guest link)
+   * Batch migrate local tasks & projects to Firestore
    */
   async batchMigrate(userId: string, tasks: Task[], projects: Project[]): Promise<void> {
     if (!db) return;
@@ -154,7 +208,38 @@ export const taskSyncService = {
 
     for (const task of tasks) {
       const taskDoc = doc(db, 'users', userId, 'tasks', task.id);
-      batch.set(taskDoc, sanitizeForFirestore(task), { merge: true });
+      batch.set(taskDoc, prepareTaskForFirestore(task), { merge: true });
+    }
+
+    for (const project of projects) {
+      const projDoc = doc(db, 'users', userId, 'projects', project.id);
+      batch.set(projDoc, sanitizeForFirestore(project), { merge: true });
+    }
+
+    await batch.commit();
+  },
+
+  /**
+   * Replace all remote tasks & projects with replacement array, deleting remote records not present.
+   */
+  async batchReplace(userId: string, tasks: Task[], projects: Project[]): Promise<void> {
+    if (!db) return;
+    const batch = writeBatch(db);
+
+    // Fetch existing docs to find any that should be deleted
+    const tasksCol = collection(db, 'users', userId, 'tasks');
+    const existingTasksSnap = await getDocs(tasksCol);
+    const newTaskIds = new Set(tasks.map((t) => t.id));
+
+    existingTasksSnap.forEach((docSnap) => {
+      if (!newTaskIds.has(docSnap.id)) {
+        batch.delete(docSnap.ref);
+      }
+    });
+
+    for (const task of tasks) {
+      const taskDoc = doc(db, 'users', userId, 'tasks', task.id);
+      batch.set(taskDoc, prepareTaskForFirestore(task), { merge: true });
     }
 
     for (const project of projects) {
@@ -165,3 +250,4 @@ export const taskSyncService = {
     await batch.commit();
   },
 };
+

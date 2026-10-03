@@ -6,10 +6,11 @@ import { UpcomingView } from '../views/UpcomingView';
 import { TimelineView } from '../views/TimelineView';
 import { EisenhowerView } from '../views/EisenhowerView';
 import { KanbanView } from '../views/KanbanView';
-import { LogbookView } from '../views/LogbookView';
-import { InsightsView } from '../views/InsightsView';
+import { ProjectsView } from '../views/ProjectsView';
+import { ReviewView } from '../views/ReviewView';
 import { TaskList } from '../tasks/TaskList';
 import { TaskDrawer } from '../tasks/TaskDrawer';
+import { QuickAddModal } from '../tasks/QuickAddModal';
 import { PomodoroModal } from '../focus/PomodoroModal';
 import { CommandPalette } from '../modals/CommandPalette';
 import { ShortcutsModal } from '../modals/ShortcutsModal';
@@ -29,7 +30,7 @@ import { BatchActionBar } from '../tasks/BatchActionBar';
 import { Toast } from '../ui/Toast';
 import { Button } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
-import { Menu, Search, Sun, Moon, Palette, Share2, X, FileEdit, Pause, Plus, Sparkles } from 'lucide-react';
+import { Menu, Search, Sun, Moon, Palette, Share2, X, FileEdit, Pause, Play, Plus, Sparkles } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { audioEngine } from '../../utils/audioEngine';
@@ -62,6 +63,13 @@ export const AppLayout: React.FC = () => {
     activeTimerSeconds,
     toggleTaskTimer,
     undoLastAction,
+    isQuickAddOpen,
+    setIsQuickAddOpen,
+    focusSession,
+    focusElapsedSeconds,
+    pauseFocusSession,
+    resumeFocusSession,
+    stopFocusSession,
   } = useTaskContext();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
@@ -109,12 +117,33 @@ export const AppLayout: React.FC = () => {
     localStorage.setItem('flowtask_sidebar_collapsed', String(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
 
-  // Global Keyboard shortcuts
+  // Global Keyboard shortcuts with strict modal isolation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input or textarea
-      const tag = (document.activeElement?.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea') return;
+      // Don't trigger if user is typing in an input, textarea, or contentEditable element
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+
+      // Suspend all global single-key shortcuts while ANY modal or slide-over drawer is open
+      const isAnyModalActive =
+        isQuickAddOpen ||
+        isAuthModalOpen ||
+        isCommandPaletteOpen ||
+        isShortcutsOpen ||
+        isBrainDumpOpen ||
+        isExportImportOpen ||
+        isAestheticsOpen ||
+        isScratchpadOpen ||
+        isStudySessionOpen ||
+        isStudySprintOpen ||
+        isPomodoroOpen ||
+        isEveningShutdownOpen ||
+        isWeeklyReviewOpen ||
+        isSmartFilterModalOpen ||
+        selectedTaskId !== null;
+
+      if (isAnyModalActive) return;
 
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault();
@@ -134,6 +163,9 @@ export const AppLayout: React.FC = () => {
       } else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
         e.preventDefault();
         setIsScratchpadOpen((prev) => !prev);
+      } else if (e.key === 'n' || e.key === 'N' || e.key === 'c') {
+        e.preventDefault();
+        setIsQuickAddOpen(true);
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
         e.preventDefault();
         undoLastAction();
@@ -142,15 +174,57 @@ export const AppLayout: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undoLastAction, setIsEveningShutdownOpen, setIsWeeklyReviewOpen]);
+  }, [
+    undoLastAction,
+    setIsEveningShutdownOpen,
+    setIsWeeklyReviewOpen,
+    setIsQuickAddOpen,
+    isQuickAddOpen,
+    isAuthModalOpen,
+    isCommandPaletteOpen,
+    isShortcutsOpen,
+    isBrainDumpOpen,
+    isExportImportOpen,
+    isAestheticsOpen,
+    isScratchpadOpen,
+    isStudySessionOpen,
+    isStudySprintOpen,
+    isPomodoroOpen,
+    isEveningShutdownOpen,
+    isWeeklyReviewOpen,
+    isSmartFilterModalOpen,
+    selectedTaskId,
+  ]);
 
   const todayStr = formatLocalDate(new Date());
-  const todayCount = tasks.filter(
-    (t) => t.status !== 'done' && (t.dueDate === todayStr || t.isPinnedToday)
+
+  // Count active tasks for views with exact view-selector parity
+  const todayCount = tasks.filter((t) => {
+    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
+    const isPlannedToday = t.plannedDate === todayStr;
+    const isPinnedForToday =
+      t.isPinnedToday &&
+      (t.topThreeDate === todayStr || (!t.topThreeDate && isPlannedToday));
+    const isLegacyDueToday = !t.plannedDate && t.dueDate === todayStr;
+    return isPlannedToday || isPinnedForToday || isLegacyDueToday;
+  }).length;
+
+  const inboxCount = tasks.filter(
+    (t) =>
+      t.status !== 'done' &&
+      !t.deletedAt &&
+      !t.archivedAt &&
+      t.projectId === 'inbox' &&
+      !t.dueDate &&
+      !t.plannedDate &&
+      !t.isSomeday
   ).length;
-  const upcomingCount = tasks.filter(
-    (t) => t.status !== 'done' && t.dueDate && t.dueDate > todayStr
-  ).length;
+
+  const upcomingCount = tasks.filter((t) => {
+    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
+    const taskDate = t.plannedDate || t.dueDate;
+    return taskDate && taskDate > todayStr;
+  }).length;
 
   const formatStopwatch = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -160,9 +234,14 @@ export const AppLayout: React.FC = () => {
 
   const activeTimerTask = activeTimerTaskId ? tasks.find((t) => t.id === activeTimerTaskId) : null;
 
-  const todayTasksList = tasks.filter(
-    (t) => t.dueDate === todayStr || t.isPinnedToday
-  );
+  const todayTasksList = tasks.filter((t) => {
+    if (t.deletedAt || t.archivedAt) return false;
+    return (
+      t.plannedDate === todayStr ||
+      (!t.plannedDate && t.dueDate === todayStr) ||
+      t.isPinnedToday
+    );
+  });
   const totalTodayPlanned = todayTasksList.length;
   const todayDoneCount = todayTasksList.filter((t) => t.status === 'done').length;
   const todayPercent = totalTodayPlanned > 0 ? Math.round((todayDoneCount / totalTodayPlanned) * 100) : 0;
@@ -172,11 +251,14 @@ export const AppLayout: React.FC = () => {
       case 'today': return 'My Day';
       case 'inbox': return 'Inbox';
       case 'upcoming': return 'Upcoming';
+      case 'projects': return 'Projects';
+      case 'review': return 'Review & Retrospective';
+      case 'all': return 'All Tasks';
+      case 'someday': return 'Someday';
       case 'timeline': return 'Timeline';
       case 'matrix': return 'Priority Matrix';
       case 'kanban': return 'Kanban Board';
       case 'insights': return 'Insights';
-      case 'someday': return 'Someday';
       case 'logbook': return 'Logbook';
       default:
         if (activeView.startsWith('project:')) {
@@ -213,6 +295,17 @@ export const AppLayout: React.FC = () => {
         />
       );
     }
+    if (activeView === 'inbox') {
+      return (
+        <TaskList
+          filterInbox
+          onSelectTask={(id) => setSelectedTaskId(id)}
+          onStartFocus={handleStartFocus}
+          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onStartSprint={handleStartStudySprint}
+        />
+      );
+    }
     if (activeView === 'upcoming') {
       return (
         <UpcomingView
@@ -222,6 +315,32 @@ export const AppLayout: React.FC = () => {
           onStartSprint={handleStartStudySprint}
         />
       );
+    }
+    if (activeView === 'projects' || activeView.startsWith('project:')) {
+      const selectedProjId = activeView.startsWith('project:')
+        ? activeView.split(':')[1]
+        : null;
+      return (
+        <ProjectsView
+          selectedProjectId={selectedProjId}
+          onSelectProject={(projId) => {
+            if (projId) {
+              setActiveView(`project:${projId}`);
+            } else {
+              setActiveView('projects');
+            }
+          }}
+          onSelectTask={(id) => setSelectedTaskId(id)}
+          onStartFocus={handleStartFocus}
+        />
+      );
+    }
+    if (
+      activeView === 'review' ||
+      activeView === 'insights' ||
+      activeView === 'logbook'
+    ) {
+      return <ReviewView onSelectTask={(id) => setSelectedTaskId(id)} />;
     }
     if (activeView === 'timeline') {
       return (
@@ -236,24 +355,32 @@ export const AppLayout: React.FC = () => {
       );
     }
     if (activeView === 'matrix') {
-      return (
-        <EisenhowerView
-          onSelectTask={(id) => setSelectedTaskId(id)}
-        />
-      );
+      return <EisenhowerView onSelectTask={(id) => setSelectedTaskId(id)} />;
     }
     if (activeView === 'kanban') {
+      return <KanbanView onSelectTask={(id) => setSelectedTaskId(id)} />;
+    }
+    if (activeView === 'someday') {
       return (
-        <KanbanView
+        <TaskList
+          filterSomeday
           onSelectTask={(id) => setSelectedTaskId(id)}
+          onStartFocus={handleStartFocus}
+          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onStartSprint={handleStartStudySprint}
         />
       );
     }
-    if (activeView === 'insights') {
-      return <InsightsView onSelectTask={(id) => setSelectedTaskId(id)} />;
-    }
-    if (activeView === 'logbook') {
-      return <LogbookView onSelectTask={(id) => setSelectedTaskId(id)} />;
+    if (activeView === 'all') {
+      return (
+        <TaskList
+          filterAll
+          onSelectTask={(id) => setSelectedTaskId(id)}
+          onStartFocus={handleStartFocus}
+          onOpenBrainDump={() => setIsBrainDumpOpen(true)}
+          onStartSprint={handleStartStudySprint}
+        />
+      );
     }
     return (
       <TaskList
@@ -294,6 +421,7 @@ export const AppLayout: React.FC = () => {
           onOpenAesthetics={() => setIsAestheticsOpen(true)}
           onOpenScratchpad={() => setIsScratchpadOpen(true)}
           onOpenStudySession={() => setIsStudySessionOpen(true)}
+          onOpenSettings={() => setIsExportImportOpen(true)}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         />
@@ -341,6 +469,10 @@ export const AppLayout: React.FC = () => {
                 setIsSidebarOpenMobile(false);
                 setIsStudySessionOpen(true);
               }}
+              onOpenSettings={() => {
+                setIsSidebarOpenMobile(false);
+                setIsExportImportOpen(true);
+              }}
             />
           </div>
         </div>
@@ -376,9 +508,77 @@ export const AppLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Center: Active Focus Pill / Today Progress Ring */}
+          {/* Center: Persistent Focus Session Mini-Player or Today Progress Ring */}
           <div className="flex items-center gap-3">
-            {activeTimerTaskId && activeTimerTask ? (
+            {focusSession && (focusSession.state === 'running' || focusSession.state === 'paused') ? (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border border-amber-500/35 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
+                <span
+                  className={`w-2 h-2 rounded-full bg-amber-500 ${
+                    focusSession.state === 'running' ? 'animate-ping' : ''
+                  }`}
+                />
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                  {focusSession.mode === 'pomodoro'
+                    ? '🍅 Pomodoro'
+                    : focusSession.mode === 'sprint'
+                    ? '⚡ Sprint'
+                    : '⏱️ Focus'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (focusSession.taskId) {
+                      setSelectedTaskId(focusSession.taskId);
+                    } else if (focusSession.mode === 'pomodoro') {
+                      setIsPomodoroOpen(true);
+                    } else if (focusSession.mode === 'sprint') {
+                      setIsStudySprintOpen(true);
+                    }
+                  }}
+                  className="hover:underline truncate max-w-[150px]"
+                  title={`Focus session: "${focusSession.taskTitle}". Click to view details.`}
+                >
+                  {focusSession.taskTitle}
+                </button>
+                <span className="font-mono text-[11px] bg-amber-500/25 px-1.5 py-0.5 rounded font-semibold text-amber-950 dark:text-amber-100">
+                  {focusSession.targetDurationSec
+                    ? formatStopwatch(
+                        Math.max(
+                          0,
+                          focusSession.targetDurationSec - focusElapsedSeconds
+                        )
+                      )
+                    : formatStopwatch(focusElapsedSeconds)}
+                </span>
+                {focusSession.state === 'running' ? (
+                  <button
+                    type="button"
+                    onClick={pauseFocusSession}
+                    title="Pause Focus Session"
+                    className="p-1 hover:bg-amber-500/20 rounded-md transition-colors"
+                  >
+                    <Pause size={12} className="fill-current text-amber-700 dark:text-amber-300" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={resumeFocusSession}
+                    title="Resume Focus Session"
+                    className="p-1 hover:bg-amber-500/20 rounded-md transition-colors"
+                  >
+                    <Play size={12} className="fill-current text-amber-700 dark:text-amber-300" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={stopFocusSession}
+                  title="Finish / Stop Session"
+                  className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-md transition-colors text-amber-700 dark:text-amber-300"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ) : activeTimerTaskId && activeTimerTask ? (
               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/35 text-amber-800 dark:text-amber-300 text-xs font-bold shadow-xs animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
                 <button
@@ -413,24 +613,14 @@ export const AppLayout: React.FC = () => {
 
           {/* Right: Quick Tools */}
           <div className="flex items-center gap-1.5">
-            {/* New Task Omnibar Summoner */}
+            {/* New Task Summoner */}
             <Button
               variant="primary"
               size="sm"
               leftIcon={<Plus size={13} />}
               kbd="N"
-              onClick={() => {
-                const omnibarInput = document.querySelector(
-                  'input[placeholder*="task"], input[placeholder*="Task"]'
-                ) as HTMLInputElement | null;
-                if (omnibarInput) {
-                  omnibarInput.focus();
-                  omnibarInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                } else {
-                  setIsBrainDumpOpen(true);
-                }
-              }}
-              title="Add Task (N)"
+              onClick={() => setIsQuickAddOpen(true)}
+              title="Quick Add Task (N)"
             >
               New Task
             </Button>
@@ -508,6 +698,40 @@ export const AppLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {/* Mobile Focus Session Indicator */}
+            {focusSession && (focusSession.state === 'running' || focusSession.state === 'paused') && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (focusSession.taskId) {
+                    setSelectedTaskId(focusSession.taskId);
+                  } else if (focusSession.mode === 'pomodoro') {
+                    setIsPomodoroOpen(true);
+                  } else if (focusSession.mode === 'sprint') {
+                    setIsStudySprintOpen(true);
+                  }
+                }}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono text-[10px] font-bold border border-amber-500/30 shrink-0 mr-1"
+                title={`Active session: ${focusSession.taskTitle}`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full bg-amber-500 ${
+                    focusSession.state === 'running' ? 'animate-ping' : ''
+                  }`}
+                />
+                <span>
+                  {focusSession.targetDurationSec
+                    ? formatStopwatch(
+                        Math.max(
+                          0,
+                          focusSession.targetDurationSec - focusElapsedSeconds
+                        )
+                      )
+                    : formatStopwatch(focusElapsedSeconds)}
+                </span>
+              </button>
+            )}
+
             {/* Quick Theme Toggle directly in header */}
             <button
               onClick={toggleTheme}
@@ -627,24 +851,15 @@ export const AppLayout: React.FC = () => {
       <MobileBottomNav
         activeView={activeView}
         onSelectView={(viewId) => setActiveView(viewId as any)}
-        onQuickAdd={() => {
-          if (activeView !== 'today') {
-            setActiveView('today');
-          }
-          setTimeout(() => {
-            const omnibarInput = document.querySelector('input[placeholder*="task"], input[placeholder*="Task"]') as HTMLInputElement | null;
-            if (omnibarInput) {
-              omnibarInput.focus();
-              omnibarInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-              setIsBrainDumpOpen(true);
-            }
-          }, 50);
-        }}
+        onQuickAdd={() => setIsQuickAddOpen(true)}
         onOpenMenu={() => setIsSidebarOpenMobile(true)}
         todayCount={todayCount}
+        inboxCount={inboxCount}
         upcomingCount={upcomingCount}
       />
+
+      {/* Universal Quick Capture Composer Modal */}
+      <QuickAddModal />
 
       {/* Slide-over Task Detail Drawer */}
       {selectedTaskId && (

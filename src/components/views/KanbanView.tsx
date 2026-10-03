@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { TaskStatus } from '../../types/task';
 import { Kanban, Plus, Circle, Clock, CheckCircle2, Keyboard } from 'lucide-react';
-import { audioEngine } from '../../utils/audioEngine';
 
 interface KanbanViewProps {
   onSelectTask: (taskId: string) => void;
+  projectId?: string;
 }
 
 export const KanbanView: React.FC<KanbanViewProps> = ({
   onSelectTask,
+  projectId,
 }) => {
-  const { tasks, updateTask, addTask } = useTaskContext();
+  const { tasks: allTasks, updateTask, addTask, toggleTaskStatus } = useTaskContext();
+  const tasks = projectId ? allTasks.filter((t) => t.projectId === projectId) : allTasks;
   const [mobileColumn, setMobileColumn] = useState<TaskStatus>('todo');
   const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
   const [addingToStatus, setAddingToStatus] = useState<TaskStatus | null>(null);
@@ -86,11 +88,14 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                 : current.status === 'in_progress'
                 ? 'done'
                 : 'todo';
-            updateTask(current.id, {
-              status: nextStatus,
-              completedAt: nextStatus === 'done' ? Date.now() : undefined,
-            });
-            audioEngine.playCompletionChime();
+            if (nextStatus === 'done' || (current.status === 'done' && nextStatus === 'todo')) {
+              toggleTaskStatus(current.id);
+            } else {
+              updateTask(current.id, {
+                status: nextStatus,
+                completedAt: undefined,
+              });
+            }
           }
         }
       }
@@ -98,7 +103,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mobileColumn, tasks, focusedCardId, onSelectTask, updateTask]);
+  }, [mobileColumn, tasks, focusedCardId, onSelectTask, updateTask, toggleTaskStatus]);
 
   const columns: {
     status: TaskStatus;
@@ -134,10 +139,21 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     e.preventDefault();
     const taskId = e.dataTransfer.getData('text/plain');
     if (taskId) {
-      updateTask(taskId, {
-        status,
-        completedAt: status === 'done' ? Date.now() : undefined,
-      });
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      if (status === 'done' && task.status !== 'done') {
+        toggleTaskStatus(taskId);
+      } else if (status !== 'done' && task.status === 'done') {
+        toggleTaskStatus(taskId);
+        if (status === 'in_progress') {
+          updateTask(taskId, { status: 'in_progress' });
+        }
+      } else {
+        updateTask(taskId, {
+          status,
+          completedAt: undefined,
+        });
+      }
     }
   };
 
@@ -370,7 +386,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         {col.status !== 'done' && (
                           <button
                             type="button"
-                            onClick={() => updateTask(task.id, { status: 'done', completedAt: Date.now() })}
+                            onClick={() => toggleTaskStatus(task.id)}
                             className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
                             title="Mark Completed"
                           >

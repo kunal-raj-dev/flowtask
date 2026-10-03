@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Calendar, Plus, Grid2X2, Menu } from 'lucide-react';
+import { Sun, Inbox, Calendar, Plus, Menu } from 'lucide-react';
 
 interface MobileBottomNavProps {
   activeView: string;
@@ -7,6 +7,7 @@ interface MobileBottomNavProps {
   onQuickAdd: () => void;
   onOpenMenu: () => void;
   todayCount?: number;
+  inboxCount?: number;
   upcomingCount?: number;
 }
 
@@ -16,11 +17,12 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onQuickAdd,
   onOpenMenu,
   todayCount = 0,
+  inboxCount = 0,
   upcomingCount = 0,
 }) => {
   const isToday = activeView === 'today';
+  const isInbox = activeView === 'inbox';
   const isUpcoming = activeView === 'upcoming';
-  const isMatrix = activeView === 'matrix';
 
   return (
     <nav
@@ -50,26 +52,26 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <span className="text-[10px] mt-1 tracking-tight">Today</span>
         </button>
 
-        {/* Tab 2: Upcoming */}
+        {/* Tab 2: Inbox */}
         <button
           type="button"
-          onClick={() => onSelectView('upcoming')}
+          onClick={() => onSelectView('inbox')}
           className={`flex flex-col items-center justify-center min-w-[56px] py-1 px-2 rounded-lg transition-all ${
-            isUpcoming
-              ? 'text-[var(--color-brand)] font-semibold'
+            isInbox
+              ? 'text-blue-500 font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
-          aria-label="Upcoming View"
+          aria-label="Inbox View"
         >
           <div className="relative">
-            <Calendar size={20} className={isUpcoming ? 'stroke-[2.4]' : 'stroke-[1.8]'} />
-            {upcomingCount > 0 && (
-              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[var(--color-brand)] text-white font-mono text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
-                {upcomingCount > 99 ? '99+' : upcomingCount}
+            <Inbox size={20} className={isInbox ? 'stroke-[2.4]' : 'stroke-[1.8]'} />
+            {inboxCount > 0 && (
+              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-blue-500 text-white font-mono text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
+                {inboxCount > 99 ? '99+' : inboxCount}
               </span>
             )}
           </div>
-          <span className="text-[10px] mt-1 tracking-tight">Upcoming</span>
+          <span className="text-[10px] mt-1 tracking-tight">Inbox</span>
         </button>
 
         {/* Center Elevating Quick Add (+) Button */}
@@ -84,22 +86,29 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           </button>
         </div>
 
-        {/* Tab 3: Priority Matrix */}
+        {/* Tab 3: Upcoming */}
         <button
           type="button"
-          onClick={() => onSelectView('matrix')}
+          onClick={() => onSelectView('upcoming')}
           className={`flex flex-col items-center justify-center min-w-[56px] py-1 px-2 rounded-lg transition-all ${
-            isMatrix
-              ? 'text-emerald-500 font-semibold'
+            isUpcoming
+              ? 'text-purple-500 font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
-          aria-label="Priority Matrix"
+          aria-label="Upcoming View"
         >
-          <Grid2X2 size={20} className={isMatrix ? 'stroke-[2.4]' : 'stroke-[1.8]'} />
-          <span className="text-[10px] mt-1 tracking-tight">Matrix</span>
+          <div className="relative">
+            <Calendar size={20} className={isUpcoming ? 'stroke-[2.4]' : 'stroke-[1.8]'} />
+            {upcomingCount > 0 && (
+              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-purple-500 text-white font-mono text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
+                {upcomingCount > 99 ? '99+' : upcomingCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] mt-1 tracking-tight">Upcoming</span>
         </button>
 
-        {/* Tab 4: More / Menu (opens sidebar drawer with projects & settings) */}
+        {/* Tab 4: More / Menu (opens mobile drawer with Projects, Review, Someday, All Tasks, Settings) */}
         <button
           type="button"
           onClick={onOpenMenu}

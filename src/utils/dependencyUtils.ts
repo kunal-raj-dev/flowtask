@@ -24,7 +24,43 @@ export function isTaskBlocked(task: Task, allTasks: Task[]): BlockedStatus {
 }
 
 /**
- * Returns tasks that can safely be assigned as blocking dependencies without circular loops.
+ * Checks if setting `candidateId` as a blocker for `taskId` would create a circular dependency
+ * across the entire dependency graph (supports arbitrary N-hop cycles).
+ */
+export function wouldCreateCycle(
+  taskId: string,
+  candidateId: string,
+  allTasks: Task[]
+): boolean {
+  if (taskId === candidateId) return true;
+
+  const taskMap = new Map<string, Task>();
+  allTasks.forEach((t) => taskMap.set(t.id, t));
+
+  const visited = new Set<string>();
+  const queue = [candidateId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    if (currentId === taskId) return true;
+    if (visited.has(currentId)) continue;
+    visited.add(currentId);
+
+    const currentTask = taskMap.get(currentId);
+    if (currentTask?.blockedBy && currentTask.blockedBy.length > 0) {
+      for (const blockerId of currentTask.blockedBy) {
+        if (!visited.has(blockerId)) {
+          queue.push(blockerId);
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Returns tasks that can safely be assigned as blocking dependencies without circular loops (full graph checked).
  */
 export function getPotentialBlockingCandidates(
   currentTaskId: string,
@@ -33,8 +69,7 @@ export function getPotentialBlockingCandidates(
   return allTasks.filter((t) => {
     if (t.id === currentTaskId) return false;
     if (t.status === 'done') return false;
-    // Check if `t` is blocked by `currentTaskId` (prevent 1-hop circular dependency)
-    if (t.blockedBy && t.blockedBy.includes(currentTaskId)) return false;
+    if (wouldCreateCycle(currentTaskId, t.id, allTasks)) return false;
     return true;
   });
 }
@@ -45,6 +80,100 @@ const PRIORITY_RANKS: Record<Priority, number> = {
   p3: 2,
   p4: 1,
 };
+
+export interface MergeConflict {
+  field: string;
+  targetValue: unknown;
+  sourceValue: unknown;
+  resolvedValue: unknown;
+}
+
+export interface MergePreviewResult {
+  combinedTaskUpdates: Partial<Task>;
+  conflicts: MergeConflict[];
+  redirectedTasks: Array<{ taskId: string; title: string }>;
+}
+
+/**
+ * Generates a comprehensive merge preview including conflicting fields and dependency redirects.
+ */
+export function getMergePreview(
+  targetTask: Task,
+  sourceTask: Task,
+  allTasks: Task[]
+): MergePreviewResult {
+  const conflicts: MergeConflict[] = [];
+
+  if (targetTask.projectId !== sourceTask.projectId) {
+    conflicts.push({
+      field: 'Project',
+      targetValue: targetTask.projectId,
+      sourceValue: sourceTask.projectId,
+      resolvedValue: targetTask.projectId,
+    });
+  }
+
+  if (targetTask.priority !== sourceTask.priority) {
+    const targetRank = PRIORITY_RANKS[targetTask.priority] || 1;
+    const sourceRank = PRIORITY_RANKS[sourceTask.priority] || 1;
+    const higher = sourceRank > targetRank ? sourceTask.priority : targetTask.priority;
+    conflicts.push({
+      field: 'Priority',
+      targetValue: targetTask.priority.toUpperCase(),
+      sourceValue: sourceTask.priority.toUpperCase(),
+      resolvedValue: higher.toUpperCase(),
+    });
+  }
+
+  if (targetTask.dueDate !== sourceTask.dueDate) {
+    conflicts.push({
+      field: 'Due Date',
+      targetValue: targetTask.dueDate || 'None',
+      sourceValue: sourceTask.dueDate || 'None',
+      resolvedValue: targetTask.dueDate || sourceTask.dueDate || 'None',
+    });
+  }
+
+  // Find other tasks blocked by sourceTask that need to redirect to targetTask
+  const redirectedTasks: Array<{ taskId: string; title: string }> = [];
+  allTasks.forEach((t) => {
+    if (t.id !== targetTask.id && t.id !== sourceTask.id && t.blockedBy?.includes(sourceTask.id)) {
+      redirectedTasks.push({ taskId: t.id, title: t.title });
+    }
+  });
+
+  const combinedTaskUpdates = mergeTaskData(targetTask, sourceTask);
+  if (!targetTask.plannedDate && sourceTask.plannedDate) {
+    combinedTaskUpdates.plannedDate = sourceTask.plannedDate;
+  }
+  if (!targetTask.dueDate && sourceTask.dueDate) {
+    combinedTaskUpdates.dueDate = sourceTask.dueDate;
+  }
+
+  return {
+    combinedTaskUpdates,
+    conflicts,
+    redirectedTasks,
+  };
+}
+
+/**
+ * Redirects incoming dependencies from an old task ID to a new task ID.
+ */
+export function redirectDependencies(
+  allTasks: Task[],
+  oldId: string,
+  newId: string
+): Task[] {
+  return allTasks.map((t) => {
+    if (t.blockedBy && t.blockedBy.includes(oldId)) {
+      const updatedBlockedBy = t.blockedBy.map((id) => (id === oldId ? newId : id));
+      const unique = Array.from(new Set(updatedBlockedBy)).filter((id) => id !== t.id);
+      return { ...t, blockedBy: unique };
+    }
+    return t;
+  });
+}
 
 /**
  * Merge two tasks together into an updated target task.
@@ -93,3 +222,4 @@ export function mergeTaskData(targetTask: Task, sourceTask: Task): Partial<Task>
     timeSpentMinutes: mergedSpent > 0 ? mergedSpent : targetTask.timeSpentMinutes,
   };
 }
+

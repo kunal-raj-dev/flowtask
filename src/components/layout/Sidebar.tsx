@@ -31,6 +31,8 @@ import {
   FileEdit,
   Compass,
   Clock,
+  Folder,
+  Settings,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
@@ -45,6 +47,7 @@ interface SidebarProps {
   onOpenAesthetics?: () => void;
   onOpenScratchpad?: () => void;
   onOpenStudySession?: () => void;
+  onOpenSettings?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   onItemClick?: () => void;
@@ -59,6 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAesthetics,
   onOpenScratchpad,
   onOpenStudySession,
+  onOpenSettings,
   isCollapsed = false,
   onToggleCollapse,
   onItemClick,
@@ -89,24 +93,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const todayStr = formatLocalDate(new Date());
 
-  // Count active tasks for views
-  const todayCount = tasks.filter(
-    (t) => t.status !== 'done' && (t.dueDate === todayStr || t.isPinnedToday)
-  ).length;
+  // Count active tasks for views with strict view-selector parity
+  const todayCount = tasks.filter((t) => {
+    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
+    const isPlannedToday = t.plannedDate === todayStr;
+    const isPinnedForToday =
+      t.isPinnedToday &&
+      (t.topThreeDate === todayStr || (!t.topThreeDate && isPlannedToday));
+    const isLegacyDueToday = !t.plannedDate && t.dueDate === todayStr;
+    return isPlannedToday || isPinnedForToday || isLegacyDueToday;
+  }).length;
 
   const inboxCount = tasks.filter(
-    (t) => t.status !== 'done' && t.projectId === 'inbox' && !t.dueDate
+    (t) =>
+      t.status !== 'done' &&
+      !t.deletedAt &&
+      !t.archivedAt &&
+      t.projectId === 'inbox' &&
+      !t.dueDate &&
+      !t.plannedDate &&
+      !t.isSomeday
   ).length;
 
-  const upcomingCount = tasks.filter(
-    (t) => t.status !== 'done' && t.dueDate && t.dueDate > todayStr
+  const upcomingCount = tasks.filter((t) => {
+    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
+    const taskDate = t.plannedDate || t.dueDate;
+    return taskDate && taskDate > todayStr;
+  }).length;
+
+  const somedayCount = tasks.filter((t) => {
+    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
+    return Boolean(
+      t.isSomeday ||
+        (!t.dueDate && !t.plannedDate && t.projectId === 'ideas')
+    );
+  }).length;
+
+  const allCount = tasks.filter(
+    (t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt
   ).length;
 
-  const somedayCount = tasks.filter(
-    (t) => t.status !== 'done' && !t.dueDate && t.projectId === 'ideas'
+  const activeProjectCount = projects.filter(
+    (p) => p.id !== 'inbox' && p.id !== 'ideas' && !p.isArchived
   ).length;
-
-  const doneCount = tasks.filter((t) => t.status === 'done').length;
 
   const handleCreateProject = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,25 +148,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const coreNavItems = [
+  // 4 Primary destinations
+  const primaryNavItems = [
     { id: 'today', label: 'Today', icon: Sun, count: todayCount, color: 'text-amber-500' },
     { id: 'inbox', label: 'Inbox', icon: Inbox, count: inboxCount, color: 'text-blue-500' },
     { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: upcomingCount, color: 'text-purple-500' },
+    { id: 'projects', label: 'Projects', icon: Folder, count: activeProjectCount, color: 'text-indigo-500' },
   ];
 
+  // Secondary "More" Hub
+  const secondaryNavItems = [
+    { id: 'review', label: 'Review & Stats', icon: TrendingUp, count: null, color: 'text-teal-500' },
+    { id: 'all', label: 'All Tasks', icon: CheckCircle2, count: allCount, color: 'text-stone-400' },
+    { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-amber-500' },
+  ];
+
+  // Perspectives
   const perspectiveNavItems = [
     { id: 'timeline', label: 'Timeline', icon: Clock, count: null, color: 'text-teal-500' },
     { id: 'kanban', label: 'Kanban Board', icon: Kanban, count: null, color: 'text-indigo-500' },
     { id: 'matrix', label: 'Priority Matrix', icon: Grid2X2, count: null, color: 'text-emerald-500' },
   ];
 
-  const reviewNavItems = [
-    { id: 'insights', label: 'Insights & Stats', icon: TrendingUp, count: null, color: 'text-teal-500' },
-    { id: 'logbook', label: 'Logbook', icon: CheckCircle2, count: doneCount, color: 'text-stone-400' },
-    { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-amber-500' },
-  ];
-
-  const allNavItems = [...coreNavItems, ...perspectiveNavItems, ...reviewNavItems];
+  const allNavItems = [...primaryNavItems, ...secondaryNavItems, ...perspectiveNavItems];
 
   const getSmartViewIcon = (iconName: string) => {
     switch (iconName) {
@@ -177,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {allNavItems.map((item, idx) => {
             const Icon = item.icon;
             const isActive = activeView === item.id;
-            const isSectionDivider = idx === 3 || idx === 6;
+            const isSectionDivider = idx === 4 || idx === 7;
             return (
               <React.Fragment key={item.id}>
                 {isSectionDivider && (
@@ -341,12 +374,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation Views */}
       <div className="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-3.5">
-        {/* Core Execution Section */}
+        {/* 4 Primary Destinations */}
         <div className="space-y-0.5">
           <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            Workspaces
+            Primary
           </div>
-          {coreNavItems.map(renderNavItem)}
+          {primaryNavItems.map(renderNavItem)}
+        </div>
+
+        {/* More Hub */}
+        <div className="space-y-0.5">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
+            More
+          </div>
+          {secondaryNavItems.map(renderNavItem)}
         </div>
 
         {/* Perspectives Section */}
@@ -355,14 +396,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Perspectives
           </div>
           {perspectiveNavItems.map(renderNavItem)}
-        </div>
-
-        {/* Review & Reports Section */}
-        <div className="space-y-0.5">
-          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            Review & Reports
-          </div>
-          {reviewNavItems.map(renderNavItem)}
         </div>
 
         {/* Smart Filter Views Section */}
@@ -648,6 +681,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Keyboard size={17} />
             </button>
           )}
+
+          <button
+            onClick={() => {
+              if (onOpenSettings) {
+                onOpenSettings();
+              } else {
+                onOpenExportImport();
+              }
+              onItemClick?.();
+            }}
+            title="Settings & Data (Export / Import)"
+            aria-label="Settings and Data"
+            className="p-2 sm:p-1.5 hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+          >
+            <Settings size={17} />
+          </button>
 
           <button
             onClick={() => {
