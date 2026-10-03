@@ -62,7 +62,9 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
   const [activeTab, setActiveTab] = useState<'paste' | 'builder'>('paste');
   const [rawText, setRawText] = useState(SAMPLE_STUDY_LOG);
   const [selectedDate, setSelectedDate] = useState(() => formatLocalDate(new Date()));
-  const [selectedProjectId, setSelectedProjectId] = useState('work');
+  const [selectedProjectId, setSelectedProjectId] = useState(() => {
+    return projects.find((p) => p.id === 'work')?.id || projects[0]?.id || 'inbox';
+  });
 
   // Visual builder state
   const [builderSessionNum, setBuilderSessionNum] = useState(1);

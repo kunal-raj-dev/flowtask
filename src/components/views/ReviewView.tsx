@@ -14,7 +14,6 @@ import {
   Download,
   Copy,
   Check,
-  CalendarCheck,
   Sunset,
 } from 'lucide-react';
 import { SegmentedControl } from '../ui/SegmentedControl';
@@ -116,7 +115,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask }) => {
             type="button"
             variant="secondary"
             size="sm"
-            leftIcon={<CalendarCheck size={14} className="text-indigo-500" />}
+            leftIcon={<Compass size={14} className="text-teal-500" />}
             onClick={() => setIsWeeklyReviewOpen(true)}
           >
             Weekly Review

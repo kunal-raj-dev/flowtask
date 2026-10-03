@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { audioEngine } from '../../utils/audioEngine';
 import {
@@ -23,18 +23,36 @@ interface PomodoroModalProps {
 type Mode = 'focus' | 'short_break' | 'long_break';
 
 export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose }) => {
-  const { tasks, toggleTaskStatus, stashActiveFocus } = useTaskContext();
+  const {
+    tasks,
+    stashActiveFocus,
+    toggleTaskStatus,
+    focusSession,
+    focusElapsedSeconds,
+    startFocusSession,
+    pauseFocusSession,
+    resumeFocusSession,
+    stopFocusSession,
+  } = useTaskContext();
   const task = tasks.find((t) => t.id === taskId);
 
   const [mode, setMode] = useState<Mode>('focus');
   const [focusDuration, setFocusDuration] = useState(25 * 60); // 25 mins
-  const [timeLeft, setTimeLeft] = useState(25 * 60);
-  const [isRunning, setIsRunning] = useState(false);
   const [ambientSound, setAmbientSound] = useState<AmbientSoundType>('none');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cycleCount, setCycleCount] = useState<number>(1);
 
-  const intervalRef = useRef<number | null>(null);
+  // Check if an active session belongs to pomodoro
+  const isPomodoroActive = Boolean(focusSession && (focusSession.mode === 'pomodoro' || !focusSession.mode));
+  const isRunning = Boolean(isPomodoroActive && focusSession?.state === 'running');
+
+  // Derive remaining seconds from global focusSession if active, else local duration
+  const activeRemainingSec = focusSession?.targetDurationSec
+    ? Math.max(0, focusSession.targetDurationSec - focusElapsedSeconds)
+    : null;
+
+  const [localTimeLeft, setLocalTimeLeft] = useState(25 * 60);
+  const timeLeft = isPomodoroActive && activeRemainingSec !== null ? activeRemainingSec : localTimeLeft;
 
   // Keyboard shortcut: F to toggle Zen Fullscreen
   useEffect(() => {
@@ -56,58 +74,40 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
 
   // Switch modes
   const handleModeChange = (newMode: Mode) => {
+    stopFocusSession();
     setMode(newMode);
-    setIsRunning(false);
     if (newMode === 'focus') {
-      setTimeLeft(focusDuration);
+      setLocalTimeLeft(focusDuration);
     } else if (newMode === 'short_break') {
-      setTimeLeft(5 * 60);
+      setLocalTimeLeft(5 * 60);
     } else if (newMode === 'long_break') {
-      setTimeLeft(15 * 60);
+      setLocalTimeLeft(15 * 60);
     }
   };
 
-  // Timer tick
+  // Completion trigger on zero remaining time
   useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = window.setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            if (intervalRef.current !== null) {
-              window.clearInterval(intervalRef.current);
-            }
-            setIsRunning(false);
-            audioEngine.playPomodoroComplete();
-            audioEngine.stopAmbientSound();
+    if (isPomodoroActive && activeRemainingSec !== null && activeRemainingSec <= 0) {
+      audioEngine.playPomodoroComplete();
+      audioEngine.stopAmbientSound();
+      stopFocusSession();
 
-            if (mode === 'focus') {
-              if (cycleCount >= 4) {
-                // Completed full round of 4 cycles -> Long Break
-                setCycleCount(1);
-                setMode('long_break');
-                setTimeLeft(15 * 60);
-              } else {
-                setCycleCount((c) => c + 1);
-                setMode('short_break');
-                setTimeLeft(5 * 60);
-              }
-            } else {
-              // Break finished -> back to Focus
-              setMode('focus');
-              setTimeLeft(focusDuration);
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
+      if (mode === 'focus') {
+        if (cycleCount >= 4) {
+          setCycleCount(1);
+          setMode('long_break');
+          setLocalTimeLeft(15 * 60);
+        } else {
+          setCycleCount((c) => c + 1);
+          setMode('short_break');
+          setLocalTimeLeft(5 * 60);
+        }
+      } else {
+        setMode('focus');
+        setLocalTimeLeft(focusDuration);
+      }
     }
-    return () => {
-      if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
-    };
-  }, [isRunning, mode, cycleCount, focusDuration]);
+  }, [isPomodoroActive, activeRemainingSec, mode, cycleCount, focusDuration, stopFocusSession]);
 
   // Ambient sound management
   useEffect(() => {
@@ -122,14 +122,27 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
   }, [isRunning, ambientSound]);
 
   const toggleTimer = () => {
-    setIsRunning(!isRunning);
+    if (isRunning) {
+      pauseFocusSession();
+    } else {
+      if (isPomodoroActive && focusSession && focusSession.state === 'paused') {
+        resumeFocusSession();
+      } else {
+        const targetDuration = mode === 'focus' ? focusDuration : mode === 'short_break' ? 5 * 60 : 15 * 60;
+        startFocusSession(
+          'pomodoro',
+          taskId,
+          task?.title || (mode === 'focus' ? 'Deep Focus' : 'Break Time'),
+          targetDuration
+        );
+      }
+    }
   };
 
   const resetTimer = () => {
-    setIsRunning(false);
-    if (mode === 'focus') setTimeLeft(focusDuration);
-    else if (mode === 'short_break') setTimeLeft(5 * 60);
-    else if (mode === 'long_break') setTimeLeft(15 * 60);
+    stopFocusSession();
+    const dur = mode === 'focus' ? focusDuration : mode === 'short_break' ? 5 * 60 : 15 * 60;
+    setLocalTimeLeft(dur);
   };
 
   const minutes = Math.floor(timeLeft / 60);
@@ -146,6 +159,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       task ? { id: task.id, title: task.title, projectId: task.projectId } : undefined,
       elapsed
     );
+    stopFocusSession();
     onClose();
   };
 
@@ -356,7 +370,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
                   key={mins}
                   onClick={() => {
                     setFocusDuration(mins * 60);
-                    setTimeLeft(mins * 60);
+                    setLocalTimeLeft(mins * 60);
                   }}
                   className={`px-3 py-1 rounded-xl font-mono text-xs transition-all ${
                     focusDuration === mins * 60
@@ -525,7 +539,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
                 key={mins}
                 onClick={() => {
                   setFocusDuration(mins * 60);
-                  setTimeLeft(mins * 60);
+                  setLocalTimeLeft(mins * 60);
                 }}
                 className={`px-2.5 py-1 rounded-lg font-mono text-xs transition-all ${
                   focusDuration === mins * 60

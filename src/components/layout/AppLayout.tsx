@@ -17,12 +17,13 @@ import { useModal } from '../../context/ModalContext';
 import { Toast } from '../ui/Toast';
 import { Button } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
-import { Menu, Search, Share2, X, Pause, Play, Plus } from 'lucide-react';
+import { Menu, Search, Share2, X, Pause, Play, Plus, Timer } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { audioEngine } from '../../utils/audioEngine';
 import { getDiurnalPeriod, getDiurnalConfig, type DiurnalPeriod } from '../../utils/diurnalAura';
 import { useTactileAudioClicks } from '../../hooks/useTactileAudioClicks';
+import { useAuth } from '../../context/AuthContext';
 import confetti from 'canvas-confetti';
 
 export const AppLayout: React.FC = () => {
@@ -52,8 +53,11 @@ export const AppLayout: React.FC = () => {
     resumeFocusSession,
     stopFocusSession,
     settings,
+    syncStatus,
+    setIsAuthModalOpen,
   } = useTaskContext();
 
+  const { user, isAnonymous } = useAuth();
   const { openModal, closeModal, isModalOpen, hasAnyModalOpen } = useModal();
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
@@ -576,18 +580,62 @@ export const AppLayout: React.FC = () => {
                   <Pause size={12} className="fill-current" />
                 </button>
               </div>
-            ) : totalTodayPlanned > 0 ? (
-              <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] px-3 py-1 rounded-full bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)]">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>
-                  {todayDoneCount}/{totalTodayPlanned} Today ({todayPercent}%)
-                </span>
+            ) : (
+              <div className="flex items-center gap-2">
+                {totalTodayPlanned > 0 && (
+                  <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] px-3 py-1 rounded-full bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)]">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span>
+                      {todayDoneCount}/{totalTodayPlanned} Today ({todayPercent}%)
+                    </span>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => openModal('pomodoro')}
+                  title="Launch Focus Mode & Pomodoro Timer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 bg-[var(--bg-surface-l2)] hover:bg-amber-500/10 border border-[var(--border-hairline)] hover:border-amber-500/30 transition-all shadow-2xs active:scale-95"
+                >
+                  <Timer size={13} className="text-amber-500" />
+                  <span>Focus</span>
+                </button>
               </div>
-            ) : null}
+            )}
           </div>
 
           {/* Right: Quick Tools */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* Cloud Database Sync Status Indicator */}
+            <button
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
+              title={`Cloud Database Sync: ${syncStatus === 'synced' ? (user?.displayName || user?.email || 'Synced') : syncStatus}. Click for account settings.`}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            >
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  syncStatus === 'synced'
+                    ? 'bg-emerald-500 ring-2 ring-emerald-500/20'
+                    : syncStatus === 'syncing'
+                    ? 'bg-amber-500 animate-spin'
+                    : syncStatus === 'offline'
+                    ? 'bg-amber-500'
+                    : 'bg-stone-400'
+                }`}
+              />
+              <span className="text-[11px] font-mono hidden xl:inline text-[var(--text-muted)]">
+                {syncStatus === 'synced'
+                  ? user && !isAnonymous
+                    ? user.displayName || user.email?.split('@')[0]
+                    : 'Synced'
+                  : syncStatus === 'syncing'
+                  ? 'Syncing'
+                  : syncStatus === 'offline'
+                  ? 'Offline'
+                  : 'Local'}
+              </span>
+            </button>
+
             {/* New Task Summoner */}
             <Button
               variant="primary"
@@ -632,8 +680,8 @@ export const AppLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            {/* Mobile Focus Session Indicator */}
-            {focusSession && (focusSession.state === 'running' || focusSession.state === 'paused') && (
+            {/* Mobile Focus Session Indicator or Quick Launcher */}
+            {focusSession && (focusSession.state === 'running' || focusSession.state === 'paused') ? (
               <button
                 type="button"
                 onClick={() => {
@@ -664,7 +712,38 @@ export const AppLayout: React.FC = () => {
                     : formatStopwatch(focusElapsedSeconds)}
                 </span>
               </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openModal('pomodoro')}
+                title="Launch Focus Mode"
+                aria-label="Launch Focus Mode"
+                className="p-2 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+              >
+                <Timer size={18} />
+              </button>
             )}
+
+            {/* Mobile Sync Indicator */}
+            <button
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
+              title="Cloud Sync"
+              aria-label="Cloud Sync"
+              className="p-2 text-[var(--text-secondary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <span
+                className={`block w-2.5 h-2.5 rounded-full ${
+                  syncStatus === 'synced'
+                    ? 'bg-emerald-500'
+                    : syncStatus === 'syncing'
+                    ? 'bg-amber-500 animate-spin'
+                    : syncStatus === 'offline'
+                    ? 'bg-amber-500'
+                    : 'bg-stone-400'
+                }`}
+              />
+            </button>
 
             {/* Search */}
             <button
