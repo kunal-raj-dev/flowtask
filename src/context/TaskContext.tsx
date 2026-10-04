@@ -15,7 +15,7 @@ import { isActiveTask, isFocusTask } from '../utils/taskSelectors';
 import { dbService } from '../services/dbService';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local' | 'conflict' | 'error';
-export type AppTheme = 'light' | 'dark' | 'tokyo' | 'nord' | 'matcha';
+export type AppTheme = 'light' | 'dark' | 'tokyo' | 'nord' | 'matcha' | 'sepia' | 'crimson' | 'cobalt';
 
 interface TaskContextType {
   workspaceId: string;
@@ -214,7 +214,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const [focusElapsedSeconds, setFocusElapsedSeconds] = useState(0);
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('flowtask_theme') as AppTheme;
-    return ['light', 'dark', 'tokyo', 'nord', 'matcha'].includes(saved) ? saved : 'light';
+    return ['light', 'dark', 'tokyo', 'nord', 'matcha', 'sepia', 'crimson', 'cobalt'].includes(saved) ? saved : 'light';
   });
   const [soundEnabled, setSoundEnabled] = useState(audioEngine.getSoundEnabled());
   const [soundProfile, setSoundProfileState] = useState<SoundProfile>(audioEngine.getSoundProfile());
@@ -262,8 +262,16 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     const timer = setInterval(tick, 1000); return () => clearInterval(timer);
   }, [focusSession]);
   useEffect(() => {
-    document.documentElement.classList.remove('dark', 'theme-tokyo', 'theme-nord', 'theme-matcha');
-    if (['dark', 'tokyo', 'nord'].includes(theme)) document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove(
+      'dark',
+      'theme-tokyo',
+      'theme-nord',
+      'theme-matcha',
+      'theme-sepia',
+      'theme-crimson',
+      'theme-cobalt'
+    );
+    if (['dark', 'tokyo', 'nord', 'crimson', 'cobalt'].includes(theme)) document.documentElement.classList.add('dark');
     if (!['light', 'dark'].includes(theme)) document.documentElement.classList.add(`theme-${theme}`);
     document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('flowtask_theme', theme);
   }, [theme]);

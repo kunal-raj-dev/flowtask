@@ -257,7 +257,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
     {
       id: 'aesthetics',
-      title: 'Theme & Sound Aesthetics (5 Colorways, Tactile Chimes)',
+      title: 'Theme & Sound Aesthetics (8 Colorways, 8 Audio Profiles & Ambient Focus)',
       icon: Palette,
       run: () => onOpenAesthetics && onOpenAesthetics(),
     },

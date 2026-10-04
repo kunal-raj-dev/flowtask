@@ -3,15 +3,28 @@
  * Zero external audio assets required. 100% offline and low-latency.
  */
 
-export type SoundProfile = 'zen' | 'mechanical' | 'bubble' | 'mute';
-export type AmbientSoundType = 'none' | 'brown' | 'pink' | 'white' | 'rain';
+export type SoundProfile =
+  | 'zen'
+  | 'mechanical'
+  | 'bubble'
+  | 'marimba'
+  | 'typewriter'
+  | 'synth'
+  | 'velvet'
+  | 'mute';
+
+export type AmbientSoundType = 'none' | 'brown' | 'pink' | 'white' | 'rain' | 'binaural';
 
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private isSoundEnabled: boolean = true;
   private soundProfile: SoundProfile = 'zen';
+  private tactileVolume: number = 0.8;
+  private ambientVolume: number = 0.08;
+  private currentAmbientType: AmbientSoundType = 'none';
   private ambientSource: AudioNode | null = null;
   private ambientGain: GainNode | null = null;
+  private ambientOscillators: OscillatorNode[] = [];
   private lastMajorSoundTime: number = 0;
   private lastClickTime: number = 0;
 
@@ -29,6 +42,20 @@ class AudioEngine {
         const savedProfile = localStorage.getItem('flowtask_sound_profile') as SoundProfile;
         if (savedProfile) {
           this.soundProfile = savedProfile;
+        }
+        const savedVolume = localStorage.getItem('flowtask_tactile_volume');
+        if (savedVolume !== null) {
+          const parsed = parseFloat(savedVolume);
+          if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
+            this.tactileVolume = parsed;
+          }
+        }
+        const savedAmbientVol = localStorage.getItem('flowtask_ambient_volume');
+        if (savedAmbientVol !== null) {
+          const parsed = parseFloat(savedAmbientVol);
+          if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
+            this.ambientVolume = parsed;
+          }
         }
       }
     } catch {
@@ -79,24 +106,64 @@ class AudioEngine {
     return this.soundProfile;
   }
 
+  public setVolume(vol: number) {
+    this.tactileVolume = Math.max(0, Math.min(1, vol));
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem('flowtask_tactile_volume', String(this.tactileVolume));
+      }
+    } catch {}
+  }
+
+  public getVolume(): number {
+    return this.tactileVolume;
+  }
+
+  public setAmbientVolume(vol: number) {
+    this.ambientVolume = Math.max(0, Math.min(1, vol));
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem('flowtask_ambient_volume', String(this.ambientVolume));
+      }
+    } catch {}
+    if (this.ambientGain && this.ctx) {
+      try {
+        const now = this.ctx.currentTime;
+        this.ambientGain.gain.setValueAtTime(this.ambientGain.gain.value, now);
+        this.ambientGain.gain.linearRampToValueAtTime(this.ambientVolume, now + 0.1);
+      } catch {}
+    }
+  }
+
+  public getAmbientVolume(): number {
+    return this.ambientVolume;
+  }
+
+  public getCurrentAmbientType(): AmbientSoundType {
+    return this.currentAmbientType;
+  }
+
   /**
-   * Play a pleasant two-tone celebratory chime for completed tasks.
+   * Play a celebratory chime for completed tasks.
+   * Supports profile overriding and forcePlay for live audition previews.
    */
-  public playCompletionChime() {
-    if (!this.isSoundEnabled || this.soundProfile === 'mute') return;
+  public playCompletionChime(profileOverride?: SoundProfile, forcePlay: boolean = false) {
+    const profile = profileOverride || this.soundProfile;
+    if ((!this.isSoundEnabled && !forcePlay) || profile === 'mute') return;
     this.notifyMajorSound();
     const ctx = this.getContext();
     if (!ctx) return;
 
     const now = ctx.currentTime;
+    const vol = this.tactileVolume;
 
-    if (this.soundProfile === 'mechanical') {
+    if (profile === 'mechanical') {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(1400, now);
       osc.frequency.exponentialRampToValueAtTime(180, now + 0.04);
-      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.setValueAtTime(0.12 * vol, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -105,18 +172,115 @@ class AudioEngine {
       return;
     }
 
-    if (this.soundProfile === 'bubble') {
+    if (profile === 'bubble') {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(320, now);
       osc.frequency.exponentialRampToValueAtTime(820, now + 0.07);
-      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.setValueAtTime(0.15 * vol, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(now);
       osc.stop(now + 0.09);
+      return;
+    }
+
+    if (profile === 'marimba') {
+      // Warm acoustic wooden triad: F4 (349.23), A4 (440), C5 (523.25)
+      const playWoodBar = (freq: number, start: number, duration: number, gainVal: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(gainVal * vol, start + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + duration);
+      };
+      playWoodBar(349.23, now, 0.28, 0.16);
+      playWoodBar(440.00, now + 0.04, 0.32, 0.15);
+      playWoodBar(523.25, now + 0.08, 0.38, 0.18);
+      return;
+    }
+
+    if (profile === 'typewriter') {
+      // Vintage carriage return bell (C7 - 2093 Hz) + mechanical catch
+      const bell = ctx.createOscillator();
+      const bellGain = ctx.createGain();
+      bell.type = 'sine';
+      bell.frequency.setValueAtTime(2093, now);
+      bellGain.gain.setValueAtTime(0.18 * vol, now);
+      bellGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+      bell.connect(bellGain);
+      bellGain.connect(ctx.destination);
+      bell.start(now);
+      bell.stop(now + 0.55);
+
+      // Carriage thud
+      const latch = ctx.createOscillator();
+      const latchGain = ctx.createGain();
+      latch.type = 'triangle';
+      latch.frequency.setValueAtTime(240, now + 0.06);
+      latch.frequency.exponentialRampToValueAtTime(60, now + 0.1);
+      latchGain.gain.setValueAtTime(0.1 * vol, now + 0.06);
+      latchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      latch.connect(latchGain);
+      latchGain.connect(ctx.destination);
+      latch.start(now + 0.06);
+      latch.stop(now + 0.1);
+      return;
+    }
+
+    if (profile === 'synth') {
+      // 80s analog FM arpeggio: C5 (523), E5 (659), G5 (784), B5 (987)
+      const notes = [523.25, 659.25, 783.99, 987.77];
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + i * 0.04);
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1400, now + i * 0.04);
+
+        gain.gain.setValueAtTime(0.09 * vol, now + i * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.04 + 0.35);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now + i * 0.04);
+        osc.stop(now + i * 0.04 + 0.35);
+      });
+      return;
+    }
+
+    if (profile === 'velvet') {
+      // Warm felt-damped Rhodes interval: A3 (220 Hz) and E4 (330 Hz)
+      const playFeltTone = (freq: number, start: number) => {
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(450, start);
+        gain.gain.setValueAtTime(0.18 * vol, start);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.42);
+      };
+      playFeltTone(220, now);
+      playFeltTone(330, now + 0.05);
       return;
     }
 
@@ -129,7 +293,7 @@ class AudioEngine {
       osc.frequency.setValueAtTime(freq, start);
 
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(gainVal, start + 0.02);
+      gain.gain.linearRampToValueAtTime(gainVal * vol, start + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
 
       osc.connect(gain);
@@ -152,29 +316,33 @@ class AudioEngine {
 
   /**
    * Play a subtle, tactile click or pop tailored to the active sound profile.
-   * Suppressed if a major sound (completion chime/fanfare) just fired, and throttled to prevent audio overlap.
+   * Suppressed if a major sound just fired, and throttled to prevent audio overlap.
    */
-  public playClickSound() {
-    if (!this.isSoundEnabled || this.soundProfile === 'mute') return;
+  public playClickSound(profileOverride?: SoundProfile, forcePlay: boolean = false) {
+    const profile = profileOverride || this.soundProfile;
+    if ((!this.isSoundEnabled && !forcePlay) || profile === 'mute') return;
+
     const nowMs = Date.now();
-    if (nowMs - this.lastMajorSoundTime < 70) return;
-    if (nowMs - this.lastClickTime < 30) return;
+    if (!forcePlay) {
+      if (nowMs - this.lastMajorSoundTime < 70) return;
+      if (nowMs - this.lastClickTime < 30) return;
+    }
     this.lastClickTime = nowMs;
 
     const ctx = this.getContext();
     if (!ctx) return;
 
     const now = ctx.currentTime;
+    const vol = this.tactileVolume;
 
-    if (this.soundProfile === 'bubble') {
-      // Soft organic water bubble pop: quick gentle upward sine sweep
+    if (profile === 'bubble') {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(420, now);
       osc.frequency.exponentialRampToValueAtTime(740, now + 0.035);
 
-      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.setValueAtTime(0.07 * vol, now);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
 
       osc.connect(gain);
@@ -185,15 +353,14 @@ class AudioEngine {
       return;
     }
 
-    if (this.soundProfile === 'mechanical') {
-      // Crisp mechanical key switch click
+    if (profile === 'mechanical') {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(1100, now);
       osc.frequency.exponentialRampToValueAtTime(140, now + 0.025);
 
-      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.setValueAtTime(0.09 * vol, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
 
       osc.connect(gain);
@@ -204,13 +371,85 @@ class AudioEngine {
       return;
     }
 
+    if (profile === 'marimba') {
+      // Wood bar tap: fundamental 520Hz with quick harmonic
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(260, now + 0.035);
+      gain.gain.setValueAtTime(0.12 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.035);
+      return;
+    }
+
+    if (profile === 'typewriter') {
+      // Crisp mechanical typewriter strike
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(2200, now);
+      osc.frequency.exponentialRampToValueAtTime(350, now + 0.022);
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1800, now);
+      gain.gain.setValueAtTime(0.14 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.022);
+      return;
+    }
+
+    if (profile === 'synth') {
+      // 80s analog synthesizer pulse blip
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(950, now);
+      osc.frequency.exponentialRampToValueAtTime(280, now + 0.03);
+      gain.gain.setValueAtTime(0.08 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.03);
+      return;
+    }
+
+    if (profile === 'velvet') {
+      // Whisper-quiet low frequency felt thud
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(55, now + 0.035);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(320, now);
+      gain.gain.setValueAtTime(0.12 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.035);
+      return;
+    }
+
     // Default 'zen': gentle crystal singing glass tap (C6)
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(1046.5, now);
 
-    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.setValueAtTime(0.05 * vol, now);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
 
     osc.connect(gain);
@@ -221,18 +460,20 @@ class AudioEngine {
   }
 
   /**
-   * Play gentle, pleasing harmonic sound tones for stateful toggles (on vs off).
+   * Play harmonic sound tones for stateful toggles (on vs off).
    */
-  public playToggleSound(state: boolean) {
-    if (!this.isSoundEnabled || this.soundProfile === 'mute') return;
+  public playToggleSound(state: boolean, profileOverride?: SoundProfile, forcePlay: boolean = false) {
+    const profile = profileOverride || this.soundProfile;
+    if ((!this.isSoundEnabled && !forcePlay) || profile === 'mute') return;
+
     this.notifyMajorSound();
     const ctx = this.getContext();
     if (!ctx) return;
 
     const now = ctx.currentTime;
+    const vol = this.tactileVolume;
 
-    if (this.soundProfile === 'bubble') {
-      // Gentle organic water bubble tones: ascending on ON, soft descending droplet on OFF
+    if (profile === 'bubble') {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
@@ -240,12 +481,12 @@ class AudioEngine {
       if (state) {
         osc.frequency.setValueAtTime(380, now);
         osc.frequency.exponentialRampToValueAtTime(680, now + 0.055);
-        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.setValueAtTime(0.09 * vol, now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
       } else {
         osc.frequency.setValueAtTime(620, now);
         osc.frequency.exponentialRampToValueAtTime(320, now + 0.06);
-        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.setValueAtTime(0.07 * vol, now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
       }
 
@@ -256,7 +497,7 @@ class AudioEngine {
       return;
     }
 
-    if (this.soundProfile === 'mechanical') {
+    if (profile === 'mechanical') {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
@@ -267,7 +508,7 @@ class AudioEngine {
         osc.frequency.setValueAtTime(1200, now);
         osc.frequency.exponentialRampToValueAtTime(500, now + 0.04);
       }
-      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.setValueAtTime(0.09 * vol, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -276,9 +517,88 @@ class AudioEngine {
       return;
     }
 
+    if (profile === 'marimba') {
+      const startFreq = state ? 440 : 660;
+      const endFreq = state ? 660 : 440;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.05);
+      gain.gain.setValueAtTime(0.12 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.065);
+      return;
+    }
+
+    if (profile === 'typewriter') {
+      // Rapid double click
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(state ? 1600 : 1300, now);
+      gain1.gain.setValueAtTime(0.1 * vol, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.02);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(state ? 2100 : 1000, now + 0.025);
+      gain2.gain.setValueAtTime(0.11 * vol, now + 0.025);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.025);
+      osc2.stop(now + 0.045);
+      return;
+    }
+
+    if (profile === 'synth') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      const startFreq = state ? 440 : 880;
+      const endFreq = state ? 880 : 440;
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.05);
+      gain.gain.setValueAtTime(0.08 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+      return;
+    }
+
+    if (profile === 'velvet') {
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      const startFreq = state ? 120 : 190;
+      const endFreq = state ? 190 : 120;
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.05);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(350, now);
+      gain.gain.setValueAtTime(0.11 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+      return;
+    }
+
     // Default 'zen': gentle harmonic intervals
-    // On: C5 (523.25 Hz) -> E5 (659.25 Hz)
-    // Off: E5 (659.25 Hz) -> C5 (523.25 Hz)
     const startFreq = state ? 523.25 : 659.25;
     const endFreq = state ? 659.25 : 523.25;
 
@@ -288,7 +608,7 @@ class AudioEngine {
     osc.frequency.setValueAtTime(startFreq, now);
     osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.05);
 
-    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.setValueAtTime(0.08 * vol, now);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
 
     osc.connect(gain);
@@ -306,18 +626,27 @@ class AudioEngine {
     this.playToggleSound(false);
   }
 
-  /**
-   * Gentle micro-tone for checking / unchecking a subtask.
-   */
   public playSubtaskToggle(completed: boolean) {
     this.playToggleSound(completed);
   }
 
-  /**
-   * Gentle pleasing tone for reopening / uncompleting a parent task.
-   */
   public playTaskUncheckSound() {
     this.playToggleSound(false);
+  }
+
+  /**
+   * Audition a specific sound profile directly without modifying global selection.
+   * Plays cleanly even if master sound is muted.
+   */
+  public auditionSound(profile: SoundProfile, type: 'pop' | 'toggle' | 'chime' = 'chime') {
+    if (profile === 'mute') return;
+    if (type === 'pop') {
+      this.playClickSound(profile, true);
+    } else if (type === 'toggle') {
+      this.playToggleSound(true, profile, true);
+    } else {
+      this.playCompletionChime(profile, true);
+    }
   }
 
   /**
@@ -329,7 +658,8 @@ class AudioEngine {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const frequencies = [440, 880, 1320]; // Fundamental + harmonics
+    const vol = this.tactileVolume;
+    const frequencies = [440, 880, 1320];
 
     frequencies.forEach((freq, index) => {
       const osc = ctx.createOscillator();
@@ -338,7 +668,7 @@ class AudioEngine {
       osc.type = index === 0 ? 'sine' : 'triangle';
       osc.frequency.setValueAtTime(freq, now);
 
-      const amp = 0.2 / (index + 1);
+      const amp = (0.2 / (index + 1)) * vol;
       gain.gain.setValueAtTime(0.001, now);
       gain.gain.linearRampToValueAtTime(amp, now + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
@@ -354,11 +684,13 @@ class AudioEngine {
   /**
    * Universal ambient soundscape player.
    */
-  public startAmbientSound(type: AmbientSoundType, volume: number = 0.08) {
+  public startAmbientSound(type: AmbientSoundType, volume: number = this.ambientVolume) {
     if (type === 'none') {
       this.stopAmbientSound();
       return;
     }
+    this.ambientVolume = volume;
+    this.currentAmbientType = type;
     if (type === 'brown') {
       this.startBrownNoise(volume);
     } else if (type === 'pink') {
@@ -367,6 +699,8 @@ class AudioEngine {
       this.startWhiteNoise(volume * 0.6);
     } else if (type === 'rain') {
       this.startRainSound(volume);
+    } else if (type === 'binaural') {
+      this.startBinauralTone(volume);
     }
   }
 
@@ -379,6 +713,7 @@ class AudioEngine {
     if (!ctx) return;
 
     this.stopAmbientSound();
+    this.currentAmbientType = 'brown';
 
     const bufferSize = 2 * ctx.sampleRate;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -389,7 +724,7 @@ class AudioEngine {
       const white = Math.random() * 2 - 1;
       output[i] = (lastOut + 0.02 * white) / 1.02;
       lastOut = output[i];
-      output[i] *= 3.5; // Gain compensation
+      output[i] *= 3.5;
     }
 
     const source = ctx.createBufferSource();
@@ -415,7 +750,7 @@ class AudioEngine {
   }
 
   /**
-   * Synthesize real-time Pink Noise (1/f equal energy per octave) via Paul Kellet filter.
+   * Synthesize real-time Pink Noise via Paul Kellet filter.
    */
   public startPinkNoise(volume: number = 0.08) {
     if (!this.isSoundEnabled) return;
@@ -423,6 +758,7 @@ class AudioEngine {
     if (!ctx) return;
 
     this.stopAmbientSound();
+    this.currentAmbientType = 'pink';
 
     const bufferSize = 2 * ctx.sampleRate;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -467,6 +803,7 @@ class AudioEngine {
     if (!ctx) return;
 
     this.stopAmbientSound();
+    this.currentAmbientType = 'white';
 
     const bufferSize = 2 * ctx.sampleRate;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -507,6 +844,7 @@ class AudioEngine {
     if (!ctx) return;
 
     this.stopAmbientSound();
+    this.currentAmbientType = 'rain';
 
     const bufferSize = 2 * ctx.sampleRate;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -545,8 +883,41 @@ class AudioEngine {
   }
 
   /**
-   * Harmonic Tibetan singing bowl chord (528 Hz Solfeggio frequency + harmonic overtones)
-   * celebrating complete execution of all 3 MITs.
+   * Synthesize 40Hz Gamma Focus Binaural Beats with soothing carrier tone.
+   */
+  public startBinauralTone(volume: number = 0.08) {
+    if (!this.isSoundEnabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    this.stopAmbientSound();
+    this.currentAmbientType = 'binaural';
+
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    osc1.type = 'sine';
+    osc2.type = 'sine';
+    // 190 Hz and 230 Hz create a 40 Hz difference binaural frequency
+    osc1.frequency.setValueAtTime(190, ctx.currentTime);
+    osc2.frequency.setValueAtTime(230, ctx.currentTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume * 0.65), ctx.currentTime + 1.5);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start();
+    osc2.start();
+
+    this.ambientOscillators = [osc1, osc2];
+    this.ambientGain = gain;
+  }
+
+  /**
+   * Harmonic Tibetan singing bowl chord (528 Hz Solfeggio frequency + harmonic overtones).
    */
   public playRuleOf3Fanfare() {
     if (!this.isSoundEnabled) return;
@@ -555,7 +926,8 @@ class AudioEngine {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const frequencies = [528, 792, 1056]; // 528 Hz fundamental, fifth, octave
+    const vol = this.tactileVolume;
+    const frequencies = [528, 792, 1056];
 
     frequencies.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
@@ -564,7 +936,7 @@ class AudioEngine {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now);
 
-      const amp = 0.16 / (idx + 1);
+      const amp = (0.16 / (idx + 1)) * vol;
       gain.gain.setValueAtTime(0.001, now);
       gain.gain.linearRampToValueAtTime(amp, now + 0.08);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.0);
@@ -578,6 +950,21 @@ class AudioEngine {
   }
 
   public stopAmbientSound(fadeDuration: number = 0.8) {
+    this.currentAmbientType = 'none';
+
+    // Stop multi-oscillator setups (e.g. binaural beats)
+    if (this.ambientOscillators.length > 0) {
+      const oscs = [...this.ambientOscillators];
+      this.ambientOscillators = [];
+      setTimeout(() => {
+        oscs.forEach((osc) => {
+          try {
+            osc.stop();
+          } catch {}
+        });
+      }, fadeDuration * 1000);
+    }
+
     if (this.ambientSource && this.ambientGain && this.ctx) {
       const source = this.ambientSource;
       const gain = this.ambientGain;

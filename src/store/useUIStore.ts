@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { ViewId, Priority } from '../types/task';
 import { audioEngine, type SoundProfile } from '../utils/audioEngine';
 
-export type AppTheme = 'light' | 'dark' | 'tokyo' | 'nord' | 'matcha';
+export type AppTheme = 'light' | 'dark' | 'tokyo' | 'nord' | 'matcha' | 'sepia' | 'crimson' | 'cobalt';
 
 export interface ToastState {
   message: string;
@@ -75,7 +75,7 @@ const parseInitialView = (): ViewId => {
 const getInitialTheme = (): AppTheme => {
   if (typeof localStorage === 'undefined') return 'light';
   const saved = localStorage.getItem('flowtask_theme') as AppTheme;
-  return ['light', 'dark', 'tokyo', 'nord', 'matcha'].includes(saved) ? saved : 'light';
+  return ['light', 'dark', 'tokyo', 'nord', 'matcha', 'sepia', 'crimson', 'cobalt'].includes(saved) ? saved : 'light';
 };
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -139,8 +139,16 @@ export const useUIStore = create<UIState>((set, get) => ({
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('flowtask_theme', theme);
     }
-    document.documentElement.classList.remove('dark', 'theme-tokyo', 'theme-nord', 'theme-matcha');
-    if (['dark', 'tokyo', 'nord'].includes(theme)) document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove(
+      'dark',
+      'theme-tokyo',
+      'theme-nord',
+      'theme-matcha',
+      'theme-sepia',
+      'theme-crimson',
+      'theme-cobalt'
+    );
+    if (['dark', 'tokyo', 'nord', 'crimson', 'cobalt'].includes(theme)) document.documentElement.classList.add('dark');
     if (!['light', 'dark'].includes(theme)) document.documentElement.classList.add(`theme-${theme}`);
     document.documentElement.setAttribute('data-theme', theme);
     set({ theme });

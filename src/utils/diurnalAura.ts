@@ -1,13 +1,15 @@
 /**
  * Diurnal Dynamic Ambient Glow & Shift Engine
  * Shifts ambient lighting organically across time of day:
- * - Morning (06:00 – 12:00): Warm amber/rose luminescence
- * - Midday (12:00 – 18:00): Electric indigo/sky clarity
- * - Evening/Night (18:00 – 06:00): Deep cosmic obsidian/violet calm
+ * - Morning Dawn (06:00 – 12:00): Warm amber/rose luminescence
+ * - Midday Zenith (12:00 – 17:00): Electric indigo/sky clarity
+ * - Golden Dusk (17:00 – 20:00): Warm terracotta & copper sunset aura
+ * - Evening Cosmic (20:00 – 00:00): Deep cosmic obsidian & violet calm
+ * - Midnight Starlight (00:00 – 06:00): Ethereal deep space obsidian & cyan/indigo calm
  */
 
-export type DiurnalPeriod = 'morning' | 'midday' | 'evening';
-export type DiurnalOverride = 'auto' | 'morning' | 'midday' | 'evening';
+export type DiurnalPeriod = 'morning' | 'midday' | 'dusk' | 'evening' | 'midnight';
+export type DiurnalOverride = 'auto' | 'morning' | 'midday' | 'dusk' | 'evening' | 'midnight';
 
 export interface DiurnalConfig {
   period: DiurnalPeriod;
@@ -38,6 +40,15 @@ const DIURNAL_CONFIGS: Record<DiurnalPeriod, DiurnalConfig> = {
     orb3Class: 'bg-stone-400/[0.03] dark:bg-stone-600/[0.02]',
     orb4Class: 'bg-slate-400/[0.03] dark:bg-slate-600/[0.02]',
   },
+  dusk: {
+    period: 'dusk',
+    label: 'Golden Dusk',
+    description: 'Warm terracotta & copper sunset horizon for relaxed focus',
+    orb1Class: 'bg-amber-500/[0.06] dark:bg-amber-600/[0.04]',
+    orb2Class: 'bg-orange-500/[0.05] dark:bg-orange-600/[0.03]',
+    orb3Class: 'bg-rose-500/[0.04] dark:bg-rose-700/[0.03]',
+    orb4Class: 'bg-purple-900/[0.04] dark:bg-purple-950/[0.05]',
+  },
   evening: {
     period: 'evening',
     label: 'Evening Cosmic',
@@ -46,6 +57,15 @@ const DIURNAL_CONFIGS: Record<DiurnalPeriod, DiurnalConfig> = {
     orb2Class: 'bg-indigo-800/[0.04] dark:bg-indigo-950/[0.05]',
     orb3Class: 'bg-stone-800/[0.03] dark:bg-stone-900/[0.04]',
     orb4Class: 'bg-slate-700/[0.03] dark:bg-slate-900/[0.05]',
+  },
+  midnight: {
+    period: 'midnight',
+    label: 'Midnight Starlight',
+    description: 'Deep celestial obsidian & starlight shimmer for quiet hyperfocus',
+    orb1Class: 'bg-indigo-900/[0.05] dark:bg-indigo-950/[0.06]',
+    orb2Class: 'bg-cyan-600/[0.04] dark:bg-cyan-500/[0.03]',
+    orb3Class: 'bg-violet-950/[0.05] dark:bg-violet-950/[0.07]',
+    orb4Class: 'bg-slate-900/[0.05] dark:bg-slate-950/[0.08]',
   },
 };
 
@@ -61,10 +81,16 @@ export function getDiurnalPeriod(override?: DiurnalOverride, date: Date = new Da
   if (hour >= 6 && hour < 12) {
     return 'morning';
   }
-  if (hour >= 12 && hour < 18) {
+  if (hour >= 12 && hour < 17) {
     return 'midday';
   }
-  return 'evening';
+  if (hour >= 17 && hour < 20) {
+    return 'dusk';
+  }
+  if (hour >= 20 && hour < 24) {
+    return 'evening';
+  }
+  return 'midnight';
 }
 
 export function getDiurnalConfig(period: DiurnalPeriod): DiurnalConfig {
@@ -75,7 +101,15 @@ export function loadDiurnalOverride(): DiurnalOverride {
   try {
     if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
       const saved = localStorage.getItem(STORAGE_KEY) as DiurnalOverride;
-      if (saved && (saved === 'auto' || saved === 'morning' || saved === 'midday' || saved === 'evening')) {
+      if (
+        saved &&
+        (saved === 'auto' ||
+          saved === 'morning' ||
+          saved === 'midday' ||
+          saved === 'dusk' ||
+          saved === 'evening' ||
+          saved === 'midnight')
+      ) {
         return saved;
       }
     }

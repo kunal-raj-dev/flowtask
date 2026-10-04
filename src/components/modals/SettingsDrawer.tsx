@@ -87,6 +87,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
     { id: 'tokyo', label: 'Tokyo Night', bg: 'bg-[#1A1B26] text-purple-200', border: 'border-indigo-500/30', desc: 'Neon cyber evening aesthetic' },
     { id: 'nord', label: 'Nord Cold', bg: 'bg-[#2E3440] text-cyan-100', border: 'border-cyan-500/30', desc: 'Arctic cool blue palette' },
     { id: 'matcha', label: 'Matcha Zen', bg: 'bg-[#18231C] text-emerald-200', border: 'border-emerald-500/30', desc: 'Organic grounding herbal tone' },
+    { id: 'sepia', label: 'Solarized Sepia', bg: 'bg-[#FBF7EE] text-[#2C2218]', border: 'border-amber-600/30', desc: 'Editorial warm parchment paper' },
+    { id: 'crimson', label: 'Cyber Crimson', bg: 'bg-[#0D080B] text-rose-200', border: 'border-rose-500/30', desc: 'Deep velvet obsidian with ruby neon' },
+    { id: 'cobalt', label: 'Deep Cobalt', bg: 'bg-[#060B14] text-cyan-200', border: 'border-cyan-500/30', desc: 'Oceanic midnight abyss with cyan borders' },
   ];
 
   if (!isOpen) return null;
@@ -439,6 +442,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
                       <option value="zen">Zen Singing Bowl (Harmonic)</option>
                       <option value="mechanical">Mechanical Switch (Clicky)</option>
                       <option value="bubble">Soft Bubble (Pop)</option>
+                      <option value="marimba">Marimba Teak (Acoustic)</option>
+                      <option value="typewriter">Retro Typewriter (Vintage)</option>
+                      <option value="synth">Cosmic Synth (Retro 80s)</option>
+                      <option value="velvet">Velvet Thud (Whisper Soft)</option>
+                      <option value="mute">Completely Silent (Mute)</option>
                     </select>
                   </div>
                 )}
