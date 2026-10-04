@@ -433,6 +433,7 @@ export function convertSessionToTask(
     status: 'todo',
     priority: 'p1', // Study sessions are prime daily focus
     projectId,
+    plannedDate: dueDateStr,
     dueDate: dueDateStr,
     dueTime: session.endTime,
     scheduledStart: session.startTime,

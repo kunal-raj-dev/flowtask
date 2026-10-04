@@ -467,6 +467,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               🎯 Session {task.sessionMetadata.sessionNumber || ''}
             </Badge>
           )}
+          {task.scheduledStart && !isDone && (
+            <Badge variant="teal" size="xs">
+              <Clock size={10} />
+              {task.scheduledStart}{task.scheduledEnd ? `–${task.scheduledEnd}` : ''}
+            </Badge>
+          )}
           {task.sessionMetadata?.pacingMinutesPerQuestion && (
             <Badge variant="brand" size="xs">
               ⚡ {task.sessionMetadata.pacingMinutesPerQuestion}m/Q
