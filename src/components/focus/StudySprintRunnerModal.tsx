@@ -110,20 +110,45 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
     };
   }, [isSessionRunning]);
 
-  // Fullscreen keyboard shortcut
+  // Ambient sound lifecycle management & unmount cleanup
   useEffect(() => {
+    return () => {
+      audioEngine.stopAmbientSound();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || ambientSound === 'none') {
+      audioEngine.stopAmbientSound();
+    } else {
+      audioEngine.startAmbientSound(ambientSound);
+    }
+  }, [isOpen, ambientSound]);
+
+  // Fullscreen keyboard shortcut with input protection & escape handling
+  useEffect(() => {
+    if (!isOpen || !task) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+
       if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
         setIsFullscreen((prev) => !prev);
       } else if (e.key === 'Escape') {
+        e.preventDefault();
         if (isFullscreen) {
           setIsFullscreen(false);
+        } else {
+          onClose();
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreen]);
+  }, [isOpen, task, isFullscreen, onClose]);
 
   if (!isOpen || !task) return null;
 
@@ -199,7 +224,6 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
 
   const handleAmbientChange = (type: AmbientSoundType) => {
     setAmbientSound(type);
-    audioEngine.startAmbientSound(type);
   };
 
   const getDifficultyBadge = (diff?: TargetDifficulty) => {
@@ -231,13 +255,15 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-md animate-fade-in"
+      className={`fixed inset-0 z-50 flex items-center justify-center ${
+        isFullscreen ? 'p-0' : 'p-2 sm:p-4'
+      } bg-black/70 backdrop-blur-md animate-fade-in`}
     >
       <div
-        className={`relative w-full bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-modal rounded-xl overflow-hidden flex flex-col transition-all ${
+        className={`relative w-full bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-modal overflow-hidden flex flex-col transition-all ${
           isFullscreen
-            ? 'h-full max-w-none rounded-none'
-            : 'max-w-4xl max-h-[92vh] card-surface'
+            ? 'h-full max-w-none rounded-none border-none'
+            : 'max-w-4xl max-h-[92vh] rounded-xl card-surface'
         }`}
       >
         {/* Top Header Bar */}

@@ -78,10 +78,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   const defaultPlannedDate = activeView === 'today' ? todayStr : undefined;
 
   // Sync draft change to parent
-  const handleInputChange = (val: string) => {
+  const handleInputChange = useCallback((val: string) => {
     setInput(val);
     if (onDraftChange) onDraftChange(val);
-  };
+  }, [onDraftChange]);
 
   useEffect(() => {
     if (autoFocus) {
@@ -113,7 +113,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
         status: 'todo',
         priority: effectivePriority,
         projectId: projectObj.id,
-        createdAt: Date.now(),
+        createdAt: 0,
         subtasks: [],
       },
       tasks
@@ -159,7 +159,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
       setIsListening(false);
       showToast('Could not access microphone.');
     }
-  }, [isSpeechSupported, isListening, showToast]);
+  }, [isSpeechSupported, isListening, showToast, handleInputChange]);
 
   useEffect(() => {
     return () => {

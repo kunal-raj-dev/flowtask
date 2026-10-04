@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
 import { useTaskContext } from '../../context/TaskContext';
 
@@ -27,7 +27,7 @@ interface ModalRootProps {
 }
 
 export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudySprint }) => {
-  const { isModalOpen, closeModal, openModal, getModalProps } = useModal();
+  const { isModalOpen, closeModal, openModal, getModalProps, activeModals } = useModal();
   const {
     isAuthModalOpen,
     setIsAuthModalOpen,
@@ -41,6 +41,61 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
   } = useTaskContext();
 
   const handleSelectTask = onSelectTask || ((id: string) => setSelectedTaskId(id));
+
+  // Centralized Escape key dismissal for all active modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+
+      if (activeModals.length > 0) {
+        const topModal = activeModals[activeModals.length - 1];
+        if (topModal === 'pomodoro' || topModal === 'studySprint') {
+          // Focus modals handle their own Escape sequence (e.g. exit Zen fullscreen first)
+          return;
+        }
+        e.preventDefault();
+        closeModal(topModal);
+        if (topModal === 'auth') setIsAuthModalOpen(false);
+        if (topModal === 'eveningShutdown') setIsEveningShutdownOpen(false);
+        if (topModal === 'weeklyReview') setIsWeeklyReviewOpen(false);
+        if (topModal === 'smartFilter') setIsSmartFilterModalOpen(false);
+        return;
+      }
+
+      // Fallback for standalone TaskContext modals
+      if (isAuthModalOpen) {
+        e.preventDefault();
+        setIsAuthModalOpen(false);
+        closeModal('auth');
+      } else if (isEveningShutdownOpen) {
+        e.preventDefault();
+        setIsEveningShutdownOpen(false);
+        closeModal('eveningShutdown');
+      } else if (isWeeklyReviewOpen) {
+        e.preventDefault();
+        setIsWeeklyReviewOpen(false);
+        closeModal('weeklyReview');
+      } else if (isSmartFilterModalOpen) {
+        e.preventDefault();
+        setIsSmartFilterModalOpen(false);
+        closeModal('smartFilter');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    activeModals,
+    closeModal,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    isEveningShutdownOpen,
+    setIsEveningShutdownOpen,
+    isWeeklyReviewOpen,
+    setIsWeeklyReviewOpen,
+    isSmartFilterModalOpen,
+    setIsSmartFilterModalOpen,
+  ]);
 
   return (
     <Suspense fallback={<div role="status" className="fixed inset-0 z-50 bg-black/30 grid place-items-center"><p className="bg-white text-black p-5 rounded-xl">Opening…</p></div>}>
