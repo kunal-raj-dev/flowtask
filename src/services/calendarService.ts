@@ -50,13 +50,58 @@ export function parseICSFeed(content: string, targetDateStr = formatLocalDate(ne
   return events.sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 export async function parseICSFile(file: File, targetDateStr = formatLocalDate(new Date())) { return parseICSFeed(await file.text(), targetDateStr); }
-export async function fetchICSFeed(feedUrl: string, targetDateStr = formatLocalDate(new Date())): Promise<CalendarEvent[]> {
+export async function fetchICSFeed(
+  feedUrl: string,
+  targetDateStr = formatLocalDate(new Date()),
+  customProxyUrl?: string
+): Promise<CalendarEvent[]> {
   const cleanUrl = feedUrl.trim().replace(/^webcal:\/\//i, 'https://');
   if (!cleanUrl) return [];
   const parsed = new URL(cleanUrl);
   if (!['https:', 'http:'].includes(parsed.protocol)) throw new Error('Use an HTTP or HTTPS calendar URL.');
-  const response = await fetch(cleanUrl, { headers: { Accept: 'text/calendar, text/plain' }, signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error(`Calendar server returned ${response.status}.`);
+
+  let response: Response | null = null;
+  let lastError: Error | null = null;
+
+  // 1. Direct fetch attempt
+  try {
+    response = await fetch(cleanUrl, {
+      headers: { Accept: 'text/calendar, text/plain' },
+      signal: AbortSignal.timeout(12000),
+    });
+  } catch (err) {
+    lastError = err as Error;
+  }
+
+  // 2. Fallback via CORS proxy if direct fetch is blocked by browser CORS
+  if (!response || !response.ok) {
+    const proxiesToTry = [
+      customProxyUrl ? `${customProxyUrl}?url=${encodeURIComponent(cleanUrl)}` : null,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`,
+    ].filter(Boolean) as string[];
+
+    for (const proxy of proxiesToTry) {
+      try {
+        const proxied = await fetch(proxy, {
+          headers: { Accept: 'text/calendar, text/plain' },
+          signal: AbortSignal.timeout(12000),
+        });
+        if (proxied.ok) {
+          response = proxied;
+          break;
+        }
+      } catch (err) {
+        lastError = err as Error;
+      }
+    }
+  }
+
+  if (!response || !response.ok) {
+    throw new Error(
+      lastError?.message || `Calendar server returned ${response?.status || 'network error'}.`
+    );
+  }
+
   const content = await response.text();
   if (!content.includes('BEGIN:VCALENDAR')) throw new Error('The URL did not return an iCalendar feed.');
   return parseICSFeed(content, targetDateStr);

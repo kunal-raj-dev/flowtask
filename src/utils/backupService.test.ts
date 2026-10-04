@@ -88,4 +88,10 @@ describe('backupService', () => {
     const triggeredAgain = checkAndTriggerDailyAutoSnapshot(mockTasks, mockProjects);
     expect(triggeredAgain).toBe(false);
   });
+
+  it('handles loadSnapshotsFromIDB fallback gracefully', async () => {
+    const { loadSnapshotsFromIDB } = await import('./backupService');
+    const snaps = await loadSnapshotsFromIDB();
+    expect(Array.isArray(snaps)).toBe(true);
+  });
 });

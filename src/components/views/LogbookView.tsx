@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
 import { VirtualTaskList } from '../tasks/VirtualTaskList';
@@ -12,6 +12,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import { generateWorklogMarkdown } from '../../utils/worklogExporter';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from 'canvas-confetti';
@@ -27,67 +28,77 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
   const [timeHorizon, setTimeHorizon] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
 
-  const todayStr = formatLocalDate(new Date());
-  const nowMs = Date.now();
-  const dayMs = 24 * 60 * 60 * 1000;
-  const sevenDaysAgoMs = nowMs - 7 * dayMs;
-  const thirtyDaysAgoMs = nowMs - 30 * dayMs;
+  const todayStr = useTodayStr();
 
-  // Filter completed tasks
-  const allCompletedTasks = tasks
-    .filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done')
-    .sort((a, b) => (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt));
+  // Filter completed tasks (memoized)
+  const allCompletedTasks = useMemo(() => {
+    return tasks
+      .filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done')
+      .sort((a, b) => (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt));
+  }, [tasks]);
 
-  const filteredTasks = allCompletedTasks.filter((t) => {
-    // 1. Search Query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = t.title.toLowerCase().includes(q);
-      const matchDesc = t.description?.toLowerCase().includes(q);
-      const matchTags = t.tags?.some((tag) => tag.toLowerCase().includes(q));
-      if (!matchTitle && !matchDesc && !matchTags) return false;
-    }
+  const { filteredTasks, totalFilteredHours, todayTasks, yesterdayTasks, earlierTasks } = useMemo(() => {
+    const nowMs = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const sevenDaysAgoMs = nowMs - 7 * dayMs;
+    const thirtyDaysAgoMs = nowMs - 30 * dayMs;
 
-    // 2. Project
-    if (selectedProjectId !== 'all' && t.projectId !== selectedProjectId) {
-      return false;
-    }
+    const filtered = allCompletedTasks.filter((t) => {
+      // 1. Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = t.title.toLowerCase().includes(q);
+        const matchDesc = t.description?.toLowerCase().includes(q);
+        const matchTags = t.tags?.some((tag) => tag.toLowerCase().includes(q));
+        if (!matchTitle && !matchDesc && !matchTags) return false;
+      }
 
-    // 3. Time Horizon
-    const completedTime = t.completedAt || t.createdAt;
-    if (timeHorizon === 'today') {
-      const compDateStr = formatLocalDate(new Date(completedTime));
-      if (compDateStr !== todayStr) return false;
-    } else if (timeHorizon === 'week') {
-      if (completedTime < sevenDaysAgoMs) return false;
-    } else if (timeHorizon === 'month') {
-      if (completedTime < thirtyDaysAgoMs) return false;
-    }
+      // 2. Project
+      if (selectedProjectId !== 'all' && t.projectId !== selectedProjectId) {
+        return false;
+      }
 
-    return true;
-  });
+      // 3. Time Horizon
+      const completedTime = t.completedAt || t.createdAt;
+      if (timeHorizon === 'today') {
+        const compDateStr = formatLocalDate(new Date(completedTime));
+        if (compDateStr !== todayStr) return false;
+      } else if (timeHorizon === 'week') {
+        if (completedTime < sevenDaysAgoMs) return false;
+      } else if (timeHorizon === 'month') {
+        if (completedTime < thirtyDaysAgoMs) return false;
+      }
 
-  const totalFilteredMinutes = filteredTasks.reduce(
-    (acc, t) => acc + (t.timeSpentMinutes || 0),
-    0
-  );
-  const totalFilteredHours = (totalFilteredMinutes / 60).toFixed(1);
+      return true;
+    });
 
-  // Group filtered tasks by relative periods
-  const todayTasks = filteredTasks.filter(
-    (t) => formatLocalDate(new Date(t.completedAt || t.createdAt)) === todayStr
-  );
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayStr = formatLocalDate(yesterdayDate);
+    const totalMinutes = filtered.reduce((acc, t) => acc + (t.timeSpentMinutes || 0), 0);
+    const totalHours = (totalMinutes / 60).toFixed(1);
 
-  const yesterdayTasks = filteredTasks.filter(
-    (t) => formatLocalDate(new Date(t.completedAt || t.createdAt)) === yesterdayStr
-  );
-  const earlierTasks = filteredTasks.filter((t) => {
-    const dStr = formatLocalDate(new Date(t.completedAt || t.createdAt));
-    return dStr !== todayStr && dStr !== yesterdayStr;
-  });
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = formatLocalDate(yesterdayDate);
+
+    const todayList = filtered.filter(
+      (t) => formatLocalDate(new Date(t.completedAt || t.createdAt)) === todayStr
+    );
+    const yesterdayList = filtered.filter(
+      (t) => formatLocalDate(new Date(t.completedAt || t.createdAt)) === yesterdayStr
+    );
+    const earlierList = filtered.filter((t) => {
+      const dStr = formatLocalDate(new Date(t.completedAt || t.createdAt));
+      return dStr !== todayStr && dStr !== yesterdayStr;
+    });
+
+    return {
+      filteredTasks: filtered,
+      totalFilteredMinutes: totalMinutes,
+      totalFilteredHours: totalHours,
+      todayTasks: todayList,
+      yesterdayTasks: yesterdayList,
+      earlierTasks: earlierList,
+    };
+  }, [allCompletedTasks, searchQuery, selectedProjectId, timeHorizon, todayStr]);
 
   const handleCopyWorklog = () => {
     const text = generateWorklogMarkdown(filteredTasks, projects, { timeHorizon });

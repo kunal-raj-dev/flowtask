@@ -15,5 +15,28 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "utilities"]
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Today's Agenda",
+      "short_name": "Today",
+      "description": "View today's priority tasks",
+      "url": "/?view=today",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Capture Task",
+      "short_name": "Quick Add",
+      "description": "Quickly capture a task",
+      "url": "/?action=quickadd",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Inbox Backlog",
+      "short_name": "Inbox",
+      "description": "View unorganized inbox thoughts",
+      "url": "/?view=inbox",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
 }

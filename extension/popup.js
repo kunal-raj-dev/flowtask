@@ -66,13 +66,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         tasks.push(taskPayload);
         await chrome.storage.local.set({ flowtask_captured_tasks: tasks });
       }
-    } catch (e) {
+
+      // Real-time broadcast to active FlowTask tabs
+      if (chrome && chrome.tabs && chrome.tabs.query) {
+        try {
+          const tabs = await chrome.tabs.query({});
+          for (const tab of tabs) {
+            if (
+              tab.id &&
+              tab.url &&
+              (tab.url.includes('localhost') ||
+                tab.url.includes('127.0.0.1') ||
+                tab.url.includes('vercel.app') ||
+                tab.url.includes('flowtask'))
+            ) {
+              chrome.tabs.sendMessage(tab.id, {
+                type: 'FLOWTASK_EXTERNAL_CAPTURE',
+                task: taskPayload,
+              }).catch(() => {});
+            }
+          }
+        } catch {
+          // Non-blocking tab messaging
+        }
+      }
+    } catch {
       statusMsg.textContent = 'Could not save capture. Keep this popup open and retry.';
       statusMsg.style.display = 'block';
       return;
     }
 
+    statusMsg.textContent = 'Task captured to FlowTask!';
     statusMsg.style.display = 'block';
+    titleInput.value = '';
+    urlInput.value = '';
+    titleInput.focus();
 
+    setTimeout(() => {
+      statusMsg.style.display = 'none';
+    }, 2500);
   });
 });

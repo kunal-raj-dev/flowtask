@@ -1,6 +1,7 @@
 import { isTodayTask } from '../../utils/taskSelectors';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import {
   Sun,
   Inbox,
@@ -35,7 +36,6 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
-import { formatLocalDate } from '../../utils/nlpParser';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
 import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../ui';
@@ -131,43 +131,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [activeView]);
 
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = useTodayStr();
 
-  // Count active tasks for views with strict view-selector parity
-  const todayCount = tasks.filter(t => isTodayTask(t, todayStr)).length;
+  // Memoized view counts and project counts in a single pass
+  const { todayCount, inboxCount, upcomingCount, somedayCount, allCount, activeProjectCount, projectTaskCountMap } = useMemo(() => {
+    let today = 0;
+    let inbox = 0;
+    let upcoming = 0;
+    let someday = 0;
+    let all = 0;
+    const projectMap = new Map<string, number>();
 
-  const inboxCount = tasks.filter(
-    (t) =>
-      t.status !== 'done' &&
-      !t.deletedAt &&
-      !t.archivedAt &&
-      t.projectId === 'inbox' &&
-      !t.dueDate &&
-      !t.plannedDate &&
-      !t.isSomeday
-  ).length;
+    tasks.forEach((t) => {
+      if (t.deletedAt || t.archivedAt) return;
+      if (isTodayTask(t, todayStr)) {
+        today++;
+      }
+      if (t.status !== 'done') {
+        all++;
+        projectMap.set(t.projectId, (projectMap.get(t.projectId) || 0) + 1);
 
-  const upcomingCount = tasks.filter((t) => {
-    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
-    const taskDate = t.plannedDate || t.dueDate;
-    return taskDate && taskDate > todayStr;
-  }).length;
+        if (t.projectId === 'inbox' && !t.dueDate && !t.plannedDate && !t.isSomeday) {
+          inbox++;
+        }
+        const taskDate = t.plannedDate || t.dueDate;
+        if (taskDate && taskDate > todayStr) {
+          upcoming++;
+        }
+        if (t.isSomeday || (!t.dueDate && !t.plannedDate && t.projectId === 'ideas')) {
+          someday++;
+        }
+      }
+    });
 
-  const somedayCount = tasks.filter((t) => {
-    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
-    return Boolean(
-      t.isSomeday ||
-        (!t.dueDate && !t.plannedDate && t.projectId === 'ideas')
-    );
-  }).length;
+    const activeProjects = projects.filter((p) => p.id !== 'inbox' && p.id !== 'ideas' && !p.isArchived).length;
 
-  const allCount = tasks.filter(
-    (t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt
-  ).length;
-
-  const activeProjectCount = projects.filter(
-    (p) => p.id !== 'inbox' && p.id !== 'ideas' && !p.isArchived
-  ).length;
+    return {
+      todayCount: today,
+      inboxCount: inbox,
+      upcomingCount: upcoming,
+      somedayCount: someday,
+      allCount: all,
+      activeProjectCount: activeProjects,
+      projectTaskCountMap: projectMap,
+    };
+  }, [tasks, projects, todayStr]);
 
   const handleCreateProject = (e: React.FormEvent) => {
     e.preventDefault();
@@ -658,9 +666,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             .filter((p) => p.id !== 'inbox' && p.id !== 'ideas')
             .map((project) => {
               const isSelected = activeView === `project:${project.id}`;
-              const projCount = tasks.filter(
-                (t) => t.status !== 'done' && t.projectId === project.id
-              ).length;
+              const projCount = projectTaskCountMap.get(project.id) || 0;
 
               return (
                 <button

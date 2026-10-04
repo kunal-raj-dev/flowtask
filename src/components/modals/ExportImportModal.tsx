@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { exportToMarkdown, exportToJSON, exportToCSV } from '../../utils/storage';
 import { generateDailyStandup } from '../../utils/standupGenerator';
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import {
   getStoredSnapshots,
+  loadSnapshotsFromIDB,
   createLocalSnapshot,
   restoreSnapshot,
   deleteSnapshot,
@@ -51,6 +52,14 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   const [importJsonText, setImportJsonText] = useState('');
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [importError, setImportError] = useState('');
+
+  useEffect(() => {
+    void loadSnapshotsFromIDB().then((snaps) => {
+      if (snaps && snaps.length > 0) {
+        setLocalSnapshots(snaps);
+      }
+    });
+  }, []);
 
   const validationPreview = useMemo(() => {
     if (!importJsonText.trim()) return null;

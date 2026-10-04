@@ -1,6 +1,7 @@
 import { isTodayTask } from '../../utils/taskSelectors';
 import { RecoveryView } from '../views/RecoveryView';
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import { Sidebar } from './Sidebar';
 import { TodayView } from '../views/TodayView';
@@ -21,7 +22,7 @@ import { Button } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
 import { Menu, Search, Share2, X, Pause, Play, Plus, Timer, Settings } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
-import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
 import { getDiurnalPeriod, getDiurnalConfig, type DiurnalPeriod } from '../../utils/diurnalAura';
 import { useTactileAudioClicks } from '../../hooks/useTactileAudioClicks';
@@ -65,7 +66,12 @@ export const AppLayout: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('flowtask_sidebar_collapsed') === 'true';
   });
-  const [pendingSnapshot, setPendingSnapshot] = useState<SnapshotPayload | null>(null);
+  const [pendingSnapshot, setPendingSnapshot] = useState<SnapshotPayload | null>(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('snapshot=')) {
+      return parseSnapshotFromUrl(window.location.hash);
+    }
+    return null;
+  });
   const [diurnalPeriod, setDiurnalPeriod] = useState<DiurnalPeriod>(() => getDiurnalPeriod());
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
@@ -87,16 +93,6 @@ export const AppLayout: React.FC = () => {
       clearInterval(interval);
       window.removeEventListener('diurnal-change', handleDiurnalUpdate);
     };
-  }, []);
-
-  // Check for incoming shared snapshot in URL hash
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash.includes('snapshot=')) {
-      const parsed = parseSnapshotFromUrl(window.location.hash);
-      if (parsed) {
-        setPendingSnapshot(parsed);
-      }
-    }
   }, []);
 
   useEffect(() => {
@@ -174,12 +170,12 @@ export const AppLayout: React.FC = () => {
     isModalOpen,
   ]);
 
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = useTodayStr();
 
-  // Count active tasks for views with exact view-selector parity
-  const todayCount = tasks.filter(t => isTodayTask(t, todayStr)).length;
+  // Count active tasks for views with exact view-selector parity (memoized)
+  const todayCount = useMemo(() => tasks.filter(t => isTodayTask(t, todayStr)).length, [tasks, todayStr]);
 
-  const inboxCount = tasks.filter(
+  const inboxCount = useMemo(() => tasks.filter(
     (t) =>
       t.status !== 'done' &&
       !t.deletedAt &&
@@ -188,13 +184,13 @@ export const AppLayout: React.FC = () => {
       !t.dueDate &&
       !t.plannedDate &&
       !t.isSomeday
-  ).length;
+  ).length, [tasks]);
 
-  const upcomingCount = tasks.filter((t) => {
+  const upcomingCount = useMemo(() => tasks.filter((t) => {
     if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
     const taskDate = t.plannedDate || t.dueDate;
     return taskDate && taskDate > todayStr;
-  }).length;
+  }).length, [tasks, todayStr]);
 
   const formatStopwatch = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -202,19 +198,25 @@ export const AppLayout: React.FC = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const activeTimerTask = activeTimerTaskId ? tasks.find((t) => t.id === activeTimerTaskId) : null;
+  const activeTimerTask = useMemo(
+    () => (activeTimerTaskId ? tasks.find((t) => t.id === activeTimerTaskId) || null : null),
+    [activeTimerTaskId, tasks]
+  );
 
-  const todayTasksList = tasks.filter((t) => {
-    if (t.deletedAt || t.archivedAt) return false;
-    return (
-      t.plannedDate === todayStr ||
-      (!t.plannedDate && t.dueDate === todayStr) ||
-      t.isPinnedToday
-    );
-  });
-  const totalTodayPlanned = todayTasksList.length;
-  const todayDoneCount = todayTasksList.filter((t) => t.status === 'done').length;
-  const todayPercent = totalTodayPlanned > 0 ? Math.round((todayDoneCount / totalTodayPlanned) * 100) : 0;
+  const { totalTodayPlanned, todayDoneCount, todayPercent } = useMemo(() => {
+    const list = tasks.filter((t) => {
+      if (t.deletedAt || t.archivedAt) return false;
+      return (
+        t.plannedDate === todayStr ||
+        (!t.plannedDate && t.dueDate === todayStr) ||
+        t.isPinnedToday
+      );
+    });
+    const total = list.length;
+    const done = list.filter((t) => t.status === 'done').length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { totalTodayPlanned: total, todayDoneCount: done, todayPercent: pct };
+  }, [tasks, todayStr]);
 
   const getViewTitle = () => {
     switch (activeView) {
@@ -396,54 +398,64 @@ export const AppLayout: React.FC = () => {
       </div>
 
       {/* Mobile Drawer Overlay */}
-      {isSidebarOpenMobile && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-          onClick={() => setIsSidebarOpenMobile(false)}
-        >
-          <div
-            className="w-64 h-full bg-[var(--bg-surface-l1)] shadow-2xl animate-slide-down border-r border-[var(--border-hairline)]"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {isSidebarOpenMobile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+            onClick={() => setIsSidebarOpenMobile(false)}
           >
-            <Sidebar
-              onItemClick={() => setIsSidebarOpenMobile(false)}
-              isMobileDrawer={true}
-              onOpenPomodoro={() => {
-                setIsSidebarOpenMobile(false);
-                openModal('pomodoro');
-              }}
-              onOpenShortcuts={() => {
-                setIsSidebarOpenMobile(false);
-                openModal('shortcuts');
-              }}
-              onOpenExportImport={() => {
-                setIsSidebarOpenMobile(false);
-                openModal('exportImport');
-              }}
-              onOpenBrainDump={() => {
-                setIsSidebarOpenMobile(false);
-                openModal('brainDump');
-              }}
-              onOpenAesthetics={() => {
-                setIsSidebarOpenMobile(false);
-                openModal('aesthetics');
-              }}
-              onOpenScratchpad={() => {
-                setIsSidebarOpenMobile(false);
-                openModal('scratchpad');
-              }}
-              onOpenStudySession={() => {
-                setIsSidebarOpenMobile(false);
-                openModal('studySession');
-              }}
-              onOpenSettings={() => {
-                setIsSidebarOpenMobile(false);
-                openModal('settings');
-              }}
-            />
-          </div>
-        </div>
-      )}
+            <motion.div
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+              className="w-64 h-full bg-[var(--bg-surface-l1)] shadow-2xl border-r border-[var(--border-hairline)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Sidebar
+                onItemClick={() => setIsSidebarOpenMobile(false)}
+                isMobileDrawer={true}
+                onOpenPomodoro={() => {
+                  setIsSidebarOpenMobile(false);
+                  openModal('pomodoro');
+                }}
+                onOpenShortcuts={() => {
+                  setIsSidebarOpenMobile(false);
+                  openModal('shortcuts');
+                }}
+                onOpenExportImport={() => {
+                  setIsSidebarOpenMobile(false);
+                  openModal('exportImport');
+                }}
+                onOpenBrainDump={() => {
+                  setIsSidebarOpenMobile(false);
+                  openModal('brainDump');
+                }}
+                onOpenAesthetics={() => {
+                  setIsSidebarOpenMobile(false);
+                  openModal('aesthetics');
+                }}
+                onOpenScratchpad={() => {
+                  setIsSidebarOpenMobile(false);
+                  openModal('scratchpad');
+                }}
+                onOpenStudySession={() => {
+                  setIsSidebarOpenMobile(false);
+                  openModal('studySession');
+                }}
+                onOpenSettings={() => {
+                  setIsSidebarOpenMobile(false);
+                  openModal('settings');
+                }}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
@@ -843,14 +855,17 @@ export const AppLayout: React.FC = () => {
       <QuickAddModal />
 
       {/* Slide-over Task Detail Drawer */}
-      {selectedTaskId && (
-        <TaskDrawer
-          taskId={selectedTaskId}
-          onClose={() => setSelectedTaskId(null)}
-          onStartFocus={handleStartFocus}
-          onStartSprint={handleStartStudySprint}
-        />
-      )}
+      <AnimatePresence>
+        {selectedTaskId && (
+          <TaskDrawer
+            key={selectedTaskId}
+            taskId={selectedTaskId}
+            onClose={() => setSelectedTaskId(null)}
+            onStartFocus={handleStartFocus}
+            onStartSprint={handleStartStudySprint}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Batch Actions Dock */}
       <BatchActionBar />

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
-import { parseTaskInput, formatLocalDate } from '../../utils/nlpParser';
+import { parseTaskInput } from '../../utils/nlpParser';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import type { Priority, RecurrenceFrequency } from '../../types/task';
 import { findPotentialDuplicates } from '../../utils/duplicateDetector';
 import {
@@ -70,7 +71,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   const sessionRef = useRef<VoiceDictationSession | null>(null);
   const isSpeechSupported = isVoiceDictationSupported();
 
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = useTodayStr();
 
   // Default context resolution
   const defaultProjectId = activeView.startsWith('project:') ? activeView.split(':')[1] : 'inbox';

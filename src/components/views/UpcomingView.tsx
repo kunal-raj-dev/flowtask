@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
 import { Omnibar } from '../tasks/Omnibar';
 import { TimelineView } from './TimelineView';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { Calendar, CalendarDays, Clock, List } from 'lucide-react';
 import { SegmentedControl } from '../ui/SegmentedControl';
@@ -35,67 +36,89 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   const [presentationMode, setPresentationMode] = useState<'list' | 'timeline'>('list');
   const [selectedHorizonDate, setSelectedHorizonDate] = useState<string | null>(null);
 
-  const today = new Date();
-  const todayStr = formatLocalDate(today);
+  const todayStr = useTodayStr();
 
   // Future incomplete tasks (plannedDate > todayStr or fallback dueDate > todayStr)
-  const rawUpcomingTasks = tasks.filter((t) => {
-    if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
-    const taskDate = t.plannedDate || t.dueDate;
-    return taskDate && taskDate > todayStr;
-  });
-
-  // Generate 7-day horizon (Tomorrow + next 6 days)
-  const horizonDays = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() + (i + 1));
-    const dateStr = formatLocalDate(d);
-    const dayTasks = tasks.filter((t) => {
+  const rawUpcomingTasks = useMemo(() => {
+    return tasks.filter((t) => {
       if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
       const taskDate = t.plannedDate || t.dueDate;
-      return taskDate === dateStr;
+      return Boolean(taskDate && taskDate > todayStr);
     });
-    const totalMinutes = dayTasks.reduce((acc, t) => acc + (t.estimatedMinutes || 25), 0);
+  }, [tasks, todayStr]);
+
+  // Generate 7-day horizon (Tomorrow + next 6 days) (memoized)
+  const { horizonDays, tomorrowStr, endOfWeekStr, nextWeekEndStr } = useMemo(() => {
+    const today = new Date();
+    const days = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + (i + 1));
+      const dateStr = formatLocalDate(d);
+      const dayTasks = tasks.filter((t) => {
+        if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
+        const taskDate = t.plannedDate || t.dueDate;
+        return taskDate === dateStr;
+      });
+      const totalMinutes = dayTasks.reduce((acc, t) => acc + (t.estimatedMinutes || 25), 0);
+      return {
+        date: d,
+        dateStr,
+        dayName: i === 0 ? 'Tmrw' : d.toLocaleDateString(undefined, { weekday: 'short' }),
+        dayNumber: d.getDate(),
+        taskCount: dayTasks.length,
+        hoursText: totalMinutes > 0 ? `${(totalMinutes / 60).toFixed(1)}h` : 'Free',
+      };
+    });
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tmrStr = formatLocalDate(tomorrow);
+
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+    const eowStr = formatLocalDate(endOfWeek);
+
+    const nextWeekEnd = new Date(endOfWeek);
+    nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
+    const nweStr = formatLocalDate(nextWeekEnd);
+
     return {
-      date: d,
-      dateStr,
-      dayName: i === 0 ? 'Tmrw' : d.toLocaleDateString(undefined, { weekday: 'short' }),
-      dayNumber: d.getDate(),
-      taskCount: dayTasks.length,
-      hoursText: totalMinutes > 0 ? `${(totalMinutes / 60).toFixed(1)}h` : 'Free',
+      horizonDays: days,
+      tomorrowStr: tmrStr,
+      endOfWeekStr: eowStr,
+      nextWeekEndStr: nweStr,
     };
-  });
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = formatLocalDate(tomorrow);
-
-  const endOfWeek = new Date(today);
-  endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
-  const endOfWeekStr = formatLocalDate(endOfWeek);
-
-  const nextWeekEnd = new Date(endOfWeek);
-  nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
-  const nextWeekEndStr = formatLocalDate(nextWeekEnd);
+  }, [tasks, todayStr]);
 
   // Filter tasks based on selected horizon date or full list
-  const activeTasksToDisplay = selectedHorizonDate
-    ? rawUpcomingTasks.filter((t) => (t.plannedDate || t.dueDate) === selectedHorizonDate)
-    : rawUpcomingTasks;
+  const activeTasksToDisplay = useMemo(() => {
+    return selectedHorizonDate
+      ? rawUpcomingTasks.filter((t) => (t.plannedDate || t.dueDate) === selectedHorizonDate)
+      : rawUpcomingTasks;
+  }, [rawUpcomingTasks, selectedHorizonDate]);
 
-  const tomorrowTasks = activeTasksToDisplay.filter((t) => (t.plannedDate || t.dueDate) === tomorrowStr);
-  const thisWeekTasks = activeTasksToDisplay.filter((t) => {
-    const d = t.plannedDate || t.dueDate;
-    return d && d > tomorrowStr && d <= endOfWeekStr;
-  });
-  const nextWeekTasks = activeTasksToDisplay.filter((t) => {
-    const d = t.plannedDate || t.dueDate;
-    return d && d > endOfWeekStr && d <= nextWeekEndStr;
-  });
-  const laterTasks = activeTasksToDisplay.filter((t) => {
-    const d = t.plannedDate || t.dueDate;
-    return d && d > nextWeekEndStr;
-  });
+  const { tomorrowTasks, thisWeekTasks, nextWeekTasks, laterTasks } = useMemo(() => {
+    const tomorrowList = activeTasksToDisplay.filter((t) => (t.plannedDate || t.dueDate) === tomorrowStr);
+    const thisWeekList = activeTasksToDisplay.filter((t) => {
+      const d = t.plannedDate || t.dueDate;
+      return Boolean(d && d > tomorrowStr && d <= endOfWeekStr);
+    });
+    const nextWeekList = activeTasksToDisplay.filter((t) => {
+      const d = t.plannedDate || t.dueDate;
+      return Boolean(d && d > endOfWeekStr && d <= nextWeekEndStr);
+    });
+    const laterList = activeTasksToDisplay.filter((t) => {
+      const d = t.plannedDate || t.dueDate;
+      return Boolean(d && d > nextWeekEndStr);
+    });
+
+    return {
+      tomorrowTasks: tomorrowList,
+      thisWeekTasks: thisWeekList,
+      nextWeekTasks: nextWeekList,
+      laterTasks: laterList,
+    };
+  }, [activeTasksToDisplay, tomorrowStr, endOfWeekStr, nextWeekEndStr]);
 
   const { focusedTaskId, setFocusedIndex } = useKeyboardNavigation({
     tasks: activeTasksToDisplay,

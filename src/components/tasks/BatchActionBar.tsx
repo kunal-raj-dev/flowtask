@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
 import type { Priority } from '../../types/task';
@@ -25,8 +26,6 @@ export const BatchActionBar: React.FC = () => {
 
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
-
-  if (selectedTaskIds.length === 0) return null;
 
   const count = selectedTaskIds.length;
   const todayStr = formatLocalDate(new Date());
@@ -56,11 +55,18 @@ export const BatchActionBar: React.FC = () => {
   };
 
   return (
-    <div
-      role="region"
-      aria-label="Bulk task actions"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up"
-    >
+    <AnimatePresence>
+      {selectedTaskIds.length > 0 && (
+        <motion.div
+          key="batch-action-bar"
+          role="region"
+          aria-label="Bulk task actions"
+          initial={{ opacity: 0, y: 30, x: '-50%' }}
+          animate={{ opacity: 1, y: 0, x: '-50%' }}
+          exit={{ opacity: 0, y: 24, x: '-50%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+          className="fixed bottom-6 left-1/2 z-40"
+        >
       <div className="bg-[var(--bg-surface-l1)]/95 backdrop-blur-2xl border border-stone-200/90 dark:border-white/10 shadow-2xl rounded-xl py-1.5 px-3 flex items-center gap-2 max-w-[95vw] overflow-x-auto card-surface">
         {/* Count pill */}
         <div className="flex items-center gap-1.5 pr-2 border-r border-[var(--border-hairline)] shrink-0">
@@ -207,7 +213,9 @@ export const BatchActionBar: React.FC = () => {
         >
           <X size={15} />
         </button>
-      </div>
-    </div>
-  );
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 };

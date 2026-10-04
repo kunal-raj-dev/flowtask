@@ -15,7 +15,7 @@ import {
   CheckCheck,
   ArrowDownUp,
 } from 'lucide-react';
-import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr, getTomorrowStr } from '../../hooks/useCurrentDate';
 import { calculateTaskPriorityScore } from '../../utils/priorityScoring';
 
 interface EisenhowerViewProps {
@@ -95,10 +95,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   }, []);
 
   const activeTasks = useMemo(() => tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status !== 'done'), [tasks]);
-  const todayStr = formatLocalDate(new Date());
-  const tomorrowDate = new Date();
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrowStr = formatLocalDate(tomorrowDate);
+  const todayStr = useTodayStr();
+  const tomorrowStr = getTomorrowStr();
 
   // Compute multi-factor priority scores
   const taskScores = useMemo(() => {

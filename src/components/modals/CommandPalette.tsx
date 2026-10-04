@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { getTodayStr } from '../../hooks/useCurrentDate';
 import {
   Search,
   Sun,
@@ -26,7 +27,6 @@ import {
   Undo2,
 } from 'lucide-react';
 import { generateDailyStandup } from '../../utils/standupGenerator';
-import { formatLocalDate } from '../../utils/nlpParser';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from 'canvas-confetti';
 import { parseSearchDSL } from '../../utils/searchDSL';
@@ -86,7 +86,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = getTodayStr();
   const dsl = parseSearchDSL(query);
   const hasFilterActive = Boolean(
     dsl.text ||

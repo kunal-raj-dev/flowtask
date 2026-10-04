@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import type { Task, SubTask, Project, ViewId, Priority, CalendarEvent, InterruptionStash, SmartFilterView, SmartFilterPredicate, FocusSession, FocusSessionMode } from '../types/task';
-import { formatLocalDate } from '../utils/nlpParser';
+import { getTodayStr } from '../hooks/useCurrentDate';
 import { BUILT_IN_SMART_VIEWS } from '../utils/smartViewUtils';
 import { audioEngine, type SoundProfile } from '../utils/audioEngine';
 import { useAuth } from './AuthContext';
@@ -182,7 +182,10 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const { tasks, projects, preferences, customViews: customSmartViews } = snapshot.record;
   const current = () => store.getSnapshot().record;
   const syncStatus = snapshot.sync;
-  const lastSyncedAt = syncStatus === 'synced' ? new Date(snapshot.record.updatedAt) : null;
+  const lastSyncedAt = useMemo(
+    () => (syncStatus === 'synced' ? new Date(snapshot.record.updatedAt) : null),
+    [syncStatus, snapshot.record.updatedAt]
+  );
   const parseView = (): ViewId => {
     const view = new URL(window.location.href).searchParams.get('view') || 'today';
     return /^(today|inbox|upcoming|projects|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view) ? view as ViewId : 'today';
@@ -215,8 +218,11 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   });
   const [soundEnabled, setSoundEnabled] = useState(audioEngine.getSoundEnabled());
   const [soundProfile, setSoundProfileState] = useState<SoundProfile>(audioEngine.getSoundProfile());
-  const todayStr = formatLocalDate(new Date());
-  const settings = { ...DEFAULT_WORKFLOW_SETTINGS, ...(preferences.settings as Partial<UserWorkflowSettings> || {}) };
+  const todayStr = getTodayStr();
+  const settings = useMemo<UserWorkflowSettings>(
+    () => ({ ...DEFAULT_WORKFLOW_SETTINGS, ...((preferences.settings as Partial<UserWorkflowSettings>) || {}) }),
+    [preferences.settings]
+  );
   const focusSession = (preferences.focusSession as FocusSession | null) || null;
   const interruptionStash = (preferences.interruptionStash as InterruptionStash | null) || null;
   const calendarIcsUrl = (preferences.calendarUrl as string) || '';
@@ -279,6 +285,27 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     store.run(result.description, r => ({ ...r, tasks: result.updatedTasks }));
     return result.createdTask;
   };
+  const addTaskRef = useRef(addTask); addTaskRef.current = addTask;
+  const showToastRef = useRef(showToast); showToastRef.current = showToast;
+
+  // Real-time synchronization listener for Chrome Extension Quick Capture
+  useEffect(() => {
+    const handleExternalCaptureMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'FLOWTASK_EXTERNAL_CAPTURE' && event.data.task) {
+        const { title, description, priority, projectId } = event.data.task;
+        if (title && typeof title === 'string') {
+          addTaskRef.current(title, {
+            description: typeof description === 'string' ? description : undefined,
+            priority: ['p1', 'p2', 'p3', 'p4'].includes(priority) ? priority : 'p2',
+            projectId: projectId || 'inbox',
+          });
+          showToastRef.current(`Captured: "${title.slice(0, 32)}${title.length > 32 ? '...' : ''}"`);
+        }
+      }
+    };
+    window.addEventListener('message', handleExternalCaptureMessage);
+    return () => window.removeEventListener('message', handleExternalCaptureMessage);
+  }, []);
   const addMultipleTasks = (lines: string[], overrides?: Partial<Task>) => {
     store.run('Add multiple tasks', r => ({ ...r, tasks: lines.map(l => l.trim()).filter(Boolean).reduce((list, line) => commandService.createTask(list, line, { projectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox', ...overrides }, { defaultPlannedDate: activeView === 'today' ? todayStr : undefined }).updatedTasks, r.tasks) }));
   };
@@ -378,7 +405,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     store.run('Delete project and move its tasks', r => ({ ...r, projects: r.projects.filter(p => p.id !== id), tasks: r.tasks.map(t => t.projectId === id ? { ...t, projectId: reassignToProjectId } : t) }));
   };
   const archiveProject = (id: string) => { if (id !== 'inbox') updateProject(id, { isArchived: true, archivedAt: Date.now() }); };
-  const smartViews = [...BUILT_IN_SMART_VIEWS, ...customSmartViews];
+  const smartViews = useMemo(() => [...BUILT_IN_SMART_VIEWS, ...customSmartViews], [customSmartViews]);
   const addSmartView = (name: string, icon: string, color: string, predicate: SmartFilterPredicate): SmartFilterView => {
     const view = { id: crypto.randomUUID(), name, icon, color, predicate }; store.run('Save view', r => ({ ...r, customViews: [...r.customViews, view] }), false); return view;
   };
@@ -400,121 +427,132 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   };
   const resolveSyncConflict = async (choice: 'local' | 'remote') => { try { await store.resolveConflict(choice); } catch (error) { showToast((error as Error).message); } };
   const importLocalWorkspace = async () => { const local = await dbService.loadWorkspace('local'); if (local) await importTasks(local.tasks, local.projects); };
+
+  const contextValue = useMemo<TaskContextType>(() => ({
+    workspaceId, workspacePreferences: preferences, setWorkspacePreference, downloadWorkspaceBackup, resolveSyncConflict, importLocalWorkspace,
+    tasks,
+    projects,
+    activeView,
+    viewLayout,
+    selectedTaskId,
+    searchQuery,
+    priorityFilter,
+    quickWinsOnly,
+    theme,
+    soundEnabled,
+    soundProfile,
+    overdueTasks,
+    isTriageDismissed,
+    toast,
+    syncStatus,
+    lastSyncedAt,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    forceSyncToCloud,
+    focusSession,
+    focusElapsedSeconds,
+    startFocusSession,
+    pauseFocusSession,
+    resumeFocusSession,
+    stopFocusSession,
+    activeTimerTaskId,
+    activeTimerSeconds,
+    startTaskTimer,
+    stopTaskTimer,
+    toggleTaskTimer,
+    selectedTaskIds,
+    toggleTaskSelection,
+    selectTask,
+    deselectTask,
+    selectAllTasks,
+    clearTaskSelection,
+    batchUpdateTasks,
+    batchDeleteTasks,
+    batchToggleStatus,
+    interruptionStash,
+    isInterruptionModalOpen,
+    setIsInterruptionModalOpen,
+    stashActiveFocus,
+    restoreStashedFocus,
+    clearInterruptionStash,
+    promoteSubTaskToTask,
+    moveSubTask,
+    duplicateTask,
+    mergeTasks,
+    isQuickAddOpen,
+    setIsQuickAddOpen,
+    quickAddDraft,
+    setQuickAddDraft,
+    isTemplatePickerOpen,
+    setIsTemplatePickerOpen,
+    isWeeklyReviewOpen,
+    setIsWeeklyReviewOpen,
+    calendarEvents,
+    calendarIcsUrl,
+    setCalendarIcsUrl,
+    refreshCalendarEvents,
+    isEveningShutdownOpen,
+    setIsEveningShutdownOpen,
+    isShutdownDismissed,
+    dismissShutdown,
+    smartViews,
+    addSmartView,
+    deleteSmartView,
+    isSmartFilterModalOpen,
+    setIsSmartFilterModalOpen,
+    setActiveView,
+    setViewLayout,
+    setSelectedTaskId,
+    setSearchQuery,
+    setPriorityFilter,
+    setQuickWinsOnly,
+    setTheme,
+    toggleTheme,
+    toggleSound,
+    setSoundProfile,
+    addTask,
+    addMultipleTasks,
+    updateTask,
+    deleteTask,
+    permanentDeleteTask,
+    archiveTask,
+    restoreTask,
+    toggleTaskStatus,
+    toggleTaskPinToday,
+    toggleSubTask,
+    addSubTask,
+    addSubTasks,
+    updateSubTask,
+    deleteSubTask,
+    addStudySessions,
+    bulkRescheduleOverdue,
+    undoLastAction,
+    addProject,
+    updateProject,
+    deleteProject,
+    archiveProject,
+    importTasks,
+    showToast,
+    clearToast,
+    settings,
+    updateSettings,
+    resetSettings,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [
+    workspaceId, preferences, tasks, projects, activeView, viewLayout, selectedTaskId,
+    searchQuery, priorityFilter, quickWinsOnly, theme, soundEnabled, soundProfile,
+    overdueTasks, isTriageDismissed, toast, syncStatus, lastSyncedAt, isAuthModalOpen,
+    focusSession, focusElapsedSeconds, activeTimerTaskId, activeTimerSeconds,
+    selectedTaskIds, interruptionStash, isInterruptionModalOpen, isQuickAddOpen,
+    quickAddDraft, isTemplatePickerOpen, isWeeklyReviewOpen, calendarEvents,
+    calendarIcsUrl, isEveningShutdownOpen, isShutdownDismissed, smartViews,
+    isSmartFilterModalOpen, settings, refreshCalendarEvents, showToast, clearToast
+  ]);
+
   if (!snapshot.ready) return <div role="status" className="p-10"><p>{snapshot.error || 'Opening your saved workspace… If it is open in another tab, close that tab to continue here.'}</p>{snapshot.error && <button onClick={() => void store.load()}>Retry</button>}</div>;
 
   return (
-    <TaskContext.Provider
-      value={{
-        workspaceId, workspacePreferences: preferences, setWorkspacePreference, downloadWorkspaceBackup, resolveSyncConflict, importLocalWorkspace,
-        tasks,
-        projects,
-        activeView,
-        viewLayout,
-        selectedTaskId,
-        searchQuery,
-        priorityFilter,
-        quickWinsOnly,
-        theme,
-        soundEnabled,
-        soundProfile,
-        overdueTasks,
-        isTriageDismissed,
-        toast,
-        syncStatus,
-        lastSyncedAt,
-        isAuthModalOpen,
-        setIsAuthModalOpen,
-        forceSyncToCloud,
-        focusSession,
-        focusElapsedSeconds,
-        startFocusSession,
-        pauseFocusSession,
-        resumeFocusSession,
-        stopFocusSession,
-        activeTimerTaskId,
-        activeTimerSeconds,
-        startTaskTimer,
-        stopTaskTimer,
-        toggleTaskTimer,
-        selectedTaskIds,
-        toggleTaskSelection,
-        selectTask,
-        deselectTask,
-        selectAllTasks,
-        clearTaskSelection,
-        batchUpdateTasks,
-        batchDeleteTasks,
-        batchToggleStatus,
-        interruptionStash,
-        isInterruptionModalOpen,
-        setIsInterruptionModalOpen,
-        stashActiveFocus,
-        restoreStashedFocus,
-        clearInterruptionStash,
-        promoteSubTaskToTask,
-        moveSubTask,
-        duplicateTask,
-        mergeTasks,
-        isQuickAddOpen,
-        setIsQuickAddOpen,
-        quickAddDraft,
-        setQuickAddDraft,
-        isTemplatePickerOpen,
-        setIsTemplatePickerOpen,
-        isWeeklyReviewOpen,
-        setIsWeeklyReviewOpen,
-        calendarEvents,
-        calendarIcsUrl,
-        setCalendarIcsUrl,
-        refreshCalendarEvents,
-        isEveningShutdownOpen,
-        setIsEveningShutdownOpen,
-        isShutdownDismissed,
-        dismissShutdown,
-        smartViews,
-        addSmartView,
-        deleteSmartView,
-        isSmartFilterModalOpen,
-        setIsSmartFilterModalOpen,
-        setActiveView,
-        setViewLayout,
-        setSelectedTaskId,
-        setSearchQuery,
-        setPriorityFilter,
-        setQuickWinsOnly,
-        setTheme,
-        toggleTheme,
-        toggleSound,
-        setSoundProfile,
-        addTask,
-        addMultipleTasks,
-        updateTask,
-        deleteTask,
-        permanentDeleteTask,
-        archiveTask,
-        restoreTask,
-        toggleTaskStatus,
-        toggleTaskPinToday,
-        toggleSubTask,
-        addSubTask,
-        addSubTasks,
-        updateSubTask,
-        deleteSubTask,
-        addStudySessions,
-        bulkRescheduleOverdue,
-        undoLastAction,
-        addProject,
-        updateProject,
-        deleteProject,
-        archiveProject,
-        importTasks,
-        showToast,
-        clearToast,
-        settings,
-        updateSettings,
-        resetSettings,
-      }}
-    >
+    <TaskContext.Provider value={contextValue}>
       {(snapshot.error || snapshot.sync === 'offline') && <div role="alert" className="fixed top-0 left-0 right-0 z-[1000] bg-amber-100 text-amber-950 p-3 flex gap-3 items-center"><span>{snapshot.error || 'Cloud unavailable. Changes are saved on this device and queued for retry.'}</span><button onClick={() => void store.retry().catch(error => showToast(error.message))}>Retry</button><button onClick={downloadWorkspaceBackup}>Download backup</button>{snapshot.sync === 'conflict' && <><button onClick={() => void resolveSyncConflict('local')}>Keep device changes</button><button onClick={() => void resolveSyncConflict('remote')}>Use account changes</button></>}</div>}
       {children}
     </TaskContext.Provider>

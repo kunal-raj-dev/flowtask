@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -60,73 +61,83 @@ export const Dialog: React.FC<DialogProps> = ({
     return () => { document.removeEventListener('keydown', handleKeyDown, true); document.body.style.overflow = overflow; if (previous?.isConnected) previous.focus(); };
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      ref={rootRef}
-      tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? titleId : undefined}
-      aria-describedby={description ? descId : undefined}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-    >
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-sm transition-opacity animate-fade-in"
-        onClick={() => {
-          if (closeOnBackdropClick) onClose();
-        }}
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <div
+          ref={rootRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={title ? titleId : undefined}
+          aria-describedby={description ? descId : undefined}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+        >
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-sm"
+            onClick={() => {
+              if (closeOnBackdropClick) onClose();
+            }}
+          />
 
-      {/* Dialog Surface */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`relative w-full rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-modal card-surface z-10 animate-slide-down overflow-hidden ${sizeStyles[size]} ${className}`}
-      >
-        {/* Header */}
-        {(title || description) && (
-          <div className="flex items-start justify-between p-4 sm:p-5 border-b border-[var(--border-hairline)]">
-            <div className="min-w-0 pr-4">
-              {title && (
-                <h3
-                  id={titleId}
-                  className="text-base font-semibold text-[var(--text-primary)] tracking-tight leading-snug"
+          {/* Dialog Surface */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            onClick={(e) => e.stopPropagation()}
+            className={`relative w-full rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-modal card-surface z-10 overflow-hidden ${sizeStyles[size]} ${className}`}
+          >
+            {/* Header */}
+            {(title || description) && (
+              <div className="flex items-start justify-between p-4 sm:p-5 border-b border-[var(--border-hairline)]">
+                <div className="min-w-0 pr-4">
+                  {title && (
+                    <h3
+                      id={titleId}
+                      className="text-base font-semibold text-[var(--text-primary)] tracking-tight leading-snug"
+                    >
+                      {title}
+                    </h3>
+                  )}
+                  {description && (
+                    <p id={descId} className="text-xs text-[var(--text-secondary)] mt-1">
+                      {description}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close dialog"
+                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/10 transition-colors shrink-0"
                 >
-                  {title}
-                </h3>
-              )}
-              {description && (
-                <p id={descId} className="text-xs text-[var(--text-secondary)] mt-1">
-                  {description}
-                </p>
-              )}
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
+            {/* Content Body */}
+            <div className="p-4 sm:p-5 max-h-[75vh] overflow-y-auto">
+              {children}
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close dialog"
-              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/10 transition-colors shrink-0"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* Content Body */}
-        <div className="p-4 sm:p-5 max-h-[75vh] overflow-y-auto">
-          {children}
+            {/* Footer */}
+            {footer && (
+              <div className="flex items-center justify-end gap-2 p-3 sm:p-4 bg-[var(--bg-surface-l1)]/50 border-t border-[var(--border-hairline)]">
+                {footer}
+              </div>
+            )}
+          </motion.div>
         </div>
-
-        {/* Footer */}
-        {footer && (
-          <div className="flex items-center justify-end gap-2 p-3 sm:p-4 bg-[var(--bg-surface-l1)]/50 border-t border-[var(--border-hairline)]">
-            {footer}
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 };

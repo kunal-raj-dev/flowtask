@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { sanitizeForFirestore, prepareTaskForFirestore } from './taskSyncService';
+import { sanitizeForFirestore, prepareTaskForFirestore } from './cloudWorkspace';
 import type { Task } from '../types/task';
 
 // Mock firebase/firestore deleteField with importOriginal
@@ -11,7 +11,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
   };
 });
 
-describe('taskSyncService', () => {
+describe('cloudWorkspace firestore utilities', () => {
   describe('sanitizeForFirestore', () => {
     it('removes undefined fields from flat objects', () => {
       const raw = {

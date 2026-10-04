@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { getTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from 'canvas-confetti';
 import {
@@ -28,48 +29,65 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
 }) => {
   const { tasks, projects, updateTask, toggleTaskStatus } = useTaskContext();
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const todayStr = getTodayStr();
+
+  const {
+    inboxTasks,
+    completedPastWeek,
+    weeklyHoursFormatted,
+    topProject,
+    upcomingNextWeekTasks,
+  } = useMemo(() => {
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    const sevenDaysAgoMs = sevenDaysAgo.getTime();
+
+    // Step 1: Open tasks in Inbox or without planned/due date
+    const inbox = tasks.filter(
+      (t) => t.status !== 'done' && (t.projectId === 'inbox' || (!t.plannedDate && !t.dueDate && !t.isSomeday))
+    );
+
+    // Step 2: Completed tasks in the past 7 days
+    const completed = tasks.filter(
+      (t) => t.status === 'done' && t.completedAt && t.completedAt >= sevenDaysAgoMs
+    );
+    const totalMins = completed.reduce(
+      (acc, t) => acc + (t.timeSpentMinutes || t.estimatedMinutes || 25),
+      0
+    );
+    const hours = (totalMins / 60).toFixed(1);
+
+    // Top project worked on
+    const counts = new Map<string, number>();
+    completed.forEach((t) => {
+      counts.set(t.projectId, (counts.get(t.projectId) || 0) + 1);
+    });
+    const topId = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const top = projects.find((p) => p.id === topId);
+
+    // Step 3: Upcoming tasks for the next 7 days
+    const todayDateStr = getTodayStr();
+    const nextWeekEnd = new Date(today);
+    nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
+    const nextWeekEndStr = formatLocalDate(nextWeekEnd);
+
+    const upcoming = tasks.filter((t) => {
+      if (t.status === 'done') return false;
+      const targetDate = t.plannedDate || t.dueDate;
+      return targetDate && targetDate >= todayDateStr && targetDate <= nextWeekEndStr;
+    });
+
+    return {
+      inboxTasks: inbox,
+      completedPastWeek: completed,
+      weeklyHoursFormatted: hours,
+      topProject: top,
+      upcomingNextWeekTasks: upcoming,
+    };
+  }, [tasks, projects]);
 
   if (!isOpen) return null;
-
-  const today = new Date();
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(today.getDate() - 7);
-  const sevenDaysAgoMs = sevenDaysAgo.getTime();
-
-  // Step 1: Open tasks in Inbox or without planned/due date
-  const inboxTasks = tasks.filter(
-    (t) => t.status !== 'done' && (t.projectId === 'inbox' || (!t.plannedDate && !t.dueDate && !t.isSomeday))
-  );
-
-  // Step 2: Completed tasks in the past 7 days
-  const completedPastWeek = tasks.filter(
-    (t) => t.status === 'done' && t.completedAt && t.completedAt >= sevenDaysAgoMs
-  );
-  const totalWeeklyMinutes = completedPastWeek.reduce(
-    (acc, t) => acc + (t.timeSpentMinutes || t.estimatedMinutes || 25),
-    0
-  );
-  const weeklyHoursFormatted = (totalWeeklyMinutes / 60).toFixed(1);
-
-  // Top project worked on
-  const projectCounts = new Map<string, number>();
-  completedPastWeek.forEach((t) => {
-    projectCounts.set(t.projectId, (projectCounts.get(t.projectId) || 0) + 1);
-  });
-  const topProjectId = Array.from(projectCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
-  const topProject = projects.find((p) => p.id === topProjectId);
-
-  // Step 3: Upcoming tasks for the next 7 days
-  const todayStr = formatLocalDate(today);
-  const nextWeekEnd = new Date(today);
-  nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
-  const nextWeekEndStr = formatLocalDate(nextWeekEnd);
-
-  const upcomingNextWeekTasks = tasks.filter((t) => {
-    if (t.status === 'done') return false;
-    const targetDate = t.plannedDate || t.dueDate;
-    return targetDate && targetDate >= todayStr && targetDate <= nextWeekEndStr;
-  });
 
   const handleNextStep = () => {
     if (step === 1) {

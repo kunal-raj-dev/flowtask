@@ -5,10 +5,23 @@
   "description": "One-click universal task capture into FlowTask from any webpage.",
   "permissions": [
     "activeTab",
+    "tabs",
     "storage"
   ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Capture Task to FlowTask"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "https://*.vercel.app/*",
+        "*://*/*flowtask*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

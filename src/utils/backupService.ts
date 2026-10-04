@@ -1,7 +1,9 @@
 import type { Task, Project } from '../types/task';
+import { getDatabase } from '../services/dbService';
 
 export interface LocalSnapshot {
   id: string;
+  workspaceId?: string;
   timestamp: number;
   label: string;
   taskCount: number;
@@ -13,6 +15,71 @@ export interface LocalSnapshot {
 
 const STORAGE_KEY_SNAPSHOTS = 'flowtask_snapshots_v1';
 const MAX_SNAPSHOTS = 10;
+
+/**
+ * Persist a snapshot into IndexedDB 'snapshots' store.
+ */
+export async function persistSnapshotToIDB(snapshot: LocalSnapshot): Promise<void> {
+  if (typeof indexedDB === 'undefined') return;
+  try {
+    const db = await getDatabase();
+    await db.put('snapshots', { ...snapshot, workspaceId: snapshot.workspaceId || 'local' });
+  } catch (err) {
+    console.warn('Failed to persist snapshot to IndexedDB:', err);
+  }
+}
+
+/**
+ * Delete a snapshot from IndexedDB 'snapshots' store.
+ */
+export async function deleteSnapshotFromIDB(snapshotId: string): Promise<void> {
+  if (typeof indexedDB === 'undefined') return;
+  try {
+    const db = await getDatabase();
+    await db.delete('snapshots', snapshotId);
+  } catch (err) {
+    console.warn('Failed to delete snapshot from IndexedDB:', err);
+  }
+}
+
+/**
+ * Load all snapshots from IndexedDB for a given workspace, falling back to localStorage.
+ */
+export async function loadSnapshotsFromIDB(workspaceId = 'local'): Promise<LocalSnapshot[]> {
+  if (typeof indexedDB === 'undefined') return getStoredSnapshots();
+  try {
+    const db = await getDatabase();
+    const index = db.transaction('snapshots').store.index('by_workspace');
+    const list = await index.getAll(workspaceId);
+    if (list && list.length > 0) {
+      list.sort((a, b) => b.timestamp - a.timestamp);
+      saveStoredSnapshots(list, false);
+      return list;
+    }
+  } catch (err) {
+    console.warn('Failed to load snapshots from IndexedDB:', err);
+  }
+  return getStoredSnapshots();
+}
+
+/**
+ * Migrate existing localStorage snapshots to IndexedDB.
+ */
+export async function migrateLocalStorageSnapshotsToIDB(workspaceId = 'local'): Promise<void> {
+  if (typeof indexedDB === 'undefined') return;
+  try {
+    const current = getStoredSnapshots();
+    if (current.length === 0) return;
+    const db = await getDatabase();
+    const tx = db.transaction('snapshots', 'readwrite');
+    for (const snap of current) {
+      await tx.store.put({ ...snap, workspaceId: snap.workspaceId || workspaceId });
+    }
+    await tx.done;
+  } catch (err) {
+    console.warn('Failed to migrate snapshots to IndexedDB:', err);
+  }
+}
 
 /**
  * Retrieve all locally saved data snapshots, newest first.
@@ -30,13 +97,34 @@ export function getStoredSnapshots(): LocalSnapshot[] {
 }
 
 /**
- * Persist the list of snapshots to localStorage.
+ * Persist the list of snapshots to localStorage and IndexedDB.
  */
-function saveStoredSnapshots(snapshots: LocalSnapshot[]): void {
+function saveStoredSnapshots(snapshots: LocalSnapshot[], syncToIDB = true): void {
   try {
     localStorage.setItem(STORAGE_KEY_SNAPSHOTS, JSON.stringify(snapshots));
   } catch (err) {
-    console.error('Failed to save local snapshots to storage:', err);
+    console.warn('Failed to save local snapshots to storage (quota risk). Pruning older snapshots:', err);
+    try {
+      const pruned = snapshots.slice(0, 3);
+      localStorage.setItem(STORAGE_KEY_SNAPSHOTS, JSON.stringify(pruned));
+    } catch (e2) {
+      console.error('Failed to save even pruned snapshots:', e2);
+    }
+  }
+
+  if (syncToIDB && typeof indexedDB !== 'undefined') {
+    void (async () => {
+      try {
+        const db = await getDatabase();
+        const tx = db.transaction('snapshots', 'readwrite');
+        for (const snap of snapshots) {
+          await tx.store.put({ ...snap, workspaceId: snap.workspaceId || 'local' });
+        }
+        await tx.done;
+      } catch (e) {
+        console.warn('Background sync to IndexedDB failed:', e);
+      }
+    })();
   }
 }
 
@@ -66,6 +154,7 @@ export function createLocalSnapshot(
 
   const snapshot: LocalSnapshot = {
     id: `snap-${timestamp}-${Math.random().toString(36).substring(2, 7)}`,
+    workspaceId: 'local',
     timestamp,
     label: customLabel?.trim() || defaultLabel,
     taskCount: tasks.length,
@@ -95,6 +184,7 @@ export function createLocalSnapshot(
   }
 
   saveStoredSnapshots(updated);
+  void persistSnapshotToIDB(snapshot);
   return snapshot;
 }
 
@@ -115,12 +205,13 @@ export function restoreSnapshot(
 }
 
 /**
- * Delete a specific snapshot from local storage.
+ * Delete a specific snapshot from local storage and IndexedDB.
  */
 export function deleteSnapshot(snapshotId: string): void {
   const current = getStoredSnapshots();
   const filtered = current.filter((s) => s.id !== snapshotId);
   saveStoredSnapshots(filtered);
+  void deleteSnapshotFromIDB(snapshotId);
 }
 
 /**
@@ -142,4 +233,32 @@ export function checkAndTriggerDailyAutoSnapshot(
   }
 
   return false;
+}
+
+/**
+ * Clear all snapshots from localStorage and IndexedDB.
+ */
+export function clearAllSnapshots(workspaceId = 'local'): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY_SNAPSHOTS);
+  } catch (err) {
+    console.warn('Failed to clear snapshots from localStorage:', err);
+  }
+
+  if (typeof indexedDB !== 'undefined') {
+    void (async () => {
+      try {
+        const db = await getDatabase();
+        const index = db.transaction('snapshots', 'readwrite').store.index('by_workspace');
+        const keys = await index.getAllKeys(workspaceId);
+        const tx = db.transaction('snapshots', 'readwrite');
+        for (const k of keys) {
+          await tx.store.delete(k);
+        }
+        await tx.done;
+      } catch (err) {
+        console.warn('Failed to clear snapshots from IndexedDB:', err);
+      }
+    })();
+  }
 }

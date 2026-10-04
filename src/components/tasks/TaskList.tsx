@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Task } from '../../types/task';
 import { TaskCard } from './TaskCard';
@@ -69,102 +70,113 @@ export const TaskList: React.FC<TaskListProps> = ({
   const isSomeday = filterSomeday || activeView === 'someday';
   const isAll = filterAll || activeView === 'all';
 
-  let viewTitle = 'Tasks';
-  let viewSubtitle = '';
-  let ViewIcon = Folder;
-  let gradientBg = 'from-stone-700 to-stone-900';
-  let filtered: Task[] = [];
-  let completed: Task[] = [];
+  const { viewTitle, viewSubtitle, ViewIcon, gradientBg, filtered, completed } = React.useMemo(() => {
+    let title = 'Tasks';
+    let subtitle = '';
+    let Icon = Folder;
+    let bg = 'from-stone-700 to-stone-900';
+    let fList: Task[] = [];
+    let cList: Task[] = [];
 
-  if (isInbox) {
-    viewTitle = 'Inbox';
-    viewSubtitle = 'Capture thoughts quickly and organize them later';
-    ViewIcon = Inbox;
-    gradientBg = 'from-blue-500 to-indigo-600';
-    filtered = tasks.filter(
-      (t) =>
-        t.status !== 'done' &&
-        !t.deletedAt &&
-        !t.archivedAt &&
-        t.projectId === 'inbox' &&
-        !t.dueDate &&
-        !t.plannedDate &&
-        !t.isSomeday
-    );
-    completed = tasks.filter(
-      (t) => t.status === 'done' && !t.deletedAt && !t.archivedAt && t.projectId === 'inbox'
-    );
-  } else if (isSomeday) {
-    viewTitle = 'Someday / Maybe';
-    viewSubtitle = 'Ideas, low-pressure backlog, and things to consider eventually';
-    ViewIcon = Lightbulb;
-    gradientBg = 'from-amber-400 to-yellow-500';
-    filtered = tasks.filter(
-      (t) =>
-        t.status !== 'done' &&
-        !t.deletedAt &&
-        !t.archivedAt &&
-        Boolean(t.isSomeday || (!t.dueDate && !t.plannedDate && t.projectId === 'ideas'))
-    );
-    completed = tasks.filter(
-      (t) =>
-        t.status === 'done' &&
-        !t.deletedAt &&
-        !t.archivedAt &&
-        Boolean(t.isSomeday || t.projectId === 'ideas')
-    );
-  } else if (isAll) {
-    viewTitle = 'All Tasks';
-    viewSubtitle = 'Complete workspace backlog and active tasks';
-    ViewIcon = CheckCircle2;
-    gradientBg = 'from-stone-700 to-stone-900';
-    filtered = tasks.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
-    completed = tasks.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
-  } else if (activeView.startsWith('project:')) {
-    const projId = activeView.split(':')[1];
-    const project = projects.find((p) => p.id === projId);
-    viewTitle = project ? project.name : 'Project';
-    viewSubtitle = 'Project workspace';
-    ViewIcon = Folder;
-    gradientBg = 'from-purple-500 to-indigo-600';
-    filtered = tasks.filter(
-      (t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt && t.projectId === projId
-    );
-    completed = tasks.filter(
-      (t) => t.status === 'done' && !t.deletedAt && !t.archivedAt && t.projectId === projId
-    );
-  } else if (activeView.startsWith('smart:')) {
-    const svId = activeView.split(':')[1];
-    const smartView = smartViews.find((sv) => sv.id === svId);
-    viewTitle = smartView ? smartView.name : 'Smart View';
-    viewSubtitle = 'Filtered dynamic perspective';
-    if (smartView?.icon === 'zap') {
-      ViewIcon = Zap;
-      gradientBg = 'from-amber-500 to-orange-500';
-    } else if (smartView?.icon === 'brain') {
-      ViewIcon = Brain;
-      gradientBg = 'from-indigo-600 to-purple-600';
-    } else if (smartView?.icon === 'flame') {
-      ViewIcon = Flame;
-      gradientBg = 'from-rose-500 to-red-600';
-    } else if (smartView?.icon === 'archive') {
-      ViewIcon = Archive;
-      gradientBg = 'from-blue-600 to-cyan-600';
+    if (isInbox) {
+      title = 'Inbox';
+      subtitle = 'Capture thoughts quickly and organize them later';
+      Icon = Inbox;
+      bg = 'from-blue-500 to-indigo-600';
+      fList = tasks.filter(
+        (t) =>
+          t.status !== 'done' &&
+          !t.deletedAt &&
+          !t.archivedAt &&
+          t.projectId === 'inbox' &&
+          !t.dueDate &&
+          !t.plannedDate &&
+          !t.isSomeday
+      );
+      cList = tasks.filter(
+        (t) => t.status === 'done' && !t.deletedAt && !t.archivedAt && t.projectId === 'inbox'
+      );
+    } else if (isSomeday) {
+      title = 'Someday / Maybe';
+      subtitle = 'Ideas, low-pressure backlog, and things to consider eventually';
+      Icon = Lightbulb;
+      bg = 'from-amber-400 to-yellow-500';
+      fList = tasks.filter(
+        (t) =>
+          t.status !== 'done' &&
+          !t.deletedAt &&
+          !t.archivedAt &&
+          Boolean(t.isSomeday || (!t.dueDate && !t.plannedDate && t.projectId === 'ideas'))
+      );
+      cList = tasks.filter(
+        (t) =>
+          t.status === 'done' &&
+          !t.deletedAt &&
+          !t.archivedAt &&
+          Boolean(t.isSomeday || t.projectId === 'ideas')
+      );
+    } else if (isAll) {
+      title = 'All Tasks';
+      subtitle = 'Complete workspace backlog and active tasks';
+      Icon = CheckCircle2;
+      bg = 'from-stone-700 to-stone-900';
+      fList = tasks.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
+      cList = tasks.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
+    } else if (activeView.startsWith('project:')) {
+      const projId = activeView.split(':')[1];
+      const project = projects.find((p) => p.id === projId);
+      title = project ? project.name : 'Project';
+      subtitle = 'Project workspace';
+      Icon = Folder;
+      bg = 'from-purple-500 to-indigo-600';
+      fList = tasks.filter(
+        (t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt && t.projectId === projId
+      );
+      cList = tasks.filter(
+        (t) => t.status === 'done' && !t.deletedAt && !t.archivedAt && t.projectId === projId
+      );
+    } else if (activeView.startsWith('smart:')) {
+      const svId = activeView.split(':')[1];
+      const smartView = smartViews.find((sv) => sv.id === svId);
+      title = smartView ? smartView.name : 'Smart View';
+      subtitle = 'Filtered dynamic perspective';
+      if (smartView?.icon === 'zap') {
+        Icon = Zap;
+        bg = 'from-amber-500 to-orange-500';
+      } else if (smartView?.icon === 'brain') {
+        Icon = Brain;
+        bg = 'from-indigo-600 to-purple-600';
+      } else if (smartView?.icon === 'flame') {
+        Icon = Flame;
+        bg = 'from-rose-500 to-red-600';
+      } else if (smartView?.icon === 'archive') {
+        Icon = Archive;
+        bg = 'from-blue-600 to-cyan-600';
+      } else {
+        Icon = Filter;
+        bg = 'from-indigo-500 to-blue-600';
+      }
+      const matching = smartView ? filterTasksByPredicate(tasks, smartView.predicate) : [];
+      fList = matching.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
+      cList = matching.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
     } else {
-      ViewIcon = Filter;
-      gradientBg = 'from-indigo-500 to-blue-600';
+      title = 'All Tasks';
+      subtitle = 'Active workspace tasks';
+      Icon = CheckCircle2;
+      bg = 'from-stone-700 to-stone-900';
+      fList = tasks.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
+      cList = tasks.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
     }
-    const matching = smartView ? filterTasksByPredicate(tasks, smartView.predicate) : [];
-    filtered = matching.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
-    completed = matching.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
-  } else {
-    viewTitle = 'All Tasks';
-    viewSubtitle = 'Active workspace tasks';
-    ViewIcon = CheckCircle2;
-    gradientBg = 'from-stone-700 to-stone-900';
-    filtered = tasks.filter((t) => t.status !== 'done' && !t.deletedAt && !t.archivedAt);
-    completed = tasks.filter((t) => t.status === 'done' && !t.deletedAt && !t.archivedAt);
-  }
+
+    return {
+      viewTitle: title,
+      viewSubtitle: subtitle,
+      ViewIcon: Icon,
+      gradientBg: bg,
+      filtered: fList,
+      completed: cList,
+    };
+  }, [isInbox, isSomeday, isAll, tasks, activeView, projects, smartViews]);
 
   // Extract available context tags for this list
   const availableContextTags = React.useMemo(() => {
@@ -474,21 +486,29 @@ export const TaskList: React.FC<TaskListProps> = ({
             </span>
           </button>
 
-          {!isCompletedCollapsed && (
-            <div className="mt-3 animate-slide-down">
-              <VirtualTaskList
-                tasks={completed}
-                className="space-y-2"
-                renderTask={(task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onSelectTask={onSelectTask}
-                  />
-                )}
-              />
-            </div>
-          )}
+          <AnimatePresence>
+            {!isCompletedCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="mt-3 overflow-hidden"
+              >
+                <VirtualTaskList
+                  tasks={completed}
+                  className="space-y-2"
+                  renderTask={(task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onSelectTask={onSelectTask}
+                    />
+                  )}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

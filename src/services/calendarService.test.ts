@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseICSFeed } from './calendarService';
+import { parseICSFeed, fetchICSFeed } from './calendarService';
 
 describe('calendarService - parseICSFeed', () => {
   const sampleICS = `BEGIN:VCALENDAR
@@ -73,5 +73,18 @@ END:VCALENDAR`;
     expect(events.length).toBe(1);
     expect(events[0].title).toBe('Long title that has been foldedacross multiple lines in RFC 5545');
     expect(events[0].description).toBe('Description that also spansacross multiple lines with notes.');
+  });
+});
+
+describe('calendarService - fetchICSFeed', () => {
+  it('returns empty array when feedUrl is empty', async () => {
+    const result = await fetchICSFeed('   ');
+    expect(result).toEqual([]);
+  });
+
+  it('rejects invalid non-http protocols', async () => {
+    await expect(fetchICSFeed('ftp://calendar.example.com/feed.ics')).rejects.toThrow(
+      'Use an HTTP or HTTPS calendar URL.'
+    );
   });
 });

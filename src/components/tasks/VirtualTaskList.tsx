@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { Task } from '../../types/task';
 import { useVirtualList } from '../../hooks/useVirtualList';
 
@@ -30,7 +31,24 @@ export const VirtualTaskList: React.FC<VirtualTaskListProps> = ({
   if (!isVirtual) {
     return (
       <div className={className}>
-        {tasks.map((task, idx) => renderTask(task, idx))}
+        <AnimatePresence initial={false} mode="popLayout">
+          {tasks.map((task, idx) => (
+            <motion.div
+              key={task.id}
+              layout="position"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
+              transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 30,
+              }}
+            >
+              {renderTask(task, idx)}
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     );
   }

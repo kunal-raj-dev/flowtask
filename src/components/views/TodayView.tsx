@@ -1,10 +1,12 @@
 import { isTodayTask } from '../../utils/taskSelectors';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
 import { Omnibar } from '../tasks/Omnibar';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr, getTomorrowStr } from '../../hooks/useCurrentDate';
 import {
   Sun,
   Moon,
@@ -74,44 +76,65 @@ export const TodayView: React.FC<TodayViewProps> = ({
     localStorage.setItem('flowtask_today_calm_mode', String(isCalmMode));
   }, [isCalmMode]);
 
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = useTodayStr();
 
-  // Tasks planned for today or with Top 3 pin scoped to today
-  const activeTodayTasks = tasks.filter(t => isTodayTask(t, todayStr));
+  // Tasks planned for today or with Top 3 pin scoped to today (memoized)
+  const activeTodayTasks = useMemo(
+    () => tasks.filter(t => isTodayTask(t, todayStr)),
+    [tasks, todayStr]
+  );
 
   // Filter tasks based on global filters (Quick Wins & Priority)
-  const filteredActiveTasks = activeTodayTasks.filter((t) => {
-    if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
-    if (quickWinsOnly && (t.estimatedMinutes || 999) > 15) return false;
-    return true;
-  });
+  const filteredActiveTasks = useMemo(
+    () => activeTodayTasks.filter((t) => {
+      if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
+      if (quickWinsOnly && (t.estimatedMinutes || 999) > 15) return false;
+      return true;
+    }),
+    [activeTodayTasks, priorityFilter, quickWinsOnly]
+  );
 
   // Top 3 Focus
-  const topThreeTasks = filteredActiveTasks.filter(
-    (t) => t.isPinnedToday && (t.topThreeDate === todayStr || (!t.topThreeDate && t.plannedDate === todayStr))
+  const topThreeTasks = useMemo(
+    () => filteredActiveTasks.filter(
+      (t) => t.isPinnedToday && (t.topThreeDate === todayStr || (!t.topThreeDate && t.plannedDate === todayStr))
+    ),
+    [filteredActiveTasks, todayStr]
   );
 
   // Daytime tasks (not Top 3, not marked for evening)
-  const daytimeTasks = filteredActiveTasks.filter(
-    (t) => !topThreeTasks.some((top) => top.id === t.id) && !t.isEvening
+  const daytimeTasks = useMemo(
+    () => filteredActiveTasks.filter(
+      (t) => !topThreeTasks.some((top) => top.id === t.id) && !t.isEvening
+    ),
+    [filteredActiveTasks, topThreeTasks]
   );
 
   // Things 3-style "This Evening" tasks (not Top 3, marked for evening)
-  const eveningTasks = filteredActiveTasks.filter(
-    (t) => !topThreeTasks.some((top) => top.id === t.id) && Boolean(t.isEvening)
+  const eveningTasks = useMemo(
+    () => filteredActiveTasks.filter(
+      (t) => !topThreeTasks.some((top) => top.id === t.id) && Boolean(t.isEvening)
+    ),
+    [filteredActiveTasks, topThreeTasks]
   );
 
   // Completed today based on completion timestamp
-  const completedTodayTasks = tasks.filter((t) => {
-    if (t.status !== 'done' || t.deletedAt) return false;
-    if (!t.completedAt) {
-      return t.plannedDate === todayStr || t.dueDate === todayStr;
-    }
-    return formatLocalDate(new Date(t.completedAt)) === todayStr;
-  });
+  const completedTodayTasks = useMemo(
+    () => tasks.filter((t) => {
+      if (t.status !== 'done' || t.deletedAt) return false;
+      if (!t.completedAt) {
+        return t.plannedDate === todayStr || t.dueDate === todayStr;
+      }
+      return formatLocalDate(new Date(t.completedAt)) === todayStr;
+    }),
+    [tasks, todayStr]
+  );
 
   // Linear active list for keyboard navigation (j/k)
-  const activeListTasks = [...topThreeTasks, ...daytimeTasks, ...eveningTasks];
+  const activeListTasks = useMemo(
+    () => [...topThreeTasks, ...daytimeTasks, ...eveningTasks],
+    [topThreeTasks, daytimeTasks, eveningTasks]
+  );
 
   const { focusedTaskId } = useKeyboardNavigation({
     tasks: activeListTasks,
@@ -144,9 +167,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   const isOverbooked = activePlannedMinutes > targetWorkCapacityMinutes;
 
   const handleDeferNonMitToTomorrow = () => {
-    const tmr = new Date();
-    tmr.setDate(tmr.getDate() + 1);
-    const tmrStr = formatLocalDate(tmr);
+    const tmrStr = getTomorrowStr();
 
     if (daytimeTasks.length > 0) {
       batchUpdateTasks(daytimeTasks.map(t => t.id), { plannedDate: tmrStr, isPinnedToday: false });
@@ -328,15 +349,25 @@ export const TodayView: React.FC<TodayViewProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            {topThreeTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                isKeyboardFocused={focusedTaskId === task.id}
-                onSelectTask={() => onSelectTask(task.id)}
-                onStartFocus={() => onStartFocus(task.id)}
-              />
-            ))}
+            <AnimatePresence initial={false} mode="popLayout">
+              {topThreeTasks.map((task) => (
+                <motion.div
+                  key={task.id}
+                  layout="position"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                >
+                  <TaskCard
+                    task={task}
+                    isKeyboardFocused={focusedTaskId === task.id}
+                    onSelectTask={() => onSelectTask(task.id)}
+                    onStartFocus={() => onStartFocus(task.id)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
@@ -419,15 +450,25 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 </button>
               </div>
             )}
-            {daytimeTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                isKeyboardFocused={focusedTaskId === task.id}
-                onSelectTask={() => onSelectTask(task.id)}
-                onStartFocus={() => onStartFocus(task.id)}
-              />
-            ))}
+            <AnimatePresence initial={false} mode="popLayout">
+              {daytimeTasks.map((task) => (
+                <motion.div
+                  key={task.id}
+                  layout="position"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                >
+                  <TaskCard
+                    task={task}
+                    isKeyboardFocused={focusedTaskId === task.id}
+                    onSelectTask={() => onSelectTask(task.id)}
+                    onStartFocus={() => onStartFocus(task.id)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
@@ -465,15 +506,25 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {eveningTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  isKeyboardFocused={focusedTaskId === task.id}
-                  onSelectTask={() => onSelectTask(task.id)}
-                  onStartFocus={() => onStartFocus(task.id)}
-                />
-              ))}
+              <AnimatePresence initial={false} mode="popLayout">
+                {eveningTasks.map((task) => (
+                  <motion.div
+                    key={task.id}
+                    layout="position"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  >
+                    <TaskCard
+                      task={task}
+                      isKeyboardFocused={focusedTaskId === task.id}
+                      onSelectTask={() => onSelectTask(task.id)}
+                      onStartFocus={() => onStartFocus(task.id)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           )
         )}
@@ -496,15 +547,25 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
           {!isCompletedCollapsed && (
             <div className="mt-2 space-y-2 opacity-80">
-              {completedTodayTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  isKeyboardFocused={focusedTaskId === task.id}
-                  onSelectTask={() => onSelectTask(task.id)}
-                  onStartFocus={() => onStartFocus(task.id)}
-                />
-              ))}
+              <AnimatePresence initial={false} mode="popLayout">
+                {completedTodayTasks.map((task) => (
+                  <motion.div
+                    key={task.id}
+                    layout="position"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  >
+                    <TaskCard
+                      task={task}
+                      isKeyboardFocused={focusedTaskId === task.id}
+                      onSelectTask={() => onSelectTask(task.id)}
+                      onStartFocus={() => onStartFocus(task.id)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           )}
         </div>

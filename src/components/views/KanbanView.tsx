@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import type { TaskStatus } from '../../types/task';
 import { Kanban, Plus, Circle, Clock, CheckCircle2 } from 'lucide-react';
@@ -299,94 +300,105 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                     Drop cards here
                   </div>
                 ) : (
-                  colTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      draggable
-                      onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)}
-                      onClick={() => {
-                        setFocusedCardId(task.id);
-                        onSelectTask(task.id);
-                      }}
-                      className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-lg border transition-all space-y-2 card-surface cursor-grab active:cursor-grabbing hover:-translate-y-[0.5px] ${
-                        focusedCardId === task.id
-                          ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-elevated'
-                          : 'border-[var(--border-hairline)] shadow-card hover:border-stone-300 dark:hover:border-stone-700'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-xs font-semibold text-[var(--text-primary)] leading-snug">
-                          {task.title}
-                        </span>
-                        {task.priority !== 'p4' && (
-                          <span
-                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border shadow-xs shrink-0 ${
-                              task.priority === 'p1'
-                                ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                                : task.priority === 'p2'
-                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                                : 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30'
-                            }`}
-                          >
-                            {task.priority}
-                          </span>
-                        )}
-                      </div>
-
-                      {task.description && (
-                        <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2">
-                          {task.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] pt-1.5 border-t border-[var(--border-hairline)]">
-                        <span>{task.dueDate || 'No date'}</span>
-                        {task.subtasks && task.subtasks.length > 0 && (
-                          <span>
-                            {task.subtasks.filter((s) => s.completed).length}/
-                            {task.subtasks.length} subtasks
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Quick status advance buttons (always visible on mobile, hover on desktop) */}
-                      <div
-                        className="flex items-center justify-end gap-1.5 pt-2 border-t border-[var(--border-hairline)] sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => e.stopPropagation()}
+                  <AnimatePresence mode="popLayout">
+                    {colTasks.map((task) => (
+                      <motion.div
+                        key={task.id}
+                        layout="position"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 350,
+                          damping: 28,
+                        }}
+                        draggable
+                        onDragStart={(e) => (e as unknown as React.DragEvent).dataTransfer?.setData('text/plain', task.id)}
+                        onClick={() => {
+                          setFocusedCardId(task.id);
+                          onSelectTask(task.id);
+                        }}
+                        className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-lg border transition-colors space-y-2 card-surface cursor-grab active:cursor-grabbing hover:-translate-y-[0.5px] ${
+                          focusedCardId === task.id
+                            ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-elevated'
+                            : 'border-[var(--border-hairline)] shadow-card hover:border-stone-300 dark:hover:border-stone-700'
+                        }`}
                       >
-                        {col.status !== 'todo' && (
-                          <button
-                            type="button"
-                            onClick={() => updateTask(task.id, { status: 'todo' })}
-                            className="px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l1)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
-                            title="Move back to To Do"
-                          >
-                            ← To Do
-                          </button>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-xs font-semibold text-[var(--text-primary)] leading-snug">
+                            {task.title}
+                          </span>
+                          {task.priority !== 'p4' && (
+                            <span
+                              className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border shadow-xs shrink-0 ${
+                                task.priority === 'p1'
+                                  ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                                  : task.priority === 'p2'
+                                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                  : 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30'
+                              }`}
+                            >
+                              {task.priority}
+                            </span>
+                          )}
+                        </div>
+
+                        {task.description && (
+                          <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2">
+                            {task.description}
+                          </p>
                         )}
-                        {col.status !== 'in_progress' && (
-                          <button
-                            type="button"
-                            onClick={() => updateTask(task.id, { status: 'in_progress' })}
-                            className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-[10px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
-                            title={col.status === 'todo' ? 'Start Task' : 'Move to In Progress'}
-                          >
-                            {col.status === 'todo' ? 'Start →' : '← In Prog'}
-                          </button>
-                        )}
-                        {col.status !== 'done' && (
-                          <button
-                            type="button"
-                            onClick={() => toggleTaskStatus(task.id)}
-                            className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                            title="Mark Completed"
-                          >
-                            ✓ Done
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))
+
+                        <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] pt-1.5 border-t border-[var(--border-hairline)]">
+                          <span>{task.dueDate || 'No date'}</span>
+                          {task.subtasks && task.subtasks.length > 0 && (
+                            <span>
+                              {task.subtasks.filter((s) => s.completed).length}/
+                              {task.subtasks.length} subtasks
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Quick status advance buttons (always visible on mobile, hover on desktop) */}
+                        <div
+                          className="flex items-center justify-end gap-1.5 pt-2 border-t border-[var(--border-hairline)] sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {col.status !== 'todo' && (
+                            <button
+                              type="button"
+                              onClick={() => updateTask(task.id, { status: 'todo' })}
+                              className="px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l1)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+                              title="Move back to To Do"
+                            >
+                              ← To Do
+                            </button>
+                          )}
+                          {col.status !== 'in_progress' && (
+                            <button
+                              type="button"
+                              onClick={() => updateTask(task.id, { status: 'in_progress' })}
+                              className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-[10px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+                              title={col.status === 'todo' ? 'Start Task' : 'Move to In Progress'}
+                            >
+                              {col.status === 'todo' ? 'Start →' : '← In Prog'}
+                            </button>
+                          )}
+                          {col.status !== 'done' && (
+                            <button
+                              type="button"
+                              onClick={() => toggleTaskStatus(task.id)}
+                              className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                              title="Mark Completed"
+                            >
+                              ✓ Done
+                            </button>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 )}
               </div>
             </div>

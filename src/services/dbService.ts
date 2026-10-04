@@ -34,7 +34,13 @@ export const dbService = {
       if (record) return normalize(record, id);
     }
     const raw = localStorage.getItem(`flowtask_ws_${id}`);
-    return raw ? normalize(JSON.parse(raw), id) : null;
+    if (!raw) return null;
+    try {
+      return normalize(JSON.parse(raw), id);
+    } catch (e) {
+      console.warn(`Failed to parse cached workspace flowtask_ws_${id}:`, e);
+      return null;
+    }
   },
   async ensureLegacyMigrated(id = 'local'): Promise<WorkspaceRecord> {
     const existing = await this.loadWorkspace(id);
@@ -46,7 +52,11 @@ export const dbService = {
       const projects = localStorage.getItem('flowtask_projects_v1');
       if (tasks || projects) {
         localStorage.setItem('flowtask_legacy_backup_raw', JSON.stringify({ tasks, projects }));
-        Object.assign(record, normalize({ tasks: tasks ? JSON.parse(tasks) : [], projects: projects ? JSON.parse(projects) : DEFAULT_PROJECTS }, id));
+        let parsedTasks = [];
+        let parsedProjects = DEFAULT_PROJECTS;
+        try { parsedTasks = tasks ? JSON.parse(tasks) : []; } catch { /* ignore */ }
+        try { parsedProjects = projects ? JSON.parse(projects) : DEFAULT_PROJECTS; } catch { /* ignore */ }
+        Object.assign(record, normalize({ tasks: parsedTasks, projects: parsedProjects }, id));
       }
       const legacyKeys: Record<string, string> = { settings: 'flowtask_workflow_settings_v1', templates: 'flowtask_custom_templates', scratchpad: 'flowtask_scratchpad_v1', calendarUrl: 'flowtask_calendar_ics_url' };
       for (const [key, storageKey] of Object.entries(legacyKeys)) {
@@ -54,7 +64,9 @@ export const dbService = {
         if (value) { try { record.preferences[key] = JSON.parse(value); } catch { record.preferences[key] = value; } }
       }
       const views = localStorage.getItem('flowtask_custom_smart_views');
-      if (views) record.customViews = JSON.parse(views);
+      if (views) {
+        try { record.customViews = JSON.parse(views); } catch { /* ignore */ }
+      }
     }
     await this.saveWorkspace(id, record);
     return record;

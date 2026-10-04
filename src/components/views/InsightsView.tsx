@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import {
   TrendingUp,
   Flame,
@@ -35,156 +36,187 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
 
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
 
-  const today = new Date();
-  const todayStr = formatLocalDate(today);
+  const todayStr = useTodayStr();
 
-  // Generate 30-day date array (from 29 days ago up to today)
-  const last30Days: string[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    last30Days.push(formatLocalDate(d));
-  }
-
-  // Completed tasks
-  const completedTasks = tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done');
-
-  // Map of dateStr -> completed tasks count
-  const activityMap: Record<string, { count: number; minutes: number }> = {};
-  last30Days.forEach((dateStr) => {
-    activityMap[dateStr] = { count: 0, minutes: 0 };
-  });
-
-  completedTasks.forEach((t) => {
-    const completedDate = t.completedAt
-      ? formatLocalDate(new Date(t.completedAt))
-      : t.dueDate || todayStr;
-    if (activityMap[completedDate]) {
-      activityMap[completedDate].count += 1;
-      activityMap[completedDate].minutes += t.timeSpentMinutes || 0;
+  const {
+    last30Days,
+    completedTasks,
+    activityMap,
+    currentStreak,
+    totalFocusHours,
+    focusExecutionRate,
+    timedCompletedTasks,
+    maxScatterDuration,
+    hourlyCounts,
+    currentHour,
+    chronoBuckets,
+    maxHourlyCount,
+    totalChronoCount,
+    peakChronoKey,
+    peakBucket,
+    rollingWeeks,
+    maxWeeklyTasks,
+    wowPercent,
+  } = useMemo(() => {
+    // Generate 30-day date array
+    const dates: string[] = [];
+    const baseDate = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() - i);
+      dates.push(formatLocalDate(d));
     }
-  });
 
-  // Calculate Streak
-  let currentStreak = 0;
-  for (let i = last30Days.length - 1; i >= 0; i--) {
-    const dateStr = last30Days[i];
-    if (activityMap[dateStr] && activityMap[dateStr].count > 0) {
-      currentStreak++;
-    } else if (dateStr !== todayStr) {
-      // If today has 0 so far, we don't break streak if yesterday was completed
-      break;
-    }
-  }
+    const completed = tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done');
 
-  // Total Focus Minutes logged
-  const totalFocusMinutes = completedTasks.reduce(
-    (acc, t) => acc + (t.timeSpentMinutes || 0),
-    0
-  );
-  const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
+    const activity: Record<string, { count: number; minutes: number }> = {};
+    dates.forEach((dateStr) => {
+      activity[dateStr] = { count: 0, minutes: 0 };
+    });
 
-  // Rule of 3 Focus Execution Rate
-  const totalPinned = tasks.filter((t) => t.isPinnedToday).length;
-  const completedPinned = tasks.filter((t) => t.isPinnedToday && !t.deletedAt && !t.archivedAt && t.status === 'done').length;
-  const focusExecutionRate = totalPinned > 0 ? Math.round((completedPinned / totalPinned) * 100) : 100;
-
-  // Estimation Accuracy & Velocity Metrics
-  const accuracyMetrics = calculateEstimationAccuracy(tasks);
-
-  // Anti-Planning Fallacy Calibration Scatter Data
-  const timedCompletedTasks = completedTasks.filter(
-    (t) => (t.estimatedMinutes || 0) > 0 && (t.timeSpentMinutes || 0) > 0
-  );
-
-  const maxScatterDuration = Math.max(
-    60,
-    ...timedCompletedTasks.map((t) => Math.max(t.estimatedMinutes || 0, t.timeSpentMinutes || 0))
-  );
-
-  // 24-Hour Execution Distribution
-  const hourlyCounts: number[] = Array(24).fill(0);
-  const hourlyMinutes: number[] = Array(24).fill(0);
-  const currentHour = new Date().getHours();
-
-  // Chronobiological Peak Performance Analysis
-  const chronoBuckets = {
-    morning: { count: 0, minutes: 0, label: 'Morning Surge', time: '06:00 – 12:00', icon: Sunrise, color: 'text-amber-500', barColor: 'bg-amber-500' },
-    afternoon: { count: 0, minutes: 0, label: 'Afternoon Focus', time: '12:00 – 17:00', icon: TrendingUp, color: 'text-orange-500', barColor: 'bg-orange-500' },
-    evening: { count: 0, minutes: 0, label: 'Evening Wrap-up', time: '17:00 – 22:00', icon: Sunset, color: 'text-indigo-500', barColor: 'bg-indigo-500' },
-    night: { count: 0, minutes: 0, label: 'Night Flow', time: '22:00 – 06:00', icon: Moon, color: 'text-purple-500', barColor: 'bg-purple-500' },
-  };
-
-  completedTasks.forEach((t) => {
-    if (t.completedAt) {
-      const h = new Date(t.completedAt).getHours();
-      const mins = t.timeSpentMinutes || 0;
-      hourlyCounts[h]++;
-      hourlyMinutes[h] += mins;
-      if (h >= 6 && h < 12) {
-        chronoBuckets.morning.count++;
-        chronoBuckets.morning.minutes += mins;
-      } else if (h >= 12 && h < 17) {
-        chronoBuckets.afternoon.count++;
-        chronoBuckets.afternoon.minutes += mins;
-      } else if (h >= 17 && h < 22) {
-        chronoBuckets.evening.count++;
-        chronoBuckets.evening.minutes += mins;
-      } else {
-        chronoBuckets.night.count++;
-        chronoBuckets.night.minutes += mins;
+    completed.forEach((t) => {
+      const completedDate = t.completedAt
+        ? formatLocalDate(new Date(t.completedAt))
+        : t.dueDate || todayStr;
+      if (activity[completedDate]) {
+        activity[completedDate].count += 1;
+        activity[completedDate].minutes += t.timeSpentMinutes || 0;
       }
-    }
-  });
+    });
 
-  const maxHourlyCount = Math.max(...hourlyCounts, 1);
-  const totalChronoCount = Object.values(chronoBuckets).reduce((acc, b) => acc + b.count, 0) || 1;
-  const peakChronoKey = (Object.keys(chronoBuckets) as (keyof typeof chronoBuckets)[]).reduce((best, key) =>
-    chronoBuckets[key].count > chronoBuckets[best].count ? key : best,
-    'morning' as keyof typeof chronoBuckets
-  );
-  const peakBucket = chronoBuckets[peakChronoKey];
-
-  // 4-Week Rolling Velocity Trend
-  const now = Date.now();
-  const dayMs = 24 * 60 * 60 * 1000;
-  const rollingWeeks = [
-    { label: 'Current Wk', start: now - 7 * dayMs, end: now, tasks: 0, minutes: 0 },
-    { label: '1 Wk Ago', start: now - 14 * dayMs, end: now - 7 * dayMs, tasks: 0, minutes: 0 },
-    { label: '2 Wks Ago', start: now - 21 * dayMs, end: now - 14 * dayMs, tasks: 0, minutes: 0 },
-    { label: '3 Wks Ago', start: now - 28 * dayMs, end: now - 21 * dayMs, tasks: 0, minutes: 0 },
-  ];
-
-  completedTasks.forEach((t) => {
-    const time = t.completedAt || t.createdAt;
-    for (const w of rollingWeeks) {
-      if (time >= w.start && time < w.end) {
-        w.tasks++;
-        w.minutes += t.timeSpentMinutes || 0;
+    let streak = 0;
+    for (let i = dates.length - 1; i >= 0; i--) {
+      const dateStr = dates[i];
+      if (activity[dateStr] && activity[dateStr].count > 0) {
+        streak++;
+      } else if (dateStr !== todayStr) {
         break;
       }
     }
-  });
 
-  const maxWeeklyTasks = Math.max(...rollingWeeks.map((w) => w.tasks), 1);
-  const wowDiff = rollingWeeks[0].tasks - rollingWeeks[1].tasks;
-  const wowPercent = rollingWeeks[1].tasks > 0 ? Math.round((wowDiff / rollingWeeks[1].tasks) * 100) : 0;
+    const totalMinutes = completed.reduce((acc, t) => acc + (t.timeSpentMinutes || 0), 0);
+    const focusHours = (totalMinutes / 60).toFixed(1);
 
-  // Project distribution
-  const projectStats: { id: string; name: string; color: string; count: number; percent: number }[] = [];
-  projects.forEach((proj) => {
-    const count = tasks.filter((t) => t.projectId === proj.id).length;
-    if (count > 0) {
-      projectStats.push({
-        id: proj.id,
-        name: proj.name,
-        color: proj.color,
-        count,
-        percent: Math.round((count / (tasks.length || 1)) * 100),
-      });
-    }
-  });
-  projectStats.sort((a, b) => b.count - a.count);
+    const totalPin = tasks.filter((t) => t.isPinnedToday).length;
+    const completedPin = tasks.filter((t) => t.isPinnedToday && !t.deletedAt && !t.archivedAt && t.status === 'done').length;
+    const rate = totalPin > 0 ? Math.round((completedPin / totalPin) * 100) : 100;
+
+    const timedTasks = completed.filter(
+      (t) => (t.estimatedMinutes || 0) > 0 && (t.timeSpentMinutes || 0) > 0
+    );
+
+    const maxScatter = Math.max(
+      60,
+      ...timedTasks.map((t) => Math.max(t.estimatedMinutes || 0, t.timeSpentMinutes || 0))
+    );
+
+    const counts: number[] = Array(24).fill(0);
+    const hourMins: number[] = Array(24).fill(0);
+    const currHour = new Date().getHours();
+
+    const chrono = {
+      morning: { count: 0, minutes: 0, label: 'Morning Surge', time: '06:00 – 12:00', icon: Sunrise, color: 'text-amber-500', barColor: 'bg-amber-500' },
+      afternoon: { count: 0, minutes: 0, label: 'Afternoon Focus', time: '12:00 – 17:00', icon: TrendingUp, color: 'text-orange-500', barColor: 'bg-orange-500' },
+      evening: { count: 0, minutes: 0, label: 'Evening Wrap-up', time: '17:00 – 22:00', icon: Sunset, color: 'text-indigo-500', barColor: 'bg-indigo-500' },
+      night: { count: 0, minutes: 0, label: 'Night Flow', time: '22:00 – 06:00', icon: Moon, color: 'text-purple-500', barColor: 'bg-purple-500' },
+    };
+
+    completed.forEach((t) => {
+      if (t.completedAt) {
+        const h = new Date(t.completedAt).getHours();
+        const mins = t.timeSpentMinutes || 0;
+        counts[h]++;
+        hourMins[h] += mins;
+        if (h >= 6 && h < 12) {
+          chrono.morning.count++;
+          chrono.morning.minutes += mins;
+        } else if (h >= 12 && h < 17) {
+          chrono.afternoon.count++;
+          chrono.afternoon.minutes += mins;
+        } else if (h >= 17 && h < 22) {
+          chrono.evening.count++;
+          chrono.evening.minutes += mins;
+        } else {
+          chrono.night.count++;
+          chrono.night.minutes += mins;
+        }
+      }
+    });
+
+    const maxHourly = Math.max(...counts, 1);
+    const totalChrono = Object.values(chrono).reduce((acc, b) => acc + b.count, 0) || 1;
+    const peakKey = (Object.keys(chrono) as (keyof typeof chrono)[]).reduce((best, key) =>
+      chrono[key].count > chrono[best].count ? key : best,
+      'morning' as keyof typeof chrono
+    );
+
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const weeks = [
+      { label: 'Current Wk', start: now - 7 * dayMs, end: now, tasks: 0, minutes: 0 },
+      { label: '1 Wk Ago', start: now - 14 * dayMs, end: now - 7 * dayMs, tasks: 0, minutes: 0 },
+      { label: '2 Wks Ago', start: now - 21 * dayMs, end: now - 14 * dayMs, tasks: 0, minutes: 0 },
+      { label: '3 Wks Ago', start: now - 28 * dayMs, end: now - 21 * dayMs, tasks: 0, minutes: 0 },
+    ];
+
+    completed.forEach((t) => {
+      const time = t.completedAt || t.createdAt;
+      for (const w of weeks) {
+        if (time >= w.start && time < w.end) {
+          w.tasks++;
+          w.minutes += t.timeSpentMinutes || 0;
+          break;
+        }
+      }
+    });
+
+    const maxWk = Math.max(...weeks.map((w) => w.tasks), 1);
+    const diff = weeks[0].tasks - weeks[1].tasks;
+    const pct = weeks[1].tasks > 0 ? Math.round((diff / weeks[1].tasks) * 100) : 0;
+
+    return {
+      last30Days: dates,
+      completedTasks: completed,
+      activityMap: activity,
+      currentStreak: streak,
+      totalFocusHours: focusHours,
+      focusExecutionRate: rate,
+      timedCompletedTasks: timedTasks,
+      maxScatterDuration: maxScatter,
+      hourlyCounts: counts,
+      currentHour: currHour,
+      chronoBuckets: chrono,
+      maxHourlyCount: maxHourly,
+      totalChronoCount: totalChrono,
+      peakChronoKey: peakKey,
+      peakBucket: chrono[peakKey],
+      rollingWeeks: weeks,
+      maxWeeklyTasks: maxWk,
+      wowDiff: diff,
+      wowPercent: pct,
+    };
+  }, [tasks, todayStr]);
+
+  // Estimation Accuracy & Velocity Metrics (memoized)
+  const accuracyMetrics = useMemo(() => calculateEstimationAccuracy(tasks), [tasks]);
+
+  // Project distribution (memoized)
+  const projectStats = useMemo(() => {
+    const stats: { id: string; name: string; color: string; count: number; percent: number }[] = [];
+    projects.forEach((proj) => {
+      const count = tasks.filter((t) => t.projectId === proj.id).length;
+      if (count > 0) {
+        stats.push({
+          id: proj.id,
+          name: proj.name,
+          color: proj.color,
+          count,
+          percent: Math.round((count / (tasks.length || 1)) * 100),
+        });
+      }
+    });
+    return stats.sort((a, b) => b.count - a.count);
+  }, [projects, tasks]);
 
   const getActivityColor = (count: number) => {
     if (count === 0) return 'bg-stone-200/60 dark:bg-white/[0.04] text-[var(--text-muted)] border-transparent';

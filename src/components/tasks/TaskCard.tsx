@@ -25,6 +25,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { getTodayStr, getTomorrowStr } from '../../hooks/useCurrentDate';
 import { checkTaskStaleness } from '../../utils/staleTaskDetector';
 import { isTaskBlocked } from '../../utils/dependencyUtils';
 import { audioEngine } from '../../utils/audioEngine';
@@ -78,9 +79,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     return () => window.removeEventListener('mousedown', handleClickOutside);
   }, [isSnoozeOpen]);
 
-  useEffect(() => {
+  const [prevTitle, setPrevTitle] = useState(task.title);
+  if (task.title !== prevTitle) {
+    setPrevTitle(task.title);
     setTitleDraft(task.title);
-  }, [task.title]);
+  }
 
   useEffect(() => {
     if (isEditingTitle) {
@@ -110,7 +113,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   const isDone = task.status === 'done';
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = getTodayStr();
 
   const isActiveTimer = activeTimerTaskId === task.id;
   const isSelected = selectedTaskIds.includes(task.id);
@@ -149,9 +152,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const formatDueDateLabel = (dueDateStr?: string) => {
     if (!dueDateStr) return null;
     if (dueDateStr === todayStr) return 'Today';
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    if (dueDateStr === formatLocalDate(tomorrow)) return 'Tomorrow';
+    if (dueDateStr === getTomorrowStr()) return 'Tomorrow';
     return dueDateStr;
   };
 
