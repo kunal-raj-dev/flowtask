@@ -3,6 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --color-canvas: var(--bg-canvas);
   --color-background: var(--bg-main);
   --color-surface-l1: var(--bg-surface-l1);
   --color-surface-l2: var(--bg-surface-l2);
@@ -22,6 +23,7 @@
 }
 
 :root {
+  --bg-canvas: var(--bg-main);
   /* Surface Ladder (Light: Clean Alabaster Paper + Luminous Surfaces) */
   --bg-main: #FAF9F6;
   --bg-surface-l1: #F4F1EB;

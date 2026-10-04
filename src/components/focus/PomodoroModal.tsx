@@ -54,7 +54,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
   const [localTimeLeft, setLocalTimeLeft] = useState(25 * 60);
   const timeLeft = isPomodoroActive && activeRemainingSec !== null ? activeRemainingSec : localTimeLeft;
 
-  // Keyboard shortcut: F to toggle Zen Fullscreen
+  // Keyboard shortcut: F to toggle Zen Fullscreen, Escape to exit fullscreen or close modal
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const tag = (document.activeElement?.tagName || '').toLowerCase();
@@ -63,14 +63,18 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       if (e.key === 'f' || e.key === 'F') {
         e.preventDefault();
         setIsFullscreen((prev) => !prev);
-      } else if (e.key === 'Escape' && isFullscreen) {
+      } else if (e.key === 'Escape') {
         e.preventDefault();
-        setIsFullscreen(false);
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        } else {
+          onClose();
+        }
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isFullscreen]);
+  }, [isFullscreen, onClose]);
 
   // Switch modes
   const handleModeChange = (newMode: Mode) => {
@@ -256,9 +260,19 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
   // -------------------------------------------------------------
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-between p-6 sm:p-10 select-none animate-fade-in overflow-hidden">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Zen Focus Mode"
+        className="fixed inset-0 z-[60] isolate bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col justify-between p-6 sm:p-10 select-none animate-fade-in overflow-hidden"
+      >
+        {/* Ambient subtle warm vignette glow */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden -z-10 opacity-70">
+          <div className="absolute -top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-amber-500/5 dark:bg-amber-500/10 blur-[130px]" />
+        </div>
+
         {/* Top Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
             {renderCycleIndicators()}
             {task && (
@@ -272,7 +286,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
             <button
               onClick={() => setIsFullscreen(false)}
               title="Exit Zen Fullscreen (F / Esc)"
-              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-xl transition-all flex items-center gap-1.5 text-xs font-medium"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-xl transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer"
             >
               <Minimize2 size={18} />
               <span className="hidden sm:inline">Exit Zen (F)</span>
@@ -280,7 +294,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
             <button
               onClick={onClose}
               title="Close Focus Mode"
-              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-xl transition-all"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-xl transition-all cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -288,7 +302,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
         </div>
 
         {/* Center: Massive Breathing Timer */}
-        <div className="flex flex-col items-center justify-center my-auto relative">
+        <div className="flex flex-col items-center justify-center my-auto relative isolate">
           {/* Subtle pulsating breathing ring */}
           <div
             className={`absolute w-72 h-72 sm:w-96 sm:h-96 md:w-[28rem] md:h-[28rem] rounded-full -z-10 transition-all duration-1000 ${
@@ -406,6 +420,9 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
   // -------------------------------------------------------------
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Focus Timer"
       className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-slide-down"
       onClick={onClose}
     >
@@ -418,13 +435,13 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
           <button
             onClick={() => setIsFullscreen(true)}
             title="Zen Fullscreen Mode (F)"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <Maximize2 size={16} />
           </button>
           <button
             onClick={onClose}
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
