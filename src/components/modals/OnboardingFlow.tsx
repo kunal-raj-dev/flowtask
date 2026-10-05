@@ -179,19 +179,35 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
               </p>
             </div>
 
-            {/* Capacity Slider */}
+            {/* Capacity Slider & Presets */}
             <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[var(--text-secondary)]">Target Daily Workload:</span>
-                <span className="text-sm font-bold font-mono px-3 py-1 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                  {capacity.toFixed(1)} Hours
-                </span>
+                <div>
+                  <span className="text-xs font-semibold text-[var(--text-secondary)] block">Target Daily Workload:</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">Work or study sprint hours</span>
+                </div>
+                <div className="flex items-center gap-1 bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-xl px-2.5 py-1 focus-within:ring-2 focus-within:ring-amber-500 transition-all">
+                  <input
+                    type="number"
+                    min="1"
+                    max="24"
+                    step="0.5"
+                    aria-label="Target daily workload in hours"
+                    value={capacity}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v) && v >= 1 && v <= 24) setCapacity(v);
+                    }}
+                    className="w-12 bg-transparent text-right font-mono font-bold text-sm text-amber-700 dark:text-amber-300 outline-none"
+                  />
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">hrs</span>
+                </div>
               </div>
 
               <input
                 type="range"
-                min="2"
-                max="10"
+                min="1"
+                max={Math.max(16, Math.ceil(capacity))}
                 step="0.5"
                 value={capacity}
                 onChange={(e) => setCapacity(parseFloat(e.target.value))}
@@ -199,9 +215,27 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
               />
 
               <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
-                <span>2h (Light)</span>
-                <span>6h (Optimal Balance)</span>
-                <span>10h (Heavy)</span>
+                <span>1h (Minimal)</span>
+                <span>6h (Recommended Deep Work)</span>
+                <span>{Math.max(16, Math.ceil(capacity))}h (Marathon)</span>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-[var(--border-hairline)]">
+                {[4, 6, 8, 10, 12, 14].map((hrs) => (
+                  <button
+                    key={hrs}
+                    type="button"
+                    onClick={() => setCapacity(hrs)}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                      capacity === hrs
+                        ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                        : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    {hrs === 12 ? '12h (Study Marathon)' : `${hrs}h`}
+                  </button>
+                ))}
               </div>
             </div>
 

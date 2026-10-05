@@ -76,4 +76,20 @@ describe('useWorkspaceSettings', () => {
     });
     expect(result.current.settings.targetWorkCapacityHours).toBe(6.0);
   });
+
+  it('supports study marathon capacity targets beyond 10 hours', () => {
+    const { result } = renderHook(() => useWorkspaceSettings());
+
+    act(() => {
+      result.current.updateSettings({ targetWorkCapacityHours: 12.0 });
+    });
+    expect(result.current.settings.targetWorkCapacityHours).toBe(12.0);
+
+    act(() => {
+      result.current.updateSettings({ targetWorkCapacityHours: 14.5 });
+    });
+    expect(result.current.settings.targetWorkCapacityHours).toBe(14.5);
+    const stored = loadSettingsFromStorage();
+    expect(stored.targetWorkCapacityHours).toBe(14.5);
+  });
 });

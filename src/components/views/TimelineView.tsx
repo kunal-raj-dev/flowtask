@@ -70,8 +70,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     combinedCapacityPercent,
     cognitiveTopology,
   } = useMemo(() => {
-    const START_HOUR = settings.timelineStartHour;
-    const END_HOUR = settings.timelineEndHour;
+    const START_HOUR = settings.timelineStartHour ?? 7;
+    const END_HOUR = Math.max(START_HOUR + 1, settings.timelineEndHour ?? 22);
 
     const filteredTodayTasks = tasks.filter((t) => {
       if (t.deletedAt || t.archivedAt) return false;
@@ -132,9 +132,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     };
   }, [tasks, effectiveDateStr, todayStr, settings, calendarEvents]);
 
-  const START_HOUR = settings.timelineStartHour;
-  const END_HOUR = settings.timelineEndHour;
-  const TOTAL_HOURS = END_HOUR - START_HOUR;
+  const START_HOUR = settings.timelineStartHour ?? 7;
+  const END_HOUR = Math.max(START_HOUR + 1, settings.timelineEndHour ?? 22);
+  const TOTAL_HOURS = Math.max(1, END_HOUR - START_HOUR);
   const HOUR_HEIGHT_PX = TIMELINE_HOUR_HEIGHT_PX;
   const targetWorkCapacityHours = settings?.targetWorkCapacityHours ?? 6.0;
 
