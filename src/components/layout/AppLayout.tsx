@@ -24,7 +24,13 @@ import { Menu, Search, Share2, X, Pause, Play, Plus, Timer, Settings } from 'luc
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
-import { getDiurnalPeriod, getDiurnalConfig, type DiurnalPeriod } from '../../utils/diurnalAura';
+import {
+  getDiurnalPeriod,
+  getDiurnalConfig,
+  loadDiurnalIntensity,
+  applyDiurnalToDom,
+  type DiurnalPeriod,
+} from '../../utils/diurnalAura';
 import { useTactileAudioClicks } from '../../hooks/useTactileAudioClicks';
 import { useAuth } from '../../context/AuthContext';
 import confetti from 'canvas-confetti';
@@ -73,6 +79,7 @@ export const AppLayout: React.FC = () => {
     return null;
   });
   const [diurnalPeriod, setDiurnalPeriod] = useState<DiurnalPeriod>(() => getDiurnalPeriod());
+  const [diurnalIntensity, setDiurnalIntensity] = useState<number>(() => loadDiurnalIntensity());
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
   // Reset viewport scroll to top on activeView transition
@@ -82,11 +89,19 @@ export const AppLayout: React.FC = () => {
     }
   }, [activeView]);
 
-  // Diurnal Ambient Shift dynamic listener & interval
+  // Diurnal Ambient Shift dynamic listener & interval with DOM cascade
   useEffect(() => {
     const handleDiurnalUpdate = () => {
-      setDiurnalPeriod(getDiurnalPeriod());
+      const period = getDiurnalPeriod();
+      const intensity = loadDiurnalIntensity();
+      setDiurnalPeriod(period);
+      setDiurnalIntensity(intensity);
+      applyDiurnalToDom(period, intensity);
     };
+
+    // Apply on initial mount
+    handleDiurnalUpdate();
+
     const interval = setInterval(handleDiurnalUpdate, 5 * 60 * 1000);
     window.addEventListener('diurnal-change', handleDiurnalUpdate);
     return () => {
@@ -379,16 +394,20 @@ export const AppLayout: React.FC = () => {
         Skip to main content
       </a>
 
-      {/* Ambient breathing diurnal aurora mesh glow (Morning amber/rose, Midday indigo/sky, Evening cosmic obsidian/violet) */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden select-none transition-all duration-1000">
+      {/* Ambient breathing diurnal aurora mesh glow with dynamic intensity calibration */}
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden select-none transition-opacity duration-700"
+        style={{ opacity: diurnalIntensity }}
+        aria-hidden="true"
+      >
         {/* Orb 1: Horizon Prime */}
-        <div className={`absolute -top-[12%] -left-[8%] w-[580px] h-[580px] rounded-full ${diurnalConfig.orb1Class} blur-[110px] animate-aurora-1 transition-colors duration-1000`} />
+        <div className={`absolute -top-[12%] -left-[8%] w-[640px] h-[640px] rounded-full ${diurnalConfig.orb1Class} blur-[95px] animate-aurora-1 transition-all duration-700`} />
         {/* Orb 2: Ambient Luminescence */}
-        <div className={`absolute top-[8%] -right-[10%] w-[540px] h-[540px] rounded-full ${diurnalConfig.orb2Class} blur-[100px] animate-aurora-2 transition-colors duration-1000`} />
+        <div className={`absolute top-[6%] -right-[10%] w-[580px] h-[580px] rounded-full ${diurnalConfig.orb2Class} blur-[90px] animate-aurora-2 transition-all duration-700`} />
         {/* Orb 3: Core Radial Depth */}
-        <div className={`absolute top-[45%] left-[25%] w-[460px] h-[460px] rounded-full ${diurnalConfig.orb3Class} blur-[120px] animate-aurora-3 transition-colors duration-1000`} />
+        <div className={`absolute top-[42%] left-[22%] w-[500px] h-[500px] rounded-full ${diurnalConfig.orb3Class} blur-[105px] animate-aurora-3 transition-all duration-700`} />
         {/* Orb 4: Baseline Earth Ground */}
-        <div className={`absolute -bottom-[15%] left-[10%] w-[620px] h-[500px] rounded-full ${diurnalConfig.orb4Class} blur-[100px] animate-aurora-4 transition-colors duration-1000`} />
+        <div className={`absolute -bottom-[14%] right-[10%] w-[660px] h-[520px] rounded-full ${diurnalConfig.orb4Class} blur-[90px] animate-aurora-4 transition-all duration-700`} />
       </div>
 
       {/* Desktop Sidebar */}
@@ -470,7 +489,10 @@ export const AppLayout: React.FC = () => {
       {/* Main Content Area */}
       <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col h-full overflow-hidden relative z-10 focus:outline-none">
         {/* Desktop Top Horizon Status Bar */}
-        <header className="hidden md:flex items-center justify-between px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/75 backdrop-blur-xl sticky top-0 z-20 transition-all">
+        <header
+          className="hidden md:flex items-center justify-between px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/75 backdrop-blur-xl sticky top-0 z-20 transition-all"
+          style={{ borderBottomColor: `color-mix(in srgb, var(--diurnal-glow-1, var(--border-hairline)) 22%, var(--border-hairline))` }}
+        >
           <div className="flex items-center gap-3 min-w-0">
             {/* Zen Sidebar Collapse/Expand Toggle */}
             <button
@@ -719,7 +741,10 @@ export const AppLayout: React.FC = () => {
         </header>
 
         {/* Mobile Top Header */}
-        <header className="md:hidden flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20">
+        <header
+          className="md:hidden flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20 transition-all"
+          style={{ borderBottomColor: `color-mix(in srgb, var(--diurnal-glow-1, var(--border-hairline)) 22%, var(--border-hairline))` }}
+        >
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => setIsSidebarOpenMobile(true)}

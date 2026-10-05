@@ -4,7 +4,11 @@ import { type SoundProfile, type AmbientSoundType, audioEngine } from '../../uti
 import {
   loadDiurnalOverride,
   saveDiurnalOverride,
+  loadDiurnalIntensity,
+  saveDiurnalIntensity,
+  DIURNAL_CONFIGS,
   type DiurnalOverride,
+  type DiurnalPeriod,
 } from '../../utils/diurnalAura';
 import {
   Palette,
@@ -45,23 +49,40 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
   } = useTaskContext();
 
   const [diurnalOverride, setDiurnalOverride] = useState<DiurnalOverride>(() => loadDiurnalOverride());
+  const [diurnalIntensity, setDiurnalIntensity] = useState<number>(() => loadDiurnalIntensity());
   const [tactileVolume, setTactileVolume] = useState<number>(() => audioEngine.getVolume());
   const [ambientType, setAmbientType] = useState<AmbientSoundType>(() => audioEngine.getCurrentAmbientType());
   const [ambientVolume, setAmbientVolume] = useState<number>(() => audioEngine.getAmbientVolume());
   const [auditioningKey, setAuditioningKey] = useState<string | null>(null);
 
-  // Synchronize ambient state when modal opens
+  // Synchronize ambient & diurnal state when modal opens
   useEffect(() => {
     if (isOpen) {
       setAmbientType(audioEngine.getCurrentAmbientType());
       setAmbientVolume(audioEngine.getAmbientVolume());
       setTactileVolume(audioEngine.getVolume());
+      setDiurnalOverride(loadDiurnalOverride());
+      setDiurnalIntensity(loadDiurnalIntensity());
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const handleDiurnalEvent = () => {
+      setDiurnalOverride(loadDiurnalOverride());
+      setDiurnalIntensity(loadDiurnalIntensity());
+    };
+    window.addEventListener('diurnal-change', handleDiurnalEvent);
+    return () => window.removeEventListener('diurnal-change', handleDiurnalEvent);
+  }, []);
 
   const handleDiurnalSelect = (override: DiurnalOverride) => {
     setDiurnalOverride(override);
     saveDiurnalOverride(override);
+  };
+
+  const handleDiurnalIntensityChange = (newVal: number) => {
+    setDiurnalIntensity(newVal);
+    saveDiurnalIntensity(newVal);
   };
 
   const handleTactileVolumeChange = (newVol: number) => {
@@ -291,54 +312,147 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
     },
   ];
 
-  const diurnalOptions: {
+  const circadianAtmospheres: {
     id: DiurnalOverride;
     label: string;
+    subtitle: string;
     desc: string;
     preview: string;
     timeTag: string;
+    glow1: string;
+    glow2: string;
   }[] = [
     {
       id: 'auto',
-      label: 'Auto (Circadian)',
-      desc: 'Synchronizes dynamically with your local time of day',
-      preview: 'from-amber-400/30 via-indigo-500/30 via-rose-500/30 to-violet-700/30',
+      label: 'Auto (Circadian Sync)',
+      subtitle: 'Dynamic Local Clock',
+      desc: 'Synchronizes organically with your local time of day',
+      preview: 'from-amber-400 via-sky-400 via-rose-500 to-indigo-900',
       timeTag: 'Live Clock',
+      glow1: '#F59E0B',
+      glow2: '#38BDF8',
     },
     {
       id: 'morning',
-      label: 'Morning Dawn',
-      desc: 'Warm amber & rose luminescence for intention',
-      preview: 'from-amber-400/30 to-rose-400/20',
-      timeTag: '06:00 – 12:00',
+      label: DIURNAL_CONFIGS.morning.label,
+      subtitle: DIURNAL_CONFIGS.morning.subtitle,
+      desc: DIURNAL_CONFIGS.morning.description,
+      preview: DIURNAL_CONFIGS.morning.previewGradient,
+      timeTag: DIURNAL_CONFIGS.morning.timeTag,
+      glow1: DIURNAL_CONFIGS.morning.glowColor1,
+      glow2: DIURNAL_CONFIGS.morning.glowColor2,
     },
     {
       id: 'midday',
-      label: 'Midday Zenith',
-      desc: 'Electric indigo & sky clarity for high-output deep work',
-      preview: 'from-indigo-500/30 to-sky-400/20',
-      timeTag: '12:00 – 17:00',
+      label: DIURNAL_CONFIGS.midday.label,
+      subtitle: DIURNAL_CONFIGS.midday.subtitle,
+      desc: DIURNAL_CONFIGS.midday.description,
+      preview: DIURNAL_CONFIGS.midday.previewGradient,
+      timeTag: DIURNAL_CONFIGS.midday.timeTag,
+      glow1: DIURNAL_CONFIGS.midday.glowColor1,
+      glow2: DIURNAL_CONFIGS.midday.glowColor2,
     },
     {
       id: 'dusk',
-      label: 'Golden Dusk',
-      desc: 'Warm terracotta & copper sunset horizon for relaxed flow',
-      preview: 'from-amber-500/30 via-orange-500/20 to-purple-900/30',
-      timeTag: '17:00 – 20:00',
+      label: DIURNAL_CONFIGS.dusk.label,
+      subtitle: DIURNAL_CONFIGS.dusk.subtitle,
+      desc: DIURNAL_CONFIGS.dusk.description,
+      preview: DIURNAL_CONFIGS.dusk.previewGradient,
+      timeTag: DIURNAL_CONFIGS.dusk.timeTag,
+      glow1: DIURNAL_CONFIGS.dusk.glowColor1,
+      glow2: DIURNAL_CONFIGS.dusk.glowColor2,
     },
     {
       id: 'evening',
-      label: 'Evening Cosmic',
-      desc: 'Deep cosmic obsidian & violet calm for wrap-up',
-      preview: 'from-violet-700/30 to-slate-900/30',
-      timeTag: '20:00 – 00:00',
+      label: DIURNAL_CONFIGS.evening.label,
+      subtitle: DIURNAL_CONFIGS.evening.subtitle,
+      desc: DIURNAL_CONFIGS.evening.description,
+      preview: DIURNAL_CONFIGS.evening.previewGradient,
+      timeTag: DIURNAL_CONFIGS.evening.timeTag,
+      glow1: DIURNAL_CONFIGS.evening.glowColor1,
+      glow2: DIURNAL_CONFIGS.evening.glowColor2,
     },
     {
       id: 'midnight',
-      label: 'Midnight Starlight',
-      desc: 'Deep celestial obsidian & starlight shimmer for hyperfocus',
-      preview: 'from-indigo-900/30 via-cyan-600/20 to-slate-950/40',
-      timeTag: '00:00 – 06:00',
+      label: DIURNAL_CONFIGS.midnight.label,
+      subtitle: DIURNAL_CONFIGS.midnight.subtitle,
+      desc: DIURNAL_CONFIGS.midnight.description,
+      preview: DIURNAL_CONFIGS.midnight.previewGradient,
+      timeTag: DIURNAL_CONFIGS.midnight.timeTag,
+      glow1: DIURNAL_CONFIGS.midnight.glowColor1,
+      glow2: DIURNAL_CONFIGS.midnight.glowColor2,
+    },
+  ];
+
+  const thematicAtmospheres: {
+    id: DiurnalPeriod;
+    label: string;
+    subtitle: string;
+    desc: string;
+    preview: string;
+    timeTag: string;
+    glow1: string;
+    glow2: string;
+  }[] = [
+    {
+      id: 'aurora',
+      label: DIURNAL_CONFIGS.aurora.label,
+      subtitle: DIURNAL_CONFIGS.aurora.subtitle,
+      desc: DIURNAL_CONFIGS.aurora.description,
+      preview: DIURNAL_CONFIGS.aurora.previewGradient,
+      timeTag: DIURNAL_CONFIGS.aurora.timeTag,
+      glow1: DIURNAL_CONFIGS.aurora.glowColor1,
+      glow2: DIURNAL_CONFIGS.aurora.glowColor2,
+    },
+    {
+      id: 'solar',
+      label: DIURNAL_CONFIGS.solar.label,
+      subtitle: DIURNAL_CONFIGS.solar.subtitle,
+      desc: DIURNAL_CONFIGS.solar.description,
+      preview: DIURNAL_CONFIGS.solar.previewGradient,
+      timeTag: DIURNAL_CONFIGS.solar.timeTag,
+      glow1: DIURNAL_CONFIGS.solar.glowColor1,
+      glow2: DIURNAL_CONFIGS.solar.glowColor2,
+    },
+    {
+      id: 'forest',
+      label: DIURNAL_CONFIGS.forest.label,
+      subtitle: DIURNAL_CONFIGS.forest.subtitle,
+      desc: DIURNAL_CONFIGS.forest.description,
+      preview: DIURNAL_CONFIGS.forest.previewGradient,
+      timeTag: DIURNAL_CONFIGS.forest.timeTag,
+      glow1: DIURNAL_CONFIGS.forest.glowColor1,
+      glow2: DIURNAL_CONFIGS.forest.glowColor2,
+    },
+    {
+      id: 'synthwave',
+      label: DIURNAL_CONFIGS.synthwave.label,
+      subtitle: DIURNAL_CONFIGS.synthwave.subtitle,
+      desc: DIURNAL_CONFIGS.synthwave.description,
+      preview: DIURNAL_CONFIGS.synthwave.previewGradient,
+      timeTag: DIURNAL_CONFIGS.synthwave.timeTag,
+      glow1: DIURNAL_CONFIGS.synthwave.glowColor1,
+      glow2: DIURNAL_CONFIGS.synthwave.glowColor2,
+    },
+    {
+      id: 'abyss',
+      label: DIURNAL_CONFIGS.abyss.label,
+      subtitle: DIURNAL_CONFIGS.abyss.subtitle,
+      desc: DIURNAL_CONFIGS.abyss.description,
+      preview: DIURNAL_CONFIGS.abyss.previewGradient,
+      timeTag: DIURNAL_CONFIGS.abyss.timeTag,
+      glow1: DIURNAL_CONFIGS.abyss.glowColor1,
+      glow2: DIURNAL_CONFIGS.abyss.glowColor2,
+    },
+    {
+      id: 'twilight',
+      label: DIURNAL_CONFIGS.twilight.label,
+      subtitle: DIURNAL_CONFIGS.twilight.subtitle,
+      desc: DIURNAL_CONFIGS.twilight.description,
+      preview: DIURNAL_CONFIGS.twilight.previewGradient,
+      timeTag: DIURNAL_CONFIGS.twilight.timeTag,
+      glow1: DIURNAL_CONFIGS.twilight.glowColor1,
+      glow2: DIURNAL_CONFIGS.twilight.glowColor2,
     },
   ];
 
@@ -750,19 +864,19 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
             )}
           </div>
 
-          {/* SECTION 4: Diurnal Circadian Ambient Shift */}
-          <div className="pt-4 border-t border-[var(--border-hairline)] space-y-4">
+          {/* SECTION 4: Diurnal Circadian & Thematic Atmosphere Shift */}
+          <div className="pt-4 border-t border-[var(--border-hairline)] space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div>
                 <div className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-2">
                   <Clock size={13} className="text-amber-500" />
                   <span>Diurnal Ambient Atmosphere</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    Circadian Glow
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
+                    12 Atmospheres
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  Organic background aurora mesh that shifts atmospheric tones throughout your workday
+                  Organic breathing aurora mesh that shifts atmospheric tones throughout your workday
                 </p>
               </div>
 
@@ -770,7 +884,7 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
                 <span className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-stone-200/50 dark:bg-white/[0.04] text-[var(--text-secondary)] border border-[var(--border-hairline)]">
                   {diurnalOverride === 'auto'
                     ? 'Circadian Clock (Auto)'
-                    : `Manual Preset: ${diurnalOptions.find((d) => d.id === diurnalOverride)?.label}`}
+                    : `Active: ${[...circadianAtmospheres, ...thematicAtmospheres].find((d) => d.id === diurnalOverride)?.label || diurnalOverride}`}
                 </span>
 
                 {diurnalOverride !== 'auto' && (
@@ -787,41 +901,152 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
               </div>
             </div>
 
-            {/* Diurnal Grid (6 Balanced Presets: Auto + 5 Phases) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-              {diurnalOptions.map((item) => {
-                const isSelected = diurnalOverride === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleDiurnalSelect(item.id)}
-                    className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-2.5 card-surface ${
-                      isSelected
-                        ? 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500/25'
-                        : 'border-[var(--border-hairline)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="text-xs font-bold text-[var(--text-primary)]">
-                          {item.label}
-                        </span>
-                        {isSelected && <Check size={12} className="text-amber-500 stroke-[3]" />}
+            {/* Atmosphere Intensity Calibration Slider */}
+            <div className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <Sparkles size={16} className="text-amber-500 shrink-0" />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-[var(--text-primary)]">Atmosphere Intensity</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
+                      {Math.round(diurnalIntensity * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-secondary)]">
+                    Tune the background aurora luminance to match your display brightness
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-56 shrink-0">
+                <span className="text-[10px] text-[var(--text-muted)] font-medium">Subtle</span>
+                <input
+                  type="range"
+                  min="0.2"
+                  max="1.0"
+                  step="0.05"
+                  value={diurnalIntensity}
+                  onChange={(e) => handleDiurnalIntensityChange(parseFloat(e.target.value))}
+                  className="w-full accent-amber-500 cursor-pointer"
+                  title="Calibrate atmospheric glow intensity"
+                />
+                <span className="text-[10px] text-[var(--text-muted)] font-medium">Vivid</span>
+              </div>
+            </div>
+
+            {/* Category A: Circadian Rhythms */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                  <Sun size={12} className="text-amber-500" />
+                  <span>Circadian Rhythms (Time-Based)</span>
+                </span>
+                <span className="text-[10px] font-mono text-[var(--text-muted)]">6 Presets</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {circadianAtmospheres.map((item) => {
+                  const isSelected = diurnalOverride === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleDiurnalSelect(item.id)}
+                      className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-2.5 card-surface ${
+                        isSelected
+                          ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30 shadow-xs'
+                          : 'border-[var(--border-hairline)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs ring-1 ring-black/10"
+                              style={{ background: `linear-gradient(135deg, ${item.glow1}, ${item.glow2})` }}
+                            />
+                            <span className="text-xs font-bold text-[var(--text-primary)] truncate">
+                              {item.label}
+                            </span>
+                          </div>
+                          {isSelected && <Check size={12} className="text-amber-500 stroke-[3] shrink-0" />}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-stone-200/60 dark:bg-white/10 text-[var(--text-muted)]">
+                            {item.timeTag}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)] truncate">
+                            {item.subtitle}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-stone-200/60 dark:bg-white/10 text-[var(--text-muted)]">
-                        {item.timeTag}
-                      </span>
-                    </div>
 
-                    <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">
-                      {item.desc}
-                    </p>
+                      <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">
+                        {item.desc}
+                      </p>
 
-                    <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${item.preview}`} />
-                  </button>
-                );
-              })}
+                      <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${item.preview}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Category B: Specialized Flow Atmospheres */}
+            <div className="space-y-2.5 pt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles size={12} className="text-indigo-400" />
+                  <span>Thematic Flow Atmospheres (Focus & Mood)</span>
+                </span>
+                <span className="text-[10px] font-mono text-[var(--text-muted)]">6 Presets</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {thematicAtmospheres.map((item) => {
+                  const isSelected = diurnalOverride === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleDiurnalSelect(item.id)}
+                      className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-2.5 card-surface ${
+                        isSelected
+                          ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30 shadow-xs'
+                          : 'border-[var(--border-hairline)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs ring-1 ring-black/10"
+                              style={{ background: `linear-gradient(135deg, ${item.glow1}, ${item.glow2})` }}
+                            />
+                            <span className="text-xs font-bold text-[var(--text-primary)] truncate">
+                              {item.label}
+                            </span>
+                          </div>
+                          {isSelected && <Check size={12} className="text-amber-500 stroke-[3] shrink-0" />}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-stone-200/60 dark:bg-white/10 text-[var(--text-muted)]">
+                            {item.timeTag}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)] truncate">
+                            {item.subtitle}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">
+                        {item.desc}
+                      </p>
+
+                      <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${item.preview}`} />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

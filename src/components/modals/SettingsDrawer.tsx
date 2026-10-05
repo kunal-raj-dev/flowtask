@@ -14,11 +14,30 @@ import {
   Upload,
   RefreshCw,
   Clock,
+  Sparkles,
+  Sun,
+  RotateCcw,
 } from 'lucide-react';
+import {
+  loadDiurnalOverride,
+  saveDiurnalOverride,
+  loadDiurnalIntensity,
+  saveDiurnalIntensity,
+  DIURNAL_CONFIGS,
+  type DiurnalOverride,
+  type DiurnalPeriod,
+} from '../../utils/diurnalAura';
 import { useTaskContext, type AppTheme } from '../../context/TaskContext';
 import { useModal } from '../../context/ModalContext';
 import { audioEngine, type SoundProfile } from '../../utils/audioEngine';
 import { useAuth } from '../../context/AuthContext';
+import {
+  MIN_CAPACITY_HOURS,
+  MAX_CAPACITY_HOURS,
+  CAPACITY_PRESETS,
+  DURATION_PRESETS,
+  BUFFER_PRESETS,
+} from '../../types/settings';
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -26,6 +45,16 @@ interface SettingsDrawerProps {
 }
 
 type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account';
+
+const ALL_START_HOURS = Array.from({ length: 23 }, (_, i) => i); // 0 to 22
+const ALL_END_HOURS = Array.from({ length: 24 }, (_, i) => i + 1); // 1 to 24
+
+const formatHourLabel = (h: number) => {
+  if (h === 0 || h === 24) return '12:00 AM (Midnight)';
+  if (h === 12) return '12:00 PM (Noon)';
+  if (h < 12) return `${h}:00 AM`;
+  return `${h - 12}:00 PM`;
+};
 
 export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('workflow');
@@ -52,9 +81,46 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
   const [isRefreshingCalendar, setIsRefreshingCalendar] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
 
+  // Diurnal Ambient Atmosphere state
+  const [diurnalOverride, setDiurnalOverride] = useState<DiurnalOverride>(() => loadDiurnalOverride());
+  const [diurnalIntensity, setDiurnalIntensity] = useState<number>(() => loadDiurnalIntensity());
+
+  // Capacity & Duration local states
+  const [capacityInput, setCapacityInput] = useState(settings.targetWorkCapacityHours.toString());
+  const [isCustomDurationOpen, setIsCustomDurationOpen] = useState(false);
+  const [customDurationInput, setCustomDurationInput] = useState(settings.defaultTaskDuration.toString());
+
+  useEffect(() => {
+    setCapacityInput(settings.targetWorkCapacityHours.toString());
+  }, [settings.targetWorkCapacityHours]);
+
+  useEffect(() => {
+    setCustomDurationInput(settings.defaultTaskDuration.toString());
+    const isPreset = (DURATION_PRESETS as readonly number[]).includes(settings.defaultTaskDuration);
+    if (!isPreset) {
+      setIsCustomDurationOpen(true);
+    }
+  }, [settings.defaultTaskDuration]);
+
   useEffect(() => {
     setIcsInput(calendarIcsUrl || '');
   }, [calendarIcsUrl]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDiurnalOverride(loadDiurnalOverride());
+      setDiurnalIntensity(loadDiurnalIntensity());
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleDiurnalChange = () => {
+      setDiurnalOverride(loadDiurnalOverride());
+      setDiurnalIntensity(loadDiurnalIntensity());
+    };
+    window.addEventListener('diurnal-change', handleDiurnalChange);
+    return () => window.removeEventListener('diurnal-change', handleDiurnalChange);
+  }, []);
 
   // Handle Escape key
   useEffect(() => {
@@ -81,6 +147,96 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
     setTimeout(() => setSaveToast(false), 2000);
   };
 
+  const handleDiurnalSelect = (override: DiurnalOverride) => {
+    setDiurnalOverride(override);
+    saveDiurnalOverride(override);
+    triggerSaveToast();
+  };
+
+  const handleDiurnalIntensityChange = (val: number) => {
+    setDiurnalIntensity(val);
+    saveDiurnalIntensity(val);
+    triggerSaveToast();
+  };
+
+  // Capacity handlers
+  const handleCapacityInputChange = (val: string) => {
+    setCapacityInput(val);
+    const parsed = parseFloat(val);
+    if (!isNaN(parsed) && parsed >= MIN_CAPACITY_HOURS && parsed <= MAX_CAPACITY_HOURS) {
+      updateSettings({ targetWorkCapacityHours: parsed });
+      triggerSaveToast();
+    }
+  };
+
+  const handleCapacityInputBlur = () => {
+    const parsed = parseFloat(capacityInput);
+    if (isNaN(parsed) || parsed < MIN_CAPACITY_HOURS || parsed > MAX_CAPACITY_HOURS) {
+      setCapacityInput(settings.targetWorkCapacityHours.toString());
+    } else {
+      const rounded = Math.round(parsed * 10) / 10;
+      setCapacityInput(rounded.toString());
+      updateSettings({ targetWorkCapacityHours: rounded });
+      triggerSaveToast();
+    }
+  };
+
+  const handleCapacityPreset = (hours: number) => {
+    setCapacityInput(hours.toString());
+    updateSettings({ targetWorkCapacityHours: hours });
+    triggerSaveToast();
+  };
+
+  const getCapacityGuidance = (hours: number) => {
+    if (hours < 4) return { text: 'Minimalist & recovery pacing', color: 'text-stone-500 dark:text-stone-400' };
+    if (hours <= 7) return { text: 'Optimal cognitive balance for deep work & retention', color: 'text-emerald-600 dark:text-emerald-400' };
+    if (hours <= 10) return { text: 'Intensive workday sprint / high output', color: 'text-amber-600 dark:text-amber-400' };
+    if (hours <= 14) return { text: 'Exam marathon & deep study sprint mode', color: 'text-indigo-600 dark:text-indigo-400' };
+    return { text: 'Extended marathon crunch — schedule recovery & hydration', color: 'text-rose-600 dark:text-rose-400' };
+  };
+
+  // Duration handlers
+  const isPresetDuration = (DURATION_PRESETS as readonly number[]).includes(settings.defaultTaskDuration);
+
+  const handleDurationPreset = (mins: number) => {
+    setIsCustomDurationOpen(false);
+    setCustomDurationInput(mins.toString());
+    updateSettings({ defaultTaskDuration: mins });
+    triggerSaveToast();
+  };
+
+  const handleCustomDurationCommit = (valStr: string) => {
+    const parsed = parseInt(valStr, 10);
+    if (!isNaN(parsed) && parsed >= 5 && parsed <= 480) {
+      updateSettings({ defaultTaskDuration: parsed });
+      setCustomDurationInput(parsed.toString());
+      triggerSaveToast();
+    } else {
+      setCustomDurationInput(settings.defaultTaskDuration.toString());
+    }
+  };
+
+  // Timeline Hour Handlers with start < end invariant
+  const handleStartHourChange = (s: number) => {
+    if (s >= settings.timelineEndHour) {
+      const newEnd = Math.min(24, s + 4);
+      updateSettings({ timelineStartHour: s, timelineEndHour: newEnd });
+    } else {
+      updateSettings({ timelineStartHour: s });
+    }
+    triggerSaveToast();
+  };
+
+  const handleEndHourChange = (e: number) => {
+    if (e <= settings.timelineStartHour) {
+      const newStart = Math.max(0, e - 4);
+      updateSettings({ timelineStartHour: newStart, timelineEndHour: e });
+    } else {
+      updateSettings({ timelineEndHour: e });
+    }
+    triggerSaveToast();
+  };
+
   const themes: { id: AppTheme; label: string; bg: string; border: string; desc: string }[] = [
     { id: 'light', label: 'Alabaster Light', bg: 'bg-[#F9FAFB] text-stone-900', border: 'border-stone-300', desc: 'Calm morning light with aurora mesh' },
     { id: 'dark', label: 'Obsidian Dark', bg: 'bg-[#0B0F17] text-stone-100', border: 'border-stone-700', desc: 'Deep space 4-tiered contrast' },
@@ -93,6 +249,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
   ];
 
   if (!isOpen) return null;
+
+  const sliderMax = Math.max(16, Math.min(MAX_CAPACITY_HOURS, Math.ceil(settings.targetWorkCapacityHours)));
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
@@ -141,65 +299,65 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-[var(--border-hairline)] px-4 sm:px-6 bg-[var(--bg-surface-l2)]/40 overflow-x-auto no-scrollbar gap-1 pt-2">
+        {/* Tab Navigation with responsive wrapping and clear visibility */}
+        <div className="flex border-b border-[var(--border-hairline)] px-3 sm:px-6 bg-[var(--bg-surface-l2)]/40 overflow-x-auto no-scrollbar gap-1 pt-2">
           <button
             onClick={() => setActiveTab('workflow')}
-            className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
               activeTab === 'workflow'
                 ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
                 : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
-            <Clock size={14} />
+            <Clock size={14} className="shrink-0" />
             <span>Workflow & Capacity</span>
           </button>
 
           <button
             onClick={() => setActiveTab('aesthetics')}
-            className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
               activeTab === 'aesthetics'
                 ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
                 : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
-            <Palette size={14} />
+            <Palette size={14} className="shrink-0" />
             <span>Aesthetics & Audio</span>
           </button>
 
           <button
             onClick={() => setActiveTab('calendar')}
-            className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
               activeTab === 'calendar'
                 ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
                 : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
-            <Calendar size={14} />
+            <Calendar size={14} className="shrink-0" />
             <span>Calendar Feeds</span>
           </button>
 
           <button
             onClick={() => setActiveTab('data')}
-            className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
               activeTab === 'data'
                 ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
                 : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
-            <Database size={14} />
+            <Database size={14} className="shrink-0" />
             <span>Data & Portability</span>
           </button>
 
           <button
             onClick={() => setActiveTab('account')}
-            className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
               activeTab === 'account'
                 ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
                 : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
-            <Cloud size={14} />
+            <Cloud size={14} className="shrink-0" />
             <span>Account & Sync</span>
           </button>
         </div>
@@ -209,43 +367,109 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
           {/* TAB 1: WORKFLOW & CAPACITY */}
           {activeTab === 'workflow' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Daily Target Capacity */}
+              {/* Daily Target Capacity (Study & Work) */}
               <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <label htmlFor="daily-capacity-slider" className="text-sm font-bold text-[var(--text-primary)]">
-                      Daily Planned Capacity Target
+                    <label htmlFor="daily-capacity-custom-input" className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                      <span>Daily Planned Capacity Target</span>
+                      <Sparkles size={14} className="text-amber-500" />
                     </label>
                     <p className="text-xs text-[var(--text-secondary)]">
-                      Guards against planning fallacy and cognitive exhaustion.
+                      Calibrate your daily workload budget. Perfect for regular workdays or intense study sprints.
                     </p>
                   </div>
-                  <span className="text-sm font-bold font-mono px-3 py-1 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                    {settings.targetWorkCapacityHours.toFixed(1)} hrs
-                  </span>
+
+                  {/* Direct Custom Numerical Input */}
+                  <div className="flex items-center gap-1 bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-xl px-2.5 py-1 focus-within:ring-2 focus-within:ring-amber-500 transition-all shrink-0">
+                    <input
+                      type="number"
+                      min={MIN_CAPACITY_HOURS}
+                      max={MAX_CAPACITY_HOURS}
+                      step="0.5"
+                      id="daily-capacity-custom-input"
+                      name="customCapacityHours"
+                      aria-label="Daily capacity hours target"
+                      value={capacityInput}
+                      onChange={(e) => handleCapacityInputChange(e.target.value)}
+                      onBlur={handleCapacityInputBlur}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
+                      className="w-12 bg-transparent text-right font-mono font-bold text-sm text-amber-700 dark:text-amber-300 outline-none"
+                    />
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">hrs</span>
+                  </div>
                 </div>
 
-                <div className="space-y-1.5 pt-2">
+                {/* Range Slider */}
+                <div className="space-y-1.5 pt-1">
                   <input
                     id="daily-capacity-slider"
                     name="targetWorkCapacityHours"
                     aria-label="Daily Planned Capacity Target"
                     type="range"
-                    min="2"
-                    max="10"
+                    min={MIN_CAPACITY_HOURS}
+                    max={sliderMax}
                     step="0.5"
                     value={settings.targetWorkCapacityHours}
                     onChange={(e) => {
-                      updateSettings({ targetWorkCapacityHours: parseFloat(e.target.value) });
+                      const val = parseFloat(e.target.value);
+                      setCapacityInput(val.toString());
+                      updateSettings({ targetWorkCapacityHours: val });
                       triggerSaveToast();
                     }}
                     className="w-full accent-amber-500 cursor-pointer"
                   />
-                  <div className="flex justify-between text-[11px] text-[var(--text-muted)] font-mono">
-                    <span>2h (Minimalist)</span>
+                  <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
+                    <span>{MIN_CAPACITY_HOURS}h (Minimal)</span>
                     <span>6h (Recommended Deep Work)</span>
-                    <span>10h (Intense)</span>
+                    <span>{sliderMax}h {sliderMax > 10 ? '(Marathon)' : '(Intense)'}</span>
                   </div>
+                </div>
+
+                {/* Quick Preset Chips */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)] block">
+                    Quick Capacity Presets:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {CAPACITY_PRESETS.map((hours) => {
+                      const isSelected = settings.targetWorkCapacityHours === hours;
+                      let label = `${hours}h`;
+                      if (hours === 4) label = '4h (Light)';
+                      else if (hours === 6) label = '6h (Balanced)';
+                      else if (hours === 8) label = '8h (Deep Work)';
+                      else if (hours === 10) label = '10h (Intense)';
+                      else if (hours === 12) label = '12h (Study Marathon)';
+                      else if (hours === 14) label = '14h (Exam Crunch)';
+
+                      return (
+                        <button
+                          key={hours}
+                          type="button"
+                          onClick={() => handleCapacityPreset(hours)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300 shadow-xs'
+                              : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-stone-400'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pacing Guidance Tag */}
+                <div className="flex items-center gap-1.5 text-[11px] pt-1 border-t border-[var(--border-hairline)]">
+                  <span className="font-semibold text-[var(--text-muted)]">Pacing profile:</span>
+                  <span className={`font-medium ${getCapacityGuidance(settings.targetWorkCapacityHours).color}`}>
+                    {getCapacityGuidance(settings.targetWorkCapacityHours).text}
+                  </span>
                 </div>
               </div>
 
@@ -260,24 +484,60 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
                   </p>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2 pt-1">
-                  {[15, 25, 30, 45, 60, 90].map((mins) => (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {DURATION_PRESETS.map((mins) => {
+                    const isSelected = settings.defaultTaskDuration === mins;
+                    return (
+                      <button
+                        key={mins}
+                        type="button"
+                        aria-label={`Set default duration to ${mins} mins`}
+                        onClick={() => handleDurationPreset(mins)}
+                        className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                          isSelected
+                            ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 shadow-xs'
+                            : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        }`}
+                      >
+                        {mins} mins
+                      </button>
+                    );
+                  })}
+
+                  {/* Custom Duration Input / Button */}
+                  {isCustomDurationOpen || !isPresetDuration ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                      <span className="text-xs font-semibold">Custom:</span>
+                      <input
+                        type="number"
+                        min="5"
+                        max="480"
+                        step="5"
+                        id="custom-duration-input"
+                        aria-label="Custom task duration in minutes"
+                        value={customDurationInput}
+                        onChange={(e) => setCustomDurationInput(e.target.value)}
+                        onBlur={() => handleCustomDurationCommit(customDurationInput)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleCustomDurationCommit(customDurationInput);
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        className="w-12 bg-transparent text-center font-mono font-bold text-xs outline-none border-b border-amber-500/50"
+                        autoFocus={isCustomDurationOpen && isPresetDuration}
+                      />
+                      <span className="text-xs font-semibold">m</span>
+                    </div>
+                  ) : (
                     <button
-                      key={mins}
                       type="button"
-                      onClick={() => {
-                        updateSettings({ defaultTaskDuration: mins });
-                        triggerSaveToast();
-                      }}
-                      className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
-                        settings.defaultTaskDuration === mins
-                          ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 shadow-xs'
-                          : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      }`}
+                      onClick={() => setIsCustomDurationOpen(true)}
+                      className="py-1.5 px-3 rounded-xl text-xs font-semibold border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-amber-500/50"
                     >
-                      {mins} mins
+                      + Custom
                     </button>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -295,22 +555,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
                 <div className="grid grid-cols-2 gap-4 pt-1">
                   <div>
                     <label htmlFor="timeline-start-hour-select" className="text-xs font-medium text-[var(--text-muted)] block mb-1">
-                      Start Hour (Morning)
+                      Start Hour
                     </label>
                     <select
                       id="timeline-start-hour-select"
                       name="timelineStartHour"
                       aria-label="Timeline start hour"
                       value={settings.timelineStartHour}
-                      onChange={(e) => {
-                        updateSettings({ timelineStartHour: parseInt(e.target.value, 10) });
-                        triggerSaveToast();
-                      }}
+                      onChange={(e) => handleStartHourChange(parseInt(e.target.value, 10))}
                       className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none"
                     >
-                      {[5, 6, 7, 8, 9].map((h) => (
+                      {ALL_START_HOURS.map((h) => (
                         <option key={h} value={h}>
-                          {h}:00 AM
+                          {formatHourLabel(h)}
                         </option>
                       ))}
                     </select>
@@ -318,25 +575,107 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
 
                   <div>
                     <label htmlFor="timeline-end-hour-select" className="text-xs font-medium text-[var(--text-muted)] block mb-1">
-                      End Hour (Night)
+                      End Hour
                     </label>
                     <select
                       id="timeline-end-hour-select"
                       name="timelineEndHour"
                       aria-label="Timeline end hour"
                       value={settings.timelineEndHour}
-                      onChange={(e) => {
-                        updateSettings({ timelineEndHour: parseInt(e.target.value, 10) });
-                        triggerSaveToast();
-                      }}
+                      onChange={(e) => handleEndHourChange(parseInt(e.target.value, 10))}
                       className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none"
                     >
-                      {[20, 21, 22, 23, 24].map((h) => (
+                      {ALL_END_HOURS.map((h) => (
                         <option key={h} value={h}>
-                          {h === 24 ? '12:00 AM (Midnight)' : `${h - 12}:00 PM`}
+                          {formatHourLabel(h)}
                         </option>
                       ))}
                     </select>
+                  </div>
+                </div>
+
+                {/* Canvas Coverage Preview */}
+                <div className="pt-2 px-3 py-2 rounded-xl bg-stone-500/5 dark:bg-white/[0.03] border border-[var(--border-hairline)] flex items-center justify-between text-xs text-[var(--text-muted)]">
+                  <span className="font-medium text-[var(--text-secondary)]">Canvas Window</span>
+                  <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">
+                    {settings.timelineEndHour - settings.timelineStartHour} hrs ({formatHourLabel(settings.timelineStartHour)} – {formatHourLabel(settings.timelineEndHour)})
+                  </span>
+                </div>
+              </div>
+
+              {/* Timeline Auto-Schedule Buffer */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+                <div>
+                  <span className="text-sm font-bold text-[var(--text-primary)] block">
+                    Timeline Auto-Schedule Buffer
+                  </span>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Breathing room placed between unscheduled tasks when time-blocking on the visual canvas.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {BUFFER_PRESETS.map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      aria-label={`Set auto-slot buffer to ${mins} mins`}
+                      onClick={() => {
+                        updateSettings({ autoSlotBufferMinutes: mins });
+                        triggerSaveToast();
+                      }}
+                      className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                        settings.autoSlotBufferMinutes === mins
+                          ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 shadow-xs'
+                          : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      {mins === 0 ? 'None (0m)' : `${mins} mins`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Week Start Day */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold text-[var(--text-primary)] block">
+                      Week Start Day
+                    </span>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Configures calendar columns and weekly planning views.
+                    </p>
+                  </div>
+                  <div className="flex items-center p-1 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateSettings({ weekStartDay: 'monday' });
+                        triggerSaveToast();
+                      }}
+                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                        settings.weekStartDay === 'monday'
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs font-bold'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      Monday
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateSettings({ weekStartDay: 'sunday' });
+                        triggerSaveToast();
+                      }}
+                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                        settings.weekStartDay === 'sunday'
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs font-bold'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      Sunday
+                    </button>
                   </div>
                 </div>
               </div>
@@ -399,6 +738,176 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Diurnal Ambient Atmosphere Section */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <Clock size={18} className="text-amber-500" />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-[var(--text-primary)]">
+                          Diurnal Ambient Atmosphere
+                        </h4>
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
+                          12 Atmospheres
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[var(--text-secondary)]">
+                        Organic breathing background glow calibrated to your workday
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-lg bg-stone-200/50 dark:bg-white/[0.04] text-[var(--text-secondary)] border border-[var(--border-hairline)]">
+                      {diurnalOverride === 'auto'
+                        ? 'Auto (Circadian)'
+                        : DIURNAL_CONFIGS[diurnalOverride]?.label || diurnalOverride}
+                    </span>
+                    {diurnalOverride !== 'auto' && (
+                      <button
+                        type="button"
+                        onClick={() => handleDiurnalSelect('auto')}
+                        className="flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline px-2 py-0.5 rounded-lg hover:bg-amber-500/10 transition-colors"
+                        title="Reset to local circadian auto clock"
+                      >
+                        <RotateCcw size={11} />
+                        <span>Reset</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Intensity Slider */}
+                <div className="p-3 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+                    <Sparkles size={14} className="text-amber-500 shrink-0" />
+                    <div className="flex items-center gap-1.5">
+                      <span>Atmosphere Intensity</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
+                        {Math.round(diurnalIntensity * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5 w-full sm:w-48 shrink-0">
+                    <span className="text-[9px] text-[var(--text-muted)] font-medium">Subtle</span>
+                    <input
+                      type="range"
+                      min="0.2"
+                      max="1.0"
+                      step="0.05"
+                      value={diurnalIntensity}
+                      onChange={(e) => handleDiurnalIntensityChange(parseFloat(e.target.value))}
+                      className="w-full accent-amber-500 cursor-pointer"
+                      title="Adjust diurnal atmosphere intensity"
+                    />
+                    <span className="text-[9px] text-[var(--text-muted)] font-medium">Vivid</span>
+                  </div>
+                </div>
+
+                {/* Circadian Presets */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
+                    <Sun size={11} className="text-amber-500" />
+                    <span>Circadian Presets</span>
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      {
+                        id: 'auto' as DiurnalOverride,
+                        label: 'Auto (Clock)',
+                        timeTag: 'Live Clock',
+                        preview: 'from-amber-400 via-sky-400 to-indigo-900',
+                        glow1: '#F59E0B',
+                        glow2: '#38BDF8',
+                      },
+                      ...(['morning', 'midday', 'dusk', 'evening', 'midnight'] as DiurnalPeriod[]).map((p) => ({
+                        id: p as DiurnalOverride,
+                        label: DIURNAL_CONFIGS[p].label,
+                        timeTag: DIURNAL_CONFIGS[p].timeTag,
+                        preview: DIURNAL_CONFIGS[p].previewGradient,
+                        glow1: DIURNAL_CONFIGS[p].glowColor1,
+                        glow2: DIURNAL_CONFIGS[p].glowColor2,
+                      })),
+                    ].map((item) => {
+                      const isSelected = diurnalOverride === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleDiurnalSelect(item.id)}
+                          className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-1.5 ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30'
+                              : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 w-full">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0 shadow-xs"
+                                style={{ background: `linear-gradient(135deg, ${item.glow1}, ${item.glow2})` }}
+                              />
+                              <span className="text-xs font-bold text-[var(--text-primary)] truncate">
+                                {item.label}
+                              </span>
+                            </div>
+                            {isSelected && <Check size={11} className="text-amber-500 stroke-[3] shrink-0" />}
+                          </div>
+                          <span className="text-[9px] font-mono text-[var(--text-muted)] truncate">
+                            {item.timeTag}
+                          </span>
+                          <div className={`h-1 w-full rounded-full bg-gradient-to-r ${item.preview}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Thematic Flow Presets */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
+                    <Sparkles size={11} className="text-indigo-400" />
+                    <span>Thematic Flow Atmospheres</span>
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {(['aurora', 'solar', 'forest', 'synthwave', 'abyss', 'twilight'] as DiurnalPeriod[]).map((p) => {
+                      const item = DIURNAL_CONFIGS[p];
+                      const isSelected = diurnalOverride === p;
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handleDiurnalSelect(p)}
+                          className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-1.5 ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30'
+                              : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 w-full">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0 shadow-xs"
+                                style={{ background: `linear-gradient(135deg, ${item.glowColor1}, ${item.glowColor2})` }}
+                              />
+                              <span className="text-xs font-bold text-[var(--text-primary)] truncate">
+                                {item.label}
+                              </span>
+                            </div>
+                            {isSelected && <Check size={11} className="text-amber-500 stroke-[3] shrink-0" />}
+                          </div>
+                          <span className="text-[9px] font-mono text-[var(--text-muted)] truncate">
+                            {item.subtitle}
+                          </span>
+                          <div className={`h-1 w-full rounded-full bg-gradient-to-r ${item.previewGradient}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
