@@ -332,11 +332,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Command Palette"
-      className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-start justify-center pt-20 p-4 animate-slide-down"
+      className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-start justify-center pt-20 p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] shadow-modal overflow-hidden card-surface"
+        className="w-full max-w-xl bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--border-hairline)] shadow-modal overflow-hidden card-surface animate-slide-down"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}

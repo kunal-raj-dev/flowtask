@@ -204,10 +204,10 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
           <button
             type="button"
             onClick={() => setSelectedHorizonDate(null)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
               selectedHorizonDate === null
                 ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-hairline)]'
+                : 'bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-hairline)]'
             }`}
           >
             All Dates
@@ -220,10 +220,10 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
                 key={hd.dateStr}
                 type="button"
                 onClick={() => setSelectedHorizonDate(isSelected ? null : hd.dateStr)}
-                className={`flex flex-col items-center px-3.5 py-1.5 rounded-xl text-xs transition-all border min-w-[70px] ${
+                className={`flex flex-col items-center px-3.5 py-1.5 rounded-xl text-xs transition-all border min-w-[70px] cursor-pointer ${
                   isSelected
                     ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                    : 'bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--border-hairline)]'
+                    : 'bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--border-hairline)]'
                 }`}
               >
                 <span className={`text-[10px] font-semibold uppercase ${isSelected ? 'text-purple-200' : 'text-[var(--text-muted)]'}`}>

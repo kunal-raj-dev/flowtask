@@ -18,7 +18,7 @@ import { BatchActionBar } from '../tasks/BatchActionBar';
 import { ModalRoot } from '../modals/ModalRoot';
 import { useModal } from '../../context/ModalContext';
 import { Toast } from '../ui/Toast';
-import { Button } from '../ui';
+import { Button, ViewSkeleton, Kbd } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
 import { Menu, Search, Share2, X, Pause, Play, Plus, Timer, Settings } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
@@ -96,7 +96,9 @@ export const AppLayout: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('flowtask_sidebar_collapsed', String(isSidebarCollapsed));
+    try {
+      localStorage.setItem('flowtask_sidebar_collapsed', String(isSidebarCollapsed));
+    } catch {}
   }, [isSidebarCollapsed]);
 
   // Global Keyboard shortcuts with strict modal isolation
@@ -369,6 +371,14 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="relative flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-200">
+      {/* Skip to Main Content Link (WCAG 2.2 Level A / AA) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 px-4 py-2 rounded-lg bg-[var(--color-brand)] text-white text-xs font-bold shadow-elevated focus:outline-none focus:ring-2 focus:ring-white"
+      >
+        Skip to main content
+      </a>
+
       {/* Ambient breathing diurnal aurora mesh glow (Morning amber/rose, Midday indigo/sky, Evening cosmic obsidian/violet) */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden select-none transition-all duration-1000">
         {/* Orb 1: Horizon Prime */}
@@ -458,7 +468,7 @@ export const AppLayout: React.FC = () => {
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col h-full overflow-hidden relative z-10 focus:outline-none">
         {/* Desktop Top Horizon Status Bar */}
         <header className="hidden md:flex items-center justify-between px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/75 backdrop-blur-xl sticky top-0 z-20 transition-all">
           <div className="flex items-center gap-3 min-w-0">
@@ -682,14 +692,17 @@ export const AppLayout: React.FC = () => {
               New Task
             </Button>
 
-            {/* Command Palette / Search */}
+            {/* Command Palette / Search Trigger */}
             <button
               type="button"
               onClick={() => openModal('commandPalette')}
-              title="Search and commands (Ctrl+K)"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+              title="Search and commands (Ctrl+K or ⌘K)"
+              aria-label="Search and commands"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-subtle cursor-pointer group"
             >
-              <Search size={16} />
+              <Search size={14} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
+              <span className="hidden xl:inline text-xs text-[var(--text-muted)] font-medium">Search & jump to...</span>
+              <Kbd size="xs" className="hidden lg:inline-flex opacity-85">⌘K</Kbd>
             </button>
 
             {/* Application Settings & Preferences */}
@@ -697,6 +710,7 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={() => openModal('settings')}
               title="Preferences & Settings (Ctrl+,)"
+              aria-label="Preferences and Settings"
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
               <Settings size={16} />
@@ -871,7 +885,20 @@ export const AppLayout: React.FC = () => {
             </div>
           )}
 
-          <Suspense fallback={<p role="status" className="p-6">Opening view…</p>}>{renderActiveView()}</Suspense>
+          <Suspense fallback={<ViewSkeleton title={`Loading ${getViewTitle()}…`} />}>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={activeView}
+                initial={{ opacity: 0, y: 3 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -3 }}
+                transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+                className="h-full flex flex-col"
+              >
+                {renderActiveView()}
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
         </div>
       </main>
 

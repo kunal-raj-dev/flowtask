@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useTodayStr, getTomorrowStr } from '../../hooks/useCurrentDate';
 import { calculateTaskPriorityScore } from '../../utils/priorityScoring';
+import { Badge } from '../ui';
 
 interface EisenhowerViewProps {
   onSelectTask: (taskId: string) => void;
@@ -36,19 +37,35 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
 
   // Multi-Factor Prioritization settings
   const [scoringMode, setScoringMode] = useState<'manual' | 'smart'>(() => {
-    return (localStorage.getItem('flowtask_eisenhower_mode') as 'manual' | 'smart') || 'manual';
+    try {
+      return (localStorage.getItem('flowtask_eisenhower_mode') as 'manual' | 'smart') || 'manual';
+    } catch {
+      return 'manual';
+    }
   });
 
   const [sortByScore, setSortByScore] = useState<boolean>(() => {
-    return localStorage.getItem('flowtask_eisenhower_sort_score') === 'true';
+    try {
+      return localStorage.getItem('flowtask_eisenhower_sort_score') === 'true';
+    } catch {
+      return false;
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('flowtask_eisenhower_mode', scoringMode);
+    try {
+      localStorage.setItem('flowtask_eisenhower_mode', scoringMode);
+    } catch {
+      // safe fallback
+    }
   }, [scoringMode]);
 
   useEffect(() => {
-    localStorage.setItem('flowtask_eisenhower_sort_score', String(sortByScore));
+    try {
+      localStorage.setItem('flowtask_eisenhower_sort_score', String(sortByScore));
+    } catch {
+      // safe fallback
+    }
   }, [sortByScore]);
 
   // Hotkey navigation: '1', '2', '3', '4' or ArrowLeft / ArrowRight to switch quadrants
@@ -408,11 +425,9 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span
-                    className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full border shadow-xs ${q.badgeColor}`}
-                  >
+                  <Badge variant={q.priority} size="xs" className="font-mono">
                     {quadTasks.length}
-                  </span>
+                  </Badge>
                   <button
                     onClick={() => handleQuickAdd(q.priority)}
                     className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"

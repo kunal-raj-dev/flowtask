@@ -5,6 +5,7 @@ import type { Task } from '../../types/task';
 import { TaskCard } from './TaskCard';
 import { VirtualTaskList } from './VirtualTaskList';
 import { Omnibar } from './Omnibar';
+import { EmptyState } from '../ui';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import {
   Inbox,
@@ -429,28 +430,28 @@ export const TaskList: React.FC<TaskListProps> = ({
       )}
 
       {displayedTasks.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/20 rounded-2xl border border-[var(--border-hairline)]">
-          <CheckCircle2 size={36} className="mx-auto mb-2 text-stone-300 dark:text-stone-700" />
-          {selectedContextTag ? (
-            <>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">
-                No tasks matching @{selectedContextTag}
-              </p>
+        selectedContextTag ? (
+          <EmptyState
+            icon={<Filter size={20} className="text-teal-500" />}
+            title={`No tasks matching @${selectedContextTag}`}
+            description="Clear this context filter to view all available tasks in this view."
+            action={
               <button
                 type="button"
                 onClick={() => setSelectedContextTag(null)}
-                className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 transition-all card-surface"
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 transition-all shadow-subtle hover:scale-[1.02] cursor-pointer"
               >
                 Clear Context Filter
               </button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">No active tasks</p>
-              <p className="text-xs mt-1 text-[var(--text-secondary)]">Add a task using the bar above or press 'N'.</p>
-            </>
-          )}
-        </div>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={<CheckCircle2 size={24} className="text-amber-500" />}
+            title="No active tasks"
+            description="Add a task using the bar above or press 'N'."
+          />
+        )
       ) : (
         <VirtualTaskList
           tasks={displayedTasks}

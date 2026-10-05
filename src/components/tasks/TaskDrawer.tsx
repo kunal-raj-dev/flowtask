@@ -150,7 +150,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               type="text"
               value={task.title}
               onChange={(e) => updateTask(task.id, { title: e.target.value })}
-              className={`w-full bg-transparent text-lg font-bold outline-none transition-colors tracking-tight ${
+              className={`w-full bg-transparent text-lg font-bold outline-none transition-all tracking-tight pb-1 border-b-2 border-transparent focus:border-amber-500/80 ${
                 isDone ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'
               }`}
               placeholder="Task title..."

@@ -19,7 +19,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { EmptyState } from '../ui/EmptyState';
+import { EmptyState, Badge } from '../ui';
 
 interface TodayViewProps {
   onSelectTask: (taskId: string) => void;
@@ -340,9 +340,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               Top 3 Focus
             </h2>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
+            <Badge variant="focus" size="xs">
               {topThreeTasks.length}/3
-            </span>
+            </Badge>
           </div>
           <span className="text-[11px] text-[var(--text-muted)] hidden sm:inline">
             Star up to 3 high-impact tasks
@@ -350,11 +350,12 @@ export const TodayView: React.FC<TodayViewProps> = ({
         </div>
 
         {topThreeTasks.length === 0 ? (
-          <div className="p-4 rounded-xl border border-dashed border-[var(--border-subtle)] text-center text-xs text-[var(--text-muted)] bg-[var(--bg-surface-l1)]/40">
+          <div className="p-5 rounded-2xl border border-dashed border-amber-500/25 text-center text-xs text-[var(--text-muted)] bg-amber-500/[0.02]">
+            <Star size={16} className="mx-auto mb-1.5 text-amber-500/60" />
             Click the star on any task to choose your Top 3 for today
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-amber-500/[0.03] dark:bg-amber-500/[0.04] border border-amber-500/20 shadow-xs space-y-2">
             <AnimatePresence initial={false} mode="popLayout">
               {topThreeTasks.map((task) => (
                 <motion.div
@@ -385,9 +386,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               Daytime Tasks
             </h2>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-200 dark:bg-stone-800 text-[var(--text-secondary)] font-bold">
+            <Badge variant="neutral" size="xs">
               {daytimeTasks.length}
-            </span>
+            </Badge>
           </div>
         </div>
 
@@ -487,9 +488,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               This Evening
             </h2>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold">
+            <Badge variant="blue" size="xs">
               {eveningTasks.length}
-            </span>
+            </Badge>
           </div>
 
           <button

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import type { TaskStatus } from '../../types/task';
 import { Kanban, Plus, Circle, Clock, CheckCircle2 } from 'lucide-react';
+import { Badge } from '../ui';
 
 interface KanbanViewProps {
   onSelectTask: (taskId: string) => void;
@@ -232,9 +233,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
                     {col.title}
                   </h3>
-                  <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full border border-[var(--border-subtle)] shadow-xs ${col.badgeBg}`}>
+                  <Badge variant={col.status} size="xs" className="font-mono">
                     {colTasks.length}
-                  </span>
+                  </Badge>
                 </div>
 
                 <button

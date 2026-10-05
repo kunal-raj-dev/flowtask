@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Keyboard } from 'lucide-react';
+import { Kbd } from '../ui';
 
 interface ShortcutsModalProps {
   onClose: () => void;
@@ -45,11 +46,11 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-slide-down"
+      className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-[var(--bg-surface-l2)] rounded-xl p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface"
+        className="w-full max-w-lg bg-[var(--bg-surface-l2)] rounded-xl p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface animate-scale-up"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -85,9 +86,9 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
                 className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-xs card-surface"
               >
                 <span className="text-[var(--text-secondary)]">{s.desc}</span>
-                <kbd className="px-2.5 py-0.5 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] font-mono text-[10px] text-[var(--text-primary)] font-semibold shadow-xs">
+                <Kbd size="xs">
                   {s.key}
-                </kbd>
+                </Kbd>
               </div>
             ))}
           </div>

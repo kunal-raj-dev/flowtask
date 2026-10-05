@@ -377,7 +377,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                     Question Target Budget ({targetBudgetMins}m)
                   </span>
 
-                  <div className="text-5xl font-mono font-bold tracking-tight text-amber-400">
+                  <div className="text-5xl font-mono font-bold tracking-tight text-amber-400 tabular-nums">
                     {formatTime(questionSecondsLeft)}
                   </div>
 
@@ -483,7 +483,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                   Session Performance
                 </span>
                 <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                  Remaining: <strong className="text-[var(--text-primary)]">{formatTime(sessionSecondsLeft)}</strong>
+                  Remaining: <strong className="text-[var(--text-primary)] tabular-nums">{formatTime(sessionSecondsLeft)}</strong>
                 </span>
               </div>
 

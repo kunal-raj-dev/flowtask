@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
 import { useTaskContext } from '../../context/TaskContext';
+import { ModalSkeleton } from '../ui';
 
 // Modals
 const CommandPalette = lazy(() => import('./CommandPalette').then(m => ({ default: m.CommandPalette })));
@@ -98,7 +99,7 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
   ]);
 
   return (
-    <Suspense fallback={<div role="status" className="fixed inset-0 z-50 bg-black/30 grid place-items-center"><p className="bg-white text-black p-5 rounded-xl">Opening…</p></div>}>
+    <Suspense fallback={<ModalSkeleton />}>
       {/* Centralized Settings Slide-Over Panel */}
       {isModalOpen('settings') && (
         <SettingsDrawer

@@ -23,6 +23,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const isToday = activeView === 'today';
   const isInbox = activeView === 'inbox';
   const isUpcoming = activeView === 'upcoming';
+  const isMore = !isToday && !isInbox && !isUpcoming;
 
   return (
     <nav
@@ -112,10 +113,15 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           type="button"
           onClick={onOpenMenu}
-          className="flex flex-col items-center justify-center min-w-[56px] py-1 px-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
+          className={`flex flex-col items-center justify-center min-w-[56px] py-1 px-2 rounded-lg transition-all ${
+            isMore
+              ? 'text-[var(--color-brand)] font-semibold'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+          }`}
           aria-label="More views and projects"
+          aria-current={isMore ? 'page' : undefined}
         >
-          <Menu size={20} className="stroke-[1.8]" />
+          <Menu size={20} className={isMore ? 'stroke-[2.4]' : 'stroke-[1.8]'} />
           <span className="text-[10px] mt-1 tracking-tight">More</span>
         </button>
       </div>

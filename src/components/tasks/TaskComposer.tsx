@@ -17,7 +17,6 @@ import {
   Flag,
   Folder,
   Sparkles,
-  CornerDownLeft,
   Mic,
   MicOff,
   AlertCircle,
@@ -27,6 +26,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { parseTimeToMinutes, minutesToTimeStr } from '../../utils/timelineUtils';
+import { Kbd } from '../ui';
 
 interface TaskComposerProps {
   initialDraft?: string;
@@ -261,9 +261,9 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
     <div className={`w-full ${isModal ? '' : 'mb-6'}`}>
       <form
         onSubmit={handleSubmit}
-        className={`relative rounded-2xl transition-all duration-150 border ${
+        className={`relative rounded-2xl transition-all duration-200 border ${
           isFocused
-            ? 'bg-[var(--bg-surface-l1)] border-amber-500/60 dark:border-amber-400/50 shadow-elevated ring-2 ring-amber-500/20'
+            ? 'bg-[var(--bg-surface-l2)] border-amber-500/70 shadow-elevated ring-2 ring-amber-500/20'
             : 'bg-[var(--bg-surface-l1)] border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-hairline)]'
         }`}
       >
@@ -664,10 +664,11 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                 type="button"
                 onClick={() => handleSubmit()}
                 disabled={!input.trim()}
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-35 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1"
+                aria-label="Add"
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-35 disabled:active:scale-100 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-amber-500/50 outline-none"
               >
                 <span>Add</span>
-                <CornerDownLeft size={13} />
+                <Kbd size="xs" className="text-[10px] py-0 px-1 border-white/20 bg-black/20 text-white shadow-none">↵</Kbd>
               </button>
             </div>
           </div>

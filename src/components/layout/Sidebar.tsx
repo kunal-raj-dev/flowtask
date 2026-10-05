@@ -92,30 +92,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
 
-  const [isMoreCollapsed, setIsMoreCollapsed] = useState<boolean>(
-    () => localStorage.getItem('flowtask_sidebar_more_collapsed') === 'true'
-  );
-  const [isPerspectivesCollapsed, setIsPerspectivesCollapsed] = useState<boolean>(
-    () => localStorage.getItem('flowtask_sidebar_perspectives_collapsed') !== 'false'
-  );
-  const [isSmartViewsCollapsed, setIsSmartViewsCollapsed] = useState<boolean>(
-    () => localStorage.getItem('flowtask_sidebar_smartviews_collapsed') !== 'false'
-  );
-  const [isProjectsCollapsed, setIsProjectsCollapsed] = useState<boolean>(
-    () => localStorage.getItem('flowtask_sidebar_projects_collapsed') === 'true'
-  );
+  const [isMoreCollapsed, setIsMoreCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('flowtask_sidebar_more_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [isPerspectivesCollapsed, setIsPerspectivesCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('flowtask_sidebar_perspectives_collapsed') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  const [isSmartViewsCollapsed, setIsSmartViewsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('flowtask_sidebar_smartviews_collapsed') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  const [isProjectsCollapsed, setIsProjectsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('flowtask_sidebar_projects_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
-    localStorage.setItem('flowtask_sidebar_more_collapsed', String(isMoreCollapsed));
+    try {
+      localStorage.setItem('flowtask_sidebar_more_collapsed', String(isMoreCollapsed));
+    } catch {}
   }, [isMoreCollapsed]);
   useEffect(() => {
-    localStorage.setItem('flowtask_sidebar_perspectives_collapsed', String(isPerspectivesCollapsed));
+    try {
+      localStorage.setItem('flowtask_sidebar_perspectives_collapsed', String(isPerspectivesCollapsed));
+    } catch {}
   }, [isPerspectivesCollapsed]);
   useEffect(() => {
-    localStorage.setItem('flowtask_sidebar_smartviews_collapsed', String(isSmartViewsCollapsed));
+    try {
+      localStorage.setItem('flowtask_sidebar_smartviews_collapsed', String(isSmartViewsCollapsed));
+    } catch {}
   }, [isSmartViewsCollapsed]);
   useEffect(() => {
-    localStorage.setItem('flowtask_sidebar_projects_collapsed', String(isProjectsCollapsed));
+    try {
+      localStorage.setItem('flowtask_sidebar_projects_collapsed', String(isProjectsCollapsed));
+    } catch {}
   }, [isProjectsCollapsed]);
 
   // Ensure current activeView section is expanded so user never loses their position
@@ -410,7 +434,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }
           onItemClick?.();
         }}
-        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-[0.98] ${
           isActive
             ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
             : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
