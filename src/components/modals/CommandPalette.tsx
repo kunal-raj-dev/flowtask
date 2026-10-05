@@ -143,7 +143,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     inputRef.current?.focus();
   };
 
-  const actions = [
+  const actions = useMemo(() => [
     {
       id: 'study-sessions',
       title: 'Plan Study & Deep Work Sessions (DSA, LeetCode, Web Dev)',
@@ -288,7 +288,25 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         setTimeout(() => window.print(), 200);
       },
     },
-  ];
+  ], [
+    onClose,
+    onOpenStudySession,
+    setIsWeeklyReviewOpen,
+    setActiveView,
+    onOpenPomodoro,
+    onOpenBrainDump,
+    onOpenScratchpad,
+    undoLastAction,
+    onOpenExportImport,
+    setIsAuthModalOpen,
+    onOpenAesthetics,
+    setIsEveningShutdownOpen,
+    setIsSmartFilterModalOpen,
+    theme,
+    toggleTheme,
+    tasks,
+    projects,
+  ]);
 
   const filteredActions = useMemo(() => {
     if (!dsl.text) return actions;
@@ -311,6 +329,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command Palette"
       className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-start justify-center pt-20 p-4 animate-slide-down"
       onClick={onClose}
     >

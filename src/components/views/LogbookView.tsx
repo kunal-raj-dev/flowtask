@@ -38,7 +38,9 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
   }, [tasks]);
 
   const { filteredTasks, totalFilteredHours, todayTasks, yesterdayTasks, earlierTasks } = useMemo(() => {
-    const nowMs = Date.now();
+    const [y, m, d] = todayStr.split('-').map(Number);
+    const todayBase = new Date(y, (m || 1) - 1, d || 1, 12, 0, 0);
+    const nowMs = todayBase.getTime();
     const dayMs = 24 * 60 * 60 * 1000;
     const sevenDaysAgoMs = nowMs - 7 * dayMs;
     const thirtyDaysAgoMs = nowMs - 30 * dayMs;
@@ -75,7 +77,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
     const totalMinutes = filtered.reduce((acc, t) => acc + (t.timeSpentMinutes || 0), 0);
     const totalHours = (totalMinutes / 60).toFixed(1);
 
-    const yesterdayDate = new Date();
+    const yesterdayDate = new Date(todayBase);
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
     const yesterdayStr = formatLocalDate(yesterdayDate);
 

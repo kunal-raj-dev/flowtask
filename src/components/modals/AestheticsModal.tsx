@@ -344,6 +344,9 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="aesthetics-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/80 backdrop-blur-xl animate-fade-in"
       onClick={onClose}
     >
@@ -359,7 +362,7 @@ export const AestheticsModal: React.FC<AestheticsModalProps> = ({ isOpen, onClos
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">
+                <h3 id="aesthetics-modal-title" className="text-base font-bold text-[var(--text-primary)]">
                   Aesthetics & Tactile Sound Profiles
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">

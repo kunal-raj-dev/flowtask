@@ -557,6 +557,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                         <div className="flex items-center gap-2.5 min-w-0">
                           <button
                             type="button"
+                            aria-label={`Mark "${task.title}" as complete`}
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleTaskStatus(task.id);

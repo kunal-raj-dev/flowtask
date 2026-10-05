@@ -31,8 +31,10 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
 
   // Autosave to localStorage on every change
   useEffect(() => {
-    if (workspacePreferences.scratchpad !== content) setWorkspacePreference('scratchpad', content);
-  }, [content]);
+    if (workspacePreferences.scratchpad !== content) {
+      setWorkspacePreference('scratchpad', content);
+    }
+  }, [content, workspacePreferences.scratchpad, setWorkspacePreference]);
 
   if (!isOpen) return null;
 
@@ -60,7 +62,7 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
     if (lines.length === 0) return;
 
     const cleanLines = lines
-      .map((line) => line.replace(/^[-*•]\s+/, '').replace(/^\d+[\.\)]\s+/, '').trim())
+      .map((line) => line.replace(/^[-*•]\s+/, '').replace(/^\d+[.)]\s+/, '').trim())
       .filter((line) => line.length > 0);
 
     if (cleanLines.length === 0) return;
@@ -75,26 +77,29 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="scratchpad-modal-title"
       className="fixed inset-0 z-50 bg-black/40 dark:bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-white dark:bg-[#12151D] rounded-xl p-6 border border-stone-200/80 dark:border-white/10 shadow-2xl dark:shadow-black/70 card-surface relative flex flex-col max-h-[85vh]"
+        className="w-full max-w-2xl bg-[var(--bg-surface-l1)] rounded-xl p-6 border border-[var(--border-subtle)] shadow-2xl card-surface relative flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-stone-200/60 dark:border-white/5">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--border-hairline)]">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-[var(--color-brand)] border border-amber-500/20 shadow-xs">
               <FileEdit size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 tracking-tight">
+                <h3 id="scratchpad-modal-title" className="text-base font-bold text-[var(--text-primary)] tracking-tight">
                   Sticky Scratchpad
                 </h3>
               </div>
-              <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">
+              <p className="text-xs text-[var(--text-secondary)] font-medium">
                 Fleeting thoughts, phone numbers, and raw notes. Autosaved locally.
               </p>
             </div>
@@ -102,7 +107,8 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
+            aria-label="Close scratchpad"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/5 transition-colors"
           >
             <X size={18} />
           </button>
@@ -120,13 +126,13 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
             placeholder="Jot down quick thoughts, meeting notes, code snippets, or task bullets...
 - Call Alex @calls p1 ~15m
 - Review PR #code tomorrow"
-            className="w-full flex-1 p-4 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/70 dark:border-white/5 rounded-lg outline-none text-sm text-stone-900 dark:text-stone-100 resize-none font-mono leading-relaxed focus:border-[var(--color-brand)] shadow-inner"
+            className="w-full flex-1 p-4 bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] rounded-lg outline-none text-sm text-[var(--text-primary)] resize-none font-mono leading-relaxed focus:border-[var(--color-brand)] shadow-inner"
           />
         </div>
 
         {/* Footer with Counters & Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 dark:border-white/5 flex-wrap gap-2 text-xs">
-          <div className="flex items-center gap-3 text-stone-400 font-mono text-[11px]">
+        <div className="flex items-center justify-between pt-3 border-t border-[var(--border-hairline)] flex-wrap gap-2 text-xs">
+          <div className="flex items-center gap-3 text-[var(--text-muted)] font-mono text-[11px]">
             <span>{wordCount} words</span>
             <span>•</span>
             <span>{charCount} chars</span>
@@ -143,7 +149,8 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
               onClick={handleClear}
               disabled={!content.trim()}
               title="Clear scratchpad"
-              className="p-2 text-stone-400 hover:text-rose-500 rounded-lg hover:bg-stone-100 dark:hover:bg-white/5 transition-colors disabled:opacity-30"
+              aria-label="Clear scratchpad"
+              className="p-2 text-[var(--text-muted)] hover:text-rose-500 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/5 transition-colors disabled:opacity-30"
             >
               <Trash2 size={15} />
             </button>

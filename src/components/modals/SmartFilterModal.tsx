@@ -136,6 +136,7 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close Smart Filter Modal"
             className="p-1.5 rounded-lg text-stone-400 hover:text-[var(--text-primary)] hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors"
           >
             <X size={18} />
@@ -163,9 +164,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
 
           {/* Icon Selector */}
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+            <span className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
               Icon & Tint
-            </label>
+            </span>
             <div className="flex items-center gap-2 overflow-x-auto py-1">
               {AVAILABLE_ICONS.map(({ id, Icon }) => {
                 const isSelected = selectedIcon === id;
@@ -212,9 +213,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
 
           {/* Priorities */}
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+            <span className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
               Priority Filter
-            </label>
+            </span>
             <div className="flex items-center gap-2">
               {(['p1', 'p2', 'p3', 'p4'] as Priority[]).map((p) => {
                 const isSelected = selectedPriorities.includes(p);
@@ -251,9 +252,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
 
           {/* Duration Filter */}
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+            <span className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
               Effort & Duration
-            </label>
+            </span>
             <div className="flex items-center gap-2">
               {[
                 { id: 'any', label: 'Any Duration' },
@@ -278,9 +279,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
 
           {/* Due Date Range */}
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+            <span className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
               Due Date Horizon
-            </label>
+            </span>
             <div className="flex flex-wrap items-center gap-1.5">
               {[
                 { id: 'any', label: 'Any Date' },
@@ -308,9 +309,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
 
           {/* Special Focus Criteria */}
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+            <span className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
               Special Focus Criteria
-            </label>
+            </span>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -356,9 +357,9 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
           {/* Project Inclusion */}
           {projects.filter((p) => p.id !== 'inbox' && p.id !== 'ideas').length > 0 && (
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+              <span className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
                 Limit to Specific Projects (Optional)
-              </label>
+              </span>
               <div className="flex flex-wrap items-center gap-1.5">
                 {projects
                   .filter((p) => p.id !== 'inbox' && p.id !== 'ideas')

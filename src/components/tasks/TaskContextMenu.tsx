@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import type { Task, Priority } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
-import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr, useTomorrowStr } from '../../hooks/useCurrentDate';
 import {
   Sun,
   Moon,
@@ -41,10 +41,8 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
 
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const todayStr = formatLocalDate(new Date());
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = formatLocalDate(tomorrow);
+  const todayStr = useTodayStr();
+  const tomorrowStr = useTomorrowStr();
 
   const isDone = task.status === 'done';
 

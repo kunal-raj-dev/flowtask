@@ -62,7 +62,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   } = useTaskContext();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleDraft, setTitleDraft] = useState(task.title);
+  const [titleDraft, setTitleDraft] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [isSnoozeOpen, setIsSnoozeOpen] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -79,12 +79,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     return () => window.removeEventListener('mousedown', handleClickOutside);
   }, [isSnoozeOpen]);
 
-  const [prevTitle, setPrevTitle] = useState(task.title);
-  if (task.title !== prevTitle) {
-    setPrevTitle(task.title);
-    setTitleDraft(task.title);
-  }
-
   useEffect(() => {
     if (isEditingTitle) {
       titleInputRef.current?.focus();
@@ -93,11 +87,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   }, [isEditingTitle]);
 
   const handleSaveTitle = () => {
-    if (titleDraft.trim() && titleDraft.trim() !== task.title) {
-      updateTask(task.id, { title: titleDraft.trim() });
-    } else {
-      setTitleDraft(task.title);
+    const draft = titleDraft !== null ? titleDraft.trim() : task.title;
+    if (draft && draft !== task.title) {
+      updateTask(task.id, { title: draft });
     }
+    setTitleDraft(null);
     setIsEditingTitle(false);
   };
 
@@ -107,7 +101,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       handleSaveTitle();
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      setTitleDraft(task.title);
+      setTitleDraft(null);
       setIsEditingTitle(false);
     }
   };
@@ -337,7 +331,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <input
               ref={titleInputRef}
               type="text"
-              value={titleDraft}
+              value={titleDraft ?? task.title}
               onChange={(e) => setTitleDraft(e.target.value)}
               onBlur={handleSaveTitle}
               onKeyDown={handleTitleKeyDown}
@@ -348,7 +342,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <span
               onDoubleClick={(e) => {
                 e.stopPropagation();
-                if (!isDone) setIsEditingTitle(true);
+                if (!isDone) {
+                  setTitleDraft(task.title);
+                  setIsEditingTitle(true);
+                }
               }}
               title="Double-click to edit title"
               className={`text-sm leading-snug font-medium transition-all ${

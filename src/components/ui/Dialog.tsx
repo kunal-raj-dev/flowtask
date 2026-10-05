@@ -35,7 +35,10 @@ export const Dialog: React.FC<DialogProps> = ({
   className = '',
 }) => {
   const rootRef = useRef<HTMLDivElement>(null);
-  const closeRef = useRef(onClose); closeRef.current = onClose;
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
   const titleId = useId();
   const descId = useId();
 

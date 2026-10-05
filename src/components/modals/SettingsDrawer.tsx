@@ -213,7 +213,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
               <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-bold text-[var(--text-primary)]">
+                    <label htmlFor="daily-capacity-slider" className="text-sm font-bold text-[var(--text-primary)]">
                       Daily Planned Capacity Target
                     </label>
                     <p className="text-xs text-[var(--text-secondary)]">
@@ -227,6 +227,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
 
                 <div className="space-y-1.5 pt-2">
                   <input
+                    id="daily-capacity-slider"
+                    name="targetWorkCapacityHours"
+                    aria-label="Daily Planned Capacity Target"
                     type="range"
                     min="2"
                     max="10"
@@ -249,9 +252,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
               {/* Default Task Duration */}
               <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div>
-                  <label className="text-sm font-bold text-[var(--text-primary)]">
+                  <span className="text-sm font-bold text-[var(--text-primary)] block">
                     Default Task Duration
-                  </label>
+                  </span>
                   <p className="text-xs text-[var(--text-secondary)]">
                     Fallback time allocated when no ~duration is parsed in the Omnibar.
                   </p>
@@ -281,9 +284,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
               {/* Timeline Hours Config */}
               <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div>
-                  <label className="text-sm font-bold text-[var(--text-primary)]">
+                  <span className="text-sm font-bold text-[var(--text-primary)] block">
                     Timeline Visual Canvas Hours
-                  </label>
+                  </span>
                   <p className="text-xs text-[var(--text-secondary)]">
                     Define the daily hourly boundaries for time-blocking in the Timeline view.
                   </p>
@@ -291,10 +294,13 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
 
                 <div className="grid grid-cols-2 gap-4 pt-1">
                   <div>
-                    <label className="text-xs font-medium text-[var(--text-muted)] block mb-1">
+                    <label htmlFor="timeline-start-hour-select" className="text-xs font-medium text-[var(--text-muted)] block mb-1">
                       Start Hour (Morning)
                     </label>
                     <select
+                      id="timeline-start-hour-select"
+                      name="timelineStartHour"
+                      aria-label="Timeline start hour"
                       value={settings.timelineStartHour}
                       onChange={(e) => {
                         updateSettings({ timelineStartHour: parseInt(e.target.value, 10) });
@@ -311,10 +317,13 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
                   </div>
 
                   <div>
-                    <label className="text-xs font-medium text-[var(--text-muted)] block mb-1">
+                    <label htmlFor="timeline-end-hour-select" className="text-xs font-medium text-[var(--text-muted)] block mb-1">
                       End Hour (Night)
                     </label>
                     <select
+                      id="timeline-end-hour-select"
+                      name="timelineEndHour"
+                      aria-label="Timeline end hour"
                       value={settings.timelineEndHour}
                       onChange={(e) => {
                         updateSettings({ timelineEndHour: parseInt(e.target.value, 10) });
@@ -473,11 +482,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-[var(--text-muted)] block">
+                  <label htmlFor="ical-feed-url-input" className="text-xs font-medium text-[var(--text-muted)] block">
                     iCal / Webcal Feed Secret URL
                   </label>
                   <input
                     type="url"
+                    id="ical-feed-url-input"
+                    name="calendarIcsUrl"
+                    aria-label="iCal or Webcal Feed Secret URL"
                     value={icsInput}
                     onChange={(e) => setIcsInput(e.target.value)}
                     placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"

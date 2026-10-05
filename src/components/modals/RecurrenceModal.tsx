@@ -103,6 +103,7 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close Recurrence Modal"
             className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
           >
             <X size={18} />
@@ -111,9 +112,9 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
 
         {/* Quick Presets */}
         <div className="mb-5">
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+          <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
             Quick Presets
-          </label>
+          </span>
           <div className="flex items-center gap-1.5 flex-wrap">
             <button
               type="button"
@@ -148,7 +149,7 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
 
         {/* Frequency & Unit Inputs */}
         <div className="mb-5">
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+          <label htmlFor="recurrence-interval-input" className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
             Repeat Interval
           </label>
           <div className="flex items-center gap-3">
@@ -182,9 +183,9 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
         {/* Days of Week (if unit === 'weeks') */}
         {unit === 'weeks' && (
           <div className="mb-5">
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
               On Days
-            </label>
+            </span>
             <div className="flex items-center justify-between gap-1.5">
               {DAYS_OF_WEEK.map((day) => {
                 const isSelected = daysOfWeek.includes(day.value);
@@ -210,9 +211,9 @@ export const RecurrenceModal: React.FC<RecurrenceModalProps> = ({
 
         {/* Recurrence Mode */}
         <div className="mb-5">
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+          <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
             Schedule Base
-          </label>
+          </span>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"

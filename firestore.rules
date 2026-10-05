@@ -5,15 +5,16 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
 
       match /tasks/{taskId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null && request.auth.uid == userId
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
           && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 1000))
           && (!('status' in request.resource.data) || request.resource.data.status in ['todo', 'in_progress', 'done'])
           && (!('priority' in request.resource.data) || request.resource.data.priority in ['p1', 'p2', 'p3', 'p4']);
       }
 
       match /projects/{projectId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
           && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200));
       }
 

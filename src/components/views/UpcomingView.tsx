@@ -49,7 +49,8 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
 
   // Generate 7-day horizon (Tomorrow + next 6 days) (memoized)
   const { horizonDays, tomorrowStr, endOfWeekStr, nextWeekEndStr } = useMemo(() => {
-    const today = new Date();
+    const [y, m, d] = todayStr.split('-').map(Number);
+    const today = new Date(y, (m || 1) - 1, d || 1, 12, 0, 0);
     const days = Array.from({ length: 7 }).map((_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() + (i + 1));

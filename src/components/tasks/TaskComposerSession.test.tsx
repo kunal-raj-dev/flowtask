@@ -122,4 +122,33 @@ describe('TaskComposer Session Duration Generator', () => {
       })
     );
   });
+  it('defaults plannedDate to todayStr when no date is specified in today view', () => {
+    render(<TaskComposer />);
+    const input = screen.getByPlaceholderText(/What needs to be done/i);
+    fireEvent.change(input, { target: { value: 'Buy groceries' } });
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+
+    expect(mockAddTask).toHaveBeenCalledWith(
+      'Buy groceries',
+      expect.objectContaining({
+        plannedDate: '2026-10-04',
+      })
+    );
+  });
+
+  it('does not force plannedDate to todayStr when a future due date is parsed', () => {
+    render(<TaskComposer />);
+    const input = screen.getByPlaceholderText(/What needs to be done/i);
+    fireEvent.change(input, { target: { value: 'Prepare Q3 report tomorrow at 3pm' } });
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+
+    expect(mockAddTask).toHaveBeenCalledWith(
+      'Prepare Q3 report',
+      expect.objectContaining({
+        plannedDate: undefined,
+        dueTime: '15:00',
+      })
+    );
+  });
 });
+

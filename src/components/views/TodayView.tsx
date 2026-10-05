@@ -78,6 +78,16 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
   const todayStr = useTodayStr();
 
+  const formattedTodayDate = useMemo(() => {
+    const [y, m, d] = todayStr.split('-').map(Number);
+    const date = new Date(y, (m || 1) - 1, d || 1);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  }, [todayStr]);
+
   // Tasks planned for today or with Top 3 pin scoped to today (memoized)
   const activeTodayTasks = useMemo(
     () => tasks.filter(t => isTodayTask(t, todayStr)),
@@ -196,11 +206,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 Today
               </h1>
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
-                {new Date().toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                })}
+                {formattedTodayDate}
               </span>
             </div>
             <p className="text-xs text-[var(--text-secondary)] font-medium mt-0.5">

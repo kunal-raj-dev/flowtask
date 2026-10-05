@@ -37,6 +37,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
 
   const todayStr = useTodayStr();
+  const [currentHour] = useState(() => new Date().getHours());
 
   const {
     last30Days,
@@ -48,7 +49,6 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
     timedCompletedTasks,
     maxScatterDuration,
     hourlyCounts,
-    currentHour,
     chronoBuckets,
     maxHourlyCount,
     totalChronoCount,
@@ -60,7 +60,8 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   } = useMemo(() => {
     // Generate 30-day date array
     const dates: string[] = [];
-    const baseDate = new Date();
+    const [year, month, day] = todayStr.split('-').map(Number);
+    const baseDate = new Date(year, (month || 1) - 1, day || 1, 12, 0, 0);
     for (let i = 29; i >= 0; i--) {
       const d = new Date(baseDate);
       d.setDate(d.getDate() - i);
@@ -112,7 +113,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
 
     const counts: number[] = Array(24).fill(0);
     const hourMins: number[] = Array(24).fill(0);
-    const currHour = new Date().getHours();
+    const currHour = currentHour;
 
     const chrono = {
       morning: { count: 0, minutes: 0, label: 'Morning Surge', time: '06:00 – 12:00', icon: Sunrise, color: 'text-amber-500', barColor: 'bg-amber-500' },
@@ -150,7 +151,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
       'morning' as keyof typeof chrono
     );
 
-    const now = Date.now();
+    const now = baseDate.getTime();
     const dayMs = 24 * 60 * 60 * 1000;
     const weeks = [
       { label: 'Current Wk', start: now - 7 * dayMs, end: now, tasks: 0, minutes: 0 },
@@ -195,7 +196,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
       wowDiff: diff,
       wowPercent: pct,
     };
-  }, [tasks, todayStr]);
+  }, [tasks, todayStr, currentHour]);
 
   // Estimation Accuracy & Velocity Metrics (memoized)
   const accuracyMetrics = useMemo(() => calculateEstimationAccuracy(tasks), [tasks]);

@@ -244,6 +244,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                 type="button"
                 onClick={() => moveSubTask(task.id, sub.id, 'up')}
                 title="Move step up"
+                aria-label="Move step up"
                 className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md transition-all"
               >
                 <ChevronUp size={13} />
@@ -252,6 +253,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                 type="button"
                 onClick={() => moveSubTask(task.id, sub.id, 'down')}
                 title="Move step down"
+                aria-label="Move step down"
                 className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md transition-all"
               >
                 <ChevronDown size={13} />
@@ -260,6 +262,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                 type="button"
                 onClick={() => promoteSubTaskToTask(task.id, sub.id)}
                 title="Promote subtask to independent task"
+                aria-label="Promote subtask to independent task"
                 className="text-[var(--text-muted)] hover:text-[var(--color-brand)] p-1 rounded-md transition-all"
               >
                 <ArrowUpRight size={13} />
@@ -267,6 +270,8 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
               <button
                 type="button"
                 onClick={() => deleteSubTask(task.id, sub.id)}
+                title="Delete subtask"
+                aria-label="Delete subtask"
                 className="text-[var(--text-muted)] hover:text-rose-500 p-1 rounded-md transition-all"
               >
                 <X size={13} />
@@ -304,6 +309,8 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
         <button
           type="submit"
           disabled={!newSubtaskTitle.trim()}
+          title="Add subtask"
+          aria-label="Add subtask"
           className="p-1.5 bg-[var(--bg-surface-l1)] text-[var(--text-primary)] hover:bg-[var(--bg-surface-l2)] disabled:opacity-40 rounded-lg border border-[var(--border-hairline)] shadow-xs transition-colors"
         >
           <Plus size={14} />

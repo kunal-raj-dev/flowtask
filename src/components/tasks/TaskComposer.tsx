@@ -129,7 +129,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   const effectiveProjectId = explicitProjectId || parsed.projectTag || defaultProjectId;
   const projectObj = projects.find((p) => p.id === effectiveProjectId || p.name.toLowerCase() === effectiveProjectId.toLowerCase()) || projects.find(p => p.id === 'inbox') || { id: 'inbox', name: 'Inbox', color: '#64748B' };
 
-  const effectivePlannedDate = explicitPlannedDate !== null ? explicitPlannedDate : parsed.plannedDate || defaultPlannedDate;
+  // If user didn't specify explicit plannedDate, but specified a dueDate that is not today,
+  // do not fallback plannedDate to todayStr so the task isn't forced into today's list.
+  const resolvedDefaultPlannedDate = (parsed.dueDate && parsed.dueDate !== todayStr) ? undefined : defaultPlannedDate;
+  const effectivePlannedDate = explicitPlannedDate !== null ? explicitPlannedDate : (parsed.plannedDate || resolvedDefaultPlannedDate);
   const effectiveDueDate = explicitDueDate !== null ? explicitDueDate : parsed.dueDate;
   const effectivePriority = explicitPriority || parsed.priority || 'p4';
   const effectiveDuration = explicitDuration !== null ? explicitDuration : parsed.estimatedMinutes;

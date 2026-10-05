@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
-import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr, useTomorrowStr } from '../../hooks/useCurrentDate';
 import type { Priority } from '../../types/task';
 import {
   CheckCircle2,
@@ -28,16 +28,15 @@ export const BatchActionBar: React.FC = () => {
   const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
 
   const count = selectedTaskIds.length;
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = useTodayStr();
+  const tomorrowStr = useTomorrowStr();
 
   const handleSetToday = () => {
     batchUpdateTasks(selectedTaskIds, { dueDate: todayStr });
   };
 
   const handleSetTomorrow = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    batchUpdateTasks(selectedTaskIds, { dueDate: formatLocalDate(tomorrow) });
+    batchUpdateTasks(selectedTaskIds, { dueDate: tomorrowStr });
   };
 
   const handleSetSomeday = () => {

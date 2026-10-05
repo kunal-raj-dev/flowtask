@@ -115,6 +115,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               onClick={() => onSelectProject(null)}
               className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
               title="Back to Projects"
+              aria-label="Back to Projects"
             >
               <ArrowLeft size={18} />
             </button>

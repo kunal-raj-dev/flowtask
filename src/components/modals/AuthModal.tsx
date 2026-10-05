@@ -11,9 +11,12 @@ import {
   ShieldCheck,
   X,
   ExternalLink,
+  UploadCloud,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTaskContext } from '../../context/TaskContext';
+import { Button } from '../ui/Button';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -64,7 +67,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close dialog"
               className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.08] transition-colors"
             >
               <X className="w-5 h-5" />
@@ -74,7 +79,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         {/* Modal Body */}
         <div className="p-6 space-y-5">
-          {user && <div className="p-4 border rounded-lg text-sm space-y-3"><p>Your device workspace is kept separately. Importing adds tasks whose IDs are not already in this account.</p><button className="underline" onClick={() => void importLocalWorkspace().catch(error => showToast(error.message))}>Import device workspace into this account</button><button className="underline block" onClick={downloadWorkspaceBackup}>Download account backup</button></div>}
+          {user && (
+            <div className="p-4 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] space-y-3">
+              <div className="flex items-start gap-2.5">
+                <div className="p-1.5 rounded-lg bg-[var(--color-brand)]/10 text-[var(--color-brand)] shrink-0 mt-0.5">
+                  <UploadCloud size={16} />
+                </div>
+                <div className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                  <span className="font-semibold text-[var(--text-primary)] block mb-0.5">
+                    Device Workspace Migration
+                  </span>
+                  Your local device workspace is stored separately. Importing merges any tasks whose IDs are not already in this cloud account.
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  leftIcon={<UploadCloud size={12} />}
+                  onClick={() => void importLocalWorkspace().catch((error) => showToast(error.message))}
+                >
+                  Import device workspace
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  leftIcon={<Download size={12} />}
+                  onClick={downloadWorkspaceBackup}
+                >
+                  Download backup
+                </Button>
+              </div>
+            </div>
+          )}
           {/* Auth Error Banner with Actionable Guidance */}
           {authError && (
             <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs space-y-2.5 animate-slide-down">

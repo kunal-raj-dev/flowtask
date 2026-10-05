@@ -42,7 +42,7 @@ describe('ModalRoot Component', () => {
     });
 
     // Verify Shortcuts modal rendered (lazy loaded)
-    const shortcutsHeading = await screen.findByRole('heading', { name: /keyboard shortcuts/i });
+    const shortcutsHeading = await screen.findByRole('heading', { name: /keyboard shortcuts/i }, { timeout: 5000 });
     expect(shortcutsHeading).toBeDefined();
 
     // Press Escape

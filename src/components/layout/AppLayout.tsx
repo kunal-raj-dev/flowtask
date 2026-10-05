@@ -470,6 +470,8 @@ export const AppLayout: React.FC = () => {
                 setIsSidebarCollapsed((prev) => !prev);
               }}
               title="Toggle Sidebar ([)"
+              aria-label="Toggle Sidebar ([)"
+              aria-expanded={!isSidebarCollapsed}
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
             >
               <Menu size={17} />
@@ -534,6 +536,7 @@ export const AppLayout: React.FC = () => {
                     type="button"
                     onClick={pauseFocusSession}
                     title="Pause Focus Session"
+                    aria-label="Pause Focus Session"
                     className="p-1 hover:bg-amber-500/20 rounded-md transition-colors"
                   >
                     <Pause size={12} className="fill-current text-amber-700 dark:text-amber-300" />
@@ -543,6 +546,7 @@ export const AppLayout: React.FC = () => {
                     type="button"
                     onClick={resumeFocusSession}
                     title="Resume Focus Session"
+                    aria-label="Resume Focus Session"
                     className="p-1 hover:bg-amber-500/20 rounded-md transition-colors"
                   >
                     <Play size={12} className="fill-current text-amber-700 dark:text-amber-300" />
@@ -552,6 +556,7 @@ export const AppLayout: React.FC = () => {
                   type="button"
                   onClick={stopFocusSession}
                   title="Finish / Stop Session"
+                  aria-label="Finish / Stop Session"
                   className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-md transition-colors text-amber-700 dark:text-amber-300"
                 >
                   <X size={12} />
@@ -575,6 +580,7 @@ export const AppLayout: React.FC = () => {
                   type="button"
                   onClick={() => toggleTaskTimer(activeTimerTaskId)}
                   title="Pause Timer"
+                  aria-label="Pause Timer"
                   className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors"
                 >
                   <Pause size={12} className="fill-current" />

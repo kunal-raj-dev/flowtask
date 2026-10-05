@@ -241,6 +241,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   onClick={() => handleAddTaskToColumn(col.status)}
                   className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
                   title={`Add to ${col.title}`}
+                  aria-label={`Add to ${col.title}`}
                 >
                   <Plus size={15} />
                 </button>
@@ -263,6 +264,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                     <input
                       autoFocus
                       type="text"
+                      name="kanbanQuickTitle"
+                      aria-label={`Add card to ${col.title}`}
                       value={quickTitle}
                       onChange={(e) => setQuickTitle(e.target.value)}
                       onKeyDown={(e) => {

@@ -12,6 +12,7 @@ import {
   Coffee,
 } from 'lucide-react';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
 
 interface EveningShutdownModalProps {
@@ -27,7 +28,7 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
     dismissShutdown,
   } = useTaskContext();
 
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = useTodayStr();
 
   const [reflection, setReflection] = useState<string>(() => {
     try {

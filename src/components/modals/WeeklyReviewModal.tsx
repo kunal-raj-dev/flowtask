@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
-import { getTodayStr } from '../../hooks/useCurrentDate';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from 'canvas-confetti';
 import {
@@ -29,7 +29,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
 }) => {
   const { tasks, projects, updateTask, toggleTaskStatus } = useTaskContext();
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const todayStr = getTodayStr();
+  const todayStr = useTodayStr();
 
   const {
     inboxTasks,
@@ -38,8 +38,9 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
     topProject,
     upcomingNextWeekTasks,
   } = useMemo(() => {
-    const today = new Date();
-    const sevenDaysAgo = new Date();
+    const [y, m, d] = todayStr.split('-').map(Number);
+    const today = new Date(y, (m || 1) - 1, d || 1, 12, 0, 0);
+    const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 7);
     const sevenDaysAgoMs = sevenDaysAgo.getTime();
 
@@ -67,7 +68,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
     const top = projects.find((p) => p.id === topId);
 
     // Step 3: Upcoming tasks for the next 7 days
-    const todayDateStr = getTodayStr();
+    const todayDateStr = todayStr;
     const nextWeekEnd = new Date(today);
     nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
     const nextWeekEndStr = formatLocalDate(nextWeekEnd);
@@ -85,7 +86,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
       topProject: top,
       upcomingNextWeekTasks: upcoming,
     };
-  }, [tasks, projects]);
+  }, [tasks, projects, todayStr]);
 
   if (!isOpen) return null;
 

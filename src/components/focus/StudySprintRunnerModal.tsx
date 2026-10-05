@@ -76,12 +76,17 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
   const [ambientSound, setAmbientSound] = useState<AmbientSoundType>('none');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Reset question timer when switching active question
-  useEffect(() => {
-    setQuestionSecondsLeft(targetBudgetMins * 60);
+  // Explicit subtask selection and timer reset handler
+  const selectSubtask = (idx: number) => {
+    setActiveSubtaskIndex(idx);
+    const sub = subtasks[idx];
+    const budget = (sub?.estimatedMinutes && sub.estimatedMinutes > 0)
+      ? sub.estimatedMinutes
+      : (task?.sessionMetadata?.targetPacingMinutes || 30);
+    setQuestionSecondsLeft(budget * 60);
     setQuestionElapsedSeconds(0);
     setIsQuestionTimerRunning(false);
-  }, [activeSubtaskIndex, targetBudgetMins]);
+  };
 
   // Question timer ticker
   useEffect(() => {
@@ -216,9 +221,9 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
     // 5. Advance to next uncompleted question
     const nextUncompleted = subtasks.findIndex((s, idx) => idx > activeSubtaskIndex && !s.completed);
     if (nextUncompleted >= 0) {
-      setActiveSubtaskIndex(nextUncompleted);
+      selectSubtask(nextUncompleted);
     } else if (activeSubtaskIndex < subtasks.length - 1) {
-      setActiveSubtaskIndex((prev) => prev + 1);
+      selectSubtask(activeSubtaskIndex + 1);
     }
   };
 
@@ -536,7 +541,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                   return (
                     <div
                       key={sub.id}
-                      onClick={() => setActiveSubtaskIndex(idx)}
+                      onClick={() => selectSubtask(idx)}
                       className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-center justify-between gap-2 ${
                         isActive
                           ? 'border-amber-500 bg-amber-500/10 shadow-xs'

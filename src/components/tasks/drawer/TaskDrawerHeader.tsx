@@ -112,6 +112,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             type="button"
             onClick={() => toggleTaskPinToday(task.id)}
             title={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
+            aria-label={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
             className={`p-1.5 rounded-lg transition-all ${
               task.isPinnedToday
                 ? 'text-amber-500 bg-amber-500/15 border border-amber-500/30 shadow-xs'
@@ -126,6 +127,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             type="button"
             onClick={() => updateTask(task.id, { isEvening: !task.isEvening })}
             title={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
+            aria-label={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
             className={`p-1.5 rounded-lg transition-all ${
               task.isEvening
                 ? 'text-indigo-500 bg-indigo-500/15 border border-indigo-500/30 shadow-xs'
@@ -142,6 +144,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
               onStartFocus(task.id);
             }}
             title="Start Focus Timer"
+            aria-label="Start Focus Timer"
             className="p-1.5 text-[var(--text-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors"
           >
             <Timer size={15} />

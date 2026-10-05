@@ -341,6 +341,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
             <button
               onClick={resetTimer}
               title="Reset Timer"
+              aria-label="Reset Timer"
               className="p-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-2xl transition-colors"
             >
               <RotateCcw size={22} />
@@ -348,6 +349,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
 
             <button
               onClick={toggleTimer}
+              aria-label={isRunning ? 'Pause timer' : 'Start timer'}
               className="w-20 h-20 rounded-3xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 flex items-center justify-center hover:scale-105 active:scale-95 shadow-2xl transition-all"
             >
               {isRunning ? <Pause size={32} /> : <Play size={32} className="ml-1 fill-current" />}
@@ -360,6 +362,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
                 setAmbientSound(order[nextIdx]);
               }}
               title={`Ambient Soundscape: ${ambientSound === 'none' ? 'Off' : ambientSound.toUpperCase()}`}
+              aria-label={`Ambient Soundscape: ${ambientSound === 'none' ? 'Off' : ambientSound.toUpperCase()}`}
               className={`p-4 rounded-2xl transition-all ${
                 ambientSound !== 'none'
                   ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-glow-amber'
@@ -435,12 +438,14 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
           <button
             onClick={() => setIsFullscreen(true)}
             title="Zen Fullscreen Mode (F)"
+            aria-label="Zen Fullscreen Mode (F)"
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <Maximize2 size={16} />
           </button>
           <button
             onClick={onClose}
+            aria-label="Close Pomodoro Modal"
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <X size={18} />
@@ -501,6 +506,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
           <button
             onClick={resetTimer}
             title="Reset Timer"
+            aria-label="Reset Timer"
             className="p-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-xl transition-colors"
           >
             <RotateCcw size={18} />
@@ -508,6 +514,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
 
           <button
             onClick={toggleTimer}
+            aria-label={isRunning ? 'Pause timer' : 'Start timer'}
             className="w-16 h-16 rounded-xl bg-gradient-to-br from-stone-900 to-stone-800 dark:from-white dark:to-stone-200 text-white dark:text-stone-950 flex items-center justify-center hover:scale-105 active:scale-95 shadow-elevated transition-all card-surface"
           >
             {isRunning ? <Pause size={24} /> : <Play size={24} className="ml-1 fill-current" />}
@@ -520,6 +527,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
               setAmbientSound(order[nextIdx]);
             }}
             title={`Ambient Soundscape: ${ambientSound === 'none' ? 'Off' : ambientSound.toUpperCase()} (Click to cycle)`}
+            aria-label={`Ambient Soundscape: ${ambientSound === 'none' ? 'Off' : ambientSound.toUpperCase()}`}
             className={`p-3.5 rounded-xl transition-all ${
               ambientSound !== 'none'
                 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-glow-amber'
