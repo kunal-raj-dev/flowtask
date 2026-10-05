@@ -29,3 +29,7 @@ dist-ssr
 !.env.example
 
 .vercel
+
+# Test artifacts
+test-results/
+playwright-report/
