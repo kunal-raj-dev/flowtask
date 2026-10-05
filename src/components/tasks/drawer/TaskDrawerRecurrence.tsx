@@ -18,6 +18,7 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
     tasks,
     projects,
     updateTask,
+    focusSession,
     activeTimerTaskId,
     activeTimerSeconds,
     toggleTaskTimer,
@@ -27,6 +28,8 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
 
   const isDone = task.status === 'done';
   const isActiveTimer = activeTimerTaskId === task.id;
+  const isTimerRunning = isActiveTimer && focusSession?.state === 'running';
+  const isTimerPaused = isActiveTimer && focusSession?.state === 'paused';
   const primaryTag = task.contextTags && task.contextTags.length > 0 ? task.contextTags[0] : undefined;
   const calibration = getVelocityCalibration(tasks, task.estimatedMinutes, task.projectId, primaryTag);
 
@@ -39,8 +42,12 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
       : 'similar';
 
   const formatStopwatch = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
@@ -141,18 +148,40 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
                 <button
                   type="button"
                   onClick={() => toggleTaskTimer(task.id)}
+                  title={
+                    isTimerRunning
+                      ? 'Pause tracking time'
+                      : isTimerPaused
+                      ? 'Resume tracking time'
+                      : 'Start live stopwatch'
+                  }
+                  aria-label={
+                    isTimerRunning
+                      ? 'Pause tracking time'
+                      : isTimerPaused
+                      ? 'Resume tracking time'
+                      : 'Start live stopwatch'
+                  }
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                    isActiveTimer
+                    isTimerRunning
                       ? 'bg-amber-500 text-white shadow-xs animate-pulse'
+                      : isTimerPaused
+                      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-dashed border-amber-500/50 shadow-2xs'
                       : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-amber-500 border border-[var(--border-hairline)]'
                   }`}
                 >
-                  {isActiveTimer ? (
+                  {isTimerRunning ? (
                     <Pause size={12} className="fill-current" />
                   ) : (
                     <Play size={12} className="fill-current" />
                   )}
-                  <span>{isActiveTimer ? formatStopwatch(activeTimerSeconds) : 'Live Stopwatch'}</span>
+                  <span>
+                    {isTimerRunning
+                      ? formatStopwatch(activeTimerSeconds)
+                      : isTimerPaused
+                      ? `Paused (${formatStopwatch(activeTimerSeconds)})`
+                      : 'Live Stopwatch'}
+                  </span>
                 </button>
               )}
             </div>

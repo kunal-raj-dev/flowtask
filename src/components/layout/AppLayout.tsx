@@ -563,29 +563,58 @@ export const AppLayout: React.FC = () => {
                 </button>
               </div>
             ) : activeTimerTaskId && activeTimerTask ? (
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/35 text-amber-800 dark:text-amber-300 text-xs font-bold shadow-xs animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                <button
-                  type="button"
-                  onClick={() => setSelectedTaskId(activeTimerTaskId)}
-                  className="hover:underline truncate max-w-[150px]"
-                  title={`Focus timer running for "${activeTimerTask.title}". Click to open.`}
-                >
-                  {activeTimerTask.title}
-                </button>
-                <span className="font-mono text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
-                  {formatStopwatch(activeTimerSeconds)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => toggleTaskTimer(activeTimerTaskId)}
-                  title="Pause Timer"
-                  aria-label="Pause Timer"
-                  className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors"
-                >
-                  <Pause size={12} className="fill-current" />
-                </button>
-              </div>
+              focusSession?.state === 'running' ? (
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/35 text-amber-800 dark:text-amber-300 text-xs font-bold shadow-xs animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTaskId(activeTimerTaskId)}
+                    className="hover:underline truncate max-w-[150px]"
+                    title={`Focus timer running for "${activeTimerTask.title}". Click to open.`}
+                  >
+                    {activeTimerTask.title}
+                  </button>
+                  <span className="font-mono text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
+                    {formatStopwatch(activeTimerSeconds)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleTaskTimer(activeTimerTaskId)}
+                    title="Pause Timer"
+                    aria-label="Pause Timer"
+                    className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors"
+                  >
+                    <Pause size={12} className="fill-current" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-dashed border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-bold shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-500/60" />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTaskId(activeTimerTaskId)}
+                    className="hover:underline truncate max-w-[150px]"
+                    title={`Focus timer paused for "${activeTimerTask.title}". Click to open.`}
+                  >
+                    {activeTimerTask.title}
+                  </button>
+                  <span className="font-mono text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
+                    {formatStopwatch(activeTimerSeconds)}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-wider bg-amber-500/25 px-1 py-0.2 rounded text-amber-900 dark:text-amber-200">
+                    Paused
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleTaskTimer(activeTimerTaskId)}
+                    title="Resume Timer"
+                    aria-label="Resume Timer"
+                    className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors"
+                  >
+                    <Play size={12} className="fill-current" />
+                  </button>
+                </div>
+              )
             ) : (
               <div className="flex items-center gap-2">
                 {totalTodayPlanned > 0 && (

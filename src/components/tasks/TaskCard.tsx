@@ -53,6 +53,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     updateTask,
     deleteTask,
     projects,
+    focusSession,
     activeTimerTaskId,
     activeTimerSeconds,
     toggleTaskTimer,
@@ -110,6 +111,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const todayStr = getTodayStr();
 
   const isActiveTimer = activeTimerTaskId === task.id;
+  const isTimerRunning = isActiveTimer && focusSession?.state === 'running';
+  const isTimerPaused = isActiveTimer && focusSession?.state === 'paused';
   const isSelected = selectedTaskIds.includes(task.id);
   const blockedInfo = isTaskBlocked(task, tasks);
 
@@ -127,9 +130,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   const formatStopwatch = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const formatEstimatedDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes}m`;
+    const hrs = Math.floor(minutes / 60);
+    const remainingMins = Math.round(minutes % 60);
+    if (remainingMins === 0) return `${hrs}h`;
+    return `${hrs}h ${remainingMins}m`;
   };
 
   // Determine due date state
@@ -477,12 +492,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
 
           {/* Estimated duration */}
-          {task.estimatedMinutes && !isDone && (
+          {Boolean(task.estimatedMinutes && task.estimatedMinutes > 0) && !isDone && (
             <Badge variant="neutral" size="xs">
               <Clock size={11} />
-              {task.estimatedMinutes >= 60
-                ? `${task.estimatedMinutes / 60}h`
-                : `${task.estimatedMinutes}m`}
+              {formatEstimatedDuration(task.estimatedMinutes!)}
             </Badge>
           )}
 
@@ -535,14 +548,31 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Active Live Stopwatch pill */}
           {isActiveTimer && (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/35 animate-pulse shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-              ⏱️ {formatStopwatch(activeTimerSeconds)}
-            </span>
+            isTimerRunning ? (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/35 animate-pulse shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                ⏱️ {formatStopwatch(activeTimerSeconds)}
+              </span>
+            ) : (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleTaskTimer(task.id);
+                }}
+                title="Timer paused. Click to resume."
+                className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-dashed border-amber-500/50 shadow-xs cursor-pointer hover:bg-amber-500/20 transition-all select-none"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500/70" />
+                <span>⏸️ {formatStopwatch(activeTimerSeconds)}</span>
+                <span className="text-[9px] font-sans font-bold uppercase tracking-wider bg-amber-500/25 px-1 py-0.5 rounded text-amber-900 dark:text-amber-200">
+                  Paused
+                </span>
+              </span>
+            )
           )}
 
           {/* Time spent logged previously */}
-          {task.timeSpentMinutes && task.timeSpentMinutes > 0 && !isActiveTimer && (
+          {Boolean(task.timeSpentMinutes && task.timeSpentMinutes > 0 && !isActiveTimer) && (
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
               <Clock size={11} />
               {task.timeSpentMinutes}m spent
@@ -594,15 +624,33 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <button
             type="button"
             onClick={() => toggleTaskTimer(task.id)}
-            title={isActiveTimer ? 'Pause tracking time' : 'Start live stopwatch'}
-            aria-label={isActiveTimer ? 'Pause tracking time' : 'Start live stopwatch'}
+            title={
+              isTimerRunning
+                ? 'Pause tracking time'
+                : isTimerPaused
+                ? 'Resume tracking time'
+                : 'Start live stopwatch'
+            }
+            aria-label={
+              isTimerRunning
+                ? 'Pause tracking time'
+                : isTimerPaused
+                ? 'Resume tracking time'
+                : 'Start live stopwatch'
+            }
             className={`p-2 rounded-xl transition-all ${
-              isActiveTimer
+              isTimerRunning
                 ? 'text-amber-600 bg-amber-500/20 animate-pulse'
+                : isTimerPaused
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border border-dashed border-amber-500/50'
                 : 'text-stone-400 hover:text-amber-500 active:bg-stone-200/50 dark:active:bg-white/[0.06]'
             }`}
           >
-            {isActiveTimer ? <Pause size={16} className="fill-current" /> : <Play size={16} className="fill-current" />}
+            {isTimerRunning ? (
+              <Pause size={16} className="fill-current" />
+            ) : (
+              <Play size={16} className="fill-current" />
+            )}
           </button>
         )}
 
@@ -678,14 +726,29 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <button
             type="button"
             onClick={() => toggleTaskTimer(task.id)}
-            title={isActiveTimer ? 'Pause tracking time' : 'Start live stopwatch'}
+            title={
+              isTimerRunning
+                ? 'Pause tracking time'
+                : isTimerPaused
+                ? 'Resume tracking time'
+                : 'Start live stopwatch'
+            }
+            aria-label={
+              isTimerRunning
+                ? 'Pause tracking time'
+                : isTimerPaused
+                ? 'Resume tracking time'
+                : 'Start live stopwatch'
+            }
             className={`p-1.5 rounded-lg transition-all ${
-              isActiveTimer
-                ? 'text-amber-600 bg-amber-500/20 hover:bg-amber-500/30'
+              isTimerRunning
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/20 hover:bg-amber-500/30 animate-pulse'
+                : isTimerPaused
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 border border-dashed border-amber-500/50 shadow-2xs'
                 : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-[var(--bg-surface-l2)]'
             }`}
           >
-            {isActiveTimer ? (
+            {isTimerRunning ? (
               <Pause size={14} className="fill-current" />
             ) : (
               <Play size={14} className="fill-current" />
