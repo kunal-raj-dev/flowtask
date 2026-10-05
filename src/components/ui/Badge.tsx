@@ -9,7 +9,14 @@ export type BadgeVariant =
   | 'danger'
   | 'blue'
   | 'teal'
-  | 'purple';
+  | 'purple'
+  | 'p1'
+  | 'p2'
+  | 'p3'
+  | 'p4'
+  | 'todo'
+  | 'in_progress'
+  | 'done';
 
 export type BadgeSize = 'xs' | 'sm' | 'md';
 
@@ -55,6 +62,34 @@ const variantStyles: Record<BadgeVariant, { container: string; dot: string }> = 
   purple: {
     container: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25',
     dot: 'bg-purple-500',
+  },
+  p1: {
+    container: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25',
+    dot: 'bg-rose-500',
+  },
+  p2: {
+    container: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/25',
+    dot: 'bg-amber-500',
+  },
+  p3: {
+    container: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25',
+    dot: 'bg-sky-500',
+  },
+  p4: {
+    container: 'bg-stone-500/10 text-stone-700 dark:text-stone-300 border-stone-500/20',
+    dot: 'bg-stone-400 dark:bg-stone-500',
+  },
+  todo: {
+    container: 'bg-stone-500/10 text-stone-700 dark:text-stone-300 border-stone-500/20',
+    dot: 'bg-stone-400 dark:bg-stone-500',
+  },
+  in_progress: {
+    container: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25',
+    dot: 'bg-sky-500',
+  },
+  done: {
+    container: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/25',
+    dot: 'bg-emerald-500',
   },
 };
 

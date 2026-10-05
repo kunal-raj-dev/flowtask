@@ -16,10 +16,12 @@ export const focusSessionService = {
 
   saveSession(session: FocusSession | null): void {
     try {
-      if (!session) {
-        localStorage.removeItem(FOCUS_STORAGE_KEY);
-      } else {
-        localStorage.setItem(FOCUS_STORAGE_KEY, JSON.stringify(session));
+      if (typeof localStorage !== 'undefined') {
+        if (!session && typeof localStorage.removeItem === 'function') {
+          localStorage.removeItem(FOCUS_STORAGE_KEY);
+        } else if (session && typeof localStorage.setItem === 'function') {
+          localStorage.setItem(FOCUS_STORAGE_KEY, JSON.stringify(session));
+        }
       }
       // Broadcast update to other tabs if BroadcastChannel is supported
       if (typeof BroadcastChannel !== 'undefined') {

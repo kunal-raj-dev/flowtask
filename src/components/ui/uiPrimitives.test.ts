@@ -1,7 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import { Button, Badge, Card, SegmentedControl, Input, EmptyState, Dialog } from './index';
+import {
+  Button,
+  Badge,
+  Card,
+  SegmentedControl,
+  Input,
+  EmptyState,
+  Dialog,
+  Kbd,
+  Switch,
+  Popover,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+  Drawer,
+} from './index';
 
 describe('Enterprise UI Component Primitives', () => {
   describe('Button primitive', () => {
@@ -21,11 +37,13 @@ describe('Enterprise UI Component Primitives', () => {
       expect(html).toContain('animate-spin');
     });
 
-    it('renders with keyboard shortcut hint', () => {
+    it('renders with keyboard shortcut hint using Kbd primitive', () => {
       const html = renderToString(
         React.createElement(Button, { variant: 'primary', kbd: 'Ctrl+K' }, 'Search')
       );
       expect(html).toContain('Ctrl+K');
+      expect(html).toContain('<kbd');
+      expect(html).toContain('font-mono');
     });
   });
 
@@ -52,6 +70,20 @@ describe('Enterprise UI Component Primitives', () => {
       expect(dangerHtml).toContain('Blocked');
       expect(dangerHtml).toContain('text-rose-700');
     });
+
+    it('renders priority and status variants correctly', () => {
+      const p1Html = renderToString(
+        React.createElement(Badge, { variant: 'p1', dot: true }, 'Urgent')
+      );
+      expect(p1Html).toContain('Urgent');
+      expect(p1Html).toContain('bg-rose-500');
+
+      const inProgressHtml = renderToString(
+        React.createElement(Badge, { variant: 'in_progress', dot: true }, 'In Progress')
+      );
+      expect(inProgressHtml).toContain('In Progress');
+      expect(inProgressHtml).toContain('bg-sky-500');
+    });
   });
 
   describe('Card primitive', () => {
@@ -64,11 +96,148 @@ describe('Enterprise UI Component Primitives', () => {
       expect(html).toContain('rounded-2xl');
     });
 
-    it('supports focus variant for Rule of 3 highlights', () => {
-      const html = renderToString(
+    it('supports focus, surface, and elevated variants', () => {
+      const focusHtml = renderToString(
         React.createElement(Card, { variant: 'focus' }, 'Focus Task')
       );
-      expect(html).toContain('border-amber-500/40');
+      expect(focusHtml).toContain('border-amber-500/40');
+
+      const surfaceHtml = renderToString(
+        React.createElement(Card, { variant: 'surface' }, 'Surface Card')
+      );
+      expect(surfaceHtml).toContain('card-surface');
+
+      const elevatedHtml = renderToString(
+        React.createElement(Card, { variant: 'elevated' }, 'Elevated Card')
+      );
+      expect(elevatedHtml).toContain('shadow-modal');
+    });
+  });
+
+  describe('Kbd primitive', () => {
+    it('renders semantic keyboard shortcut keycaps', () => {
+      const html = renderToString(React.createElement(Kbd, { size: 'sm' }, '⌘K'));
+      expect(html).toContain('⌘K');
+      expect(html).toContain('<kbd');
+      expect(html).toContain('font-mono');
+      expect(html).toContain('uppercase');
+    });
+  });
+
+  describe('Switch primitive', () => {
+    it('renders accessible switch role and aria-checked', () => {
+      const html = renderToString(
+        React.createElement(Switch, {
+          checked: true,
+          onChange: () => {},
+          label: 'Sound Effects',
+          description: 'Synthesized tactile click and focus audio',
+        })
+      );
+      expect(html).toContain('role="switch"');
+      expect(html).toContain('aria-checked="true"');
+      expect(html).toContain('Sound Effects');
+      expect(html).toContain('Synthesized tactile click and focus audio');
+    });
+
+    it('reflects unchecked state correctly', () => {
+      const html = renderToString(
+        React.createElement(Switch, {
+          checked: false,
+          onChange: () => {},
+        })
+      );
+      expect(html).toContain('role="switch"');
+      expect(html).toContain('aria-checked="false"');
+    });
+  });
+
+  describe('Popover primitive', () => {
+    it('renders trigger always and content when open', () => {
+      const closedHtml = renderToString(
+        React.createElement(
+          Popover,
+          {
+            isOpen: false,
+            onClose: () => {},
+            trigger: React.createElement('button', null, 'Trigger'),
+          },
+          'Popup Content'
+        )
+      );
+      expect(closedHtml).toContain('Trigger');
+      expect(closedHtml).not.toContain('Popup Content');
+
+      const openHtml = renderToString(
+        React.createElement(
+          Popover,
+          {
+            isOpen: true,
+            onClose: () => {},
+            trigger: React.createElement('button', null, 'Trigger'),
+          },
+          'Popup Content'
+        )
+      );
+      expect(openHtml).toContain('Trigger');
+      expect(openHtml).toContain('Popup Content');
+      expect(openHtml).toContain('role="dialog"');
+    });
+  });
+
+  describe('DropdownMenu primitive', () => {
+    it('renders full accessible menu structure when open', () => {
+      const html = renderToString(
+        React.createElement(
+          DropdownMenu,
+          {
+            isOpen: true,
+            onClose: () => {},
+            trigger: React.createElement('button', null, 'Actions'),
+          },
+          React.createElement(DropdownMenuLabel, null, 'Task Options'),
+          React.createElement(DropdownMenuItem, { kbd: 'E' }, 'Edit task'),
+          React.createElement(DropdownMenuSeparator),
+          React.createElement(DropdownMenuItem, { destructive: true }, 'Delete task')
+        )
+      );
+      expect(html).toContain('role="menu"');
+      expect(html).toContain('Task Options');
+      expect(html).toContain('Edit task');
+      expect(html).toContain('role="separator"');
+      expect(html).toContain('Delete task');
+      expect(html).toContain('role="menuitem"');
+    });
+  });
+
+  describe('Drawer primitive', () => {
+    it('renders nothing when closed', () => {
+      const html = renderToString(
+        React.createElement(Drawer, { isOpen: false, onClose: () => {} }, 'Hidden Drawer')
+      );
+      expect(html).toBe('');
+    });
+
+    it('renders accessible slide-over container when open', () => {
+      const html = renderToString(
+        React.createElement(
+          Drawer,
+          {
+            isOpen: true,
+            onClose: () => {},
+            title: 'Task Details',
+            description: 'Edit properties and subtasks',
+            footer: React.createElement(Button, { variant: 'brand' }, 'Save Changes'),
+          },
+          'Drawer Main Body'
+        )
+      );
+      expect(html).toContain('role="dialog"');
+      expect(html).toContain('aria-modal="true"');
+      expect(html).toContain('Task Details');
+      expect(html).toContain('Edit properties and subtasks');
+      expect(html).toContain('Drawer Main Body');
+      expect(html).toContain('Save Changes');
     });
   });
 

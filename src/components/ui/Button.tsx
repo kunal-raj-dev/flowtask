@@ -1,6 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { audioEngine } from '../../utils/audioEngine';
+import { Kbd } from './Kbd';
 
 export type ButtonVariant = 'primary' | 'brand' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'destructive-subtle';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon-xs' | 'icon-sm' | 'icon-md';
@@ -17,15 +18,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-stone-900 dark:bg-white text-white dark:text-stone-950 hover:bg-stone-800 dark:hover:bg-stone-100 shadow-xs active:scale-[0.98]',
+    'bg-[var(--text-primary)] text-[var(--bg-main)] hover:opacity-90 shadow-xs active:scale-[0.98]',
   brand:
     'bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white shadow-xs active:scale-[0.98]',
   secondary:
-    'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] shadow-xs active:scale-[0.98]',
+    'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] hover:bg-[var(--bg-surface-hover)] shadow-xs active:scale-[0.98]',
   outline:
-    'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-l2)] active:scale-[0.98]',
+    'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.98]',
   ghost:
-    'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.05] active:scale-[0.98]',
+    'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.98]',
   destructive:
     'bg-rose-600 hover:bg-rose-700 text-white shadow-xs active:scale-[0.98]',
   'destructive-subtle':
@@ -89,9 +90,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {!isIconOnly && children}
         {!isIconOnly && rightIcon && <span className="shrink-0">{rightIcon}</span>}
         {!isIconOnly && kbd && (
-          <kbd className="ml-1 text-[9px] font-mono px-1 py-0.2 rounded bg-black/10 dark:bg-white/15 opacity-80 uppercase">
+          <Kbd size="xs" className="ml-1 opacity-80">
             {kbd}
-          </kbd>
+          </Kbd>
         )}
       </button>
     );

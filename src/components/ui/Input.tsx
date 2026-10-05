@@ -43,7 +43,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className={`relative flex items-center bg-[var(--bg-surface-l2)] border transition-all card-surface ${
             error
               ? 'border-rose-500/80 focus-within:ring-2 focus-within:ring-rose-500/30'
-              : 'border-[var(--border-hairline)] hover:border-stone-300 dark:hover:border-stone-600 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/25'
+              : 'border-[var(--border-hairline)] hover:border-[var(--border-strong)] focus-within:border-[var(--color-brand)] focus-within:ring-2 focus-within:ring-[var(--color-focus-ring)]'
           } ${disabled ? 'opacity-50 pointer-events-none' : ''} ${container} ${className}`}
         >
           {leftIcon && (
@@ -65,14 +65,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               type="button"
               onClick={onClear}
               aria-label="Clear input"
-              className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/10 ml-1 transition-colors"
+              className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-l1)] ml-1 transition-colors"
             >
               <X size={12} />
             </button>
           )}
 
           {kbd && (
-            <kbd className="ml-1.5 hidden sm:inline-flex text-[10px] font-mono px-1.5 py-0.5 rounded bg-stone-200/70 dark:bg-stone-800/80 text-[var(--text-muted)] uppercase border border-[var(--border-subtle)] shrink-0">
+            <kbd className="ml-1.5 hidden sm:inline-flex text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-surface-l1)] text-[var(--text-muted)] uppercase border border-[var(--border-hairline)] shrink-0">
               {kbd}
             </kbd>
           )}

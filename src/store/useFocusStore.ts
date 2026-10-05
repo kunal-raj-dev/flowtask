@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { FocusSession, FocusSessionMode } from '../types/task';
 import { focusSessionService } from '../services/focusSessionService';
 
-interface FocusState {
+export interface FocusState {
   focusSession: FocusSession | null;
   focusElapsedSeconds: number;
   activeTimerTaskId: string | null;
@@ -116,3 +116,35 @@ export const useFocusStore = create<FocusState>((set, get) => ({
     }
   },
 }));
+
+// Granular selector hooks for high performance focus / stopwatch tracking
+export const useFocus = () => {
+  const focusSession = useFocusStore((s) => s.focusSession);
+  const focusElapsedSeconds = useFocusStore((s) => s.focusElapsedSeconds);
+  const activeTimerTaskId = useFocusStore((s) => s.activeTimerTaskId);
+  const activeTimerSeconds = useFocusStore((s) => s.activeTimerSeconds);
+  const startFocusSession = useFocusStore((s) => s.startFocusSession);
+  const pauseFocusSession = useFocusStore((s) => s.pauseFocusSession);
+  const resumeFocusSession = useFocusStore((s) => s.resumeFocusSession);
+  const stopFocusSession = useFocusStore((s) => s.stopFocusSession);
+  const setFocusSession = useFocusStore((s) => s.setFocusSession);
+
+  return {
+    focusSession,
+    focusElapsedSeconds,
+    activeTimerTaskId,
+    activeTimerSeconds,
+    startFocusSession,
+    pauseFocusSession,
+    resumeFocusSession,
+    stopFocusSession,
+    setFocusSession,
+  };
+};
+
+export const useIsTaskTimerActive = (taskId: string) => {
+  const isActive = useFocusStore((s) => s.activeTimerTaskId === taskId);
+  const isRunning = useFocusStore((s) => s.activeTimerTaskId === taskId && s.focusSession?.state === 'running');
+  const seconds = useFocusStore((s) => (s.activeTimerTaskId === taskId ? s.activeTimerSeconds : 0));
+  return { isActive, isRunning, seconds };
+};

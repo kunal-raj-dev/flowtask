@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type CardVariant = 'default' | 'subtle' | 'focus' | 'ghost';
+export type CardVariant = 'default' | 'surface' | 'elevated' | 'subtle' | 'focus' | 'ghost';
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -13,6 +13,10 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 const variantStyles: Record<CardVariant, string> = {
   default:
     'bg-white dark:bg-[var(--bg-surface-l2)] border border-stone-200/80 dark:border-[var(--border-hairline)] shadow-card card-surface',
+  surface:
+    'bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-card card-surface',
+  elevated:
+    'bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] shadow-modal card-surface',
   subtle:
     'bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]',
   focus:

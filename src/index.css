@@ -5,6 +5,8 @@
 @theme {
   --color-canvas: var(--bg-canvas);
   --color-background: var(--bg-main);
+  --color-surface: var(--bg-surface);
+  --color-surface-hover: var(--bg-surface-hover);
   --color-surface-l1: var(--bg-surface-l1);
   --color-surface-l2: var(--bg-surface-l2);
   --color-surface-l3: var(--bg-surface-l3);
@@ -13,6 +15,7 @@
   --color-brand-hover: var(--color-brand-hover);
   --color-brand-subtle: var(--color-brand-subtle);
   --color-brand-border: var(--color-brand-border);
+  --color-focus: var(--color-focus-ring);
   --shadow-subtle: var(--shadow-subtle);
   --shadow-card: var(--shadow-card);
   --shadow-elevated: var(--shadow-elevated);
@@ -26,6 +29,8 @@
   --bg-canvas: var(--bg-main);
   /* Surface Ladder (Light: Clean Alabaster Paper + Luminous Surfaces) */
   --bg-main: #FAF9F6;
+  --bg-surface: var(--bg-surface-l1);
+  --bg-surface-hover: var(--bg-surface-l3);
   --bg-surface-l1: #F4F1EB;
   --bg-surface-l2: #FFFFFF;
   --bg-surface-l3: #FAF8F5;
@@ -64,6 +69,8 @@
 .dark {
   /* Surface Ladder (Dark: Deep Cosmic Obsidian + CNC Machined Carbon) */
   --bg-main: #090B0F;
+  --bg-surface: var(--bg-surface-l1);
+  --bg-surface-hover: var(--bg-surface-l3);
   --bg-surface-l1: #0E1117;
   --bg-surface-l2: #14171F;
   --bg-surface-l3: #1C212B;
@@ -361,6 +368,34 @@ select:focus-visible {
 
 .animate-slide-left {
   animation: slideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.92); }
+  70% { transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-pop-in {
+  animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes pulseGlow {
