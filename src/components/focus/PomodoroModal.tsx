@@ -445,13 +445,16 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       role="dialog"
       aria-modal="true"
       aria-label="Focus Timer"
-      className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-slide-down"
+      className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-[var(--bg-surface-l2)] rounded-xl p-7 border border-[var(--border-hairline)] shadow-modal relative text-center card-surface"
+        className="w-full max-w-md bg-[var(--bg-surface-l2)] rounded-t-2xl sm:rounded-xl p-5 sm:p-7 border border-[var(--border-hairline)] shadow-modal relative text-center card-surface max-h-[92dvh] sm:max-h-none overflow-y-auto pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pb-7"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Drag Indicator */}
+        <div className="sm:hidden w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto -mt-2 mb-3 shrink-0" />
+
         {/* Top Modal Header Bar: Non-overlapping Flex Bar */}
         <div className="mb-5 flex items-center justify-between gap-2">
           {/* Cycle Indicators */}
@@ -470,14 +473,14 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
               onClick={() => setIsFullscreen(true)}
               title="Zen Fullscreen Mode (F)"
               aria-label="Zen Fullscreen Mode (F)"
-              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
             >
               <Maximize2 size={16} />
             </button>
             <button
               onClick={onClose}
               aria-label="Close Pomodoro Modal"
-              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
             >
               <X size={18} />
             </button>

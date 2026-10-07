@@ -144,15 +144,15 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 p-5 rounded-xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 p-4 sm:p-5 rounded-xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface">
         <div className="flex items-center gap-3.5">
           <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs flex-shrink-0">
             <CheckCircle2 size={24} className="stroke-[2.2]" />
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+            <h2 className="text-base sm:text-xl md:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               Logbook & Accomplishments
             </h2>
             <p className="text-xs text-[var(--text-secondary)] font-medium">
@@ -226,8 +226,8 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
         </div>
 
         {/* Time Horizon Pills */}
-        <div className="flex items-center gap-1.5 text-xs overflow-x-auto pt-1 border-t border-[var(--border-hairline)]">
-          <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mr-1">
+        <div className="flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar pt-1 border-t border-[var(--border-hairline)]">
+          <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mr-1 shrink-0">
             Horizon:
           </span>
           {[
@@ -240,7 +240,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
               key={h.id}
               type="button"
               onClick={() => setTimeHorizon(h.id as any)}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+              className={`px-3 py-1 rounded-lg font-semibold transition-all shrink-0 whitespace-nowrap ${
                 timeHorizon === h.id
                   ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
                   : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04]'
@@ -249,7 +249,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
               {h.label}
             </button>
           ))}
-          <span className="ml-auto text-[11px] font-mono text-[var(--text-muted)]">
+          <span className="ml-auto text-[11px] font-mono text-[var(--text-muted)] shrink-0 pl-2">
             {filteredTasks.length} matches
           </span>
         </div>

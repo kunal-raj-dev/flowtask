@@ -46,16 +46,20 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-[var(--bg-surface-l2)] rounded-xl p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface animate-scale-up"
+        className="w-full max-w-lg bg-[var(--bg-surface-l2)] rounded-t-2xl sm:rounded-xl p-5 sm:p-7 border border-[var(--border-hairline)] shadow-modal relative card-surface animate-scale-up max-h-[92dvh] sm:max-h-[88vh] overflow-y-auto pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pb-7"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Drag Indicator */}
+        <div className="sm:hidden w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto -mt-2 mb-3 shrink-0" />
+
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+          aria-label="Close shortcuts modal"
+          className="absolute top-4 sm:top-5 right-4 sm:right-5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
         >
           <X size={18} />
         </button>

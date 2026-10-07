@@ -421,7 +421,7 @@ export const AppLayout: React.FC = () => {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block relative z-10 transition-all duration-200">
+      <div className="hidden lg:block relative z-10 transition-all duration-200">
         <Sidebar
           onOpenPomodoro={() => openModal('pomodoro')}
           onOpenShortcuts={() => openModal('shortcuts')}
@@ -444,7 +444,7 @@ export const AppLayout: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
             onClick={() => setIsSidebarOpenMobile(false)}
           >
             <motion.div
@@ -452,7 +452,7 @@ export const AppLayout: React.FC = () => {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-              className="w-64 h-full bg-[var(--bg-surface-l1)] shadow-2xl border-r border-[var(--border-hairline)]"
+              className="w-[min(320px,85vw)] h-full bg-[var(--bg-surface-l1)] shadow-2xl border-r border-[var(--border-hairline)]"
               onClick={(e) => e.stopPropagation()}
             >
               <Sidebar
@@ -500,7 +500,7 @@ export const AppLayout: React.FC = () => {
       <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col h-full overflow-hidden relative z-10 focus:outline-none">
         {/* Desktop Top Horizon Status Bar */}
         <header
-          className="hidden md:flex items-center justify-between px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/75 backdrop-blur-xl sticky top-0 z-20 transition-all"
+          className="hidden lg:flex items-center justify-between px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/75 backdrop-blur-xl sticky top-0 z-20 transition-all"
           style={{ borderBottomColor: `color-mix(in srgb, var(--diurnal-glow-1, var(--border-hairline)) 22%, var(--border-hairline))` }}
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -767,7 +767,7 @@ export const AppLayout: React.FC = () => {
 
         {/* Mobile Top Header */}
         <header
-          className="md:hidden flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20 transition-all"
+          className="lg:hidden flex items-center justify-between px-3.5 sm:px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20 transition-all"
           style={{ borderBottomColor: `color-mix(in srgb, var(--diurnal-glow-1, var(--border-hairline)) 22%, var(--border-hairline))` }}
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -891,7 +891,7 @@ export const AppLayout: React.FC = () => {
         </header>
 
         {/* View Viewport */}
-        <div ref={mainScrollRef} className="flex-1 overflow-y-auto pb-24 md:pb-0">
+        <div ref={mainScrollRef} className="flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
           {/* Incoming Shared Task Snapshot Banner */}
           {pendingSnapshot && (
             <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-500/15 via-teal-500/15 to-emerald-500/15 border border-indigo-500/30 shadow-card card-surface flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in">

@@ -268,62 +268,120 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
         }`}
       >
         <div className="p-3.5 sm:p-4">
-          <div className="flex items-start gap-3">
-            <div className="text-[var(--text-muted)] mt-1 flex-shrink-0">
-              <Plus size={18} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2.5 sm:gap-3">
+            <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
+              <div className="text-[var(--text-muted)] mt-1 flex-shrink-0">
+                <Plus size={18} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                {isMultiline ? (
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    onKeyDown={(e) => {
+                      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSubmit();
+                      }
+                    }}
+                    rows={4}
+                    placeholder="Paste multi-line notes, meeting takeaways, or study topics..."
+                    className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none focus-visible:outline-none outline-none resize-none font-sans"
+                  />
+                ) : (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit();
+                      }
+                    }}
+                    placeholder="What needs to be done? (e.g. 'Draft report tomorrow #work p1 ~30m')"
+                    className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none focus-visible:outline-none outline-none font-sans"
+                  />
+                )}
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0">
-              {isMultiline ? (
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  onKeyDown={(e) => {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSubmit();
-                    }
-                  }}
-                  rows={4}
-                  placeholder="Paste multi-line notes, meeting takeaways, or study topics..."
-                  className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none focus-visible:outline-none outline-none resize-none font-sans"
-                />
-              ) : (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit();
-                    }
-                  }}
-                  placeholder="What needs to be done? (e.g. 'Draft report tomorrow #work p1 ~30m')"
-                  className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none focus-visible:outline-none outline-none font-sans"
-                />
-              )}
+            {/* Actions: on mobile sits as an ergonomic bottom dock; on desktop sits inline */}
+            <div className="flex items-center justify-between sm:justify-end gap-1.5 pt-2 sm:pt-0 border-t border-[var(--border-hairline)] sm:border-t-0 shrink-0">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {isSpeechSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleVoiceInput}
+                    title={isListening ? 'Stop Voice Input' : 'Voice Dictation'}
+                    className={`p-2 rounded-xl transition-colors ${
+                      isListening
+                        ? 'bg-rose-500 text-white animate-pulse'
+                        : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsMultiline((prev) => !prev)}
+                  title={isMultiline ? 'Switch to Single Task mode' : 'Switch to Multi-line Brain Dump'}
+                  className={`p-2 rounded-xl transition-colors ${
+                    isMultiline
+                      ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
+                  }`}
+                >
+                  <ListPlus size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsTemplatePickerOpen(true)}
+                  title="Browse Templates"
+                  className="p-2 text-[var(--text-muted)] hover:text-indigo-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  <Sparkles size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-2 py-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] cursor-pointer"
+                  aria-expanded={showDetails}
+                  onClick={() => setShowDetails(!showDetails)}
+                >
+                  <span>{showDetails ? '▾ Hide properties' : '▸ Set properties'}</span>
+                  {!showDetails && (parsed.dueDate || parsed.priority || parsed.estimatedMinutes || parsed.projectTag) && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title="Parsed tags available" />
+                  )}
+                </button>
+              </div>
 
               <button
                 type="button"
-                className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-2 py-0.5 rounded-md hover:bg-[var(--bg-surface-l2)] cursor-pointer"
-                aria-expanded={showDetails}
-                onClick={() => setShowDetails(!showDetails)}
+                onClick={() => handleSubmit()}
+                disabled={!input.trim()}
+                aria-label="Add"
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-35 disabled:active:scale-100 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-amber-500/50 outline-none"
               >
-                <span>{showDetails ? '▾ Hide properties' : '▸ Set properties'}</span>
-                {!showDetails && (parsed.dueDate || parsed.priority || parsed.estimatedMinutes || parsed.projectTag) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title="Parsed tags available" />
-                )}
+                <span>Add</span>
+                <Kbd size="xs" className="hidden sm:inline-block text-[10px] py-0 px-1 border-white/20 bg-black/20 text-white shadow-none">↵</Kbd>
               </button>
-              {/* Editable Chips Bar (Only in Single Task mode) */}
-              {!isMultiline && showDetails && (
-                <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-[var(--border-hairline)] text-xs">
+            </div>
+          </div>
+
+          {/* Editable Chips Bar (Only in Single Task mode) */}
+          {!isMultiline && showDetails && (
+            <div className="overflow-x-auto no-scrollbar flex items-center gap-1.5 mt-3 pt-2.5 border-t border-[var(--border-hairline)] text-xs py-1">
                   {/* Project Chip */}
                   <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
                     <Folder size={12} style={{ color: projectObj.color }} />
@@ -619,59 +677,6 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   </span>
                 </div>
               )}
-            </div>
-
-            {/* Actions: Voice, Mode, Submit */}
-            <div className="flex items-center gap-1.5 self-start">
-              {isSpeechSupported && (
-                <button
-                  type="button"
-                  onClick={toggleVoiceInput}
-                  title={isListening ? 'Stop Voice Input' : 'Voice Dictation'}
-                  className={`p-2 rounded-xl transition-colors ${
-                    isListening
-                      ? 'bg-rose-500 text-white animate-pulse'
-                      : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
-                  }`}
-                >
-                  {isListening ? <MicOff size={16} /> : <Mic size={16} />}
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setIsMultiline((prev) => !prev)}
-                title={isMultiline ? 'Switch to Single Task mode' : 'Switch to Multi-line Brain Dump'}
-                className={`p-2 rounded-xl transition-colors ${
-                  isMultiline
-                    ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
-                }`}
-              >
-                <ListPlus size={16} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsTemplatePickerOpen(true)}
-                title="Browse Templates"
-                className="p-2 text-[var(--text-muted)] hover:text-indigo-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
-              >
-                <Sparkles size={16} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSubmit()}
-                disabled={!input.trim()}
-                aria-label="Add"
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-35 disabled:active:scale-100 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-amber-500/50 outline-none"
-              >
-                <span>Add</span>
-                <Kbd size="xs" className="text-[10px] py-0 px-1 border-white/20 bg-black/20 text-white shadow-none">↵</Kbd>
-              </button>
-            </div>
-          </div>
         </div>
       </form>
     </div>

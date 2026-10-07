@@ -290,7 +290,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
             )}
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
               title="Close (Esc)"
               aria-label="Close settings"
             >
@@ -300,66 +300,68 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
         </div>
 
         {/* Tab Navigation with responsive wrapping and clear visibility */}
-        <div className="flex border-b border-[var(--border-hairline)] px-3 sm:px-6 bg-[var(--bg-surface-l2)]/40 overflow-x-auto no-scrollbar gap-1 pt-2">
-          <button
-            onClick={() => setActiveTab('workflow')}
-            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
-              activeTab === 'workflow'
-                ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <Clock size={14} className="shrink-0" />
-            <span>Workflow & Capacity</span>
-          </button>
+        <div className="relative border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l2)]/40">
+          <div className="flex px-3 sm:px-6 overflow-x-auto no-scrollbar scroll-smooth gap-1 pt-2">
+            <button
+              onClick={() => setActiveTab('workflow')}
+              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
+                activeTab === 'workflow'
+                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
+                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <Clock size={14} className="shrink-0" />
+              <span>Workflow & Capacity</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('aesthetics')}
-            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
-              activeTab === 'aesthetics'
-                ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <Palette size={14} className="shrink-0" />
-            <span>Aesthetics & Audio</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('aesthetics')}
+              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
+                activeTab === 'aesthetics'
+                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
+                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <Palette size={14} className="shrink-0" />
+              <span>Aesthetics & Audio</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('calendar')}
-            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
-              activeTab === 'calendar'
-                ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <Calendar size={14} className="shrink-0" />
-            <span>Calendar Feeds</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
+                activeTab === 'calendar'
+                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
+                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <Calendar size={14} className="shrink-0" />
+              <span>Calendar Feeds</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('data')}
-            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
-              activeTab === 'data'
-                ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <Database size={14} className="shrink-0" />
-            <span>Data & Portability</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('data')}
+              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
+                activeTab === 'data'
+                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
+                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <Database size={14} className="shrink-0" />
+              <span>Data & Portability</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('account')}
-            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 ${
-              activeTab === 'account'
-                ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <Cloud size={14} className="shrink-0" />
-            <span>Account & Sync</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('account')}
+              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
+                activeTab === 'account'
+                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
+                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <Cloud size={14} className="shrink-0" />
+              <span>Account & Sync</span>
+            </button>
+          </div>
         </div>
 
         {/* Tab Content Body */}
@@ -435,7 +437,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
                   <span className="text-[11px] font-semibold text-[var(--text-muted)] block">
                     Quick Capacity Presets:
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {CAPACITY_PRESETS.map((hours) => {
                       const isSelected = settings.targetWorkCapacityHours === hours;
                       let label = `${hours}h`;
@@ -451,7 +453,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
                           key={hours}
                           type="button"
                           onClick={() => handleCapacityPreset(hours)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                          className={`min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all text-center active:scale-95 ${
                             isSelected
                               ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300 shadow-xs'
                               : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-stone-400'

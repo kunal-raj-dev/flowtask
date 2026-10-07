@@ -188,7 +188,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
       </div>
 
       {/* Mobile Column Tab Switcher */}
-      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner shrink-0">
+      <div className="lg:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner shrink-0">
         {columns.map((col) => {
           const count = tasks.filter((t) => t.status === col.status).length;
           const isActive = mobileColumn === col.status;
@@ -197,21 +197,21 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               key={col.status}
               type="button"
               onClick={() => setMobileColumn(col.status)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-1 sm:px-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap min-w-0 ${
                 isActive
                   ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
-              <span>{col.title}</span>
-              <span className="text-[10px] font-mono font-bold opacity-75">({count})</span>
+              <span className="truncate">{col.title}</span>
+              <span className="text-[10px] font-mono font-bold opacity-75 shrink-0">({count})</span>
             </button>
           );
         })}
       </div>
 
       {/* Columns Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 flex-1 min-h-0 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 flex-1 min-h-0 items-stretch">
         {columns.map((col) => {
           const colTasks = tasks.filter((t) => t.status === col.status);
           const ColIcon = col.icon;
@@ -223,24 +223,24 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               onDrop={(e) => handleDrop(e, col.status)}
               onDragOver={handleDragOver}
               className={`${
-                isVisibleOnMobile ? 'flex' : 'hidden md:flex'
+                isVisibleOnMobile ? 'flex' : 'hidden lg:flex'
               } bg-[var(--bg-surface-l1)]/60 rounded-xl p-3.5 sm:p-4 border border-[var(--border-hairline)] flex-col h-full max-h-full min-h-0 backdrop-blur-xs shadow-xs`}
             >
               {/* Column Header */}
-              <div className="flex items-center justify-between mb-3.5 px-1 shrink-0">
-                <div className="flex items-center gap-2">
-                  <ColIcon size={16} className={col.color} />
-                  <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+              <div className="flex items-center justify-between mb-3.5 px-1 shrink-0 gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ColIcon size={16} className={`${col.color} shrink-0`} />
+                  <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider truncate">
                     {col.title}
                   </h3>
-                  <Badge variant={col.status} size="xs" className="font-mono">
+                  <Badge variant={col.status} size="xs" className="font-mono shrink-0">
                     {colTasks.length}
                   </Badge>
                 </div>
 
                 <button
                   onClick={() => handleAddTaskToColumn(col.status)}
-                  className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+                  className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors shrink-0"
                   title={`Add to ${col.title}`}
                   aria-label={`Add to ${col.title}`}
                 >

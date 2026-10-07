@@ -125,7 +125,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
       </div>
 
       {/* Tabs Switcher */}
-      <div className="mb-6">
+      <div className="mb-6 overflow-x-auto no-scrollbar py-0.5">
         <SegmentedControl<'logbook' | 'insights' | 'standup' | 'export'>
           items={[
             { id: 'logbook', label: 'Logbook', icon: <CheckCircle2 size={14} /> },

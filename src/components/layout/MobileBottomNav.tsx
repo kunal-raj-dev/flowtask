@@ -28,14 +28,14 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   return (
     <nav
       aria-label="Mobile navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--bg-surface-l1)]/95 backdrop-blur-2xl border-t border-[var(--border-hairline)] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.4)] px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--bg-surface-l1)]/95 backdrop-blur-2xl border-t border-[var(--border-hairline)] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.4)] px-3 pt-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))]"
     >
       <div className="flex items-center justify-around max-w-lg mx-auto">
         {/* Tab 1: Today */}
         <button
           type="button"
           onClick={() => onSelectView('today')}
-          className={`flex flex-col items-center justify-center min-w-[56px] py-1 px-2 rounded-lg transition-all ${
+          className={`flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-lg transition-all active:scale-95 ${
             isToday
               ? 'text-[var(--color-brand)] font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -57,7 +57,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           type="button"
           onClick={() => onSelectView('inbox')}
-          className={`flex flex-col items-center justify-center min-w-[56px] py-1 px-2 rounded-lg transition-all ${
+          className={`flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-lg transition-all active:scale-95 ${
             isInbox
               ? 'text-blue-500 font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -91,7 +91,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           type="button"
           onClick={() => onSelectView('upcoming')}
-          className={`flex flex-col items-center justify-center min-w-[56px] py-1 px-2 rounded-lg transition-all ${
+          className={`flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-lg transition-all active:scale-95 ${
             isUpcoming
               ? 'text-purple-500 font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -113,7 +113,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           type="button"
           onClick={onOpenMenu}
-          className={`flex flex-col items-center justify-center min-w-[56px] py-1 px-2 rounded-lg transition-all ${
+          className={`flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-lg transition-all active:scale-95 ${
             isMore
               ? 'text-[var(--color-brand)] font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'

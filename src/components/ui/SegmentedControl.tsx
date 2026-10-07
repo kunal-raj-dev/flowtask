@@ -77,7 +77,7 @@ export function SegmentedControl<T extends string = string>({
       ref={containerRef}
       role="tablist"
       aria-label={ariaLabel}
-      className={`inline-flex items-center bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] shadow-inner select-none ${
+      className={`inline-flex items-center max-w-full overflow-x-auto no-scrollbar scroll-smooth bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] shadow-inner select-none ${
         sizeStyles[size]
       } ${fullWidth ? 'w-full flex' : ''} ${className}`}
     >
@@ -93,7 +93,7 @@ export function SegmentedControl<T extends string = string>({
             tabIndex={isSelected ? 0 : -1}
             onClick={() => handleSelect(item.id, item.disabled)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
-            className={`flex items-center justify-center font-medium transition-all focus-ring disabled:opacity-40 disabled:pointer-events-none ${
+            className={`flex items-center justify-center font-medium transition-all focus-ring disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap shrink-0 ${
               buttonSizeStyles[size]
             } ${fullWidth ? 'flex-1' : ''} ${
               isSelected

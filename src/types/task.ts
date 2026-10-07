@@ -26,6 +26,7 @@ export interface SubTask {
   title: string;
   completed: boolean;
   estimatedMinutes?: number;
+  timeSpentMinutes?: number;
   url?: string;
   difficulty?: TargetDifficulty;
   tags?: string[];
@@ -43,6 +44,7 @@ export interface SessionMetadata {
   targetUnit?: string;
   secondaryMilestone?: string;
   contingencyGoal?: string;
+  sprintTargetProblems?: number;
 }
 
 export interface Task {
@@ -194,6 +196,7 @@ export interface FocusSessionSegment {
 export interface FocusLog {
   id: string;
   seconds: number;
+  durationSeconds?: number;
   taskId: string | null;
   taskTitle?: string;
   subtaskId?: string;

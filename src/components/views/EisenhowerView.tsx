@@ -280,7 +280,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
           <button
             type="button"
             onClick={() => setSortByScore((prev) => !prev)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+            aria-label="Rank tasks by score"
+            className={`min-h-[36px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${
               sortByScore
                 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
                 : 'bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-hairline)]'
@@ -295,7 +296,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
           <button
             type="button"
             onClick={handleAutoAlignAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shadow-xs transition-all active:scale-95"
+            aria-label="Auto-align tasks to suggested quadrants"
+            className="min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shadow-xs transition-all active:scale-95"
             title="Auto-align tasks to match their multi-factor suggested quadrants"
           >
             <CheckCheck size={13} />
@@ -324,7 +326,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
       )}
 
       {/* Mobile Quadrant Switcher */}
-      <div className="md:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner">
+      <div className="lg:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner overflow-x-auto no-scrollbar">
         {quadrants.map((q) => {
           const quadTasks = activeTasks.filter((t) => {
             if (scoringMode === 'smart') {
@@ -346,7 +348,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
               key={q.priority}
               type="button"
               onClick={() => setMobileQuadrant(q.priority)}
-              className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex-1 min-w-[70px] min-h-[42px] flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
                 isActive
                   ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -360,7 +362,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
       </div>
 
       {/* Cartesian 2D Coordinate Axis Banners (Desktop) */}
-      <div className="hidden md:grid grid-cols-2 gap-4 mb-2 text-center text-[11px] font-bold tracking-wider uppercase text-[var(--text-muted)] select-none">
+      <div className="hidden lg:grid grid-cols-2 gap-4 mb-2 text-center text-[11px] font-bold tracking-wider uppercase text-[var(--text-muted)] select-none">
         <div className="flex items-center justify-center gap-1.5 py-1 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
           <span>⚡ High Urgency (Immediate Action)</span>
         </div>
@@ -370,7 +372,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
       </div>
 
       {/* 2x2 Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
         {quadrants.map((q) => {
           const Icon = q.icon;
 
@@ -401,7 +403,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
               onDragOver={(e) => handleDragOver(e, q.priority)}
               onDragLeave={handleDragLeave}
               className={`${
-                isVisibleOnMobile ? 'flex' : 'hidden md:flex'
+                isVisibleOnMobile ? 'flex' : 'hidden lg:flex'
               } bg-[var(--bg-surface-l2)] rounded-xl border ${
                 isOver
                   ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-500/[0.02]'
@@ -409,29 +411,30 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
               } p-4 sm:p-5 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
             >
               {/* Quadrant Header */}
-              <div className="flex items-start justify-between pb-3 mb-3 border-b border-[var(--border-hairline)]">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-xl bg-[var(--bg-surface-l1)]">
+              <div className="flex items-start justify-between pb-3 mb-3 border-b border-[var(--border-hairline)] gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="p-1.5 rounded-xl bg-[var(--bg-surface-l1)] shrink-0">
                     <Icon size={16} className={q.color} />
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider truncate">
                       {q.title}
                     </h3>
-                    <p className="text-[10px] text-[var(--text-muted)] leading-tight mt-0.5">
+                    <p className="text-[10px] text-[var(--text-muted)] leading-tight mt-0.5 truncate">
                       {q.subtitle}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Badge variant={q.priority} size="xs" className="font-mono">
                     {quadTasks.length}
                   </Badge>
                   <button
                     onClick={() => handleQuickAdd(q.priority)}
-                    className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                    className="p-1.5 min-w-[28px] min-h-[28px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
                     title="Add task to this quadrant"
+                    aria-label={`Add task to ${q.title}`}
                   >
                     <Plus size={14} />
                   </button>
