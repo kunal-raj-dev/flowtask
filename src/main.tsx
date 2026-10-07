@@ -9,11 +9,23 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
+// Seamless auto-recovery when a new Vite production build is deployed and chunk hashes change
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', (event) => {
+    console.warn('Vite dynamic chunk preload mismatch detected, reloading to latest deployment:', event);
+    window.location.reload();
+  });
+}
+
 // Register PWA service worker in production with automatic seamless update handling
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   let refreshing = false;
+  // Guard: Only reload if there was already an active controller prior to this change.
+  // On first-time visits, navigator.serviceWorker.controller is initially null, so initial SW
+  // claim must NOT trigger an unexpected page reload.
+  const hadController = Boolean(navigator.serviceWorker.controller);
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!refreshing) {
+    if (hadController && !refreshing) {
       refreshing = true;
       window.location.reload();
     }
