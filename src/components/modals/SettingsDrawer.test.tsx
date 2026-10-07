@@ -47,6 +47,16 @@ vi.mock('../../utils/audioEngine', () => ({
     playCompletionChime: vi.fn(),
     setSoundEnabled: vi.fn(),
     setSoundProfile: vi.fn(),
+    getVolume: () => 0.5,
+    setVolume: vi.fn(),
+    playClickSound: vi.fn(),
+    playToggleSound: vi.fn(),
+    getCurrentAmbientType: () => 'none',
+    getAmbientVolume: () => 0.1,
+    setAmbientVolume: vi.fn(),
+    startAmbientSound: vi.fn(),
+    stopAmbientSound: vi.fn(),
+    auditionSound: vi.fn(),
   },
 }));
 

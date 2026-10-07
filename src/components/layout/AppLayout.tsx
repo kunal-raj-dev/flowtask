@@ -427,7 +427,7 @@ export const AppLayout: React.FC = () => {
           onOpenShortcuts={() => openModal('shortcuts')}
           onOpenExportImport={() => openModal('exportImport')}
           onOpenBrainDump={() => openModal('brainDump')}
-          onOpenAesthetics={() => openModal('aesthetics')}
+          onOpenAesthetics={() => openModal('settings', { initialTab: 'aesthetics' })}
           onOpenScratchpad={() => openModal('scratchpad')}
           onOpenStudySession={() => openModal('studySession')}
           onOpenSettings={() => openModal('settings')}
@@ -476,7 +476,7 @@ export const AppLayout: React.FC = () => {
                 }}
                 onOpenAesthetics={() => {
                   setIsSidebarOpenMobile(false);
-                  openModal('aesthetics');
+                  openModal('settings', { initialTab: 'aesthetics' });
                 }}
                 onOpenScratchpad={() => {
                   setIsSidebarOpenMobile(false);

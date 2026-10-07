@@ -6,30 +6,16 @@ import {
   Calendar,
   Database,
   Cloud,
-  Volume2,
-  VolumeX,
-  Check,
   ShieldCheck,
   Download,
   Upload,
   RefreshCw,
   Clock,
   Sparkles,
-  Sun,
-  RotateCcw,
 } from 'lucide-react';
-import {
-  loadDiurnalOverride,
-  saveDiurnalOverride,
-  loadDiurnalIntensity,
-  saveDiurnalIntensity,
-  DIURNAL_CONFIGS,
-  type DiurnalOverride,
-  type DiurnalPeriod,
-} from '../../utils/diurnalAura';
-import { useTaskContext, type AppTheme } from '../../context/TaskContext';
+import { AestheticsSettingsContent } from '../settings/AestheticsSettingsContent';
+import { useTaskContext } from '../../context/TaskContext';
 import { useModal } from '../../context/ModalContext';
-import { audioEngine, type SoundProfile } from '../../utils/audioEngine';
 import { useAuth } from '../../context/AuthContext';
 import {
   MIN_CAPACITY_HOURS,
@@ -39,12 +25,13 @@ import {
   BUFFER_PRESETS,
 } from '../../types/settings';
 
+export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account';
+
 interface SettingsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: SettingsTab;
 }
-
-type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account';
 
 const ALL_START_HOURS = Array.from({ length: 23 }, (_, i) => i); // 0 to 22
 const ALL_END_HOURS = Array.from({ length: 24 }, (_, i) => i + 1); // 1 to 24
@@ -56,16 +43,12 @@ const formatHourLabel = (h: number) => {
   return `${h - 12}:00 PM`;
 };
 
-export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('workflow');
+export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose, initialTab }) => {
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'workflow');
   const { openModal } = useModal();
   const { user } = useAuth();
 
   const {
-    theme,
-    toggleTheme,
-    soundEnabled,
-    soundProfile,
     settings,
     updateSettings,
     resetSettings,
@@ -81,9 +64,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
   const [isRefreshingCalendar, setIsRefreshingCalendar] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
 
-  // Diurnal Ambient Atmosphere state
-  const [diurnalOverride, setDiurnalOverride] = useState<DiurnalOverride>(() => loadDiurnalOverride());
-  const [diurnalIntensity, setDiurnalIntensity] = useState<number>(() => loadDiurnalIntensity());
+  useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   // Capacity & Duration local states
   const [capacityInput, setCapacityInput] = useState(settings.targetWorkCapacityHours.toString());
@@ -105,22 +90,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
   useEffect(() => {
     setIcsInput(calendarIcsUrl || '');
   }, [calendarIcsUrl]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setDiurnalOverride(loadDiurnalOverride());
-      setDiurnalIntensity(loadDiurnalIntensity());
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleDiurnalChange = () => {
-      setDiurnalOverride(loadDiurnalOverride());
-      setDiurnalIntensity(loadDiurnalIntensity());
-    };
-    window.addEventListener('diurnal-change', handleDiurnalChange);
-    return () => window.removeEventListener('diurnal-change', handleDiurnalChange);
-  }, []);
 
   // Handle Escape key
   useEffect(() => {
@@ -145,18 +114,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
   const triggerSaveToast = () => {
     setSaveToast(true);
     setTimeout(() => setSaveToast(false), 2000);
-  };
-
-  const handleDiurnalSelect = (override: DiurnalOverride) => {
-    setDiurnalOverride(override);
-    saveDiurnalOverride(override);
-    triggerSaveToast();
-  };
-
-  const handleDiurnalIntensityChange = (val: number) => {
-    setDiurnalIntensity(val);
-    saveDiurnalIntensity(val);
-    triggerSaveToast();
   };
 
   // Capacity handlers
@@ -236,17 +193,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
     }
     triggerSaveToast();
   };
-
-  const themes: { id: AppTheme; label: string; bg: string; border: string; desc: string }[] = [
-    { id: 'light', label: 'Alabaster Light', bg: 'bg-[#F9FAFB] text-stone-900', border: 'border-stone-300', desc: 'Calm morning light with aurora mesh' },
-    { id: 'dark', label: 'Obsidian Dark', bg: 'bg-[#0B0F17] text-stone-100', border: 'border-stone-700', desc: 'Deep space 4-tiered contrast' },
-    { id: 'tokyo', label: 'Tokyo Night', bg: 'bg-[#1A1B26] text-purple-200', border: 'border-indigo-500/30', desc: 'Neon cyber evening aesthetic' },
-    { id: 'nord', label: 'Nord Cold', bg: 'bg-[#2E3440] text-cyan-100', border: 'border-cyan-500/30', desc: 'Arctic cool blue palette' },
-    { id: 'matcha', label: 'Matcha Zen', bg: 'bg-[#18231C] text-emerald-200', border: 'border-emerald-500/30', desc: 'Organic grounding herbal tone' },
-    { id: 'sepia', label: 'Solarized Sepia', bg: 'bg-[#FBF7EE] text-[#2C2218]', border: 'border-amber-600/30', desc: 'Editorial warm parchment paper' },
-    { id: 'crimson', label: 'Cyber Crimson', bg: 'bg-[#0D080B] text-rose-200', border: 'border-rose-500/30', desc: 'Deep velvet obsidian with ruby neon' },
-    { id: 'cobalt', label: 'Deep Cobalt', bg: 'bg-[#060B14] text-cyan-200', border: 'border-cyan-500/30', desc: 'Oceanic midnight abyss with cyan borders' },
-  ];
 
   if (!isOpen) return null;
 
@@ -709,268 +655,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose 
           {/* TAB 2: AESTHETICS & AUDIO */}
           {activeTab === 'aesthetics' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Theme Picker */}
-              <div className="space-y-3">
-                <label className="text-sm font-bold text-[var(--text-primary)]">
-                  Color Space & Visual Aura
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {themes.map((th) => {
-                    const isSelected = theme === th.id;
-                    return (
-                      <button
-                        key={th.id}
-                        type="button"
-                        onClick={() => {
-                          if (theme !== th.id) toggleTheme();
-                        }}
-                        className={`p-3.5 rounded-2xl border text-left transition-all relative ${th.bg} ${th.border} ${
-                          isSelected ? 'ring-2 ring-amber-500 shadow-md' : 'opacity-85 hover:opacity-100'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold">{th.label}</span>
-                          {isSelected && (
-                            <span className="p-1 rounded-full bg-amber-500 text-stone-950">
-                              <Check size={12} strokeWidth={3} />
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] opacity-75 mt-1">{th.desc}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Diurnal Ambient Atmosphere Section */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <Clock size={18} className="text-amber-500" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold text-[var(--text-primary)]">
-                          Diurnal Ambient Atmosphere
-                        </h4>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
-                          12 Atmospheres
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[var(--text-secondary)]">
-                        Organic breathing background glow calibrated to your workday
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-lg bg-stone-200/50 dark:bg-white/[0.04] text-[var(--text-secondary)] border border-[var(--border-hairline)]">
-                      {diurnalOverride === 'auto'
-                        ? 'Auto (Circadian)'
-                        : DIURNAL_CONFIGS[diurnalOverride]?.label || diurnalOverride}
-                    </span>
-                    {diurnalOverride !== 'auto' && (
-                      <button
-                        type="button"
-                        onClick={() => handleDiurnalSelect('auto')}
-                        className="flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline px-2 py-0.5 rounded-lg hover:bg-amber-500/10 transition-colors"
-                        title="Reset to local circadian auto clock"
-                      >
-                        <RotateCcw size={11} />
-                        <span>Reset</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Intensity Slider */}
-                <div className="p-3 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
-                    <Sparkles size={14} className="text-amber-500 shrink-0" />
-                    <div className="flex items-center gap-1.5">
-                      <span>Atmosphere Intensity</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
-                        {Math.round(diurnalIntensity * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2.5 w-full sm:w-48 shrink-0">
-                    <span className="text-[9px] text-[var(--text-muted)] font-medium">Subtle</span>
-                    <input
-                      type="range"
-                      min="0.2"
-                      max="1.0"
-                      step="0.05"
-                      value={diurnalIntensity}
-                      onChange={(e) => handleDiurnalIntensityChange(parseFloat(e.target.value))}
-                      className="w-full accent-amber-500 cursor-pointer"
-                      title="Adjust diurnal atmosphere intensity"
-                    />
-                    <span className="text-[9px] text-[var(--text-muted)] font-medium">Vivid</span>
-                  </div>
-                </div>
-
-                {/* Circadian Presets */}
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
-                    <Sun size={11} className="text-amber-500" />
-                    <span>Circadian Presets</span>
-                  </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {[
-                      {
-                        id: 'auto' as DiurnalOverride,
-                        label: 'Auto (Clock)',
-                        timeTag: 'Live Clock',
-                        preview: 'from-amber-400 via-sky-400 to-indigo-900',
-                        glow1: '#F59E0B',
-                        glow2: '#38BDF8',
-                      },
-                      ...(['morning', 'midday', 'dusk', 'evening', 'midnight'] as DiurnalPeriod[]).map((p) => ({
-                        id: p as DiurnalOverride,
-                        label: DIURNAL_CONFIGS[p].label,
-                        timeTag: DIURNAL_CONFIGS[p].timeTag,
-                        preview: DIURNAL_CONFIGS[p].previewGradient,
-                        glow1: DIURNAL_CONFIGS[p].glowColor1,
-                        glow2: DIURNAL_CONFIGS[p].glowColor2,
-                      })),
-                    ].map((item) => {
-                      const isSelected = diurnalOverride === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleDiurnalSelect(item.id)}
-                          className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-1.5 ${
-                            isSelected
-                              ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30'
-                              : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-1 w-full">
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span
-                                className="w-2 h-2 rounded-full shrink-0 shadow-xs"
-                                style={{ background: `linear-gradient(135deg, ${item.glow1}, ${item.glow2})` }}
-                              />
-                              <span className="text-xs font-bold text-[var(--text-primary)] truncate">
-                                {item.label}
-                              </span>
-                            </div>
-                            {isSelected && <Check size={11} className="text-amber-500 stroke-[3] shrink-0" />}
-                          </div>
-                          <span className="text-[9px] font-mono text-[var(--text-muted)] truncate">
-                            {item.timeTag}
-                          </span>
-                          <div className={`h-1 w-full rounded-full bg-gradient-to-r ${item.preview}`} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Thematic Flow Presets */}
-                <div className="space-y-2 pt-1">
-                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
-                    <Sparkles size={11} className="text-indigo-400" />
-                    <span>Thematic Flow Atmospheres</span>
-                  </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {(['aurora', 'solar', 'forest', 'synthwave', 'abyss', 'twilight'] as DiurnalPeriod[]).map((p) => {
-                      const item = DIURNAL_CONFIGS[p];
-                      const isSelected = diurnalOverride === p;
-                      return (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => handleDiurnalSelect(p)}
-                          className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-1.5 ${
-                            isSelected
-                              ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500/30'
-                              : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-1 w-full">
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span
-                                className="w-2 h-2 rounded-full shrink-0 shadow-xs"
-                                style={{ background: `linear-gradient(135deg, ${item.glowColor1}, ${item.glowColor2})` }}
-                              />
-                              <span className="text-xs font-bold text-[var(--text-primary)] truncate">
-                                {item.label}
-                              </span>
-                            </div>
-                            {isSelected && <Check size={11} className="text-amber-500 stroke-[3] shrink-0" />}
-                          </div>
-                          <span className="text-[9px] font-mono text-[var(--text-muted)] truncate">
-                            {item.subtitle}
-                          </span>
-                          <div className={`h-1 w-full rounded-full bg-gradient-to-r ${item.previewGradient}`} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Sound Settings */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    {soundEnabled ? (
-                      <Volume2 className="text-amber-500" size={18} />
-                    ) : (
-                      <VolumeX className="text-stone-400" size={18} />
-                    )}
-                    <div>
-                      <h4 className="text-xs font-bold text-[var(--text-primary)]">
-                        Haptic & Synthesized Audio FX
-                      </h4>
-                      <p className="text-[11px] text-[var(--text-secondary)]">
-                        Tactile clicks on completion and focus chimes.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.setSoundEnabled(!soundEnabled);
-                      triggerSaveToast();
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                      soundEnabled
-                        ? 'bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300'
-                        : 'bg-stone-200 dark:bg-stone-800 border-transparent text-stone-500'
-                    }`}
-                  >
-                    {soundEnabled ? 'Enabled' : 'Muted'}
-                  </button>
-                </div>
-
-                {soundEnabled && (
-                  <div className="pt-2 border-t border-[var(--border-hairline)] flex items-center justify-between gap-4">
-                    <span className="text-xs font-medium text-[var(--text-secondary)]">Sound Profile</span>
-                    <select
-                      value={soundProfile}
-                      onChange={(e) => {
-                        audioEngine.setSoundProfile(e.target.value as SoundProfile);
-                        audioEngine.playCompletionChime();
-                        triggerSaveToast();
-                      }}
-                      className="text-xs px-3 py-1.5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] outline-none font-medium"
-                    >
-                      <option value="zen">Zen Singing Bowl (Harmonic)</option>
-                      <option value="mechanical">Mechanical Switch (Clicky)</option>
-                      <option value="bubble">Soft Bubble (Pop)</option>
-                      <option value="marimba">Marimba Teak (Acoustic)</option>
-                      <option value="typewriter">Retro Typewriter (Vintage)</option>
-                      <option value="synth">Cosmic Synth (Retro 80s)</option>
-                      <option value="velvet">Velvet Thud (Whisper Soft)</option>
-                      <option value="mute">Completely Silent (Mute)</option>
-                    </select>
-                  </div>
-                )}
-              </div>
+              <AestheticsSettingsContent
+                onSaveToast={triggerSaveToast}
+                intensitySliderTitle="Adjust diurnal atmosphere intensity"
+              />
             </div>
           )}
 

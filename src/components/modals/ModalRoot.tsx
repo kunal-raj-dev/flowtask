@@ -22,6 +22,8 @@ const PomodoroModal = lazy(() => import('../focus/PomodoroModal').then(m => ({ d
 const SettingsDrawer = lazy(() => import('./SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
 const OnboardingFlow = lazy(() => import('./OnboardingFlow').then(m => ({ default: m.OnboardingFlow })));
 
+import type { SettingsTab } from './SettingsDrawer';
+
 interface ModalRootProps {
   onSelectTask?: (taskId: string) => void;
   onStartStudySprint?: (taskId: string) => void;
@@ -105,6 +107,7 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
         <SettingsDrawer
           isOpen={true}
           onClose={() => closeModal('settings')}
+          initialTab={getModalProps<{ initialTab?: SettingsTab }>('settings')?.initialTab}
         />
       )}
 
@@ -125,7 +128,7 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
           onOpenPomodoro={() => openModal('pomodoro')}
           onOpenBrainDump={() => openModal('brainDump')}
           onOpenExportImport={() => openModal('exportImport')}
-          onOpenAesthetics={() => openModal('aesthetics')}
+          onOpenAesthetics={() => openModal('settings', { initialTab: 'aesthetics' })}
           onOpenScratchpad={() => openModal('scratchpad')}
           onOpenStudySession={() => openModal('studySession')}
         />
