@@ -27,6 +27,8 @@ const mockResumeFocusSession = vi.fn();
 const mockStashActiveFocus = vi.fn();
 const mockToggleTaskStatus = vi.fn();
 
+let mockTotalFocusedTodaySeconds = 0;
+
 vi.mock('../../context/TaskContext', () => ({
   useTaskContext: () => ({
     tasks: [
@@ -39,6 +41,19 @@ vi.mock('../../context/TaskContext', () => ({
         createdAt: Date.now(),
         subtasks: [],
       },
+      {
+        id: 'task-sprint-meta',
+        title: 'LeetCode Marathon',
+        status: 'todo',
+        priority: 'p1',
+        projectId: 'inbox',
+        createdAt: Date.now(),
+        subtasks: [{ id: 'sub-1', title: 'Problem 1', completed: false }],
+        sessionMetadata: {
+          sprintTargetProblems: 5,
+          targetPacingMinutes: 20,
+        },
+      },
     ],
     stashActiveFocus: mockStashActiveFocus,
     toggleTaskStatus: mockToggleTaskStatus,
@@ -48,6 +63,7 @@ vi.mock('../../context/TaskContext', () => ({
     pauseFocusSession: mockPauseFocusSession,
     resumeFocusSession: mockResumeFocusSession,
     stopFocusSession: mockStopFocusSession,
+    totalFocusedTodaySeconds: mockTotalFocusedTodaySeconds,
   }),
 }));
 
@@ -130,5 +146,21 @@ describe('PomodoroModal Component', () => {
     // Second Escape closes modal
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('displays today total focused time in standard and zen header', () => {
+    mockTotalFocusedTodaySeconds = 5400; // 1h 30m
+    render(<PomodoroModal taskId="task-1" onClose={vi.fn()} />);
+
+    expect(screen.getByText(/Today: 1h 30m/i)).toBeDefined();
+    mockTotalFocusedTodaySeconds = 0;
+  });
+
+  it('displays Study Sprint banner when task has sessionMetadata', () => {
+    render(<PomodoroModal taskId="task-sprint-meta" onClose={vi.fn()} />);
+
+    expect(screen.getByText(/Study Sprint Configured/i)).toBeDefined();
+    expect(screen.getByText(/5 questions with problem pacing/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: /Open Sprint/i })).toBeDefined();
   });
 });

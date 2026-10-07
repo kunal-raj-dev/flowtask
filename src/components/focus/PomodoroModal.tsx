@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { ModalContext } from '../../context/ModalContext';
 import { audioEngine } from '../../utils/audioEngine';
 import {
   X,
@@ -11,6 +12,8 @@ import {
   Flame,
   Maximize2,
   Minimize2,
+  Zap,
+  Timer,
 } from 'lucide-react';
 
 import type { AmbientSoundType } from '../../utils/audioEngine';
@@ -23,18 +26,30 @@ interface PomodoroModalProps {
 type Mode = 'focus' | 'short_break' | 'long_break';
 
 export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose }) => {
-  const {
-    tasks,
-    stashActiveFocus,
-    toggleTaskStatus,
-    focusSession,
-    focusElapsedSeconds,
-    startFocusSession,
-    pauseFocusSession,
-    resumeFocusSession,
-    stopFocusSession,
-  } = useTaskContext();
+  const context = useTaskContext();
+  const tasks = context?.tasks || [];
+  const stashActiveFocus = context?.stashActiveFocus;
+  const toggleTaskStatus = context?.toggleTaskStatus;
+  const focusSession = context?.focusSession;
+  const focusElapsedSeconds = context?.focusElapsedSeconds || 0;
+  const startFocusSession = context?.startFocusSession;
+  const pauseFocusSession = context?.pauseFocusSession;
+  const resumeFocusSession = context?.resumeFocusSession;
+  const stopFocusSession = context?.stopFocusSession;
+  const totalFocusedTodaySeconds = context?.totalFocusedTodaySeconds || 0;
+
+  const modalContext = useContext(ModalContext);
   const task = tasks.find((t) => t.id === taskId);
+
+  const formattedTodayFocus = useMemo(() => {
+    const hours = Math.floor(totalFocusedTodaySeconds / 3600);
+    const mins = Math.floor((totalFocusedTodaySeconds % 3600) / 60);
+    const secs = totalFocusedTodaySeconds % 60;
+    if (hours > 0) return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
+    if (mins > 0) return `${mins}m`;
+    if (secs > 0) return `${secs}s`;
+    return '0m';
+  }, [totalFocusedTodaySeconds]);
 
   const [mode, setMode] = useState<Mode>('focus');
   const [focusDuration, setFocusDuration] = useState(25 * 60); // 25 mins
@@ -169,12 +184,12 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
 
   // Shared Mode Selector Component
   const renderModeSelector = (isZen = false) => (
-    <div className={`flex justify-center gap-1.5 p-1 bg-[var(--bg-surface-l1)] rounded-lg border border-[var(--border-subtle)] ${isZen ? 'max-w-sm' : 'max-w-xs mx-auto mb-6'}`}>
+    <div className={`grid grid-cols-3 gap-1 p-1 bg-[var(--bg-surface-l1)] rounded-xl border border-[var(--border-subtle)] ${isZen ? 'max-w-sm' : 'w-full max-w-sm mx-auto mb-6'}`}>
       <button
         onClick={() => handleModeChange('focus')}
-        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+        className={`py-1.5 px-2 text-xs font-semibold rounded-lg transition-all text-center ${
           mode === 'focus'
-            ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface'
+            ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-bold'
             : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
         }`}
       >
@@ -182,9 +197,9 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       </button>
       <button
         onClick={() => handleModeChange('short_break')}
-        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+        className={`py-1.5 px-2 text-xs font-semibold rounded-lg transition-all text-center ${
           mode === 'short_break'
-            ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface'
+            ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-bold'
             : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
         }`}
       >
@@ -192,9 +207,9 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       </button>
       <button
         onClick={() => handleModeChange('long_break')}
-        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+        className={`py-1.5 px-2 text-xs font-semibold rounded-lg transition-all text-center ${
           mode === 'long_break'
-            ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface'
+            ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-bold'
             : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
         }`}
       >
@@ -280,6 +295,10 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
                 🎯 {task.title}
               </span>
             )}
+            <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 text-xs font-mono font-bold flex items-center gap-1.5">
+              <Timer size={12} className="text-amber-500" />
+              <span>Today: {formattedTodayFocus}</span>
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -433,27 +452,61 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
         className="w-full max-w-md bg-[var(--bg-surface-l2)] rounded-xl p-7 border border-[var(--border-hairline)] shadow-modal relative text-center card-surface"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Controls: Fullscreen toggle & Close Button */}
-        <div className="absolute top-5 right-5 flex items-center gap-1">
-          <button
-            onClick={() => setIsFullscreen(true)}
-            title="Zen Fullscreen Mode (F)"
-            aria-label="Zen Fullscreen Mode (F)"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
-          >
-            <Maximize2 size={16} />
-          </button>
-          <button
-            onClick={onClose}
-            aria-label="Close Pomodoro Modal"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
-          >
-            <X size={18} />
-          </button>
+        {/* Top Modal Header Bar: Non-overlapping Flex Bar */}
+        <div className="mb-5 flex items-center justify-between gap-2">
+          {/* Cycle Indicators */}
+          <div className="flex items-center gap-2">
+            {renderCycleIndicators()}
+          </div>
+
+          {/* Right: Today Focus Badge + Action Controls */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/25 flex items-center gap-1.5 shadow-2xs">
+              <Timer size={12} className="text-amber-500" />
+              <span>Today: {formattedTodayFocus}</span>
+            </span>
+
+            <button
+              onClick={() => setIsFullscreen(true)}
+              title="Zen Fullscreen Mode (F)"
+              aria-label="Zen Fullscreen Mode (F)"
+              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            >
+              <Maximize2 size={16} />
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="Close Pomodoro Modal"
+              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Top Cycle Indicators */}
-        <div className="mb-4">{renderCycleIndicators()}</div>
+        {/* Study Sprint Shortcut Banner if task has sessionMetadata */}
+        {task?.sessionMetadata && (
+          <div className="mb-4 p-2.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 rounded-xl flex items-center justify-between gap-2 text-left">
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                <Zap size={11} className="fill-current text-amber-500" /> Study Sprint Configured
+              </span>
+              <p className="text-[11px] text-[var(--text-secondary)] truncate">
+                {task.sessionMetadata.sprintTargetProblems || task.subtasks?.length || 0} questions with problem pacing
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                modalContext?.openModal('studySprint', { taskId: task.id });
+                onClose();
+              }}
+              className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold shrink-0 transition-colors cursor-pointer"
+            >
+              Open Sprint
+            </button>
+          </div>
+        )}
 
         {/* Mode Selector */}
         {renderModeSelector(false)}

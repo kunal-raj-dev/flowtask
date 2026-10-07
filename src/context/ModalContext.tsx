@@ -30,7 +30,7 @@ export interface ModalContextType {
   hasAnyModalOpen: boolean;
 }
 
-const ModalContext = createContext<ModalContextType | undefined>(undefined);
+export const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
 export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [modalState, setModalState] = useState<{

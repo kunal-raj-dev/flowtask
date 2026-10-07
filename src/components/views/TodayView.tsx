@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Eye,
   EyeOff,
+  Timer,
 } from 'lucide-react';
 import { EmptyState, Badge } from '../ui';
 
@@ -33,7 +34,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   onSelectTask,
   onStartFocus,
   onOpenBrainDump,
-  onStartSprint: _onStartSprint,
+  onStartSprint,
   onOpenStudySession,
 }) => {
   const {
@@ -47,33 +48,62 @@ export const TodayView: React.FC<TodayViewProps> = ({
     deleteTask,
     settings,
     showToast,
+    focusSession,
+    totalFocusedTodaySeconds,
   } = useTaskContext();
 
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState<boolean>(() => {
-    return localStorage.getItem('flowtask_today_completed_collapsed') !== 'false';
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+        return localStorage.getItem('flowtask_today_completed_collapsed') !== 'false';
+      }
+    } catch {}
+    return true;
   });
 
   const [isEveningCollapsed, setIsEveningCollapsed] = useState<boolean>(() => {
-    return localStorage.getItem('flowtask_today_evening_collapsed') === 'true';
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+        return localStorage.getItem('flowtask_today_evening_collapsed') === 'true';
+      }
+    } catch {}
+    return false;
   });
 
   const [isCalmMode, setIsCalmMode] = useState<boolean>(() => {
-    return localStorage.getItem('flowtask_today_calm_mode') === 'true';
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+        return localStorage.getItem('flowtask_today_calm_mode') === 'true';
+      }
+    } catch {}
+    return false;
   });
 
   const [isCalmModeExpanded, setIsCalmModeExpanded] = useState<boolean>(false);
   const [isOverloadDismissed, setIsOverloadDismissed] = useState<boolean>(false);
 
   useEffect(() => {
-    localStorage.setItem('flowtask_today_completed_collapsed', String(isCompletedCollapsed));
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem('flowtask_today_completed_collapsed', String(isCompletedCollapsed));
+      }
+    } catch {}
   }, [isCompletedCollapsed]);
 
   useEffect(() => {
-    localStorage.setItem('flowtask_today_evening_collapsed', String(isEveningCollapsed));
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem('flowtask_today_evening_collapsed', String(isEveningCollapsed));
+      }
+    } catch {}
   }, [isEveningCollapsed]);
 
   useEffect(() => {
-    localStorage.setItem('flowtask_today_calm_mode', String(isCalmMode));
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem('flowtask_today_calm_mode', String(isCalmMode));
+      }
+    } catch {}
   }, [isCalmMode]);
 
   const todayStr = useTodayStr();
@@ -176,6 +206,26 @@ export const TodayView: React.FC<TodayViewProps> = ({
   );
   const isOverbooked = activePlannedMinutes > targetWorkCapacityMinutes;
 
+  const focusedTodayFormatted = useMemo(() => {
+    const hours = Math.floor(totalFocusedTodaySeconds / 3600);
+    const mins = Math.floor((totalFocusedTodaySeconds % 3600) / 60);
+    const secs = totalFocusedTodaySeconds % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
+    }
+    if (mins > 0) {
+      return `${mins}m`;
+    }
+    if (secs > 0) {
+      return `${secs}s`;
+    }
+    return '0m';
+  }, [totalFocusedTodaySeconds]);
+
+  const focusedCapacityPercent = targetWorkCapacityMinutes > 0
+    ? Math.min(100, Math.round(((totalFocusedTodaySeconds / 60) / targetWorkCapacityMinutes) * 100))
+    : 0;
+
   const handleDeferNonMitToTomorrow = () => {
     const tmrStr = getTomorrowStr();
 
@@ -217,8 +267,37 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
         {/* Controls & Capacity / Progress Indicator */}
         <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap justify-between sm:justify-end">
-          {/* Capacity Pill & Calm Mode Toggle */}
-          <div className="flex items-center gap-2">
+          {/* Focus Pill, Capacity Pill & Calm Mode Toggle */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Real-time Focus Time Today Pill */}
+            <button
+              type="button"
+              onClick={() => {
+                if (focusSession?.mode === 'sprint') {
+                  onStartSprint?.(focusSession.taskId || '');
+                } else if (focusSession?.taskId) {
+                  onStartFocus(focusSession.taskId);
+                } else {
+                  onStartFocus('');
+                }
+              }}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                focusSession && focusSession.state === 'running'
+                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-900 dark:text-amber-200 border-amber-500/40 shadow-xs'
+                  : totalFocusedTodaySeconds > 0
+                  ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/25 hover:bg-amber-500/20'
+                  : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-hairline)]'
+              }`}
+              title={`Total focused time today: ${focusedTodayFormatted} (${focusedCapacityPercent}% of daily ${targetWorkCapacityHours}h target). Click to open Focus Mode.`}
+            >
+              <Timer size={13} className={focusSession?.state === 'running' ? 'text-amber-500 animate-spin' : 'text-amber-500'} />
+              <span className="font-mono font-bold">{focusedTodayFormatted}</span>
+              <span className="text-[10px] opacity-75 hidden sm:inline">focus</span>
+              {focusSession?.state === 'running' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping ml-0.5" />
+              )}
+            </button>
+
             <div
               className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
                 isOverbooked
@@ -287,6 +366,41 @@ export const TodayView: React.FC<TodayViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Live Focus Session Active Banner */}
+      {focusSession && (focusSession.state === 'running' || focusSession.state === 'paused') && (
+        <div className="mb-4 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+            <div className="truncate">
+              <span className="font-bold text-amber-900 dark:text-amber-200">
+                {focusSession.mode === 'sprint' ? '⚡ Study Sprint in Progress' : '🍅 Focus Session in Progress'}:
+              </span>{' '}
+              <span className="text-amber-800 dark:text-amber-300">
+                {focusSession.subtaskTitle ? `${focusSession.taskTitle} (${focusSession.subtaskTitle})` : focusSession.taskTitle}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="font-mono text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/20 px-2 py-0.5 rounded">
+              🎯 Today: {focusedTodayFormatted}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (focusSession.mode === 'sprint') {
+                  onStartSprint?.(focusSession.taskId || '');
+                } else {
+                  onStartFocus(focusSession.taskId || '');
+                }
+              }}
+              className="px-2.5 py-1 rounded-lg bg-amber-500 text-white font-semibold text-[11px] hover:bg-amber-600 transition-colors cursor-pointer"
+            >
+              Resume
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Quick Capture Omnibar with Editable Chips */}
       <Omnibar />

@@ -50,6 +50,44 @@ target -> Day 25 -> Javascript complete module
 finishing it then move to game activity
 revision if possible starting from js after both done`;
 
+const FORMAT_TEMPLATES = [
+  {
+    id: 'simple',
+    label: '✨ Simple Format',
+    content: `Session 1: DSA Practice (8:30am - 11:30am)
+- Two Sum (Easy, 15m)
+- 3Sum (Medium, 30m)
+- Trapping Rain Water (Hard, 45m)
+
+Session 2: Web Development (1:00pm - 3:30pm)
+- JavaScript Async/Await module (45m)
+- Build Quiz Game UI (60m)
+- Review CSS Grid & Flexbox (25m)`,
+  },
+  {
+    id: 'tasks',
+    label: '📋 Quick Tasks',
+    content: `- Two Sum (Easy, 15m)
+- 3Sum (Medium, 30m)
+- Trapping Rain Water (Hard, 45m)
+- Code review and unit testing (30m)`,
+  },
+  {
+    id: 'leetcode',
+    label: '⚡ LeetCode Sprint',
+    content: `Session 1: LeetCode Grind (9:00am - 12:00pm)
+- 1. Two Sum (Easy, 15m) https://leetcode.com/problems/two-sum
+- 15. 3Sum (Medium, 30m) https://leetcode.com/problems/3sum
+- 42. Trapping Rain Water (Hard, 45m) https://leetcode.com/problems/trapping-rain-water
+- 206. Reverse Linked List (Easy, 15m) https://leetcode.com/problems/reverse-linked-list`,
+  },
+  {
+    id: 'chat',
+    label: '💬 Chat Log',
+    content: SAMPLE_STUDY_LOG,
+  },
+];
+
 export const StudySessionModal: React.FC<StudySessionModalProps> = ({
   isOpen,
   onClose,
@@ -249,27 +287,47 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
                 <span className="font-semibold uppercase tracking-wider text-[11px]">
-                  Raw Study / Chat Log
+                  Study Plan / Tasks Input
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setRawText(SAMPLE_STUDY_LOG)}
-                  className="text-amber-600 dark:text-amber-400 hover:underline text-[11px] font-medium"
-                >
-                  Load Sample Study Plan
-                </button>
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  Markdown & bullet points supported
+                </span>
+              </div>
+
+              {/* Quick Format Template Selector */}
+              <div className="flex flex-wrap items-center gap-1.5 pb-1">
+                <span className="text-[11px] text-[var(--text-muted)] font-medium mr-0.5">Quick Formats:</span>
+                {FORMAT_TEMPLATES.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => setRawText(tmpl.content)}
+                    className="px-2 py-0.5 rounded-lg text-[11px] font-medium bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-hairline)] transition-all cursor-pointer"
+                  >
+                    {tmpl.label}
+                  </button>
+                ))}
               </div>
 
               <textarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
-                placeholder="Paste your study plan, LeetCode target list, or Discord chat log here..."
-                rows={14}
+                placeholder={`Enter in simple format:
+
+Session 1: DSA Practice (8:30am - 11:30am)
+- Two Sum (Easy, 15m)
+- 3Sum (Medium, 30m)
+- Trapping Rain Water (Hard, 45m)
+
+Or simply paste a list of tasks:
+- Task 1 (Easy, 20m)
+- Task 2 (30m)`}
+                rows={13}
                 className="w-full p-3 font-mono text-xs rounded-xl bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none leading-relaxed placeholder:text-[var(--text-muted)]"
               />
 
               <p className="text-[11px] text-[var(--text-muted)] leading-snug">
-                💡 Tip: FlowTask automatically parses <code>Session 01 - Time =&gt; 8:30am to 11:30am</code>, LeetCode problem numbers, difficulty badges, links, and pacing calculations (e.g. <code>30 mins/Q</code>).
+                💡 <strong>Simple Format:</strong> Write <code>Session 1: Topic (8:30am - 11:30am)</code> followed by <code>- Task (Difficulty, 30m)</code>. Or just paste plain <code>- Task (mins)</code> bullet points!
               </p>
             </div>
 
@@ -289,12 +347,19 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
 
               <div className="max-h-[370px] overflow-y-auto space-y-3 pr-1">
                 {parsedSessions.length === 0 ? (
-                  <div className="h-64 flex flex-col items-center justify-center p-6 rounded-xl border border-dashed border-stone-300 dark:border-stone-800 text-center text-[var(--text-muted)] text-xs">
-                    <Sparkles size={24} className="text-amber-500 mb-2 opacity-50" />
-                    <span>No valid sessions detected yet.</span>
-                    <span className="text-[11px] opacity-75 mt-1">
-                      Include a session header like <code>Session 01 - Time =&gt; 8:30 am to 11:30 am</code> or click "Load Sample".
-                    </span>
+                  <div className="h-64 flex flex-col items-center justify-center p-6 rounded-xl border border-dashed border-stone-300 dark:border-stone-800 text-center text-[var(--text-muted)] text-xs space-y-2">
+                    <Sparkles size={24} className="text-amber-500 opacity-70" />
+                    <span className="font-semibold text-[var(--text-primary)]">No sessions detected yet</span>
+                    <p className="text-[11px] text-[var(--text-secondary)] max-w-xs leading-relaxed">
+                      Write sessions like <code className="text-amber-600 dark:text-amber-400 font-mono">Session 1: DSA (9am - 12pm)</code> with <code className="text-amber-600 dark:text-amber-400 font-mono">- Two Sum (Easy, 15m)</code>, or simply paste bullet points!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setRawText(FORMAT_TEMPLATES[0].content)}
+                      className="mt-1 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/25 text-xs font-semibold transition-all cursor-pointer"
+                    >
+                      Load Simple Template
+                    </button>
                   </div>
                 ) : (
                   parsedSessions.map((s, idx) => (
@@ -319,7 +384,7 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
                               <Clock size={11} className="text-indigo-500" />
                               {s.startTime && s.endTime
                                 ? `${s.startTime} – ${s.endTime} (${s.durationMinutes}m)`
-                                : 'Flexible time'}
+                                : `${s.durationMinutes || 0}m focus duration`}
                             </span>
                             {s.targetPacingMinutes && (
                               <span className="flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400">
@@ -345,6 +410,11 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
                             >
                               <div className="flex items-center gap-1.5 min-w-0">
                                 {getDifficultyBadge(target.difficulty)}
+                                {target.estimatedMinutes && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] border border-[var(--border-hairline)] shrink-0">
+                                    {target.estimatedMinutes}m
+                                  </span>
+                                )}
                                 <span className="font-medium text-[var(--text-primary)] truncate">
                                   {target.title}
                                 </span>

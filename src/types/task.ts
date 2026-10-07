@@ -187,6 +187,20 @@ export interface FocusSessionSegment {
   startedAt: number;
   endedAt: number;
   durationSeconds: number;
+  subtaskId?: string;
+  subtaskTitle?: string;
+}
+
+export interface FocusLog {
+  id: string;
+  seconds: number;
+  taskId: string | null;
+  taskTitle?: string;
+  subtaskId?: string;
+  subtaskTitle?: string;
+  mode: FocusSessionMode;
+  startedAt: number;
+  endedAt: number;
 }
 
 export interface FocusSession {
@@ -195,6 +209,7 @@ export interface FocusSession {
   taskId: string | null;
   taskTitle?: string;
   subtaskId?: string;
+  subtaskTitle?: string;
   projectId?: string;
   startedAt: number;
   pausedAt?: number | null;
@@ -203,6 +218,8 @@ export interface FocusSession {
   state: 'idle' | 'running' | 'paused' | 'completed';
   pomodoroCycle?: number;
   pomodoroPhase?: 'focus' | 'short_break' | 'long_break';
+  pacingSecondsPerUnit?: number;
+  bankedSeconds?: number;
   loggedSegments?: FocusSessionSegment[];
 }
 

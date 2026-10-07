@@ -34,11 +34,14 @@ const sampleTask: Task = {
   ],
 };
 
+let mockTotalFocusedTodaySeconds = 0;
+
 vi.mock('../../context/TaskContext', () => ({
   useTaskContext: () => ({
     tasks: [sampleTask],
     updateTask: mockUpdateTask,
     toggleSubTask: mockToggleSubTask,
+    totalFocusedTodaySeconds: mockTotalFocusedTodaySeconds,
   }),
 }));
 
@@ -121,5 +124,19 @@ describe('StudySprintRunnerModal Component', () => {
     expect(dialog.className).toContain('p-2');
 
     document.body.removeChild(input);
+  });
+
+  it('renders today total focused time when focus time exists', () => {
+    mockTotalFocusedTodaySeconds = 3600; // 1h
+    render(
+      <StudySprintRunnerModal
+        isOpen={true}
+        taskId="task-study-1"
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getAllByText(/1h focused today/i).length).toBeGreaterThan(0);
+    mockTotalFocusedTodaySeconds = 0;
   });
 });

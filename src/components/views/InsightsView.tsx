@@ -24,7 +24,11 @@ interface InsightsViewProps {
 }
 
 export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
-  const { tasks, projects } = useTaskContext();
+  const context = useTaskContext();
+  const tasks = context?.tasks || [];
+  const projects = context?.projects || [];
+  const focusLogs = context?.focusLogs || [];
+  const totalFocusedTodaySeconds = context?.totalFocusedTodaySeconds || 0;
 
   const [hoveredScatterPoint, setHoveredScatterPoint] = useState<{
     id: string;
@@ -85,17 +89,49 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
       }
     });
 
+    // Also incorporate completed focusLogs for non-completed tasks or standalone sessions
+    const safeFocusLogs = focusLogs || [];
+    safeFocusLogs.forEach((log) => {
+      if (log.startedAt) {
+        const logDate = formatLocalDate(new Date(log.startedAt));
+        if (activity[logDate]) {
+          const isTaskCompleted = log.taskId ? completed.some((t) => t.id === log.taskId) : false;
+          if (!isTaskCompleted) {
+            activity[logDate].minutes += Math.round((log.durationSeconds || 0) / 60);
+            if (activity[logDate].count === 0) {
+              activity[logDate].count += 1;
+            }
+          }
+        }
+      }
+    });
+
+    // Ensure today's activity minutes reflects live today focus if higher
+    if (activity[todayStr]) {
+      const todayTotalMins = Math.round(totalFocusedTodaySeconds / 60);
+      if (todayTotalMins > activity[todayStr].minutes) {
+        activity[todayStr].minutes = todayTotalMins;
+      }
+    }
+
     let streak = 0;
     for (let i = dates.length - 1; i >= 0; i--) {
       const dateStr = dates[i];
-      if (activity[dateStr] && activity[dateStr].count > 0) {
+      if (activity[dateStr] && (activity[dateStr].count > 0 || activity[dateStr].minutes > 0)) {
         streak++;
       } else if (dateStr !== todayStr) {
         break;
       }
     }
 
-    const totalMinutes = completed.reduce((acc, t) => acc + (t.timeSpentMinutes || 0), 0);
+    const completedMinutes = completed.reduce((acc, t) => acc + (t.timeSpentMinutes || 0), 0);
+    const nonCompletedMinutes = tasks
+      .filter((t) => !t.deletedAt && !t.archivedAt && t.status !== 'done')
+      .reduce((acc, t) => acc + (t.timeSpentMinutes || 0), 0);
+    const standaloneMinutes = safeFocusLogs
+      .filter((l) => !l.taskId)
+      .reduce((acc, l) => acc + Math.round((l.durationSeconds || 0) / 60), 0);
+    const totalMinutes = completedMinutes + nonCompletedMinutes + standaloneMinutes;
     const focusHours = (totalMinutes / 60).toFixed(1);
 
     const totalPin = tasks.filter((t) => t.isPinnedToday).length;
@@ -167,6 +203,40 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
           w.tasks++;
           w.minutes += t.timeSpentMinutes || 0;
           break;
+        }
+      }
+    });
+
+    // Incorporate focusLogs into chronotype and weekly rolling metrics
+    safeFocusLogs.forEach((log) => {
+      if (log.startedAt) {
+        const isTaskCompleted = log.taskId ? completed.some((t) => t.id === log.taskId) : false;
+        if (!isTaskCompleted) {
+          const h = new Date(log.startedAt).getHours();
+          const mins = Math.round((log.durationSeconds || 0) / 60);
+          counts[h]++;
+          hourMins[h] += mins;
+          if (h >= 6 && h < 12) {
+            chrono.morning.count++;
+            chrono.morning.minutes += mins;
+          } else if (h >= 12 && h < 17) {
+            chrono.afternoon.count++;
+            chrono.afternoon.minutes += mins;
+          } else if (h >= 17 && h < 22) {
+            chrono.evening.count++;
+            chrono.evening.minutes += mins;
+          } else {
+            chrono.night.count++;
+            chrono.night.minutes += mins;
+          }
+
+          const time = log.startedAt;
+          for (const w of weeks) {
+            if (time >= w.start && time < w.end) {
+              w.minutes += mins;
+              break;
+            }
+          }
         }
       }
     });

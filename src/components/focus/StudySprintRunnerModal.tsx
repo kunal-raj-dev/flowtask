@@ -30,7 +30,28 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
   taskId,
   onClose,
 }) => {
-  const { tasks, toggleSubTask, updateTask } = useTaskContext();
+  const context = useTaskContext();
+  const tasks = context?.tasks || [];
+  const toggleSubTask = context?.toggleSubTask || (() => {});
+  const focusSession = context?.focusSession || null;
+  const focusElapsedSeconds = context?.focusElapsedSeconds || 0;
+  const startFocusSession = context?.startFocusSession;
+  const pauseFocusSession = context?.pauseFocusSession;
+  const resumeFocusSession = context?.resumeFocusSession;
+  const switchFocusSubtask = context?.switchFocusSubtask;
+  const logFocusSegment = context?.logFocusSegment;
+  const totalFocusedTodaySeconds = context?.totalFocusedTodaySeconds || 0;
+
+  const formattedTodayFocus = useMemo(() => {
+    const hours = Math.floor(totalFocusedTodaySeconds / 3600);
+    const mins = Math.floor((totalFocusedTodaySeconds % 3600) / 60);
+    const secs = totalFocusedTodaySeconds % 60;
+    if (hours > 0) return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
+    if (mins > 0) return `${mins}m`;
+    if (secs > 0) return `${secs}s`;
+    return '0m';
+  }, [totalFocusedTodaySeconds]);
+
   const task = taskId ? tasks.find((t) => t.id === taskId) : null;
 
   // Subtasks list
@@ -56,18 +77,42 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
     return 30; // fallback default: 30 mins
   }, [currentSubtask, task]);
 
-  // Question-level timer state
-  const [questionSecondsLeft, setQuestionSecondsLeft] = useState(targetBudgetMins * 60);
-  const [isQuestionTimerRunning, setIsQuestionTimerRunning] = useState(false);
-  const [questionElapsedSeconds, setQuestionElapsedSeconds] = useState(0);
+  const targetBudgetSeconds = targetBudgetMins * 60;
+
+  // Global sprint sync detection
+  const isThisSprintActive = Boolean(
+    focusSession && focusSession.mode === 'sprint' && focusSession.taskId === taskId
+  );
+  const isSprintRunning = Boolean(isThisSprintActive && focusSession?.state === 'running');
+
+  // Align active subtask index if global focusSession points to a specific subtask
+  useEffect(() => {
+    if (isThisSprintActive && focusSession?.subtaskId) {
+      const idx = subtasks.findIndex((s) => s.id === focusSession.subtaskId);
+      if (idx >= 0 && idx !== activeSubtaskIndex) {
+        setActiveSubtaskIndex(idx);
+      }
+    }
+  }, [isThisSprintActive, focusSession?.subtaskId, subtasks, activeSubtaskIndex]);
+
+  // Local timer fallback for isolated testing/rendering
+  const [localRunning, setLocalRunning] = useState(false);
+  const [localElapsed, setLocalElapsed] = useState(0);
+
+  const isQuestionTimerRunning = isThisSprintActive ? isSprintRunning : localRunning;
+  const questionElapsedSeconds = isThisSprintActive ? focusElapsedSeconds : localElapsed;
+  const questionSecondsLeft = Math.max(0, targetBudgetSeconds - questionElapsedSeconds);
 
   // Session-level timer state
   const totalSessionSeconds = useMemo(() => {
     return (task?.estimatedMinutes || 180) * 60;
   }, [task?.estimatedMinutes]);
 
-  const [sessionSecondsLeft, setSessionSecondsLeft] = useState(totalSessionSeconds);
-  const [isSessionRunning, setIsSessionRunning] = useState(false);
+  const sessionElapsedSeconds = useMemo(() => {
+    return (task?.timeSpentMinutes || 0) * 60 + questionElapsedSeconds;
+  }, [task?.timeSpentMinutes, questionElapsedSeconds]);
+
+  const sessionSecondsLeft = Math.max(0, totalSessionSeconds - sessionElapsedSeconds);
 
   // Banked time (in seconds)
   const [bankedSeconds, setBankedSeconds] = useState(0);
@@ -78,42 +123,39 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
 
   // Explicit subtask selection and timer reset handler
   const selectSubtask = (idx: number) => {
-    setActiveSubtaskIndex(idx);
+    if (idx < 0 || idx >= subtasks.length) return;
     const sub = subtasks[idx];
     const budget = (sub?.estimatedMinutes && sub.estimatedMinutes > 0)
       ? sub.estimatedMinutes
       : (task?.sessionMetadata?.targetPacingMinutes || 30);
-    setQuestionSecondsLeft(budget * 60);
-    setQuestionElapsedSeconds(0);
-    setIsQuestionTimerRunning(false);
+
+    // If currently running, log segment for current problem so time isn't lost
+    if (isThisSprintActive && focusElapsedSeconds > 0 && currentSubtask && logFocusSegment && task) {
+      logFocusSegment(task.id, focusElapsedSeconds, currentSubtask.id, currentSubtask.title);
+    }
+
+    setActiveSubtaskIndex(idx);
+
+    if (isThisSprintActive && switchFocusSubtask && sub) {
+      switchFocusSubtask(sub.id, sub.title, budget * 60);
+    } else {
+      setLocalElapsed(0);
+      setLocalRunning(false);
+    }
   };
 
-  // Question timer ticker
+  // Local fallback ticker
   useEffect(() => {
     let interval: number | null = null;
-    if (isQuestionTimerRunning) {
+    if (!isThisSprintActive && localRunning) {
       interval = window.setInterval(() => {
-        setQuestionSecondsLeft((prev) => Math.max(0, prev - 1));
-        setQuestionElapsedSeconds((prev) => prev + 1);
+        setLocalElapsed((prev) => prev + 1);
       }, 1000);
     }
     return () => {
       if (interval !== null) clearInterval(interval);
     };
-  }, [isQuestionTimerRunning]);
-
-  // Session timer ticker
-  useEffect(() => {
-    let interval: number | null = null;
-    if (isSessionRunning) {
-      interval = window.setInterval(() => {
-        setSessionSecondsLeft((prev) => Math.max(0, prev - 1));
-      }, 1000);
-    }
-    return () => {
-      if (interval !== null) clearInterval(interval);
-    };
-  }, [isSessionRunning]);
+  }, [isThisSprintActive, localRunning]);
 
   // Ambient sound lifecycle management & unmount cleanup
   useEffect(() => {
@@ -175,16 +217,37 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
   };
 
   const handleToggleTimer = () => {
-    const next = !isQuestionTimerRunning;
-    setIsQuestionTimerRunning(next);
-    setIsSessionRunning(next);
+    if (isThisSprintActive) {
+      if (isSprintRunning) {
+        pauseFocusSession?.();
+      } else {
+        resumeFocusSession?.();
+      }
+    } else {
+      if (startFocusSession && task) {
+        startFocusSession(
+          'sprint',
+          task.id,
+          task.title,
+          targetBudgetSeconds,
+          currentSubtask?.id || null,
+          currentSubtask?.title || null,
+          targetBudgetSeconds
+        );
+      } else {
+        setLocalRunning(!localRunning);
+      }
+    }
     audioEngine.playClickSound();
   };
 
   const handleResetTimer = () => {
-    setQuestionSecondsLeft(targetBudgetMins * 60);
-    setQuestionElapsedSeconds(0);
-    setIsQuestionTimerRunning(false);
+    if (isThisSprintActive && currentSubtask && switchFocusSubtask) {
+      switchFocusSubtask(currentSubtask.id, currentSubtask.title, targetBudgetSeconds);
+    } else {
+      setLocalElapsed(0);
+      setLocalRunning(false);
+    }
     audioEngine.playClickSound();
   };
 
@@ -194,7 +257,8 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
 
     // 1. Calculate time delta for banked budget
     const budgetSeconds = targetBudgetMins * 60;
-    const surplusSeconds = budgetSeconds - questionElapsedSeconds;
+    const elapsed = questionElapsedSeconds;
+    const surplusSeconds = budgetSeconds - elapsed;
     setBankedSeconds((prev) => prev + surplusSeconds);
 
     // 2. Mark current question completed
@@ -210,20 +274,32 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
       origin: { y: 0.6 },
     });
 
-    // 4. Update task total time spent
-    const minutesSpentSoFar = Math.ceil(questionElapsedSeconds / 60);
-    if (minutesSpentSoFar > 0) {
-      updateTask(task.id, {
-        timeSpentMinutes: (task.timeSpentMinutes || 0) + minutesSpentSoFar,
-      });
+    // 4. Log focus segment if running
+    if (elapsed > 0 && logFocusSegment && task) {
+      logFocusSegment(task.id, elapsed, currentSubtask.id, currentSubtask.title);
     }
 
     // 5. Advance to next uncompleted question
     const nextUncompleted = subtasks.findIndex((s, idx) => idx > activeSubtaskIndex && !s.completed);
-    if (nextUncompleted >= 0) {
-      selectSubtask(nextUncompleted);
-    } else if (activeSubtaskIndex < subtasks.length - 1) {
-      selectSubtask(activeSubtaskIndex + 1);
+    const nextIdx = nextUncompleted >= 0
+      ? nextUncompleted
+      : activeSubtaskIndex < subtasks.length - 1
+      ? activeSubtaskIndex + 1
+      : activeSubtaskIndex;
+
+    if (nextIdx !== activeSubtaskIndex) {
+      const nextSub = subtasks[nextIdx];
+      const budget = (nextSub?.estimatedMinutes && nextSub.estimatedMinutes > 0)
+        ? nextSub.estimatedMinutes
+        : (task?.sessionMetadata?.targetPacingMinutes || 30);
+      setActiveSubtaskIndex(nextIdx);
+      if (isThisSprintActive && switchFocusSubtask && nextSub) {
+        switchFocusSubtask(nextSub.id, nextSub.title, budget * 60);
+      } else {
+        setLocalElapsed(0);
+      }
+    } else if (isThisSprintActive && switchFocusSubtask) {
+      switchFocusSubtask(currentSubtask.id, currentSubtask.title, budgetSeconds);
     }
   };
 
@@ -295,6 +371,11 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {totalFocusedTodaySeconds > 0 && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[11px] font-bold text-amber-600 dark:text-amber-400 font-mono">
+                🎯 {formattedTodayFocus} focused today
+              </span>
+            )}
             <button
               type="button"
               onClick={() => setIsFullscreen((prev) => !prev)}
@@ -526,6 +607,14 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
                     {formatBankedTime(bankedSeconds)}
                   </span>
                 </div>
+              </div>
+
+              {/* Today's Cumulative Focus Total */}
+              <div className="pt-2.5 border-t border-[var(--border-hairline)] flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                <span className="font-medium">Total Focused Today:</span>
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                  {formattedTodayFocus}
+                </span>
               </div>
             </div>
 

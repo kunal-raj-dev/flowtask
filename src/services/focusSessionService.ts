@@ -5,6 +5,7 @@ const FOCUS_STORAGE_KEY = 'flowtask_active_focus_session';
 export const focusSessionService = {
   getStoredSession(): FocusSession | null {
     try {
+      if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') return null;
       const raw = localStorage.getItem(FOCUS_STORAGE_KEY);
       if (!raw) return null;
       return JSON.parse(raw) as FocusSession;
@@ -38,7 +39,10 @@ export const focusSessionService = {
     mode: FocusSessionMode,
     taskId: string | null = null,
     taskTitle: string | null = null,
-    targetDurationSec: number = mode === 'pomodoro' ? 25 * 60 : 0
+    targetDurationSec: number = mode === 'pomodoro' ? 25 * 60 : 0,
+    subtaskId: string | null = null,
+    subtaskTitle: string | null = null,
+    pacingSecondsPerUnit: number = 0
   ): FocusSession {
     const now = Date.now();
     const session: FocusSession = {
@@ -46,10 +50,14 @@ export const focusSessionService = {
       mode,
       taskId,
       taskTitle: taskTitle || (taskId ? 'Active Task' : 'Focus Session'),
+      subtaskId: subtaskId || undefined,
+      subtaskTitle: subtaskTitle || undefined,
       startedAt: now,
       pausedAt: null,
       accumulatedElapsedMs: 0,
       targetDurationSec,
+      pacingSecondsPerUnit: pacingSecondsPerUnit || undefined,
+      bankedSeconds: 0,
       state: 'running',
       pomodoroCycle: 1,
       pomodoroPhase: 'focus',
@@ -58,6 +66,15 @@ export const focusSessionService = {
 
     this.saveSession(session);
     return session;
+  },
+
+  updateSession(session: FocusSession, updates: Partial<FocusSession>): FocusSession {
+    const updated: FocusSession = {
+      ...session,
+      ...updates,
+    };
+    this.saveSession(updated);
+    return updated;
   },
 
   pauseSession(session: FocusSession): FocusSession {
@@ -91,10 +108,10 @@ export const focusSessionService = {
     return updated;
   },
 
-  stopSession(session: FocusSession): { finalElapsedSeconds: number } {
+  stopSession(session: FocusSession): { finalElapsedSeconds: number; session: FocusSession } {
     const totalElapsedSec = this.getElapsedSeconds(session);
     this.saveSession(null);
-    return { finalElapsedSeconds: totalElapsedSec };
+    return { finalElapsedSeconds: totalElapsedSec, session };
   },
 
   getElapsedSeconds(session: FocusSession, now: number = Date.now()): number {

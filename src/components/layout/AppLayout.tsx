@@ -58,6 +58,7 @@ export const AppLayout: React.FC = () => {
     setIsQuickAddOpen,
     focusSession,
     focusElapsedSeconds,
+    totalFocusedTodaySeconds,
     pauseFocusSession,
     resumeFocusSession,
     stopFocusSession,
@@ -214,6 +215,15 @@ export const AppLayout: React.FC = () => {
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
+
+  const formattedFocusedToday = useMemo(() => {
+    const hours = Math.floor(totalFocusedTodaySeconds / 3600);
+    const mins = Math.floor((totalFocusedTodaySeconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
+    }
+    return `${mins}m`;
+  }, [totalFocusedTodaySeconds]);
 
   const activeTimerTask = useMemo(
     () => (activeTimerTaskId ? tasks.find((t) => t.id === activeTimerTaskId) || null : null),
@@ -540,18 +550,22 @@ export const AppLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (focusSession.taskId) {
-                      setSelectedTaskId(focusSession.taskId);
+                    if (focusSession.mode === 'sprint') {
+                      openModal('studySprint', { taskId: focusSession.taskId });
                     } else if (focusSession.mode === 'pomodoro') {
+                      openModal('pomodoro', { taskId: focusSession.taskId });
+                    } else if (focusSession.taskId) {
+                      setSelectedTaskId(focusSession.taskId);
+                    } else {
                       openModal('pomodoro');
-                    } else if (focusSession.mode === 'sprint') {
-                      openModal('studySprint');
                     }
                   }}
-                  className="hover:underline truncate max-w-[150px]"
+                  className="hover:underline truncate max-w-[170px]"
                   title={`Focus session: "${focusSession.taskTitle}". Click to view details.`}
                 >
-                  {focusSession.taskTitle}
+                  {focusSession.subtaskTitle
+                    ? `${focusSession.taskTitle} • ${focusSession.subtaskTitle}`
+                    : focusSession.taskTitle}
                 </button>
                 <span className="font-mono text-[11px] bg-amber-500/25 px-1.5 py-0.5 rounded font-semibold text-amber-950 dark:text-amber-100">
                   {focusSession.targetDurationSec
@@ -649,6 +663,17 @@ export const AppLayout: React.FC = () => {
               )
             ) : (
               <div className="flex items-center gap-2">
+                {totalFocusedTodaySeconds > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => openModal('pomodoro')}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 hover:bg-amber-500/20 transition-all shadow-2xs cursor-pointer"
+                    title={`Total focused today: ${formattedFocusedToday}. Click to open Focus Mode.`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span className="font-mono font-bold">🎯 {formattedFocusedToday} Focused</span>
+                  </button>
+                )}
                 {totalTodayPlanned > 0 && (
                   <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] px-3 py-1 rounded-full bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)]">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -769,16 +794,18 @@ export const AppLayout: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  if (focusSession.taskId) {
-                    setSelectedTaskId(focusSession.taskId);
+                  if (focusSession.mode === 'sprint') {
+                    openModal('studySprint', focusSession.taskId ? { taskId: focusSession.taskId } : undefined);
                   } else if (focusSession.mode === 'pomodoro') {
+                    openModal('pomodoro', focusSession.taskId ? { taskId: focusSession.taskId } : undefined);
+                  } else if (focusSession.taskId) {
+                    setSelectedTaskId(focusSession.taskId);
+                  } else {
                     openModal('pomodoro');
-                  } else if (focusSession.mode === 'sprint') {
-                    openModal('studySprint');
                   }
                 }}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono text-[10px] font-bold border border-amber-500/30 shrink-0 mr-1"
-                title={`Active session: ${focusSession.taskTitle}`}
+                title={`Active ${focusSession.mode}: ${focusSession.taskTitle}`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full bg-amber-500 ${
@@ -797,15 +824,27 @@ export const AppLayout: React.FC = () => {
                 </span>
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => openModal('pomodoro')}
-                title="Launch Focus Mode"
-                aria-label="Launch Focus Mode"
-                className="p-2 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
-              >
-                <Timer size={18} />
-              </button>
+              <div className="flex items-center gap-1">
+                {totalFocusedTodaySeconds > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => openModal('pomodoro')}
+                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 font-mono text-[10px] font-bold shrink-0"
+                    title={`Total focused today: ${formattedFocusedToday}`}
+                  >
+                    <span>🎯 {formattedFocusedToday}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => openModal('pomodoro')}
+                  title="Launch Focus Mode"
+                  aria-label="Launch Focus Mode"
+                  className="p-2 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  <Timer size={18} />
+                </button>
+              </div>
             )}
 
             {/* Mobile Sync Indicator */}

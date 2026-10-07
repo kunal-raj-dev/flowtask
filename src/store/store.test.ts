@@ -122,5 +122,37 @@ describe('Zustand State Architecture Modernization', () => {
       useFocusStore.getState().stopFocusSession();
       expect(useFocusStore.getState().focusSession).toBeNull();
     });
+
+    it('supports study sprint mode with subtask tracking and switching', () => {
+      const session = useFocusStore.getState().startFocusSession(
+        'sprint',
+        'task-sprint-1',
+        'Algorithms Practice',
+        3600,
+        'sub-1',
+        'Two Sum',
+        900
+      );
+
+      expect(session.mode).toBe('sprint');
+      expect(session.subtaskId).toBe('sub-1');
+      expect(session.subtaskTitle).toBe('Two Sum');
+      expect(session.pacingSecondsPerUnit).toBe(900);
+      expect(useFocusStore.getState().focusSession?.subtaskTitle).toBe('Two Sum');
+
+      // Switch subtask to problem 2
+      useFocusStore.getState().switchSubtask('sub-2', 'Add Two Numbers', 1200);
+      const updated = useFocusStore.getState().focusSession;
+      expect(updated?.subtaskId).toBe('sub-2');
+      expect(updated?.subtaskTitle).toBe('Add Two Numbers');
+      expect(updated?.pacingSecondsPerUnit).toBe(1200);
+
+      // Update banked seconds
+      useFocusStore.getState().updateFocusSession({ bankedSeconds: 300 });
+      expect(useFocusStore.getState().focusSession?.bankedSeconds).toBe(300);
+
+      useFocusStore.getState().stopFocusSession();
+      expect(useFocusStore.getState().focusSession).toBeNull();
+    });
   });
 });

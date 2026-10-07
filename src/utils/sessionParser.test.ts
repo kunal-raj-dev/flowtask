@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizeTimeTo24h,
   calculateDurationMinutes,
+  extractTimeRange,
   parseTargetLine,
   parseStudySessions,
   convertSessionToTask,
@@ -125,4 +126,118 @@ task -> DSA question practise
     expect(task.subtasks[0].difficulty).toBe('MEDIUM');
     expect(task.subtasks[0].url).toContain('leetcode.com');
   });
+
+  it('extracts time ranges from various natural string formats', () => {
+    const range1 = extractTimeRange('Session 1: DSA Practice (8:30am - 11:30am)');
+    expect(range1?.start).toBe('08:30');
+    expect(range1?.end).toBe('11:30');
+    expect(range1?.duration).toBe(180);
+
+    const range2 = extractTimeRange('Web Dev 1:00pm - 3:30pm');
+    expect(range2?.start).toBe('13:00');
+    expect(range2?.end).toBe('15:30');
+    expect(range2?.duration).toBe(150);
+
+    const range3 = extractTimeRange('9am to 12pm');
+    expect(range3?.start).toBe('09:00');
+    expect(range3?.end).toBe('12:00');
+    expect(range3?.duration).toBe(180);
+
+    const range4 = extractTimeRange('14:00 - 17:00');
+    expect(range4?.start).toBe('14:00');
+    expect(range4?.end).toBe('17:00');
+    expect(range4?.duration).toBe(180);
+  });
+
+  it('parses intuitive Simple Markdown study sessions with difficulties and estimated minutes', () => {
+    const rawMarkdown = `
+Session 1: DSA Practice (8:30am - 11:30am)
+- Two Sum (Easy, 15m)
+- 3Sum (Medium, 30m)
+- Trapping Rain Water (Hard, 45m)
+
+Session 2: Web Development (1:00pm - 3:30pm)
+- JavaScript Async/Await module (45m)
+- Build Quiz Game UI (60m)
+- Review CSS Grid & Flexbox (25m)
+`;
+
+    const sessions = parseStudySessions(rawMarkdown);
+    expect(sessions.length).toBe(2);
+
+    // Session 1
+    const s1 = sessions[0];
+    expect(s1.sessionNumber).toBe(1);
+    expect(s1.sessionTopic).toBe('DSA Practice');
+    expect(s1.startTime).toBe('08:30');
+    expect(s1.endTime).toBe('11:30');
+    expect(s1.durationMinutes).toBe(180);
+    expect(s1.targets.length).toBe(3);
+
+    expect(s1.targets[0].title).toBe('Two Sum');
+    expect(s1.targets[0].difficulty).toBe('EASY');
+    expect(s1.targets[0].estimatedMinutes).toBe(15);
+
+    expect(s1.targets[1].title).toBe('3Sum');
+    expect(s1.targets[1].difficulty).toBe('MEDIUM');
+    expect(s1.targets[1].estimatedMinutes).toBe(30);
+
+    expect(s1.targets[2].title).toBe('Trapping Rain Water');
+    expect(s1.targets[2].difficulty).toBe('HARD');
+    expect(s1.targets[2].estimatedMinutes).toBe(45);
+
+    // Session 2
+    const s2 = sessions[1];
+    expect(s2.sessionNumber).toBe(2);
+    expect(s2.sessionTopic).toBe('Web Development');
+    expect(s2.startTime).toBe('13:00');
+    expect(s2.endTime).toBe('15:30');
+    expect(s2.durationMinutes).toBe(150);
+    expect(s2.targets.length).toBe(3);
+
+    expect(s2.targets[0].title).toBe('JavaScript Async/Await module');
+    expect(s2.targets[0].estimatedMinutes).toBe(45);
+    expect(s2.targets[1].title).toBe('Build Quiz Game UI');
+    expect(s2.targets[1].estimatedMinutes).toBe(60);
+    expect(s2.targets[2].title).toBe('Review CSS Grid & Flexbox');
+    expect(s2.targets[2].estimatedMinutes).toBe(25);
+  });
+
+  it('automatically wraps headerless task lists into a valid study session', () => {
+    const rawBullets = `
+- Two Sum (Easy, 15m)
+- 3Sum (Medium, 30m)
+- Trapping Rain Water (Hard, 45m)
+`;
+
+    const sessions = parseStudySessions(rawBullets);
+    expect(sessions.length).toBe(1);
+
+    const s = sessions[0];
+    expect(s.sessionTopic).toBe('Focus & Study Sprint');
+    expect(s.targets.length).toBe(3);
+    // Total duration auto-computed from sum of target estimates: 15 + 30 + 45 = 90
+    expect(s.durationMinutes).toBe(90);
+    expect(s.targetPacingMinutes).toBe(30);
+  });
+
+  it('handles markdown checkboxes, numbered items, and URLs', () => {
+    const rawChecklist = `
+Session 1: Sprint Checklist (9:00am - 11:00am)
+- [ ] 1. Two Sum (Easy, 15m) - https://leetcode.com/problems/two-sum
+- [x] 15. 3Sum (Medium, 30m)
+* Trapping Rain Water (Hard, 45 mins)
+`;
+
+    const sessions = parseStudySessions(rawChecklist);
+    expect(sessions.length).toBe(1);
+    const s = sessions[0];
+    expect(s.targets.length).toBe(3);
+    expect(s.targets[0].difficulty).toBe('EASY');
+    expect(s.targets[0].url).toBe('https://leetcode.com/problems/two-sum');
+    expect(s.targets[1].difficulty).toBe('MEDIUM');
+    expect(s.targets[2].difficulty).toBe('HARD');
+    expect(s.targets[2].estimatedMinutes).toBe(45);
+  });
 });
+

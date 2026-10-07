@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
-import type { Task, SubTask, Project, ViewId, Priority, CalendarEvent, InterruptionStash, SmartFilterView, SmartFilterPredicate, FocusSession, FocusSessionMode } from '../types/task';
+import type { Task, SubTask, Project, ViewId, Priority, CalendarEvent, InterruptionStash, SmartFilterView, SmartFilterPredicate, FocusSession, FocusSessionMode, FocusLog } from '../types/task';
 import { getTodayStr } from '../hooks/useCurrentDate';
+import { formatLocalDate } from '../utils/nlpParser';
 import { BUILT_IN_SMART_VIEWS } from '../utils/smartViewUtils';
 import { audioEngine, type SoundProfile } from '../utils/audioEngine';
 import { useAuth } from './AuthContext';
@@ -66,13 +67,26 @@ interface TaskContextType {
   setIsAuthModalOpen: (open: boolean) => void;
   forceSyncToCloud: () => Promise<void>;
 
-  // Focus Session Engine (Mini-player & Timers)
+  // Focus Session Engine (Mini-player, Study Sprints, & Timers)
   focusSession: FocusSession | null;
   focusElapsedSeconds: number;
-  startFocusSession: (mode: FocusSessionMode, taskId?: string | null, title?: string | null, targetSec?: number) => void;
+  focusLogs: FocusLog[];
+  totalFocusedTodaySeconds: number;
+  startFocusSession: (
+    mode: FocusSessionMode,
+    taskId?: string | null,
+    title?: string | null,
+    targetSec?: number,
+    subtaskId?: string | null,
+    subtaskTitle?: string | null,
+    pacingSec?: number
+  ) => void;
   pauseFocusSession: () => void;
   resumeFocusSession: () => void;
   stopFocusSession: () => void;
+  updateFocusSession: (updates: Partial<FocusSession>) => void;
+  switchFocusSubtask: (subtaskId: string, subtaskTitle: string, targetSec: number) => void;
+  logFocusSegment: (taskId: string | null, seconds: number, subtaskId?: string, subtaskTitle?: string) => void;
 
   // Backwards-compatible stopwatch hooks
   activeTimerTaskId: string | null;
@@ -261,14 +275,34 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     () => ({ ...DEFAULT_WORKFLOW_SETTINGS, ...((preferences.settings as Partial<UserWorkflowSettings>) || {}) }),
     [preferences.settings]
   );
-  const focusSession = (preferences.focusSession as FocusSession | null) || null;
+  const focusSession = (preferences.focusSession as FocusSession | null) || focusState.focusSession;
+  const focusLogs = useMemo<FocusLog[]>(
+    () => (Array.isArray(preferences.focusLogs) ? (preferences.focusLogs as FocusLog[]) : []),
+    [preferences.focusLogs]
+  );
+  const totalFocusedTodaySeconds = useMemo(() => {
+    const completedToday = focusLogs
+      .filter((log) => log.endedAt && formatLocalDate(new Date(log.endedAt)) === todayStr)
+      .reduce((acc, log) => acc + (log.seconds || 0), 0);
+
+    const isLiveToday =
+      focusSession &&
+      (focusSession.state === 'running' || focusSession.state === 'paused') &&
+      formatLocalDate(new Date(focusSession.startedAt)) === todayStr;
+    const liveSec = isLiveToday ? focusElapsedSeconds : 0;
+
+    return completedToday + liveSec;
+  }, [focusLogs, focusSession, focusElapsedSeconds, todayStr]);
+
   const interruptionStash = (preferences.interruptionStash as InterruptionStash | null) || null;
   const calendarIcsUrl = (preferences.calendarUrl as string) || '';
   const overdueTasks = tasks.filter(t => isActiveTask(t) && t.dueDate && t.dueDate < todayStr);
 
   useEffect(() => {
-    useFocusStore.getState().setFocusSession(focusSession);
-  }, [focusSession]);
+    if (preferences.focusSession) {
+      useFocusStore.getState().setFocusSession(preferences.focusSession as FocusSession);
+    }
+  }, [preferences.focusSession]);
 
   useEffect(() => {
     const abort = new AbortController();
@@ -392,37 +426,169 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     batchUpdateTasks(current().tasks.filter(t => isActiveTask(t) && t.dueDate && t.dueDate < todayStr).map(t => t.id), action === 'today' ? { plannedDate: todayStr, isSomeday: false } : { plannedDate: undefined, isSomeday: true });
   };
   function stopFocusSession() {
-    useFocusStore.getState().stopFocusSession();
+    const result = useFocusStore.getState().stopFocusSession();
     store.run('Log focus session', r => {
-      const session = r.preferences.focusSession as FocusSession | null; if (!session) return r;
-      const logs = (r.preferences.focusLogs || []) as { id: string; seconds: number; taskId: string | null; endedAt: number }[];
-      if (logs.some(log => log.id === session.id)) return { ...r, preferences: { ...r.preferences, focusSession: null } };
-      const seconds = focusSessionService.getElapsedSeconds(session);
-      return { ...r, tasks: r.tasks.map(t => t.id === session.taskId ? { ...t, timeSpentMinutes: (t.timeSpentMinutes || 0) + seconds / 60 } : t), preferences: { ...r.preferences, focusSession: null, focusLogs: [...logs, { id: session.id, seconds, taskId: session.taskId, endedAt: Date.now() }] } };
+      const session = (r.preferences.focusSession as FocusSession | null) || result.session;
+      if (!session) return { ...r, preferences: { ...r.preferences, focusSession: null } };
+      const logs = (r.preferences.focusLogs || []) as FocusLog[];
+      if (logs.some(log => log.id === session.id)) {
+        return { ...r, preferences: { ...r.preferences, focusSession: null } };
+      }
+      const seconds = result.finalElapsedSeconds || focusSessionService.getElapsedSeconds(session);
+      if (seconds <= 0) {
+        return { ...r, preferences: { ...r.preferences, focusSession: null } };
+      }
+      const newLog: FocusLog = {
+        id: session.id,
+        seconds,
+        taskId: session.taskId,
+        taskTitle: session.taskTitle,
+        subtaskId: session.subtaskId,
+        subtaskTitle: session.subtaskTitle,
+        mode: session.mode,
+        startedAt: session.startedAt,
+        endedAt: Date.now(),
+      };
+      const minutesSpent = Math.max(1, Math.round(seconds / 60));
+      return {
+        ...r,
+        tasks: r.tasks.map(t => t.id === session.taskId
+          ? {
+              ...t,
+              timeSpentMinutes: (t.timeSpentMinutes || 0) + minutesSpent,
+              subtasks: session.subtaskId
+                ? t.subtasks.map(s => s.id === session.subtaskId ? { ...s, timeSpentMinutes: (s.timeSpentMinutes || 0) + minutesSpent } : s)
+                : t.subtasks
+            }
+          : t),
+        preferences: {
+          ...r.preferences,
+          focusSession: null,
+          focusLogs: [...logs, newLog]
+        }
+      };
     }, false);
   }
-  function startFocusSession(mode: FocusSessionMode, taskId: string | null = null, title: string | null = null, targetSec = mode === 'pomodoro' ? 1500 : 0) {
+
+  function startFocusSession(
+    mode: FocusSessionMode,
+    taskId: string | null = null,
+    title: string | null = null,
+    targetSec = mode === 'pomodoro' ? 1500 : 0,
+    subtaskId: string | null = null,
+    subtaskTitle: string | null = null,
+    pacingSec: number = 0
+  ) {
     if (current().preferences.focusSession) stopFocusSession();
-    const session: FocusSession = { id: crypto.randomUUID(), mode, taskId, taskTitle: title || 'Focus session', startedAt: Date.now(), accumulatedElapsedMs: 0, targetDurationSec: targetSec, state: 'running', pomodoroCycle: 1, pomodoroPhase: 'focus' };
+    const taskObj = taskId ? current().tasks.find(t => t.id === taskId) : null;
+    const session: FocusSession = {
+      id: crypto.randomUUID(),
+      mode,
+      taskId,
+      taskTitle: title || taskObj?.title || (taskId ? 'Active Task' : 'Focus session'),
+      subtaskId: subtaskId || undefined,
+      subtaskTitle: subtaskTitle || undefined,
+      startedAt: Date.now(),
+      accumulatedElapsedMs: 0,
+      targetDurationSec: targetSec,
+      state: 'running',
+      pomodoroCycle: 1,
+      pomodoroPhase: 'focus',
+      pacingSecondsPerUnit: pacingSec || undefined,
+      bankedSeconds: 0,
+      loggedSegments: [],
+    };
     setWorkspacePreference('focusSession', session);
     useFocusStore.getState().setFocusSession(session);
   }
+
   const pauseFocusSession = () => {
-    const session = current().preferences.focusSession as FocusSession | null;
+    const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
     if (session?.state === 'running') {
-      const updated: FocusSession = { ...session, accumulatedElapsedMs: session.accumulatedElapsedMs + Math.max(0, Date.now() - session.startedAt), pausedAt: Date.now(), state: 'paused' };
+      const updated: FocusSession = {
+        ...session,
+        accumulatedElapsedMs: session.accumulatedElapsedMs + Math.max(0, Date.now() - session.startedAt),
+        pausedAt: Date.now(),
+        state: 'paused',
+      };
       setWorkspacePreference('focusSession', updated);
       useFocusStore.getState().setFocusSession(updated);
     }
   };
+
   const resumeFocusSession = () => {
-    const session = current().preferences.focusSession as FocusSession | null;
+    const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
     if (session?.state === 'paused') {
-      const updated: FocusSession = { ...session, startedAt: Date.now(), pausedAt: null, state: 'running' };
+      const updated: FocusSession = {
+        ...session,
+        startedAt: Date.now(),
+        pausedAt: null,
+        state: 'running',
+      };
       setWorkspacePreference('focusSession', updated);
       useFocusStore.getState().setFocusSession(updated);
     }
   };
+
+  const updateFocusSession = (updates: Partial<FocusSession>) => {
+    const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
+    if (!session) return;
+    const updated: FocusSession = { ...session, ...updates };
+    setWorkspacePreference('focusSession', updated);
+    useFocusStore.getState().setFocusSession(updated);
+  };
+
+  const switchFocusSubtask = (subtaskId: string, subtaskTitle: string, targetSec: number) => {
+    const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
+    if (!session) return;
+    const now = Date.now();
+    const updated: FocusSession = {
+      ...session,
+      subtaskId,
+      subtaskTitle,
+      targetDurationSec: targetSec,
+      startedAt: now,
+      accumulatedElapsedMs: 0,
+    };
+    setWorkspacePreference('focusSession', updated);
+    useFocusStore.getState().setFocusSession(updated);
+  };
+
+  const logFocusSegment = (taskId: string | null, seconds: number, subtaskId?: string, subtaskTitle?: string) => {
+    if (seconds <= 0) return;
+    store.run('Log focus segment', r => {
+      const logs = (r.preferences.focusLogs || []) as FocusLog[];
+      const newLog: FocusLog = {
+        id: crypto.randomUUID(),
+        seconds,
+        taskId,
+        taskTitle: taskId ? r.tasks.find(t => t.id === taskId)?.title : undefined,
+        subtaskId,
+        subtaskTitle,
+        mode: 'sprint',
+        startedAt: Date.now() - seconds * 1000,
+        endedAt: Date.now(),
+      };
+      const minutesSpent = Math.max(1, Math.round(seconds / 60));
+      const updatedTasks = taskId
+        ? r.tasks.map(t => t.id === taskId
+            ? {
+                ...t,
+                timeSpentMinutes: (t.timeSpentMinutes || 0) + minutesSpent,
+                subtasks: subtaskId
+                  ? t.subtasks.map(s => s.id === subtaskId ? { ...s, timeSpentMinutes: (s.timeSpentMinutes || 0) + minutesSpent } : s)
+                  : t.subtasks
+              }
+            : t)
+        : r.tasks;
+      return {
+        ...r,
+        tasks: updatedTasks,
+        preferences: { ...r.preferences, focusLogs: [...logs, newLog] }
+      };
+    }, false);
+  };
+
   const activeTimerTaskId = focusSession?.taskId || null;
   const startTaskTimer = (id: string) => startFocusSession('stopwatch', id, current().tasks.find(t => t.id === id)?.title);
   const stopTaskTimer = stopFocusSession;
@@ -491,10 +657,15 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     forceSyncToCloud,
     focusSession,
     focusElapsedSeconds,
+    focusLogs,
+    totalFocusedTodaySeconds,
     startFocusSession,
     pauseFocusSession,
     resumeFocusSession,
     stopFocusSession,
+    updateFocusSession,
+    switchFocusSubtask,
+    logFocusSegment,
     activeTimerTaskId,
     activeTimerSeconds,
     startTaskTimer,
@@ -582,7 +753,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     workspaceId, preferences, tasks, projects, activeView, viewLayout, selectedTaskId,
     searchQuery, priorityFilter, quickWinsOnly, theme, soundEnabled, soundProfile,
     overdueTasks, isTriageDismissed, toast, syncStatus, lastSyncedAt, isAuthModalOpen,
-    focusSession, focusElapsedSeconds, activeTimerTaskId, activeTimerSeconds,
+    focusSession, focusElapsedSeconds, focusLogs, totalFocusedTodaySeconds, activeTimerTaskId, activeTimerSeconds,
     selectedTaskIds, interruptionStash, isInterruptionModalOpen, isQuickAddOpen,
     quickAddDraft, isTemplatePickerOpen, isWeeklyReviewOpen, calendarEvents,
     calendarIcsUrl, isEveningShutdownOpen, isShutdownDismissed, smartViews,
