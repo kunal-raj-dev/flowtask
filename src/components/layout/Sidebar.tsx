@@ -1,5 +1,6 @@
 import { isTodayTask } from '../../utils/taskSelectors';
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import {
@@ -319,18 +320,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }
                   }}
                   title={`${item.label}${item.count !== null && item.count > 0 ? ` (${item.count})` : ''}`}
-                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors active:scale-95 ${
                     isActive
-                      ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
+                      ? 'text-[var(--text-primary)] font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
                   }`}
                 >
-                  <Icon size={16} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
+                  {isActive && (
+                    <motion.div
+                      layoutId="collapsedSidebarActiveIndicator"
+                      className="absolute inset-0 bg-[var(--bg-surface-l2)] rounded-xl shadow-subtle border border-[var(--border-hairline)] card-surface z-0"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <Icon size={16} strokeWidth={1.75} className={`relative z-10 ${isActive ? item.color : 'text-[var(--text-muted)]'}`} />
                   {item.count !== null && item.count > 0 && !isActive && (
-                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-500 ring-2 ring-[var(--bg-surface-l1)]" />
+                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-500 ring-2 ring-[var(--bg-surface-l1)] z-10" />
                   )}
                   {item.isNew && (
-                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[var(--bg-surface-l1)]" />
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[var(--bg-surface-l1)] z-10" />
                   )}
                 </button>
               </React.Fragment>
@@ -434,24 +442,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }
           onItemClick?.();
         }}
-        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-[0.98] ${
+        className={`relative w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors active:scale-[0.98] ${
           isActive
-            ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
-            : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
+            ? 'text-[var(--text-primary)] font-semibold'
+            : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
         }`}
       >
-        <div className="flex items-center gap-2.5">
+        {isActive && (
+          <motion.div
+            layoutId="sidebarActiveNavIndicator"
+            className="absolute inset-0 bg-[var(--bg-surface-l2)] rounded-xl shadow-subtle border border-[var(--border-hairline)] card-surface z-0"
+            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+          />
+        )}
+        <div className="relative z-10 flex items-center gap-2.5">
           <div className={`p-1 rounded-lg ${isActive ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
-            <Icon size={14} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
+            <Icon size={14} strokeWidth={1.75} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
           </div>
           <span>{item.label}</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="relative z-10 flex items-center gap-1.5">
           {item.count !== null && item.count > 0 && (
             <Badge
               size="xs"
               variant={isActive ? 'brand' : 'neutral'}
-              className="font-mono text-[10px]"
+              className="font-mono tabular-nums text-[10px]"
             >
               {item.count}
             </Badge>

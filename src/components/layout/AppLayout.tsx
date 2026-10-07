@@ -514,17 +514,17 @@ export const AppLayout: React.FC = () => {
               title="Toggle Sidebar ([)"
               aria-label="Toggle Sidebar ([)"
               aria-expanded={!isSidebarCollapsed}
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
             >
-              <Menu size={17} />
+              <Menu size={17} strokeWidth={1.75} />
             </button>
 
             {/* Breadcrumb Title */}
             <div className="flex items-center gap-2 truncate">
-              <span className="text-xs font-semibold text-[var(--text-muted)] tracking-wider uppercase">
+              <span className="text-xs font-semibold text-[var(--text-muted)] tracking-wider uppercase shrink-0">
                 FlowTask
               </span>
-              <span className="text-xs text-[var(--text-muted)]">/</span>
+              <span className="text-xs text-[var(--text-muted)] shrink-0">/</span>
               <span className="font-bold text-sm tracking-tight text-[var(--text-primary)] truncate">
                 {getViewTitle()}
               </span>
@@ -567,7 +567,7 @@ export const AppLayout: React.FC = () => {
                     ? `${focusSession.taskTitle} • ${focusSession.subtaskTitle}`
                     : focusSession.taskTitle}
                 </button>
-                <span className="font-mono text-[11px] bg-amber-500/25 px-1.5 py-0.5 rounded font-semibold text-amber-950 dark:text-amber-100">
+                <span className="font-mono tabular-nums text-[11px] bg-amber-500/25 px-1.5 py-0.5 rounded font-semibold text-amber-950 dark:text-amber-100">
                   {focusSession.targetDurationSec
                     ? formatStopwatch(
                         Math.max(
@@ -583,9 +583,9 @@ export const AppLayout: React.FC = () => {
                     onClick={pauseFocusSession}
                     title="Pause Focus Session"
                     aria-label="Pause Focus Session"
-                    className="p-1 hover:bg-amber-500/20 rounded-md transition-colors"
+                    className="p-1 hover:bg-amber-500/20 rounded-md transition-colors active:scale-90"
                   >
-                    <Pause size={12} className="fill-current text-amber-700 dark:text-amber-300" />
+                    <Pause size={12} strokeWidth={1.75} className="fill-current text-amber-700 dark:text-amber-300" />
                   </button>
                 ) : (
                   <button
@@ -593,9 +593,9 @@ export const AppLayout: React.FC = () => {
                     onClick={resumeFocusSession}
                     title="Resume Focus Session"
                     aria-label="Resume Focus Session"
-                    className="p-1 hover:bg-amber-500/20 rounded-md transition-colors"
+                    className="p-1 hover:bg-amber-500/20 rounded-md transition-colors active:scale-90"
                   >
-                    <Play size={12} className="fill-current text-amber-700 dark:text-amber-300" />
+                    <Play size={12} strokeWidth={1.75} className="fill-current text-amber-700 dark:text-amber-300" />
                   </button>
                 )}
                 <button
@@ -603,9 +603,9 @@ export const AppLayout: React.FC = () => {
                   onClick={stopFocusSession}
                   title="Finish / Stop Session"
                   aria-label="Finish / Stop Session"
-                  className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-md transition-colors text-amber-700 dark:text-amber-300"
+                  className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-md transition-colors text-amber-700 dark:text-amber-300 active:scale-90"
                 >
-                  <X size={12} />
+                  <X size={12} strokeWidth={1.75} />
                 </button>
               </div>
             ) : activeTimerTaskId && activeTimerTask ? (
@@ -620,7 +620,7 @@ export const AppLayout: React.FC = () => {
                   >
                     {activeTimerTask.title}
                   </button>
-                  <span className="font-mono text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
+                  <span className="font-mono tabular-nums text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
                     {formatStopwatch(activeTimerSeconds)}
                   </span>
                   <button
@@ -628,9 +628,9 @@ export const AppLayout: React.FC = () => {
                     onClick={() => toggleTaskTimer(activeTimerTaskId)}
                     title="Pause Timer"
                     aria-label="Pause Timer"
-                    className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors"
+                    className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors active:scale-90"
                   >
-                    <Pause size={12} className="fill-current" />
+                    <Pause size={12} strokeWidth={1.75} className="fill-current" />
                   </button>
                 </div>
               ) : (
@@ -644,7 +644,7 @@ export const AppLayout: React.FC = () => {
                   >
                     {activeTimerTask.title}
                   </button>
-                  <span className="font-mono text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
+                  <span className="font-mono tabular-nums text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
                     {formatStopwatch(activeTimerSeconds)}
                   </span>
                   <span className="text-[9px] uppercase tracking-wider bg-amber-500/25 px-1 py-0.2 rounded text-amber-900 dark:text-amber-200">
@@ -655,9 +655,9 @@ export const AppLayout: React.FC = () => {
                     onClick={() => toggleTaskTimer(activeTimerTaskId)}
                     title="Resume Timer"
                     aria-label="Resume Timer"
-                    className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors"
+                    className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors active:scale-90"
                   >
-                    <Play size={12} className="fill-current" />
+                    <Play size={12} strokeWidth={1.75} className="fill-current" />
                   </button>
                 </div>
               )
@@ -671,13 +671,13 @@ export const AppLayout: React.FC = () => {
                     title={`Total focused today: ${formattedFocusedToday}. Click to open Focus Mode.`}
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span className="font-mono font-bold">🎯 {formattedFocusedToday} Focused</span>
+                    <span className="font-mono tabular-nums font-bold">🎯 {formattedFocusedToday} Focused</span>
                   </button>
                 )}
                 {totalTodayPlanned > 0 && (
                   <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] px-3 py-1 rounded-full bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)]">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span>
+                    <span className="tabular-nums">
                       {todayDoneCount}/{totalTodayPlanned} Today ({todayPercent}%)
                     </span>
                   </div>
@@ -688,7 +688,7 @@ export const AppLayout: React.FC = () => {
                   title="Launch Focus Mode & Pomodoro Timer"
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 bg-[var(--bg-surface-l2)] hover:bg-amber-500/10 border border-[var(--border-hairline)] hover:border-amber-500/30 transition-all shadow-2xs active:scale-95"
                 >
-                  <Timer size={13} className="text-amber-500" />
+                  <Timer size={13} strokeWidth={1.75} className="text-amber-500" />
                   <span>Focus</span>
                 </button>
               </div>
@@ -702,7 +702,7 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={() => setIsAuthModalOpen(true)}
               title={`Cloud Database Sync: ${syncStatus === 'synced' ? (user?.displayName || user?.email || 'Synced') : syncStatus}. Click for account settings.`}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
             >
               <span
                 className={`w-2 h-2 rounded-full shrink-0 ${
@@ -715,7 +715,7 @@ export const AppLayout: React.FC = () => {
                     : 'bg-stone-400'
                 }`}
               />
-              <span className="text-[11px] font-mono hidden xl:inline text-[var(--text-muted)]">
+              <span className="text-[11px] font-mono tabular-nums hidden xl:inline text-[var(--text-muted)]">
                 {syncStatus === 'synced'
                   ? user && !isAnonymous
                     ? user.displayName || user.email?.split('@')[0]
@@ -732,7 +732,7 @@ export const AppLayout: React.FC = () => {
             <Button
               variant="primary"
               size="sm"
-              leftIcon={<Plus size={13} />}
+              leftIcon={<Plus size={13} strokeWidth={1.75} />}
               onClick={() => setIsQuickAddOpen(true)}
               title="Quick Add Task"
             >
@@ -745,9 +745,9 @@ export const AppLayout: React.FC = () => {
               onClick={() => openModal('commandPalette')}
               title="Search and commands (Ctrl+K or ⌘K)"
               aria-label="Search and commands"
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-subtle cursor-pointer group"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shadow-subtle cursor-pointer group active:scale-95"
             >
-              <Search size={14} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
+              <Search size={14} strokeWidth={1.75} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
               <span className="hidden xl:inline text-xs text-[var(--text-muted)] font-medium">Search & jump to...</span>
               <Kbd size="xs" className="hidden lg:inline-flex opacity-85">⌘K</Kbd>
             </button>
@@ -758,9 +758,9 @@ export const AppLayout: React.FC = () => {
               onClick={() => openModal('settings')}
               title="Preferences & Settings (Ctrl+,)"
               aria-label="Preferences and Settings"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
             >
-              <Settings size={16} />
+              <Settings size={16} strokeWidth={1.75} />
             </button>
           </div>
         </header>
@@ -776,7 +776,7 @@ export const AppLayout: React.FC = () => {
               aria-label="Open navigation menu"
               className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
             >
-              <Menu size={20} />
+              <Menu size={20} strokeWidth={1.75} />
             </button>
             <div className="flex items-center gap-1.5 truncate">
               <span className="font-bold text-sm tracking-tight text-[var(--text-primary)] truncate">
@@ -804,7 +804,7 @@ export const AppLayout: React.FC = () => {
                     openModal('pomodoro');
                   }
                 }}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono text-[10px] font-bold border border-amber-500/30 shrink-0 mr-1"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono tabular-nums text-[10px] font-bold border border-amber-500/30 shrink-0 mr-1 active:scale-95"
                 title={`Active ${focusSession.mode}: ${focusSession.taskTitle}`}
               >
                 <span
@@ -829,7 +829,7 @@ export const AppLayout: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => openModal('pomodoro')}
-                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 font-mono text-[10px] font-bold shrink-0"
+                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 font-mono tabular-nums text-[10px] font-bold shrink-0 active:scale-95"
                     title={`Total focused today: ${formattedFocusedToday}`}
                   >
                     <span>🎯 {formattedFocusedToday}</span>
@@ -840,9 +840,9 @@ export const AppLayout: React.FC = () => {
                   onClick={() => openModal('pomodoro')}
                   title="Launch Focus Mode"
                   aria-label="Launch Focus Mode"
-                  className="p-2 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                  className="p-2 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
                 >
-                  <Timer size={18} />
+                  <Timer size={18} strokeWidth={1.75} />
                 </button>
               </div>
             )}
@@ -853,7 +853,7 @@ export const AppLayout: React.FC = () => {
               onClick={() => setIsAuthModalOpen(true)}
               title="Cloud Sync"
               aria-label="Cloud Sync"
-              className="p-2 text-[var(--text-secondary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-2 text-[var(--text-secondary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
             >
               <span
                 className={`block w-2.5 h-2.5 rounded-full ${
@@ -875,7 +875,7 @@ export const AppLayout: React.FC = () => {
               aria-label="Search tasks"
               className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
             >
-              <Search size={18} />
+              <Search size={18} strokeWidth={1.75} />
             </button>
 
             {/* Settings */}
@@ -885,7 +885,7 @@ export const AppLayout: React.FC = () => {
               aria-label="Preferences and Settings"
               className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
             >
-              <Settings size={18} />
+              <Settings size={18} strokeWidth={1.75} />
             </button>
           </div>
         </header>

@@ -54,14 +54,18 @@
   --color-brand-border: rgba(217, 119, 6, 0.22);
   --color-focus-ring: rgba(217, 119, 6, 0.35);
 
-  /* Chromatic Slate Drop Shadows */
-  --shadow-subtle: 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.02);
-  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 4px 14px -2px rgba(15, 23, 42, 0.04);
-  --shadow-elevated: 0 2px 4px -1px rgba(15, 23, 42, 0.03), 0 14px 32px -4px rgba(15, 23, 42, 0.08);
-  --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  /* Chromatic Slate Drop Shadows - Jakub Krehel multi-layered ambient depth */
+  --shadow-subtle: 0 0 0 1px rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 0 0 1px rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  --shadow-elevated: 0 0 0 1px rgba(15, 23, 42, 0.05), 0 3px 6px -1px rgba(15, 23, 42, 0.06), 0 12px 28px -4px rgba(15, 23, 42, 0.09);
+  --shadow-modal: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 20px 48px -12px rgba(15, 23, 42, 0.18), 0 8px 16px -4px rgba(15, 23, 42, 0.08);
 
   /* Rule of 3 Golden Amber Focus Glow */
   --shadow-glow-amber: 0 0 24px -2px rgba(245, 158, 11, 0.22), 0 0 0 1px rgba(245, 158, 11, 0.4);
+
+  /* Emil Kowalski / Linear Spring Curves */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
 
   color-scheme: light;
 }
@@ -94,11 +98,11 @@
   --color-brand-border: rgba(245, 158, 11, 0.28);
   --color-focus-ring: rgba(245, 158, 11, 0.4);
 
-  /* Dark Elevation Shadows */
-  --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 2px 8px -2px rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-elevated: 0 12px 32px -4px rgba(0, 0, 0, 0.6), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
-  --shadow-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  /* Dark Elevation Shadows - Deep Obsidian CNC Machined Depth */
+  --shadow-subtle: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 2px 8px -2px rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 12px 32px -4px rgba(0, 0, 0, 0.6), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 24px 48px -12px rgba(0, 0, 0, 0.85);
 
   /* Dark Rule of 3 Golden Amber Focus Glow */
   --shadow-glow-amber: 0 0 28px -4px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.45);
@@ -515,6 +519,19 @@ html, body {
 .touch-target {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* Tabular Numerals for Telemetry and Clocks */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tactile Spring Press Physics */
+.active-press {
+  transition: transform 0.12s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.active-press:active {
+  transform: scale(0.97);
 }
 
 /* Accessible Reduced Motion (WCAG 2.2 AA) */

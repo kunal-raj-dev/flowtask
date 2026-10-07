@@ -314,7 +314,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       <button
         type="button"
         onClick={handleToggleStatus}
-        className={`mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-200 active:scale-90 focus-ring ${
+        className={`mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-200 active:scale-90 focus-ring cursor-pointer ${
           isDone
             ? 'bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--bg-main)] shadow-xs scale-100'
             : 'border-[var(--border-strong)] hover:border-[var(--color-brand)] hover:ring-2 hover:ring-[var(--color-focus-ring)] bg-transparent'
@@ -326,7 +326,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="3.5"
+            strokeWidth="3.2"
             strokeLinecap="round"
             strokeLinejoin="round"
             className="w-3 h-3 animate-check-spring"
@@ -439,7 +439,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     : 'text-[var(--text-secondary)] border-[var(--border-subtle)] bg-[var(--bg-surface-l2)] hover:border-amber-500/30'
                 }`}
               >
-                <Calendar size={11} />
+                <Calendar size={11} strokeWidth={1.75} />
                 <span>{formatDueDateLabel(task.dueDate)}</span>
                 {task.dueTime ? ` @ ${task.dueTime}` : ''}
               </button>
@@ -456,7 +456,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 title="Quick schedule due date"
                 className="opacity-0 group-hover:opacity-100 sm:inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-dashed border-[var(--border-strong)] hover:border-amber-500 text-[var(--text-muted)] hover:text-amber-500 transition-all cursor-pointer"
               >
-                <Calendar size={10} />
+                <Calendar size={10} strokeWidth={1.75} />
                 <span>+ Date</span>
               </button>
               {isSnoozeOpen && renderSnoozeMenu()}
@@ -465,8 +465,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Subtasks progress pill */}
           {totalSubtasks > 0 && (
-            <Badge variant="neutral" size="xs">
-              <ListTodo size={11} />
+            <Badge variant="neutral" size="xs" className="tabular-nums font-mono">
+              <ListTodo size={11} strokeWidth={1.75} />
               {completedSubtasks}/{totalSubtasks}
             </Badge>
           )}
@@ -478,21 +478,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </Badge>
           )}
           {task.scheduledStart && !isDone && (
-            <Badge variant="teal" size="xs">
-              <Clock size={10} />
+            <Badge variant="teal" size="xs" className="tabular-nums font-mono">
+              <Clock size={10} strokeWidth={1.75} />
               {task.scheduledStart}{task.scheduledEnd ? `–${task.scheduledEnd}` : ''}
             </Badge>
           )}
           {task.sessionMetadata?.pacingMinutesPerQuestion && (
-            <Badge variant="brand" size="xs">
+            <Badge variant="brand" size="xs" className="tabular-nums font-mono">
               ⚡ {task.sessionMetadata.pacingMinutesPerQuestion}m/Q
             </Badge>
           )}
 
           {/* Estimated duration */}
           {Boolean(task.estimatedMinutes && task.estimatedMinutes > 0) && !isDone && (
-            <Badge variant="neutral" size="xs">
-              <Clock size={11} />
+            <Badge variant="neutral" size="xs" className="tabular-nums font-mono">
+              <Clock size={11} strokeWidth={1.75} />
               {formatEstimatedDuration(task.estimatedMinutes!)}
             </Badge>
           )}
@@ -500,7 +500,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* Recurring badge */}
           {task.recurrence && task.recurrence !== 'none' && (
             <Badge variant="brand" size="xs">
-              <Repeat size={11} />
+              <Repeat size={11} strokeWidth={1.75} />
               <span className="capitalize">
                 {task.recurrence === 'custom' && task.customRecurrence
                   ? `Every ${task.customRecurrence.interval === 1 ? '' : task.customRecurrence.interval + ' '}${task.customRecurrence.unit}`
@@ -539,7 +539,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               size="xs"
               title={`Blocked by: ${blockedInfo.blockingTasks.map((t) => t.title).join(', ')}`}
             >
-              <Lock size={10} className="text-rose-500 shrink-0" />
+              <Lock size={10} strokeWidth={1.75} className="text-rose-500 shrink-0" />
               <span>Blocked ({blockedInfo.blockingTasks.length})</span>
             </Badge>
           )}
@@ -547,7 +547,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* Active Live Stopwatch pill */}
           {isActiveTimer && (
             isTimerRunning ? (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/35 animate-pulse shadow-xs">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-mono tabular-nums font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/35 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
                 ⏱️ {formatStopwatch(activeTimerSeconds)}
               </span>
@@ -558,7 +558,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   toggleTaskTimer(task.id);
                 }}
                 title="Timer paused. Click to resume."
-                className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-dashed border-amber-500/50 shadow-xs cursor-pointer hover:bg-amber-500/20 transition-all select-none"
+                className="inline-flex items-center gap-1.5 text-[11px] font-mono tabular-nums font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-dashed border-amber-500/50 shadow-xs cursor-pointer hover:bg-amber-500/20 transition-all select-none"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500/70" />
                 <span>⏸️ {formatStopwatch(activeTimerSeconds)}</span>
@@ -571,8 +571,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Time spent logged previously */}
           {Boolean(task.timeSpentMinutes && task.timeSpentMinutes > 0 && !isActiveTimer) && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-              <Clock size={11} />
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 tabular-nums font-mono">
+              <Clock size={11} strokeWidth={1.75} />
               {task.timeSpentMinutes}m spent
             </span>
           )}
@@ -645,9 +645,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             }`}
           >
             {isTimerRunning ? (
-              <Pause size={16} className="fill-current" />
+              <Pause size={15} strokeWidth={1.75} className="fill-current" />
             ) : (
-              <Play size={16} className="fill-current" />
+              <Play size={15} strokeWidth={1.75} className="fill-current" />
             )}
           </button>
         )}
@@ -658,13 +658,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             onClick={() => toggleTaskPinToday(task.id)}
             title={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
             aria-label={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
-            className={`p-2 rounded-xl transition-colors ${
+            className={`p-2 rounded-xl transition-colors active:scale-90 ${
               task.isPinnedToday
                 ? 'text-amber-500 bg-amber-500/10'
                 : 'text-stone-400 hover:text-amber-500 active:bg-stone-200/50 dark:active:bg-white/[0.06]'
             }`}
           >
-            <Star size={16} className={task.isPinnedToday ? 'fill-amber-500' : ''} />
+            <Star size={15} strokeWidth={1.75} className={task.isPinnedToday ? 'fill-amber-500' : ''} />
           </button>
         )}
 
@@ -674,13 +674,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             onClick={() => updateTask(task.id, { isEvening: !task.isEvening })}
             title={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
             aria-label={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
-            className={`p-2 rounded-xl transition-colors ${
+            className={`p-2 rounded-xl transition-colors active:scale-90 ${
               task.isEvening
                 ? 'text-indigo-500 bg-indigo-500/15'
                 : 'text-stone-400 hover:text-indigo-500 active:bg-stone-200/50 dark:active:bg-white/[0.06]'
             }`}
           >
-            <Moon size={16} className={task.isEvening ? 'fill-indigo-500/30' : ''} />
+            <Moon size={15} strokeWidth={1.75} className={task.isEvening ? 'fill-indigo-500/30' : ''} />
           </button>
         )}
 
@@ -693,9 +693,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           }}
           title="More options"
           aria-label="More options"
-          className="p-2 rounded-xl text-stone-400 hover:text-[var(--text-primary)] active:bg-stone-200/50 dark:active:bg-white/[0.06] transition-colors"
+          className="p-2 rounded-xl text-stone-400 hover:text-[var(--text-primary)] active:bg-stone-200/50 dark:active:bg-white/[0.06] transition-colors active:scale-90"
         >
-          <MoreHorizontal size={16} />
+          <MoreHorizontal size={15} strokeWidth={1.75} />
         </button>
       </div>
 
@@ -747,9 +747,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             }`}
           >
             {isTimerRunning ? (
-              <Pause size={14} className="fill-current" />
+              <Pause size={14} strokeWidth={1.75} className="fill-current" />
             ) : (
-              <Play size={14} className="fill-current" />
+              <Play size={14} strokeWidth={1.75} className="fill-current" />
             )}
           </button>
         )}
@@ -760,13 +760,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             type="button"
             onClick={() => toggleTaskPinToday(task.id)}
             title={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus for Today'}
-            className={`p-1.5 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-amber-500/40 outline-none ${
+            className={`p-1.5 rounded-lg transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-amber-500/40 outline-none ${
               task.isPinnedToday
                 ? 'text-amber-500 hover:text-amber-600 bg-amber-500/10'
                 : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-[var(--bg-surface-hover)]'
             }`}
           >
-            <Star size={14} className={task.isPinnedToday ? 'fill-current' : ''} />
+            <Star size={14} strokeWidth={1.75} className={task.isPinnedToday ? 'fill-current' : ''} />
           </button>
         )}
 
@@ -776,13 +776,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             type="button"
             onClick={() => updateTask(task.id, { isEvening: !task.isEvening })}
             title={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
-            className={`p-1.5 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-amber-500/40 outline-none ${
+            className={`p-1.5 rounded-lg transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-amber-500/40 outline-none ${
               task.isEvening
                 ? 'text-indigo-500 hover:text-indigo-600 bg-indigo-500/15'
                 : 'text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-hover)]'
             }`}
           >
-            <Moon size={14} className={task.isEvening ? 'fill-indigo-500/30' : ''} />
+            <Moon size={14} strokeWidth={1.75} className={task.isEvening ? 'fill-indigo-500/30' : ''} />
           </button>
         )}
 
@@ -792,9 +792,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             type="button"
             onClick={() => onStartFocus(task.id)}
             title="Start Focus Timer on this task"
-            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-hover)] transition-colors focus-visible:ring-2 focus-visible:ring-amber-500/40 outline-none"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-hover)] transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-amber-500/40 outline-none"
           >
-            <Timer size={14} />
+            <Timer size={14} strokeWidth={1.75} />
           </button>
         )}
 
@@ -807,9 +807,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             setContextMenu({ x: rect.right, y: rect.bottom });
           }}
           title="More options (or right click)"
-          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-colors focus-visible:ring-2 focus-visible:ring-amber-500/40 outline-none"
+          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-amber-500/40 outline-none"
         >
-          <MoreHorizontal size={14} />
+          <MoreHorizontal size={14} strokeWidth={1.75} />
         </button>
 
         {/* Delete button */}
@@ -817,9 +817,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           type="button"
           onClick={() => deleteTask(task.id)}
           title="Delete task"
-          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-500 hover:bg-[var(--bg-surface-hover)] transition-colors focus-visible:ring-2 focus-visible:ring-rose-500/40 outline-none"
+          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-500 hover:bg-[var(--bg-surface-hover)] transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-rose-500/40 outline-none"
         >
-          <Trash2 size={14} />
+          <Trash2 size={14} strokeWidth={1.75} />
         </button>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { motion } from 'framer-motion';
 import { audioEngine } from '../../utils/audioEngine';
 
 export interface SegmentedControlItem<T extends string = string> {
@@ -67,10 +68,12 @@ export function SegmentedControl<T extends string = string>({
   };
 
   const buttonSizeStyles = {
-    xs: 'px-2 py-0.5 rounded-[5px] gap-1',
+    xs: 'px-2 py-0.5 rounded-[6px] gap-1',
     sm: 'px-2.5 py-1 rounded-lg gap-1.5',
     md: 'px-3.5 py-1.5 rounded-lg gap-2',
   };
+
+  const instanceId = React.useId();
 
   return (
     <div
@@ -93,32 +96,41 @@ export function SegmentedControl<T extends string = string>({
             tabIndex={isSelected ? 0 : -1}
             onClick={() => handleSelect(item.id, item.disabled)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
-            className={`flex items-center justify-center font-medium transition-all focus-ring disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap shrink-0 ${
+            className={`relative flex items-center justify-center font-medium transition-colors focus-ring disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap shrink-0 active:scale-[0.98] ${
               buttonSizeStyles[size]
             } ${fullWidth ? 'flex-1' : ''} ${
               isSelected
-                ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface font-semibold'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
+                ? 'text-[var(--text-primary)] font-semibold'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
-            {item.icon && <span className="shrink-0">{item.icon}</span>}
-            <span>{item.label}</span>
-            {item.count !== undefined && (
-              <span
-                className={`font-mono text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                  isSelected
-                    ? 'bg-stone-100 dark:bg-white/10 text-[var(--text-primary)]'
-                    : 'bg-stone-200/60 dark:bg-white/5 text-[var(--text-muted)]'
-                }`}
-              >
-                {item.count}
-              </span>
+            {isSelected && (
+              <motion.div
+                layoutId={`segmentedIndicator-${instanceId}`}
+                className="absolute inset-0 bg-white dark:bg-[var(--bg-surface-l2)] rounded-lg shadow-sm border border-[var(--border-hairline)] z-0"
+                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+              />
             )}
-            {item.badge && (
-              <span className="text-[9px] px-1 py-0.2 rounded font-semibold uppercase bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">
-                {item.badge}
-              </span>
-            )}
+            <span className="relative z-10 flex items-center justify-center gap-1.5">
+              {item.icon && <span className="shrink-0">{item.icon}</span>}
+              <span>{item.label}</span>
+              {item.count !== undefined && (
+                <span
+                  className={`font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                    isSelected
+                      ? 'bg-stone-100 dark:bg-white/10 text-[var(--text-primary)]'
+                      : 'bg-stone-200/60 dark:bg-white/5 text-[var(--text-muted)]'
+                  }`}
+                >
+                  {item.count}
+                </span>
+              )}
+              {item.badge && (
+                <span className="text-[9px] px-1 py-0.2 rounded font-semibold uppercase bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">
+                  {item.badge}
+                </span>
+              )}
+            </span>
           </button>
         );
       })}

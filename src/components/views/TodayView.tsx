@@ -13,7 +13,6 @@ import {
   Star,
   CheckCircle2,
   ChevronDown,
-  ChevronUp,
   Sparkles,
   ShieldAlert,
   Eye,
@@ -281,7 +280,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                   onStartFocus('');
                 }
               }}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer active:scale-95 ${
                 focusSession && focusSession.state === 'running'
                   ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-900 dark:text-amber-200 border-amber-500/40 shadow-xs'
                   : totalFocusedTodaySeconds > 0
@@ -290,8 +289,8 @@ export const TodayView: React.FC<TodayViewProps> = ({
               }`}
               title={`Total focused time today: ${focusedTodayFormatted} (${focusedCapacityPercent}% of daily ${targetWorkCapacityHours}h target). Click to open Focus Mode.`}
             >
-              <Timer size={13} className={focusSession?.state === 'running' ? 'text-amber-500 animate-spin' : 'text-amber-500'} />
-              <span className="font-mono font-bold">{focusedTodayFormatted}</span>
+              <Timer size={13} strokeWidth={1.75} className={focusSession?.state === 'running' ? 'text-amber-500 animate-spin' : 'text-amber-500'} />
+              <span className="font-mono tabular-nums font-bold">{focusedTodayFormatted}</span>
               <span className="text-[10px] opacity-75 hidden sm:inline">focus</span>
               {focusSession?.state === 'running' && (
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping ml-0.5" />
@@ -308,7 +307,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
               }`}
               title={`Workload capacity: ${activePlannedHours}h planned against ${targetWorkCapacityHours}h daily target`}
             >
-              <span className="font-mono font-bold">{activePlannedHours}h</span>
+              <span className="font-mono tabular-nums font-bold">{activePlannedHours}h</span>
               <span className="text-[10px] opacity-75">/ {targetWorkCapacityHours}h cap</span>
             </div>
 
@@ -318,14 +317,14 @@ export const TodayView: React.FC<TodayViewProps> = ({
                 setIsCalmMode((prev) => !prev);
                 setIsCalmModeExpanded(false);
               }}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all active:scale-95 ${
                 isCalmMode
                   ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
                   : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-hairline)]'
               }`}
               title={isCalmMode ? 'Calm Mode Active: Non-essential tasks hidden to reduce mental clutter' : 'Turn on Calm Mode to focus exclusively on Top 3'}
             >
-              {isCalmMode ? <EyeOff size={13} /> : <Eye size={13} />}
+              {isCalmMode ? <EyeOff size={13} strokeWidth={1.75} /> : <Eye size={13} strokeWidth={1.75} />}
               <span>{isCalmMode ? 'Calm Mode' : 'Calm View'}</span>
             </button>
           </div>
@@ -450,7 +449,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
       <div className="mb-7">
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
-            <Star size={15} className="text-amber-500 fill-amber-500" />
+            <Star size={15} strokeWidth={1.75} className="text-amber-500 fill-amber-500" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               Top 3 Focus
             </h2>
@@ -464,9 +463,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
         </div>
 
         {topThreeTasks.length === 0 ? (
-          <div className="p-5 rounded-2xl border border-dashed border-amber-500/25 text-center text-xs text-[var(--text-muted)] bg-amber-500/[0.02]">
-            <Star size={16} className="mx-auto mb-1.5 text-amber-500/60" />
-            Click the star on any task to choose your Top 3 for today
+          <div className="flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-dashed border-amber-500/30 text-center text-xs text-[var(--text-muted)] bg-amber-500/[0.03] transition-colors hover:border-amber-500/40">
+            <Star size={14} strokeWidth={1.75} className="text-amber-500/70 shrink-0" />
+            <span>Click the star on any task to choose your Top 3 for today</span>
           </div>
         ) : (
           <div className="p-2 sm:p-2.5 rounded-2xl bg-amber-500/[0.03] dark:bg-amber-500/[0.04] border border-amber-500/20 shadow-xs space-y-2">
@@ -598,7 +597,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
       <div className="mb-7">
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
-            <Moon size={15} className="text-indigo-500 fill-indigo-500/20" />
+            <Moon size={15} strokeWidth={1.75} className="text-indigo-500 fill-indigo-500/20" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               This Evening
             </h2>
@@ -610,13 +609,13 @@ export const TodayView: React.FC<TodayViewProps> = ({
           <button
             type="button"
             onClick={() => setIsEveningCollapsed((prev) => !prev)}
-            className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-1.5 py-0.5 rounded-md hover:bg-[var(--bg-surface-l1)]"
+            className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-1.5 py-0.5 rounded-md hover:bg-[var(--bg-surface-l1)] active:scale-95"
             title={isEveningCollapsed ? 'Expand This Evening' : 'Collapse This Evening'}
           >
             <span className="hidden sm:inline">
               {isEveningCollapsed ? 'Show' : 'Hide'}
             </span>
-            {isEveningCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            <ChevronDown size={14} strokeWidth={1.75} className={`transition-transform duration-200 ${!isEveningCollapsed ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
@@ -657,13 +656,13 @@ export const TodayView: React.FC<TodayViewProps> = ({
           <button
             type="button"
             onClick={() => setIsCompletedCollapsed((prev) => !prev)}
-            className="flex items-center justify-between w-full p-2.5 rounded-xl hover:bg-[var(--bg-surface-l1)] text-xs font-semibold text-[var(--text-secondary)] transition-colors"
+            className="flex items-center justify-between w-full p-2.5 rounded-xl hover:bg-[var(--bg-surface-l1)] text-xs font-semibold text-[var(--text-secondary)] transition-colors active:scale-[0.99]"
           >
             <div className="flex items-center gap-2">
-              <CheckCircle2 size={15} className="text-emerald-500" />
+              <CheckCircle2 size={15} strokeWidth={1.75} className="text-emerald-500" />
               <span>Completed Today ({completedTodayTasks.length})</span>
             </div>
-            {isCompletedCollapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+            <ChevronDown size={15} strokeWidth={1.75} className={`transition-transform duration-200 ${!isCompletedCollapsed ? 'rotate-180' : ''}`} />
           </button>
 
           {!isCompletedCollapsed && (

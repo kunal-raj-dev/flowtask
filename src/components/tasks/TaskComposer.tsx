@@ -271,7 +271,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-start gap-2.5 sm:gap-3">
             <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
               <div className="text-[var(--text-muted)] mt-1 flex-shrink-0">
-                <Plus size={18} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
+                <Plus size={18} strokeWidth={1.75} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
               </div>
 
               <div className="flex-1 min-w-0">
@@ -321,13 +321,13 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     type="button"
                     onClick={toggleVoiceInput}
                     title={isListening ? 'Stop Voice Input' : 'Voice Dictation'}
-                    className={`p-2 rounded-xl transition-colors ${
+                    className={`p-2 rounded-xl transition-colors active:scale-95 ${
                       isListening
                         ? 'bg-rose-500 text-white animate-pulse'
                         : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
                     }`}
                   >
-                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                    {isListening ? <MicOff size={16} strokeWidth={1.75} /> : <Mic size={16} strokeWidth={1.75} />}
                   </button>
                 )}
 
@@ -335,22 +335,22 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   type="button"
                   onClick={() => setIsMultiline((prev) => !prev)}
                   title={isMultiline ? 'Switch to Single Task mode' : 'Switch to Multi-line Brain Dump'}
-                  className={`p-2 rounded-xl transition-colors ${
+                  className={`p-2 rounded-xl transition-colors active:scale-95 ${
                     isMultiline
                       ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
                       : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
                   }`}
                 >
-                  <ListPlus size={16} />
+                  <ListPlus size={16} strokeWidth={1.75} />
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsTemplatePickerOpen(true)}
                   title="Browse Templates"
-                  className="p-2 text-[var(--text-muted)] hover:text-indigo-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                  className="p-2 text-[var(--text-muted)] hover:text-indigo-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={16} strokeWidth={1.75} />
                 </button>
 
                 <button
@@ -384,7 +384,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
             <div className="overflow-x-auto no-scrollbar flex items-center gap-1.5 mt-3 pt-2.5 border-t border-[var(--border-hairline)] text-xs py-1">
                   {/* Project Chip */}
                   <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
-                    <Folder size={12} style={{ color: projectObj.color }} />
+                    <Folder size={12} strokeWidth={1.75} style={{ color: projectObj.color }} />
                     <select aria-label="Project"
                       value={projectObj.id}
                       onChange={(e) => setExplicitProjectId(e.target.value)}
@@ -400,7 +400,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
                   {/* Planned Date Chip */}
                   <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
-                    <Calendar size={12} className="text-amber-500" />
+                    <Calendar size={12} strokeWidth={1.75} className="text-amber-500" />
                     <span className="text-[11px]">Plan:</span>
                     <input
                       aria-label="Planned date"
@@ -408,22 +408,23 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       value={effectivePlannedDate || ''}
                       onChange={(e) => setExplicitPlannedDate(e.target.value || null)}
                       className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
-                    />
+                    >
+                    </input>
                     {effectivePlannedDate && (
                       <button
                         type="button"
                         onClick={() => setExplicitPlannedDate('')}
-                        className="hover:text-rose-500 ml-0.5"
+                        className="hover:text-rose-500 ml-0.5 active:scale-90"
                         title="Clear planned date"
                       >
-                        <X size={11} />
+                        <X size={11} strokeWidth={1.75} />
                       </button>
                     )}
                   </div>
 
                   {/* Due Date (Deadline) Chip */}
                   <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
-                    <Clock size={12} className="text-purple-500" />
+                    <Clock size={12} strokeWidth={1.75} className="text-purple-500" />
                     <span className="text-[11px]">Due:</span>
                     <input
                       aria-label="Deadline"
@@ -431,15 +432,16 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       value={effectiveDueDate || ''}
                       onChange={(e) => setExplicitDueDate(e.target.value || null)}
                       className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
-                    />
+                    >
+                    </input>
                     {effectiveDueDate && (
                       <button
                         type="button"
                         onClick={() => setExplicitDueDate('')}
-                        className="hover:text-rose-500 ml-0.5"
+                        className="hover:text-rose-500 ml-0.5 active:scale-90"
                         title="Clear deadline"
                       >
-                        <X size={11} />
+                        <X size={11} strokeWidth={1.75} />
                       </button>
                     )}
                   </div>
@@ -452,12 +454,12 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       const next = cycle[(cycle.indexOf(effectivePriority) + 1) % cycle.length];
                       setExplicitPriority(next);
                     }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border font-bold text-[11px] transition-colors ${getPriorityStyle(
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border font-bold text-[11px] transition-colors active:scale-95 ${getPriorityStyle(
                       effectivePriority
                     )}`}
                     title="Click to cycle priority"
                   >
-                    <Flag size={11} />
+                    <Flag size={11} strokeWidth={1.75} />
                     <span>{effectivePriority.toUpperCase()}</span>
                   </button>
 
@@ -469,11 +471,11 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       const next = times[(times.indexOf(effectiveDuration ?? null) + 1) % times.length];
                       setExplicitDuration(next);
                     }}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px]"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] active:scale-95"
                     title="Click to cycle estimated duration"
                   >
-                    <Sparkles size={11} className="text-teal-500" />
-                    <span>{effectiveDuration ? `~${effectiveDuration}m` : 'Estimate'}</span>
+                    <Sparkles size={11} strokeWidth={1.75} className="text-teal-500" />
+                    <span className="tabular-nums">{effectiveDuration ? `~${effectiveDuration}m` : 'Estimate'}</span>
                   </button>
 
                   {/* Recurrence Chip */}
@@ -484,10 +486,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       const next = freqs[(freqs.indexOf(effectiveRecurrence) + 1) % freqs.length];
                       setExplicitRecurrence(next);
                     }}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] cursor-pointer active:scale-95"
                     title="Click to cycle recurrence"
                   >
-                    <Repeat size={11} className="text-indigo-500" />
+                    <Repeat size={11} strokeWidth={1.75} className="text-indigo-500" />
                     <span>{effectiveRecurrence !== 'none' ? effectiveRecurrence : 'Repeat'}</span>
                   </button>
 
@@ -495,15 +497,15 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsSessionActive((prev) => !prev)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer active:scale-95 ${
                       isSessionActive
                         ? 'bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30 font-semibold'
                         : 'bg-[var(--bg-surface-l2)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                     title={isSessionActive ? 'Click to toggle session off' : 'Click to configure custom session duration & timeline block'}
                   >
-                    <Timer size={11} className={isSessionActive ? 'text-teal-500' : ''} />
-                    <span>
+                    <Timer size={11} strokeWidth={1.75} className={isSessionActive ? 'text-teal-500' : ''} />
+                    <span className="tabular-nums">
                       {isSessionActive
                         ? `Session ${activeSessionNum} (${sessionStartTime}–${sessionEndTime})`
                         : '+ Session'}
@@ -514,10 +516,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                           e.stopPropagation();
                           setIsSessionActive(false);
                         }}
-                        className="ml-0.5 hover:text-rose-500 cursor-pointer"
+                        className="ml-0.5 hover:text-rose-500 cursor-pointer active:scale-90"
                         title="Remove session"
                       >
-                        <X size={10} />
+                        <X size={10} strokeWidth={1.75} />
                       </span>
                     )}
                   </button>
@@ -529,23 +531,23 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                 <div className="mt-2.5 p-3 rounded-xl bg-teal-500/[0.07] dark:bg-teal-500/[0.1] border border-teal-500/25 space-y-2.5 animate-slide-down">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-teal-900 dark:text-teal-200">
-                      <Timer size={14} className="text-teal-600 dark:text-teal-400" />
+                      <Timer size={14} strokeWidth={1.75} className="text-teal-600 dark:text-teal-400" />
                       <span>Session Duration Generator</span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30">
+                      <span className="text-[10px] px-1.5 py-0.2 rounded font-mono tabular-nums font-bold bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30">
                         Session #{activeSessionNum}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30">
+                      <span className="text-xs font-mono tabular-nums font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30">
                         {sessionDuration.formatted}
                       </span>
                       <button
                         type="button"
                         onClick={() => setIsSessionActive(false)}
-                        className="text-[11px] text-[var(--text-muted)] hover:text-rose-500 p-0.5 rounded cursor-pointer"
+                        className="text-[11px] text-[var(--text-muted)] hover:text-rose-500 p-0.5 rounded cursor-pointer active:scale-90"
                         title="Remove session"
                       >
-                        <X size={13} />
+                        <X size={13} strokeWidth={1.75} />
                       </button>
                     </div>
                   </div>

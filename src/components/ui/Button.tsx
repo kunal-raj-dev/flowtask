@@ -18,19 +18,19 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-[var(--text-primary)] text-[var(--bg-main)] hover:opacity-90 shadow-xs active:scale-[0.98]',
+    'bg-[var(--text-primary)] text-[var(--bg-main)] hover:opacity-90 shadow-xs active:scale-[0.97] transition-all',
   brand:
-    'bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white shadow-xs active:scale-[0.98]',
+    'bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white shadow-xs active:scale-[0.97] transition-all',
   secondary:
-    'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] hover:bg-[var(--bg-surface-hover)] shadow-xs active:scale-[0.98]',
+    'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] hover:bg-[var(--bg-surface-hover)] shadow-xs active:scale-[0.97] transition-all',
   outline:
-    'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.98]',
+    'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.97] transition-all',
   ghost:
-    'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.98]',
+    'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.97] transition-all',
   destructive:
-    'bg-rose-600 hover:bg-rose-700 text-white shadow-xs active:scale-[0.98]',
+    'bg-rose-600 hover:bg-rose-700 text-white shadow-xs active:scale-[0.97] transition-all',
   'destructive-subtle':
-    'text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 active:scale-[0.98]',
+    'text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 active:scale-[0.97] transition-all',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -83,7 +83,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {isLoading ? (
-          <Loader2 size={13} className="animate-spin shrink-0" />
+          <Loader2 size={13} className="animate-spin shrink-0 stroke-[2.2]" />
         ) : (
           leftIcon && <span className="shrink-0">{leftIcon}</span>
         )}
