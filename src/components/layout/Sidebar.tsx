@@ -38,8 +38,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
-import { useAuth } from '../../context/AuthContext';
-import { Badge } from '../ui';
+import { Badge, BrandLogo } from '../ui';
 
 interface SidebarProps {
   onOpenPomodoro: () => void;
@@ -80,15 +79,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     soundEnabled,
     toggleSound,
     addProject,
-    syncStatus,
-    setIsAuthModalOpen,
     smartViews,
     deleteSmartView,
     setIsSmartFilterModalOpen,
     setIsWeeklyReviewOpen,
   } = useTaskContext();
-
-  const { user, isAnonymous } = useAuth();
 
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -264,38 +259,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
   if (isCollapsed) {
     return (
       <aside className="w-16 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col items-center select-none transition-all duration-200 py-3 justify-between">
-        {/* Top: Workspace Avatar & Expand Toggle */}
+        {/* Top: FlowTask Brand Logo & Expand Toggle */}
         <div className="flex flex-col items-center gap-2">
-          <div className="relative">
-            <button
-              onClick={() => {
-                setIsAuthModalOpen(true);
-                onItemClick?.();
-              }}
-              title={`Cloud Sync & Account: ${syncStatus === 'synced' ? (user?.displayName || user?.email || 'Synced') : syncStatus}. Click for account.`}
-              className="w-8 h-8 rounded-xl bg-gradient-to-br from-stone-900 to-stone-700 dark:from-white dark:to-stone-200 text-white dark:text-stone-950 flex items-center justify-center font-bold text-xs tracking-wider shadow-sm card-surface hover:scale-105 transition-transform"
-            >
-              {user && !isAnonymous ? (user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase() : 'FT'}
-            </button>
-            <span
-              className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--bg-surface-l1)] ${
-                syncStatus === 'synced'
-                  ? 'bg-emerald-500'
-                  : syncStatus === 'syncing'
-                  ? 'bg-amber-500 animate-spin'
-                  : syncStatus === 'offline'
-                  ? 'bg-amber-500'
-                  : 'bg-stone-400'
-              }`}
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (onToggleCollapse) {
+                onToggleCollapse();
+              } else {
+                setActiveView('today');
+              }
+              onItemClick?.();
+            }}
+            title="FlowTask Zen — Click to expand sidebar ([)"
+            aria-label="FlowTask Zen — Expand Sidebar"
+            className="cursor-pointer active:scale-95 transition-transform"
+          >
+            <BrandLogo size={32} />
+          </button>
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
               title="Expand Sidebar ([)"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors active:scale-90"
             >
-              <PanelLeftOpen size={16} />
+              <PanelLeftOpen size={16} strokeWidth={1.75} />
             </button>
           )}
         </div>
@@ -483,53 +471,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-64 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/80 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col select-none transition-colors duration-200">
-      {/* Workspace & Account Header */}
+      {/* Workspace Brand Header */}
       <div className="p-3 border-b border-[var(--border-hairline)] flex items-center justify-between gap-1.5">
         <button
+          type="button"
           onClick={() => {
-            setIsAuthModalOpen(true);
+            setActiveView('today');
             onItemClick?.();
           }}
-          title={`Cloud Sync & Account: ${syncStatus === 'synced' ? (user?.displayName || user?.email || 'Synced') : syncStatus}. Click for account.`}
-          className="flex-1 flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-all text-left min-w-0 group cursor-pointer"
+          title="FlowTask Zen — Return to Today"
+          aria-label="FlowTask Zen — Return to Today"
+          className="flex-1 flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-stone-200/40 dark:hover:bg-white/[0.04] transition-all text-left min-w-0 group cursor-pointer select-none active:scale-[0.98]"
         >
-          <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-stone-900 to-stone-700 dark:from-white dark:to-stone-200 text-white dark:text-stone-950 flex items-center justify-center font-bold text-xs tracking-wider shadow-sm card-surface">
-              {user && !isAnonymous ? (user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase() : 'FT'}
-            </div>
-            <span
-              className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--bg-surface-l1)] ${
-                syncStatus === 'synced'
-                  ? 'bg-emerald-500 ring-emerald-500/20'
-                  : syncStatus === 'syncing'
-                  ? 'bg-amber-500 animate-spin'
-                  : syncStatus === 'offline'
-                  ? 'bg-amber-500'
-                  : 'bg-stone-400'
-              }`}
-            />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
-              {user && !isAnonymous
-                ? user.displayName || user.email?.split('@')[0]
-                : 'FlowTask Zen'}
-            </p>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-[var(--text-muted)] font-mono truncate">
-                {syncStatus === 'synced'
-                  ? 'Cloud Synced'
-                  : syncStatus === 'syncing'
-                  ? 'Syncing...'
-                  : syncStatus === 'offline'
-                  ? 'Offline (Queued)'
-                  : 'Local Mode'}
-              </span>
-              <span className="text-[9px] text-[var(--text-muted)] font-mono px-1 py-0.2 rounded bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shrink-0">
-                {user && !isAnonymous ? 'Account' : 'Cloud'}
-              </span>
-            </div>
-          </div>
+          <BrandLogo size={32} showWordmark={true} />
         </button>
 
         <div className="flex items-center gap-0.5 shrink-0">

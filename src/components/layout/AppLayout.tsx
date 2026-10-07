@@ -20,7 +20,7 @@ import { useModal } from '../../context/ModalContext';
 import { Toast } from '../ui/Toast';
 import { Button, ViewSkeleton, Kbd } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
-import { Menu, Search, Share2, X, Pause, Play, Plus, Timer, Settings } from 'lucide-react';
+import { Menu, Search, Share2, X, Pause, Play, Plus, Timer, Settings, Cloud } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
@@ -697,29 +697,84 @@ export const AppLayout: React.FC = () => {
 
           {/* Right: Quick Tools */}
           <div className="flex items-center gap-1.5">
-            {/* Cloud Database Sync Status Indicator */}
+            {/* Authoritative User Account & Cloud Sync Capsule */}
             <button
               type="button"
               onClick={() => setIsAuthModalOpen(true)}
-              title={`Cloud Database Sync: ${syncStatus === 'synced' ? (user?.displayName || user?.email || 'Synced') : syncStatus}. Click for account settings.`}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
+              title={
+                user && !isAnonymous
+                  ? `Signed in as ${user.displayName || user.email} (${syncStatus === 'synced' ? 'Cloud Synced' : syncStatus}). Click for account & sync.`
+                  : `Local Mode (${syncStatus}). Click to sign in and enable cloud sync.`
+              }
+              aria-label={
+                user && !isAnonymous
+                  ? `User Account: ${user.displayName || user.email}, Cloud status: ${syncStatus}`
+                  : 'Sign in to enable cloud sync'
+              }
+              className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-hairline)] hover:border-amber-500/30 transition-all shadow-2xs cursor-pointer group active:scale-95"
             >
+              {user && !isAnonymous ? (
+                <div className="relative shrink-0 flex items-center justify-center">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || 'User'}
+                      className="w-5 h-5 rounded-full object-cover ring-1 ring-[var(--border-hairline)]"
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold text-[10px] flex items-center justify-center shadow-xs">
+                      {(user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                    </div>
+                  )}
+                  <span
+                    className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-1.5 ring-[var(--bg-surface-l1)] ${
+                      syncStatus === 'synced'
+                        ? 'bg-emerald-500 ring-emerald-500/20'
+                        : syncStatus === 'syncing'
+                        ? 'bg-amber-500 animate-spin'
+                        : syncStatus === 'offline'
+                        ? 'bg-amber-500'
+                        : 'bg-stone-400'
+                    }`}
+                  />
+                </div>
+              ) : (
+                <div className="relative shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-stone-200/80 dark:bg-stone-800 text-[var(--text-secondary)]">
+                  <Cloud size={11} strokeWidth={2} />
+                  <span
+                    className={`absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ring-1 ring-[var(--bg-surface-l1)] ${
+                      syncStatus === 'synced'
+                        ? 'bg-emerald-500'
+                        : syncStatus === 'syncing'
+                        ? 'bg-amber-500 animate-spin'
+                        : syncStatus === 'offline'
+                        ? 'bg-amber-500'
+                        : 'bg-stone-400'
+                    }`}
+                  />
+                </div>
+              )}
+
+              <span className="text-[11px] font-medium truncate max-w-[110px] xl:max-w-[150px]">
+                {user && !isAnonymous
+                  ? user.displayName || user.email?.split('@')[0]
+                  : 'Sync'}
+              </span>
+
+              {/* Status indicator dot or badge */}
               <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
+                className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full border hidden sm:inline-flex items-center gap-1 ${
                   syncStatus === 'synced'
-                    ? 'bg-emerald-500 ring-2 ring-emerald-500/20'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                     : syncStatus === 'syncing'
-                    ? 'bg-amber-500 animate-spin'
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                     : syncStatus === 'offline'
-                    ? 'bg-amber-500'
-                    : 'bg-stone-400'
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                    : 'bg-stone-500/10 text-stone-500 dark:text-stone-400 border-stone-500/20'
                 }`}
-              />
-              <span className="text-[11px] font-mono tabular-nums hidden xl:inline text-[var(--text-muted)]">
+              >
                 {syncStatus === 'synced'
-                  ? user && !isAnonymous
-                    ? user.displayName || user.email?.split('@')[0]
-                    : 'Synced'
+                  ? 'Cloud'
                   : syncStatus === 'syncing'
                   ? 'Syncing'
                   : syncStatus === 'offline'
@@ -847,25 +902,59 @@ export const AppLayout: React.FC = () => {
               </div>
             )}
 
-            {/* Mobile Sync Indicator */}
+            {/* Mobile User & Cloud Sync Capsule */}
             <button
               type="button"
               onClick={() => setIsAuthModalOpen(true)}
-              title="Cloud Sync"
-              aria-label="Cloud Sync"
-              className="p-2 text-[var(--text-secondary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+              title={
+                user && !isAnonymous
+                  ? `Account: ${user.displayName || user.email}`
+                  : 'Cloud Sync & Account'
+              }
+              aria-label="Cloud Sync and Account Settings"
+              className="p-1.5 text-[var(--text-secondary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95 flex items-center justify-center"
             >
-              <span
-                className={`block w-2.5 h-2.5 rounded-full ${
-                  syncStatus === 'synced'
-                    ? 'bg-emerald-500'
-                    : syncStatus === 'syncing'
-                    ? 'bg-amber-500 animate-spin'
-                    : syncStatus === 'offline'
-                    ? 'bg-amber-500'
-                    : 'bg-stone-400'
-                }`}
-              />
+              {user && !isAnonymous ? (
+                <div className="relative shrink-0">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || 'User'}
+                      className="w-6 h-6 rounded-full object-cover ring-1 ring-[var(--border-hairline)]"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold text-[10px] flex items-center justify-center shadow-xs">
+                      {(user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                    </div>
+                  )}
+                  <span
+                    className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-1.5 ring-[var(--bg-surface-l1)] ${
+                      syncStatus === 'synced'
+                        ? 'bg-emerald-500 ring-emerald-500/20'
+                        : syncStatus === 'syncing'
+                        ? 'bg-amber-500 animate-spin'
+                        : syncStatus === 'offline'
+                        ? 'bg-amber-500'
+                        : 'bg-stone-400'
+                    }`}
+                  />
+                </div>
+              ) : (
+                <div className="relative shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)]">
+                  <Cloud size={13} strokeWidth={1.75} />
+                  <span
+                    className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-1.5 ring-[var(--bg-surface-l1)] ${
+                      syncStatus === 'synced'
+                        ? 'bg-emerald-500'
+                        : syncStatus === 'syncing'
+                        ? 'bg-amber-500 animate-spin'
+                        : syncStatus === 'offline'
+                        ? 'bg-amber-500'
+                        : 'bg-stone-400'
+                    }`}
+                  />
+                </div>
+              )}
             </button>
 
             {/* Search */}

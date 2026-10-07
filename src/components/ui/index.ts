@@ -12,3 +12,4 @@ export * from './Switch';
 export * from './Popover';
 export * from './DropdownMenu';
 export * from './Drawer';
+export * from './BrandLogo';
