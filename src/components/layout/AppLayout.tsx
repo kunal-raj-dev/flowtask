@@ -425,7 +425,7 @@ export const AppLayout: React.FC = () => {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block relative z-10 transition-all duration-200">
+      <div className="hidden lg:block relative z-30 transition-all duration-200">
         <Sidebar
           onOpenPomodoro={() => openModal('pomodoro')}
           onOpenShortcuts={() => openModal('shortcuts')}
@@ -652,6 +652,7 @@ export const AppLayout: React.FC = () => {
               leftIcon={<Plus size={13} strokeWidth={1.75} />}
               onClick={() => setIsQuickAddOpen(true)}
               title="Quick Add Task"
+              aria-label="New Task"
             >
               New Task
             </Button>
@@ -894,6 +895,7 @@ export const AppLayout: React.FC = () => {
         <KeyboardHaloDock
           key={`keyboard-halo-${activeHaloTask.id}`}
           task={activeHaloTask}
+          isSidebarCollapsed={isSidebarCollapsed}
           onSelect={() => setSelectedTaskId(activeHaloTask.id)}
           onToggleStatus={() => toggleTaskStatus(activeHaloTask.id)}
           onStartFocus={() => handleStartFocus(activeHaloTask.id)}

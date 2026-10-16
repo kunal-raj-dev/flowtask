@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Aesthetics & Audio Unified Drawer Suite', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('flowtask_onboarding_completed', 'true');
+      localStorage.setItem('flowtask_onboarding_dismissed', 'true');
+    });
+  });
   test('Palette button in sidebar opens Settings Drawer pre-navigated to Aesthetics tab', async ({ page }) => {
     await page.goto('/');
     await page.waitForSelector('body');

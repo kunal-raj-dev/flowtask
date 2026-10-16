@@ -197,12 +197,17 @@ test.describe('Exhaustive Multi-Device Responsive Audit', () => {
           await page.waitForTimeout(300);
           await page.screenshot({ path: path.join(outDir, `${vp.name}_02b_task_drawer_bottom.png`) });
         }
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(300);
+        const closeBtn = page.getByRole('button', { name: /Close task details/i });
+        if (await closeBtn.isVisible()) {
+          await closeBtn.click();
+        } else {
+          await page.keyboard.press('Escape');
+        }
+        await page.waitForTimeout(400);
       }
 
       // 3. QUICK ADD MODAL
-      const addTrigger = vp.width < 768
+      const addTrigger = vp.width < 1024
         ? page.getByRole('button', { name: /Quick Add Task/i })
         : page.getByRole('button', { name: /New Task/i });
       if (await addTrigger.isVisible()) {
@@ -270,19 +275,20 @@ test.describe('Exhaustive Multi-Device Responsive Audit', () => {
       const settingsBtn = page.getByRole('button', { name: /Preferences/i }).first();
       if (await settingsBtn.isVisible()) {
         await settingsBtn.click();
-        await page.waitForSelector('div:has-text("Preferences & Settings")', { state: 'visible' });
+        await page.waitForSelector('div[role="dialog"]', { state: 'visible', timeout: 5000 });
         await page.waitForTimeout(400);
         await checkLayoutOverflow('settings_drawer');
         await page.screenshot({ path: path.join(outDir, `${vp.name}_09_settings_tab1.png`) });
 
         // Tab 2 Aesthetics
-        const tab2 = page.locator('button').filter({ hasText: /Aesthetics/i }).first();
+        const tab2 = page.locator('div[role="dialog"] button').filter({ hasText: /Aesthetics/i }).first();
         if (await tab2.isVisible()) {
           await tab2.click();
           await page.waitForTimeout(300);
           await page.screenshot({ path: path.join(outDir, `${vp.name}_09b_settings_tab2.png`) });
         }
         await page.keyboard.press('Escape');
+        await page.waitForSelector('div[role="dialog"]', { state: 'hidden', timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
       }
 

@@ -81,9 +81,12 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     return () => window.removeEventListener('mousedown', handlePointerDown);
   }, [isMobile, onClose]);
 
-  // Accessibility: store active element and bind Escape key
+  // Accessibility: store active element, focus dialog container, and bind Escape key
   useEffect(() => {
     previousActiveElementRef.current = document.activeElement as HTMLElement | null;
+    if (drawerRef.current) {
+      drawerRef.current.focus();
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -95,6 +98,8 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           setIsRecurrenceModalOpen(false);
           return;
         }
+        e.preventDefault();
+        e.stopPropagation();
         onClose();
       }
     };
@@ -154,6 +159,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
       <motion.div
         ref={drawerRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Task Details"
@@ -166,7 +172,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             ? { duration: 0 }
             : SPRING_TACTILE
         }
-        className="pointer-events-auto w-full sm:w-[460px] md:w-[480px] lg:w-[540px] h-[100dvh] md:h-full max-h-[100dvh] md:max-h-full bg-[var(--bg-surface-l1)] rounded-t-2xl md:rounded-l-2xl md:rounded-r-none border-t md:border-t-0 md:border-l border-[var(--border-subtle)] shadow-cute-modal flex flex-col overflow-hidden"
+        className="relative z-10 pointer-events-auto w-full sm:w-[460px] md:w-[480px] lg:w-[540px] h-[100dvh] md:h-full max-h-[100dvh] md:max-h-full bg-[var(--bg-surface-l1)] rounded-t-2xl md:rounded-l-2xl md:rounded-r-none border-t md:border-t-0 md:border-l border-[var(--border-subtle)] shadow-cute-modal flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header & Gesture handles */}

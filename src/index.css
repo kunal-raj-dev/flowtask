@@ -77,8 +77,8 @@
 
   /* Typography (WCAG 2.2 AA compliant high-contrast slate) */
   --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
+  --text-secondary: #334155;
+  --text-muted: #475569;
 
   /* Calibrated Semantic Action Tokens (Golden Amber / Warm Slate) */
   --color-brand: #F59E0B;
@@ -147,8 +147,8 @@
 
   /* Typography */
   --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
 
   /* Dark Calibrated Semantic Action Tokens */
   --color-brand: #F59E0B;

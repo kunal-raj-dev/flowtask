@@ -439,6 +439,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 Reassign Tasks To:
               </label>
               <select
+                aria-label="Reassign tasks to project"
                 value={reassignTargetId}
                 onChange={(e) => setReassignTargetId(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none"

@@ -37,94 +37,91 @@ test.describe('Responsive Deep Inspection & Diagnostics', () => {
   for (const vp of VIEWPORTS) {
     test(`Inspect all views and detect layout overflow on ${vp.name} (${vp.width}x${vp.height})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.addInitScript(() => {
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date().toISOString();
+        const mockTasks = [
+          {
+            id: 'test-task-1',
+            title: 'Quarterly Product Strategy Review with Stakeholders',
+            description: 'Synthesize user feedback and prepare quarterly roadmap slides with metrics.',
+            priority: 'p1',
+            status: 'todo',
+            projectId: 'inbox',
+            plannedDate: today,
+            dueDate: today,
+            estimatedMinutes: 60,
+            createdAt: now,
+            subtasks: [
+              { id: 'sub-1', title: 'Review Q2 engagement stats', completed: true },
+              { id: 'sub-2', title: 'Draft OKR alignment matrix', completed: false },
+            ],
+            tags: ['strategy', 'roadmap', 'high-impact'],
+          },
+          {
+            id: 'test-task-2',
+            title: 'Fix edge-case race conditions in offline sync worker',
+            description: 'Ensure optimistic updates rollback cleanly on conflict.',
+            priority: 'p2',
+            status: 'in_progress',
+            projectId: 'inbox',
+            plannedDate: today,
+            estimatedMinutes: 45,
+            scheduledStart: '10:00',
+            createdAt: now,
+            subtasks: [],
+            tags: ['bug', 'sync', 'backend'],
+          },
+          {
+            id: 'test-task-3',
+            title: 'Design responsive ergonomics for smartphones',
+            description: 'Inspect buttons, modals, and navigation across mobile ratios.',
+            priority: 'p1',
+            status: 'todo',
+            projectId: 'inbox',
+            plannedDate: today,
+            estimatedMinutes: 90,
+            scheduledStart: '14:00',
+            createdAt: now,
+            subtasks: [],
+            tags: ['ux', 'mobile', 'frontend'],
+          },
+          {
+            id: 'test-task-4',
+            title: 'Audit accessibility touch targets and focus rings',
+            description: 'Ensure WCAG 2.2 touch target compliance.',
+            priority: 'p3',
+            status: 'done',
+            projectId: 'inbox',
+            plannedDate: today,
+            completedAt: now,
+            createdAt: now,
+            subtasks: [],
+            tags: ['a11y'],
+          },
+          {
+            id: 'test-task-5',
+            title: 'Long title: Conduct comprehensive performance benchmarking and load test on serverless edge functions with latency distribution analysis',
+            description: 'Benchmark latency at 95th and 99th percentiles.',
+            priority: 'p4',
+            status: 'todo',
+            projectId: 'inbox',
+            createdAt: now,
+            subtasks: [],
+            tags: ['perf', 'benchmarks', 'infra'],
+          },
+        ];
+        localStorage.setItem('flowtask_tasks', JSON.stringify(mockTasks));
+        localStorage.setItem('flowtask_tasks_v1', JSON.stringify(mockTasks));
+        localStorage.setItem('flowtask_onboarding_dismissed', 'true');
+        localStorage.setItem('flowtask_onboarding_completed', 'true');
+        localStorage.setItem('flowtask_sidebar_perspectives_collapsed', 'false');
+        localStorage.setItem('flowtask_sidebar_more_collapsed', 'false');
+      });
+
       await page.goto('/');
 
       // Wait for app to be ready
-      await page.waitForSelector('main#main-content', { state: 'visible' });
-
-      // Seed mock tasks if empty for rich visual inspection
-      await page.evaluate(() => {
-        const stored = localStorage.getItem('flowtask_tasks');
-        const tasks = stored ? JSON.parse(stored) : [];
-        if (tasks.length < 5) {
-          const now = new Date().toISOString();
-          const today = new Date().toISOString().split('T')[0];
-          const mockTasks = [
-            {
-              id: 'test-task-1',
-              title: 'Quarterly Product Strategy Review with Stakeholders',
-              description: 'Synthesize user feedback and prepare quarterly roadmap slides with metrics.',
-              priority: 'p1',
-              status: 'todo',
-              projectId: 'inbox',
-              plannedDate: today,
-              dueDate: today,
-              estimatedMinutes: 60,
-              createdAt: now,
-              subtasks: [
-                { id: 'sub-1', title: 'Review Q2 engagement stats', completed: true },
-                { id: 'sub-2', title: 'Draft OKR alignment matrix', completed: false },
-              ],
-              tags: ['strategy', 'roadmap', 'high-impact'],
-            },
-            {
-              id: 'test-task-2',
-              title: 'Fix edge-case race conditions in offline sync worker',
-              description: 'Ensure optimistic updates rollback cleanly on conflict.',
-              priority: 'p2',
-              status: 'in_progress',
-              projectId: 'inbox',
-              plannedDate: today,
-              estimatedMinutes: 45,
-              scheduledStart: '10:00',
-              createdAt: now,
-              subtasks: [],
-              tags: ['bug', 'sync', 'backend'],
-            },
-            {
-              id: 'test-task-3',
-              title: 'Design responsive ergonomics for smartphones',
-              description: 'Inspect buttons, modals, and navigation across mobile ratios.',
-              priority: 'p1',
-              status: 'todo',
-              projectId: 'inbox',
-              plannedDate: today,
-              estimatedMinutes: 90,
-              scheduledStart: '14:00',
-              createdAt: now,
-              subtasks: [],
-              tags: ['ux', 'mobile', 'frontend'],
-            },
-            {
-              id: 'test-task-4',
-              title: 'Audit accessibility touch targets and focus rings',
-              description: 'Ensure WCAG 2.2 touch target compliance.',
-              priority: 'p3',
-              status: 'done',
-              projectId: 'inbox',
-              plannedDate: today,
-              completedAt: now,
-              createdAt: now,
-              subtasks: [],
-              tags: ['a11y'],
-            },
-            {
-              id: 'test-task-5',
-              title: 'Long title: Conduct comprehensive performance benchmarking and load test on serverless edge functions with latency distribution analysis',
-              description: 'Benchmark latency at 95th and 99th percentiles.',
-              priority: 'p4',
-              status: 'todo',
-              projectId: 'inbox',
-              createdAt: now,
-              subtasks: [],
-              tags: ['perf', 'benchmarks', 'infra'],
-            },
-          ];
-          localStorage.setItem('flowtask_tasks', JSON.stringify(mockTasks));
-          window.location.reload();
-        }
-      });
-
       await page.waitForSelector('main#main-content', { state: 'visible' });
 
       // Check horizontal overflow on initial Today view
@@ -235,8 +232,13 @@ test.describe('Responsive Deep Inspection & Diagnostics', () => {
         await page.waitForTimeout(400);
         await page.screenshot({ path: path.join(screenshotsDir, `${vp.name}_task_drawer.png`) });
         await checkOverflow('task_drawer');
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(200);
+        const closeBtn = page.getByRole('button', { name: /Close task details/i });
+        if (await closeBtn.isVisible()) {
+          await closeBtn.click();
+        } else {
+          await page.keyboard.press('Escape');
+        }
+        await page.waitForTimeout(300);
       }
 
       // 5. Test Settings Drawer

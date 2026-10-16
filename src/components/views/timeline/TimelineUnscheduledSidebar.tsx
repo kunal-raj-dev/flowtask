@@ -111,6 +111,7 @@ export const TimelineUnscheduledSidebar: React.FC<TimelineUnscheduledSidebarProp
 
                   {/* Quick Assign Dropdown */}
                   <select
+                    aria-label={`Schedule "${task.title}" to time slot`}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       const h = parseInt(e.target.value, 10);

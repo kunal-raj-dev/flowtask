@@ -76,6 +76,7 @@ export const TaskDrawerMergeModal: React.FC<TaskDrawerMergeModalProps> = ({
             </label>
             <select
               id="merge-source-select"
+              aria-label="Select source task to merge into this task"
               value={selectedSourceTaskId}
               onChange={(e) => setSelectedSourceTaskId(e.target.value)}
               className="w-full bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-xl px-3 py-2 outline-none text-xs cursor-pointer"

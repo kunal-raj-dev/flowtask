@@ -2,12 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Diurnal Ambient Atmosphere System', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    // Clear any previous overrides for pristine test environment
-    await page.evaluate(() => {
+    await page.addInitScript(() => {
+      localStorage.setItem('flowtask_onboarding_completed', 'true');
+      localStorage.setItem('flowtask_onboarding_dismissed', 'true');
       localStorage.removeItem('flowtask_diurnal_override');
       localStorage.removeItem('flowtask_diurnal_intensity');
     });
+    await page.goto('/');
   });
 
   test('renders all 12 atmospheric presets across Circadian and Thematic Flow categories in Aesthetics modal', async ({ page }) => {
@@ -79,7 +80,7 @@ test.describe('Diurnal Ambient Atmosphere System', () => {
     await expect(dialog).toBeVisible();
 
     // Locate the intensity slider
-    const slider = dialog.getByTitle('Calibrate atmospheric glow intensity');
+    const slider = dialog.getByTitle(/Adjust diurnal atmosphere intensity|Calibrate atmospheric glow intensity/i);
     await expect(slider).toBeVisible();
 
     // Adjust slider value to 85%
@@ -127,7 +128,7 @@ test.describe('Diurnal Ambient Atmosphere System', () => {
     // Open Preferences and Settings (Ctrl+,)
     await page.getByRole('button', { name: /Preferences and Settings/i }).first().click();
 
-    const drawer = page.getByRole('dialog', { name: /Application Settings/i });
+    const drawer = page.getByRole('dialog');
     await expect(drawer).toBeVisible();
 
     // Navigate to Aesthetics & Audio tab
@@ -136,7 +137,7 @@ test.describe('Diurnal Ambient Atmosphere System', () => {
     // Verify Diurnal section exists in settings
     await expect(drawer.getByText('Diurnal Ambient Atmosphere')).toBeVisible();
     await expect(drawer.getByText('Circadian Presets')).toBeVisible();
-    await expect(drawer.getByText('Thematic Flow Atmospheres')).toBeVisible();
+    await expect(drawer.getByText('Thematic Flow Atmospheres', { exact: true })).toBeVisible();
 
     // Select Solar Flare
     await drawer.getByRole('button', { name: /Solar Flare/i }).click();

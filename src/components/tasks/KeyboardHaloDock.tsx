@@ -14,6 +14,7 @@ interface KeyboardHaloDockProps {
   onToggleEvening?: () => void;
   onDismiss: () => void;
   onOpenShortcuts?: () => void;
+  isSidebarCollapsed?: boolean;
 }
 
 export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
@@ -28,9 +29,14 @@ export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
   onToggleEvening,
   onDismiss,
   onOpenShortcuts,
+  isSidebarCollapsed = false,
 }) => {
+  const desktopOffset = isSidebarCollapsed
+    ? 'lg:left-[calc(50%+1.75rem)]'
+    : 'lg:left-[calc(50%+8rem)]';
+
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden sm:flex items-center gap-3 px-4 py-2.5 rounded-xl bg-stone-900/95 dark:bg-stone-900/95 text-white border border-stone-700/70 shadow-2xl backdrop-blur-xl animate-slide-up select-none">
+    <div className={`fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 hidden sm:flex items-center gap-3 px-4 py-2.5 rounded-xl bg-stone-900/95 dark:bg-stone-900/95 text-white border border-stone-700/70 shadow-2xl backdrop-blur-xl animate-slide-up select-none transition-all duration-200 ${desktopOffset}`}>
       {/* Active task badge */}
       <div className="flex items-center gap-2 max-w-[200px] truncate border-r border-stone-700/80 pr-3">
         <span className="w-2 h-2 rounded-full bg-[var(--color-brand)] animate-pulse shrink-0" />

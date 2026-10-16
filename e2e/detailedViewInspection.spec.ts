@@ -133,31 +133,30 @@ test.describe('Detailed Multi-Device View & Interaction Inspection', () => {
             }
           }
 
-          // Expand Perspectives if needed
-          const persBtn = page.locator('button').filter({ hasText: /^PERSPECTIVES/i });
-          if (await persBtn.isVisible()) {
-            // Check if collapsed
-            const targetItem = page.locator('button').filter({ hasText: new RegExp(label, 'i') });
-            if (!(await targetItem.isVisible())) {
-              await persBtn.click();
-              await page.waitForTimeout(200);
-            }
-          }
+          const drawer = page.locator('aside[aria-label="Mobile navigation drawer"]');
+          await drawer.waitFor({ state: 'visible', timeout: 5000 });
 
-          // Click target
-          const btn = page.locator('button').filter({ hasText: new RegExp(label, 'i') }).first();
-          if (await btn.isVisible()) {
-            await btn.click();
-            await page.waitForTimeout(400);
-          }
-        } else {
-          // Desktop sidebar
-          const persBtn = page.locator('button').filter({ hasText: /^PERSPECTIVES/i });
-          const targetItem = page.locator('button').filter({ hasText: new RegExp(label, 'i') }).first();
-          if (!(await targetItem.isVisible()) && (await persBtn.isVisible())) {
-            await persBtn.click();
+          // Expand Perspectives if needed
+          const persToggle = drawer.getByTitle(/Expand Perspectives/i);
+          if (await persToggle.isVisible()) {
+            await persToggle.click();
             await page.waitForTimeout(200);
           }
+
+          // Click target button inside mobile drawer
+          const btn = drawer.locator('button').filter({ hasText: new RegExp(label, 'i') }).first();
+          await btn.waitFor({ state: 'visible', timeout: 5000 });
+          await btn.click();
+          await page.waitForTimeout(400);
+        } else {
+          // Desktop sidebar
+          const sidebar = page.locator('aside[aria-label="Desktop navigation"]');
+          const persToggle = sidebar.getByTitle(/Expand Perspectives/i);
+          if (await persToggle.isVisible()) {
+            await persToggle.click();
+            await page.waitForTimeout(200);
+          }
+          const targetItem = sidebar.locator('button').filter({ hasText: new RegExp(label, 'i') }).first();
           if (await targetItem.isVisible()) {
             await targetItem.click();
             await page.waitForTimeout(400);
@@ -174,12 +173,17 @@ test.describe('Detailed Multi-Device View & Interaction Inspection', () => {
         await taskCard.click();
         await page.waitForTimeout(400);
         await snap('02_task_drawer');
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(300);
+        const closeBtn = page.getByRole('button', { name: /Close task details/i });
+        if (await closeBtn.isVisible()) {
+          await closeBtn.click();
+        } else {
+          await page.keyboard.press('Escape');
+        }
+        await page.waitForTimeout(400);
       }
 
       // 3. Quick Capture Composer
-      if (dev.isMobile) {
+      if (dev.width < 1024) {
         await page.getByRole('button', { name: /Quick Add Task/i }).click();
       } else {
         await page.getByRole('button', { name: /New Task/i }).click();
@@ -194,7 +198,7 @@ test.describe('Detailed Multi-Device View & Interaction Inspection', () => {
       await snap('04_eisenhower_matrix');
 
       // Test mobile quadrant switcher if mobile
-      if (dev.isMobile) {
+      if (dev.width < 1024) {
         const scheduleQuad = page.locator('button').filter({ hasText: /Schedule/i }).first();
         if (await scheduleQuad.isVisible()) {
           await scheduleQuad.click();
@@ -207,7 +211,7 @@ test.describe('Detailed Multi-Device View & Interaction Inspection', () => {
       await navigateTo('Kanban Board');
       await snap('05_kanban_board');
 
-      if (dev.isMobile) {
+      if (dev.width < 1024) {
         const inProgCol = page.locator('button').filter({ hasText: /In Progress/i }).first();
         if (await inProgCol.isVisible()) {
           await inProgCol.click();
@@ -241,9 +245,21 @@ test.describe('Detailed Multi-Device View & Interaction Inspection', () => {
       const timerBtn = page.getByRole('button', { name: /Launch Focus Mode/i }).or(page.getByRole('button', { name: /Focus/i })).first();
       if (await timerBtn.isVisible()) {
         await timerBtn.click();
+        const focusDialog = page.locator('div[role="dialog"][aria-label="Focus Timer"], div[role="dialog"]');
+        await focusDialog.first().waitFor({ state: 'visible', timeout: 5000 });
         await page.waitForTimeout(300);
         await snap('09_pomodoro_modal');
         await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        if (await focusDialog.first().isVisible()) {
+          const closeBtn = page.getByRole('button', { name: /Close Pomodoro Modal|Close/i }).first();
+          if (await closeBtn.isVisible()) {
+            await closeBtn.click();
+          } else {
+            await page.keyboard.press('Escape');
+          }
+        }
+        await focusDialog.first().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
       }
 
@@ -254,8 +270,10 @@ test.describe('Detailed Multi-Device View & Interaction Inspection', () => {
         await page.waitForTimeout(400);
         await snap('10a_settings_tab_capacity');
 
+        const settingsDialog = page.locator('div[role="dialog"]');
+
         // Tab 2: Aesthetics & Audio
-        const aesTab = page.locator('button').filter({ hasText: /Aesthetics/i }).first();
+        const aesTab = settingsDialog.locator('button').filter({ hasText: /Aesthetics/i }).first();
         if (await aesTab.isVisible()) {
           await aesTab.click();
           await page.waitForTimeout(300);
@@ -263,7 +281,7 @@ test.describe('Detailed Multi-Device View & Interaction Inspection', () => {
         }
 
         // Tab 3: Cloud Sync / Calendar
-        const syncTab = page.locator('button').filter({ hasText: /Calendar/i }).or(page.locator('button').filter({ hasText: /Sync/i })).first();
+        const syncTab = settingsDialog.locator('button').filter({ hasText: /Calendar/i }).or(settingsDialog.locator('button').filter({ hasText: /Account & Sync/i })).first();
         if (await syncTab.isVisible()) {
           await syncTab.click();
           await page.waitForTimeout(300);

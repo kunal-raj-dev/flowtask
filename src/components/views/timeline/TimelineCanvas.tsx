@@ -464,6 +464,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
                 {/* Checkbox */}
                 <button
                   type="button"
+                  aria-label={isDone ? `Mark "${task.title}" as incomplete` : `Mark "${task.title}" as complete`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggleTaskStatus(task.id);

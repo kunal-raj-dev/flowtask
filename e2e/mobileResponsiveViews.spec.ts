@@ -21,9 +21,7 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
   // Common setup helper
   const setupPage = async (page: any, width: number, height: number) => {
     await page.setViewportSize({ width, height });
-    await page.goto('/');
-
-    await page.evaluate(() => {
+    await page.addInitScript(() => {
       const today = new Date().toISOString().split('T')[0];
       const now = new Date().toISOString();
       const mockTasks = [
@@ -104,9 +102,9 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
       localStorage.setItem('flowtask_onboarding_completed', 'true');
       localStorage.setItem('flowtask_sidebar_perspectives_collapsed', 'false');
       localStorage.setItem('flowtask_sidebar_more_collapsed', 'false');
-      window.location.reload();
     });
 
+    await page.goto('/');
     await page.waitForSelector('main#main-content', { state: 'visible' });
     await page.waitForTimeout(300);
   };
@@ -133,8 +131,13 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
       await page.screenshot({ path: path.join(screenshotsDir, `${vp.name}_02b_task_drawer_scrolled.png`) });
 
       // Close TaskDrawer
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(300);
+      const closeBtn = page.getByRole('button', { name: /Close task details/i });
+      if (await closeBtn.isVisible()) {
+        await closeBtn.click();
+      } else {
+        await page.keyboard.press('Escape');
+      }
+      await page.waitForTimeout(400);
     });
 
     test(`Audit Quick Add Modal on ${vp.name}`, async ({ page }) => {
@@ -149,7 +152,8 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
       await page.screenshot({ path: path.join(screenshotsDir, `${vp.name}_03_quick_add_modal.png`) });
 
       // Click "+ Set properties" or "+ Session" to see expanded composer on mobile
-      const propsToggle = page.locator('button, span').filter({ hasText: /properties/i }).first();
+      const modal = page.locator('div[role="dialog"][aria-labelledby="quick-add-title"]');
+      const propsToggle = modal.locator('button, span').filter({ hasText: /properties/i }).first();
       if (await propsToggle.isVisible()) {
         await propsToggle.click();
         await page.waitForTimeout(300);
@@ -157,6 +161,7 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
       }
 
       await page.keyboard.press('Escape');
+      await page.waitForTimeout(300);
     });
 
     test(`Audit Priority Matrix (Eisenhower) on ${vp.name}`, async ({ page }) => {
@@ -164,10 +169,18 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
 
       // Open mobile drawer
       await page.getByRole('button', { name: /More views and projects/i }).click();
-      await page.waitForSelector('aside', { state: 'visible' });
+      const drawer = page.locator('aside[aria-label="Mobile navigation drawer"]');
+      await drawer.waitFor({ state: 'visible' });
+
+      // Expand Perspectives if collapsed
+      const persToggle = drawer.getByTitle(/Expand Perspectives/i);
+      if (await persToggle.isVisible()) {
+        await persToggle.click();
+        await page.waitForTimeout(200);
+      }
 
       // Click Priority Matrix
-      await page.locator('button').filter({ hasText: 'Priority Matrix' }).first().click();
+      await drawer.locator('button').filter({ hasText: 'Priority Matrix' }).first().click();
       // Wait for Matrix view to mount (not skeleton)
       await page.waitForSelector('h2:has-text("Priority Matrix")', { state: 'visible', timeout: 15000 });
       await page.waitForTimeout(400);
@@ -184,9 +197,17 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
       await setupPage(page, vp.width, vp.height);
 
       await page.getByRole('button', { name: /More views and projects/i }).click();
-      await page.waitForSelector('aside', { state: 'visible' });
+      const drawer = page.locator('aside[aria-label="Mobile navigation drawer"]');
+      await drawer.waitFor({ state: 'visible' });
 
-      await page.locator('button').filter({ hasText: 'Kanban Board' }).first().click();
+      // Expand Perspectives if collapsed
+      const persToggle = drawer.getByTitle(/Expand Perspectives/i);
+      if (await persToggle.isVisible()) {
+        await persToggle.click();
+        await page.waitForTimeout(200);
+      }
+
+      await drawer.locator('button').filter({ hasText: 'Kanban Board' }).first().click();
       await page.waitForSelector('h2:has-text("Kanban Board")', { state: 'visible', timeout: 15000 });
       await page.waitForTimeout(400);
 
@@ -202,11 +223,19 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
       await setupPage(page, vp.width, vp.height);
 
       await page.getByRole('button', { name: /More views and projects/i }).click();
-      await page.waitForSelector('aside', { state: 'visible' });
+      const drawer = page.locator('aside[aria-label="Mobile navigation drawer"]');
+      await drawer.waitFor({ state: 'visible' });
 
-      await page.locator('button').filter({ hasText: 'Timeline' }).first().click();
+      // Expand Perspectives if collapsed
+      const persToggle = drawer.getByTitle(/Expand Perspectives/i);
+      if (await persToggle.isVisible()) {
+        await persToggle.click();
+        await page.waitForTimeout(200);
+      }
+
+      await drawer.locator('button').filter({ hasText: 'Timeline' }).first().click();
       // Wait for timeline canvas or hours
-      await page.waitForSelector('text=Hourly Timeline, text=Capacity, text=Timeline', { state: 'visible', timeout: 15000 });
+      await page.waitForSelector('h3:has-text("Day Timeline")', { state: 'visible', timeout: 15000 });
       await page.waitForTimeout(400);
 
       await page.screenshot({ path: path.join(screenshotsDir, `${vp.name}_06_timeline.png`) });

@@ -157,11 +157,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   };
 
   const getCapacityGuidance = (hours: number) => {
-    if (hours < 4) return { text: 'Minimalist & recovery pacing', color: 'text-stone-500 dark:text-stone-400' };
-    if (hours <= 7) return { text: 'Optimal cognitive balance for deep work & retention', color: 'text-emerald-600 dark:text-emerald-400' };
-    if (hours <= 10) return { text: 'Intensive workday sprint / high output', color: 'text-amber-600 dark:text-amber-400' };
-    if (hours <= 14) return { text: 'Exam marathon & deep study sprint mode', color: 'text-indigo-600 dark:text-indigo-400' };
-    return { text: 'Extended marathon crunch — schedule recovery & hydration', color: 'text-rose-600 dark:text-rose-400' };
+    if (hours < 4) return { text: 'Minimalist & recovery pacing', color: 'text-stone-600 dark:text-stone-300' };
+    if (hours <= 7) return { text: 'Optimal cognitive balance for deep work & retention', color: 'text-emerald-700 dark:text-emerald-300' };
+    if (hours <= 10) return { text: 'Intensive workday sprint / high output', color: 'text-amber-800 dark:text-amber-300' };
+    if (hours <= 14) return { text: 'Exam marathon & deep study sprint mode', color: 'text-indigo-700 dark:text-indigo-300' };
+    return { text: 'Extended marathon crunch — schedule recovery & hydration', color: 'text-rose-700 dark:text-rose-300' };
   };
 
   // Duration handlers
@@ -413,7 +413,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                           onClick={() => handleCapacityPreset(hours)}
                           className={`min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all text-center active:scale-95 ${
                             isSelected
-                              ? 'border-amber-500 bg-amber-500/20 text-amber-700 dark:text-amber-300 shadow-xs'
+                              ? 'border-amber-500 bg-amber-500/20 text-amber-800 dark:text-amber-300 shadow-xs'
                               : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-stone-400'
                           }`}
                         >
@@ -455,7 +455,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                         onClick={() => handleDurationPreset(mins)}
                         className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
                           isSelected
-                            ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 shadow-xs'
+                            ? 'border-amber-500 bg-amber-500/10 text-amber-800 dark:text-amber-300 shadow-xs'
                             : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                         }`}
                       >
@@ -466,7 +466,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
 
                   {/* Custom Duration Input / Button */}
                   {isCustomDurationOpen || !isPresetDuration ? (
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-800 dark:text-amber-300">
                       <span className="text-xs font-semibold">Custom:</span>
                       <input
                         type="number"

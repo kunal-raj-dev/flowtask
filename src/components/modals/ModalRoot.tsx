@@ -52,8 +52,10 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
       if (activeModals.length > 0) {
         const topModal = activeModals[activeModals.length - 1];
         if (topModal === 'pomodoro' || topModal === 'studySprint') {
-          // Focus modals handle their own Escape sequence (e.g. exit Zen fullscreen first)
-          return;
+          // If in Zen fullscreen mode, let focus modal handle exiting fullscreen first
+          if (document.fullscreenElement || document.querySelector('[aria-label="Zen Focus Mode"]')) {
+            return;
+          }
         }
         e.preventDefault();
         closeModal(topModal);
