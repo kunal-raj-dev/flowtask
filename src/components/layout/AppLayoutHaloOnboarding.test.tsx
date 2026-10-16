@@ -113,34 +113,21 @@ describe('AppLayout Universal Halo & Onboarding (BUG-13 & BUG-08)', () => {
     mockSyncStatus = 'synced';
   });
 
-  it('renders KeyboardHaloDock when selectedTaskId is set and halo is enabled', () => {
+  it('does not render bottom keyboard halo dock when a task is selected', () => {
     mockSelectedTaskId = 'task-layout-1';
-    render(<AppLayout />);
-
-    expect(screen.getAllByText('Review PR Diff').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole('button', { name: /keyboard shortcuts cheatsheet/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /dismiss keyboard halo dock/i })).toBeDefined();
-  });
-
-  it('does not render KeyboardHaloDock when keyboardHaloEnabled is false in settings', () => {
-    mockSelectedTaskId = 'task-layout-1';
-    mockSettings = {
-      onboardingCompleted: true,
-      keyboardHaloEnabled: false,
-    };
     render(<AppLayout />);
 
     expect(screen.queryByRole('button', { name: /keyboard shortcuts cheatsheet/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /dismiss keyboard halo dock/i })).toBeNull();
   });
 
-  it('renders KeyboardHaloDock when focusedTaskId is set during j/k navigation even when selectedTaskId is null', () => {
+  it('does not render bottom keyboard halo dock during focused task navigation', () => {
     mockSelectedTaskId = null;
     useUIStore.getState().setFocusedTaskId('task-layout-1');
     render(<AppLayout />);
 
-    expect(screen.getAllByText('Review PR Diff').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole('button', { name: /keyboard shortcuts cheatsheet/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /dismiss keyboard halo dock/i })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /keyboard shortcuts cheatsheet/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /dismiss keyboard halo dock/i })).toBeNull();
   });
 
   it('automatically triggers guided onboarding ritual when user has no tasks and has not completed onboarding', () => {

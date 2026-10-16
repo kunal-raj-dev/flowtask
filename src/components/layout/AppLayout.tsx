@@ -23,9 +23,7 @@ import { MobileBottomNav } from './MobileBottomNav';
 import { FocusMiniPlayer } from '../focus/FocusMiniPlayer';
 import { Menu, Search, Share2, X, Plus, Timer, Settings, Cloud } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
-import { useTodayStr, useTomorrowStr } from '../../hooks/useCurrentDate';
-import { useUIStore } from '../../store/useUIStore';
-import { KeyboardHaloDock } from '../tasks/KeyboardHaloDock';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
 import {
   getDiurnalPeriod,
@@ -59,16 +57,10 @@ export const AppLayout: React.FC = () => {
     setIsQuickAddOpen,
     syncStatus,
     setIsAuthModalOpen,
-    toggleTaskStatus,
-    updateTask,
     settings,
   } = useTaskContext();
 
   const todayStr = useTodayStr();
-  const tomorrowStr = useTomorrowStr();
-  const focusedTaskId = useUIStore((s) => s.focusedTaskId);
-  const activeHaloTaskId = focusedTaskId || selectedTaskId;
-  const activeHaloTask = activeHaloTaskId ? tasks.find((t) => t.id === activeHaloTaskId) : null;
 
   const { user, isAnonymous } = useAuth();
   const { openModal, closeModal, isModalOpen, hasAnyModalOpen } = useModal();
@@ -893,28 +885,6 @@ export const AppLayout: React.FC = () => {
           />
         )}
       </AnimatePresence>
-
-      {/* Universal Keyboard Halo Dock (BUG-13) */}
-      {activeHaloTask && settings?.keyboardHaloEnabled !== false && (
-        <KeyboardHaloDock
-          key={`keyboard-halo-${activeHaloTask.id}`}
-          task={activeHaloTask}
-          isSidebarCollapsed={isSidebarCollapsed}
-          onSelect={() => setSelectedTaskId(activeHaloTask.id)}
-          onToggleStatus={() => toggleTaskStatus(activeHaloTask.id)}
-          onStartFocus={() => handleStartFocus(activeHaloTask.id)}
-          onRescheduleToday={() => updateTask(activeHaloTask.id, { plannedDate: todayStr })}
-          onRescheduleTomorrow={() => updateTask(activeHaloTask.id, { plannedDate: tomorrowStr })}
-          onRescheduleSomeday={() => updateTask(activeHaloTask.id, { isSomeday: true, plannedDate: undefined })}
-          onSetPriority={(p) => updateTask(activeHaloTask.id, { priority: p })}
-          onToggleEvening={() => updateTask(activeHaloTask.id, { isEvening: !activeHaloTask.isEvening })}
-          onDismiss={() => {
-            setSelectedTaskId(null);
-            useUIStore.getState().setFocusedTaskId(null);
-          }}
-          onOpenShortcuts={() => openModal('shortcuts')}
-        />
-      )}
 
       {/* Batch Actions Dock */}
       <BatchActionBar />
