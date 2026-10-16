@@ -166,7 +166,7 @@ export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | 
   if (!cleanLine) return null;
 
   // 1. Check for URL anywhere in the line
-  const urlMatch = cleanLine.match(/(https?:\/\/[^\s\)]+)/i);
+  const urlMatch = cleanLine.match(/(https?:\/\/[^\s)]+)/i);
   let rawUrl = urlMatch ? urlMatch[1] : undefined;
   if (rawUrl) {
     rawUrl = rawUrl.replace(/[,.)]+$/, '');
@@ -234,10 +234,10 @@ export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | 
     }
 
     // Check for leading problem number: e.g. "1. Two Sum" or "#42 Trapping Rain Water" or "42 Trapping Rain Water"
-    const probNumMatch = workingText.match(/^(?:#\s*(\d+)|\b(\d+)[\.\)]\s*|\b(\d+)\s+)/);
+    const probNumMatch = workingText.match(/^(?:#\s*(\d+)|\b(\d+)[.)]\s*|\b(\d+)\s+)/);
     if (probNumMatch) {
       problemNumber = probNumMatch[1] || probNumMatch[2] || probNumMatch[3];
-      workingText = workingText.replace(/^(?:#\s*\d+\s*|\b\d+[\.\)]\s*|\b\d+\s+)/, '');
+      workingText = workingText.replace(/^(?:#\s*\d+\s*|\b\d+[.)]\s*|\b\d+\s+)/, '');
     }
 
     // Remove URL from title
@@ -256,7 +256,7 @@ export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | 
 
     // Strip out the metadata parenthetical parts: e.g. "(Easy, 15m)", "(Medium)", "(30m)", "[Hard]"
     workingText = workingText
-      .replace(/\s*[\(\[]\s*(?:(?:EASY|MEDIUM|MED|HARD)[,\s]*)?(?:~?\s*\d+(?:\.\d+)?\s*(?:mins?|minutes|m|hours?|hrs?|h))?[,\s]*(?:(?:EASY|MEDIUM|MED|HARD))?\s*[\)\]]/gi, '')
+      .replace(/\s*[([][\s]*(?:(?:EASY|MEDIUM|MED|HARD)[,\s]*)?(?:~?\s*\d+(?:\.\d+)?\s*(?:mins?|minutes|m|hours?|hrs?|h))?[,\s]*(?:(?:EASY|MEDIUM|MED|HARD))?\s*[)\]]/gi, '')
       .replace(/\s*-\s*$/, '')
       .trim();
 

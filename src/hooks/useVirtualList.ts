@@ -59,7 +59,6 @@ export function useVirtualList<T>({
 
   const calculateRange = useCallback(() => {
     if (!isVirtual || typeof window === 'undefined') {
-      setRange({ start: 0, end: items.length });
       return;
     }
 
@@ -100,7 +99,6 @@ export function useVirtualList<T>({
 
   useEffect(() => {
     if (!isVirtual) {
-      setRange({ start: 0, end: items.length });
       return;
     }
 

@@ -20,7 +20,8 @@ import { useModal } from '../../context/ModalContext';
 import { Toast } from '../ui/Toast';
 import { Button, ViewSkeleton, Kbd } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
-import { Menu, Search, Share2, X, Pause, Play, Plus, Timer, Settings, Cloud } from 'lucide-react';
+import { FocusMiniPlayer } from '../focus/FocusMiniPlayer';
+import { Menu, Search, Share2, X, Plus, Timer, Settings, Cloud } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
@@ -50,18 +51,9 @@ export const AppLayout: React.FC = () => {
     isEveningShutdownOpen,
     isWeeklyReviewOpen,
     addTask,
-    activeTimerTaskId,
-    activeTimerSeconds,
-    toggleTaskTimer,
     undoLastAction,
     isQuickAddOpen,
     setIsQuickAddOpen,
-    focusSession,
-    focusElapsedSeconds,
-    totalFocusedTodaySeconds,
-    pauseFocusSession,
-    resumeFocusSession,
-    stopFocusSession,
     syncStatus,
     setIsAuthModalOpen,
   } = useTaskContext();
@@ -210,25 +202,6 @@ export const AppLayout: React.FC = () => {
     return taskDate && taskDate > todayStr;
   }).length, [tasks, todayStr]);
 
-  const formatStopwatch = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const formattedFocusedToday = useMemo(() => {
-    const hours = Math.floor(totalFocusedTodaySeconds / 3600);
-    const mins = Math.floor((totalFocusedTodaySeconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
-    }
-    return `${mins}m`;
-  }, [totalFocusedTodaySeconds]);
-
-  const activeTimerTask = useMemo(
-    () => (activeTimerTaskId ? tasks.find((t) => t.id === activeTimerTaskId) || null : null),
-    [activeTimerTaskId, tasks]
-  );
 
   const { totalTodayPlanned, todayDoneCount, todayPercent } = useMemo(() => {
     const list = tasks.filter((t) => {
@@ -533,166 +506,24 @@ export const AppLayout: React.FC = () => {
 
           {/* Center: Persistent Focus Session Mini-Player or Today Progress Ring */}
           <div className="flex items-center gap-3">
-            {focusSession && (focusSession.state === 'running' || focusSession.state === 'paused') ? (
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border border-amber-500/35 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
-                <span
-                  className={`w-2 h-2 rounded-full bg-amber-500 ${
-                    focusSession.state === 'running' ? 'animate-ping' : ''
-                  }`}
-                />
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
-                  {focusSession.mode === 'pomodoro'
-                    ? '🍅 Pomodoro'
-                    : focusSession.mode === 'sprint'
-                    ? '⚡ Sprint'
-                    : '⏱️ Focus'}
+            <FocusMiniPlayer variant="desktop" />
+            {totalTodayPlanned > 0 && (
+              <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] px-3 py-1 rounded-full bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)]">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="tabular-nums">
+                  {todayDoneCount}/{totalTodayPlanned} Today ({todayPercent}%)
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (focusSession.mode === 'sprint') {
-                      openModal('studySprint', { taskId: focusSession.taskId });
-                    } else if (focusSession.mode === 'pomodoro') {
-                      openModal('pomodoro', { taskId: focusSession.taskId });
-                    } else if (focusSession.taskId) {
-                      setSelectedTaskId(focusSession.taskId);
-                    } else {
-                      openModal('pomodoro');
-                    }
-                  }}
-                  className="hover:underline truncate max-w-[170px]"
-                  title={`Focus session: "${focusSession.taskTitle}". Click to view details.`}
-                >
-                  {focusSession.subtaskTitle
-                    ? `${focusSession.taskTitle} • ${focusSession.subtaskTitle}`
-                    : focusSession.taskTitle}
-                </button>
-                <span className="font-mono tabular-nums text-[11px] bg-amber-500/25 px-1.5 py-0.5 rounded font-semibold text-amber-950 dark:text-amber-100">
-                  {focusSession.targetDurationSec
-                    ? formatStopwatch(
-                        Math.max(
-                          0,
-                          focusSession.targetDurationSec - focusElapsedSeconds
-                        )
-                      )
-                    : formatStopwatch(focusElapsedSeconds)}
-                </span>
-                {focusSession.state === 'running' ? (
-                  <button
-                    type="button"
-                    onClick={pauseFocusSession}
-                    title="Pause Focus Session"
-                    aria-label="Pause Focus Session"
-                    className="p-1 hover:bg-amber-500/20 rounded-md transition-colors active:scale-90"
-                  >
-                    <Pause size={12} strokeWidth={1.75} className="fill-current text-amber-700 dark:text-amber-300" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={resumeFocusSession}
-                    title="Resume Focus Session"
-                    aria-label="Resume Focus Session"
-                    className="p-1 hover:bg-amber-500/20 rounded-md transition-colors active:scale-90"
-                  >
-                    <Play size={12} strokeWidth={1.75} className="fill-current text-amber-700 dark:text-amber-300" />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={stopFocusSession}
-                  title="Finish / Stop Session"
-                  aria-label="Finish / Stop Session"
-                  className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-md transition-colors text-amber-700 dark:text-amber-300 active:scale-90"
-                >
-                  <X size={12} strokeWidth={1.75} />
-                </button>
-              </div>
-            ) : activeTimerTaskId && activeTimerTask ? (
-              focusSession?.state === 'running' ? (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/35 text-amber-800 dark:text-amber-300 text-xs font-bold shadow-xs animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTaskId(activeTimerTaskId)}
-                    className="hover:underline truncate max-w-[150px]"
-                    title={`Focus timer running for "${activeTimerTask.title}". Click to open.`}
-                  >
-                    {activeTimerTask.title}
-                  </button>
-                  <span className="font-mono tabular-nums text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
-                    {formatStopwatch(activeTimerSeconds)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => toggleTaskTimer(activeTimerTaskId)}
-                    title="Pause Timer"
-                    aria-label="Pause Timer"
-                    className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors active:scale-90"
-                  >
-                    <Pause size={12} strokeWidth={1.75} className="fill-current" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-dashed border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-bold shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-amber-500/60" />
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTaskId(activeTimerTaskId)}
-                    className="hover:underline truncate max-w-[150px]"
-                    title={`Focus timer paused for "${activeTimerTask.title}". Click to open.`}
-                  >
-                    {activeTimerTask.title}
-                  </button>
-                  <span className="font-mono tabular-nums text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded">
-                    {formatStopwatch(activeTimerSeconds)}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-wider bg-amber-500/25 px-1 py-0.2 rounded text-amber-900 dark:text-amber-200">
-                    Paused
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => toggleTaskTimer(activeTimerTaskId)}
-                    title="Resume Timer"
-                    aria-label="Resume Timer"
-                    className="p-0.5 text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-white transition-colors active:scale-90"
-                  >
-                    <Play size={12} strokeWidth={1.75} className="fill-current" />
-                  </button>
-                </div>
-              )
-            ) : (
-              <div className="flex items-center gap-2">
-                {totalFocusedTodaySeconds > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => openModal('pomodoro')}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 hover:bg-amber-500/20 transition-all shadow-2xs cursor-pointer"
-                    title={`Total focused today: ${formattedFocusedToday}. Click to open Focus Mode.`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span className="font-mono tabular-nums font-bold">🎯 {formattedFocusedToday} Focused</span>
-                  </button>
-                )}
-                {totalTodayPlanned > 0 && (
-                  <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] px-3 py-1 rounded-full bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)]">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="tabular-nums">
-                      {todayDoneCount}/{totalTodayPlanned} Today ({todayPercent}%)
-                    </span>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => openModal('pomodoro')}
-                  title="Launch Focus Mode & Pomodoro Timer"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 bg-[var(--bg-surface-l2)] hover:bg-amber-500/10 border border-[var(--border-hairline)] hover:border-amber-500/30 transition-all shadow-2xs active:scale-95"
-                >
-                  <Timer size={13} strokeWidth={1.75} className="text-amber-500" />
-                  <span>Focus</span>
-                </button>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => openModal('pomodoro')}
+              title="Launch Focus Mode & Pomodoro Timer"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 bg-[var(--bg-surface-l2)] hover:bg-amber-500/10 border border-[var(--border-hairline)] hover:border-amber-500/30 transition-all shadow-2xs active:scale-95"
+            >
+              <Timer size={13} strokeWidth={1.75} className="text-amber-500" />
+              <span>Focus</span>
+            </button>
           </div>
 
           {/* Right: Quick Tools */}
@@ -845,62 +676,7 @@ export const AppLayout: React.FC = () => {
 
           <div className="flex items-center gap-1 shrink-0">
             {/* Mobile Focus Session Indicator or Quick Launcher */}
-            {focusSession && (focusSession.state === 'running' || focusSession.state === 'paused') ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (focusSession.mode === 'sprint') {
-                    openModal('studySprint', focusSession.taskId ? { taskId: focusSession.taskId } : undefined);
-                  } else if (focusSession.mode === 'pomodoro') {
-                    openModal('pomodoro', focusSession.taskId ? { taskId: focusSession.taskId } : undefined);
-                  } else if (focusSession.taskId) {
-                    setSelectedTaskId(focusSession.taskId);
-                  } else {
-                    openModal('pomodoro');
-                  }
-                }}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono tabular-nums text-[10px] font-bold border border-amber-500/30 shrink-0 mr-1 active:scale-95"
-                title={`Active ${focusSession.mode}: ${focusSession.taskTitle}`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full bg-amber-500 ${
-                    focusSession.state === 'running' ? 'animate-ping' : ''
-                  }`}
-                />
-                <span>
-                  {focusSession.targetDurationSec
-                    ? formatStopwatch(
-                        Math.max(
-                          0,
-                          focusSession.targetDurationSec - focusElapsedSeconds
-                        )
-                      )
-                    : formatStopwatch(focusElapsedSeconds)}
-                </span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-1">
-                {totalFocusedTodaySeconds > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => openModal('pomodoro')}
-                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 font-mono tabular-nums text-[10px] font-bold shrink-0 active:scale-95"
-                    title={`Total focused today: ${formattedFocusedToday}`}
-                  >
-                    <span>🎯 {formattedFocusedToday}</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => openModal('pomodoro')}
-                  title="Launch Focus Mode"
-                  aria-label="Launch Focus Mode"
-                  className="p-2 text-[var(--text-secondary)] hover:text-amber-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
-                >
-                  <Timer size={18} strokeWidth={1.75} />
-                </button>
-              </div>
-            )}
+            <FocusMiniPlayer variant="mobile" />
 
             {/* Mobile User & Cloud Sync Capsule */}
             <button

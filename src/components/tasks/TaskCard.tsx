@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Task } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
+import { useFocusStore } from '../../store/useFocusStore';
 import { TaskContextMenu } from './TaskContextMenu';
+import { formatTimerClock } from '../../utils/focusTimeFormat';
 import {
   Check,
   Calendar,
@@ -46,6 +48,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onStartSprint,
   isKeyboardFocused = false,
 }) => {
+  const context = useTaskContext();
   const {
     tasks,
     toggleTaskStatus,
@@ -55,12 +58,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     projects,
     focusSession,
     activeTimerTaskId,
-    activeTimerSeconds,
     toggleTaskTimer,
     selectedTaskIds,
     toggleTaskSelection,
     showToast,
-  } = useTaskContext();
+  } = context;
+
+  // Granular subscription: Only the task card with the active timer re-renders every second
+  const storeTimerSeconds = useFocusStore((s) => (s.activeTimerTaskId === task.id ? s.activeTimerSeconds : 0));
+  const activeTimerSeconds = (context as any)?.activeTimerSeconds ?? storeTimerSeconds;
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState<string | null>(null);
@@ -130,13 +136,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   const formatStopwatch = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) {
-      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return formatTimerClock(seconds);
   };
 
   const formatEstimatedDuration = (minutes: number) => {

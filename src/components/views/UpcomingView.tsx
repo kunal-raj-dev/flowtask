@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
-import { Omnibar } from '../tasks/Omnibar';
+import { TaskComposer } from '../tasks/TaskComposer';
 import { TimelineView } from './TimelineView';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { useTodayStr } from '../../hooks/useCurrentDate';
@@ -253,7 +253,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
       ) : (
         <>
           {/* Quick Capture */}
-          <Omnibar />
+          <TaskComposer />
 
           {/* Grouped Planning Sections */}
           {selectedHorizonDate ? (

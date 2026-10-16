@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Project } from '../../types/task';
 import { TaskCard } from '../tasks/TaskCard';
-import { Omnibar } from '../tasks/Omnibar';
+import { TaskComposer } from '../tasks/TaskComposer';
 import { KanbanView } from './KanbanView';
 import { EisenhowerView } from './EisenhowerView';
 import {
@@ -162,7 +162,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         ) : (
           <div>
             {/* Quick Capture for this project */}
-            <Omnibar />
+            <TaskComposer />
 
             {/* Active Tasks in Project */}
             <div className="space-y-2 mb-6">

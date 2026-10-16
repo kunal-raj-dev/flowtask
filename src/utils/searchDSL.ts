@@ -36,14 +36,14 @@ export const parseSearchDSL = (rawQuery: string): ParsedQueryDSL => {
   }
 
   // 2. Context: @context or context:val
-  const ctxMatch = q.match(/(?:@|context:)([a-zA-Z0-9_\-]+)/i);
+  const ctxMatch = q.match(/(?:@|context:)([a-zA-Z0-9_-]+)/i);
   if (ctxMatch) {
     result.contextTag = ctxMatch[1].toLowerCase();
     q = q.replace(ctxMatch[0], '');
   }
 
   // 3. Tag: #tag or tag:val
-  const tagMatch = q.match(/(?:#|tag:)([a-zA-Z0-9_\-]+)/i);
+  const tagMatch = q.match(/(?:#|tag:)([a-zA-Z0-9_-]+)/i);
   if (tagMatch) {
     result.tag = tagMatch[1].toLowerCase();
     q = q.replace(tagMatch[0], '');

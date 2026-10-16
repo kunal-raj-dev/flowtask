@@ -25,14 +25,8 @@ export function useKeyboardNavigation({
 }: UseKeyboardNavigationProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
 
-  // Reset focus if tasks list empties or changes dramatically
-  useEffect(() => {
-    if (focusedIndex >= tasks.length) {
-      setFocusedIndex(tasks.length - 1);
-    }
-  }, [tasks.length, focusedIndex]);
-
-  const focusedTaskId = focusedIndex >= 0 && focusedIndex < tasks.length ? tasks[focusedIndex].id : null;
+  const safeFocusedIndex = tasks.length === 0 ? -1 : Math.min(focusedIndex, tasks.length - 1);
+  const focusedTaskId = safeFocusedIndex >= 0 && safeFocusedIndex < tasks.length ? tasks[safeFocusedIndex].id : null;
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -185,7 +179,6 @@ export function useKeyboardNavigation({
     [
       enabled,
       tasks,
-      focusedIndex,
       focusedTaskId,
       onSelectTask,
       onToggleStatus,
@@ -213,7 +206,7 @@ export function useKeyboardNavigation({
 
   return {
     focusedTaskId,
-    focusedIndex,
+    focusedIndex: safeFocusedIndex,
     setFocusedIndex,
   };
 }

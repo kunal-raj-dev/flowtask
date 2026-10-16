@@ -67,9 +67,12 @@ describe('voiceDictationService', () => {
   });
 
   it('aggregates final and interim speech transcripts correctly', () => {
-    let instance: any = null;
+    const instances: any[] = [];
 
     class MockSpeechRecognition {
+      constructor() {
+        instances.push(this);
+      }
       continuous = false;
       interimResults = false;
       lang = '';
@@ -77,9 +80,7 @@ describe('voiceDictationService', () => {
       onresult: ((e: any) => void) | null = null;
       onerror: ((e: any) => void) | null = null;
       onend: (() => void) | null = null;
-      start() {
-        instance = this;
-      }
+      start() {}
       stop = vi.fn();
       abort = vi.fn();
     }
@@ -90,7 +91,8 @@ describe('voiceDictationService', () => {
     const session = createVoiceDictationSession({ onTranscript });
     session.start();
 
-    expect(instance).not.toBeNull();
+    const instance = instances[0];
+    expect(instance).toBeDefined();
 
     // Simulate speech event
     const mockEvent = {

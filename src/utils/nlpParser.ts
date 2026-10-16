@@ -56,7 +56,7 @@ export function parseTaskInput(input: string): ParsedTaskInput {
 
   // 2. Extract Project & General Hashtags (e.g. #work, #backend, #api)
   const tagList: string[] = [];
-  workingText = workingText.replace(/(?:^|\s)#([a-zA-Z0-9_\-]+)(?=\s|$)/g, (_match, tag) => {
+  workingText = workingText.replace(/(?:^|\s)#([a-zA-Z0-9_-]+)(?=\s|$)/g, (_match, tag) => {
     tagList.push(tag.toLowerCase());
     return ' ';
   });
@@ -67,7 +67,7 @@ export function parseTaskInput(input: string): ParsedTaskInput {
 
   // 2b. Extract GTD Context Tags (e.g. @calls, @computer, @errands, @desk, @focus)
   const contextTagsList: string[] = [];
-  workingText = workingText.replace(/(^|\s)@([a-zA-Z0-9_\-]+)(?=\s|$)/g, (_match, prefix, tag) => {
+  workingText = workingText.replace(/(^|\s)@([a-zA-Z0-9_-]+)(?=\s|$)/g, (_match, prefix, tag) => {
     contextTagsList.push(tag.toLowerCase());
     return prefix || ' ';
   });

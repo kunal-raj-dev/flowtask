@@ -14,6 +14,7 @@ import {
 import { formatLocalDate } from '../../utils/nlpParser';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { generateWorklogMarkdown } from '../../utils/worklogExporter';
+import { downloadMarkdown } from '../../utils/fileExporter';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from 'canvas-confetti';
 
@@ -113,15 +114,7 @@ export const LogbookView: React.FC<LogbookViewProps> = ({ onSelectTask }) => {
 
   const handleDownloadWorklog = () => {
     const text = generateWorklogMarkdown(filteredTasks, projects, { timeHorizon });
-    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `flowtask-worklog-${todayStr}.md`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadMarkdown(text, `flowtask-worklog-${todayStr}.md`);
     audioEngine.playCompletionChime();
   };
 

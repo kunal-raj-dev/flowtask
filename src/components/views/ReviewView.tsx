@@ -3,7 +3,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import { LogbookView } from './LogbookView';
 import { InsightsView } from './InsightsView';
 import { generateDailyStandup } from '../../utils/standupGenerator';
-import { exportToCSV, exportToJSON, exportToMarkdown } from '../../utils/storage';
+import { exportToCSV, exportToJSON, exportToMarkdown, downloadFile } from '../../utils/fileExporter';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from 'canvas-confetti';
 import {
@@ -71,15 +71,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
       mimeType = 'text/markdown;charset=utf-8;';
     }
 
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadFile(content, filename, mimeType);
     showToast(`Exported ${type.toUpperCase()} file`);
   };
 

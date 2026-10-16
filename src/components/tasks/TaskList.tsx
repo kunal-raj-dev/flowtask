@@ -4,7 +4,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import type { Task } from '../../types/task';
 import { TaskCard } from './TaskCard';
 import { VirtualTaskList } from './VirtualTaskList';
-import { Omnibar } from './Omnibar';
+import { TaskComposer } from './TaskComposer';
 import { EmptyState } from '../ui';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import {
@@ -43,7 +43,7 @@ interface TaskListProps {
 export const TaskList: React.FC<TaskListProps> = ({
   onSelectTask,
   onStartFocus,
-  onOpenBrainDump,
+  onOpenBrainDump: _onOpenBrainDump,
   onStartSprint,
   filterInbox,
   filterSomeday,
@@ -392,7 +392,7 @@ export const TaskList: React.FC<TaskListProps> = ({
         </div>
       )}
 
-      <Omnibar onOpenBrainDump={onOpenBrainDump} />
+      <TaskComposer />
 
       {/* GTD Context Filter Rail */}
       {availableContextTags.length > 0 && (

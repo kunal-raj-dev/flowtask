@@ -11,9 +11,10 @@ import { commandService, type CommandResult } from '../services/commandService';
 import { WorkspaceStore } from '../services/workspaceStore';
 import { focusSessionService } from '../services/focusSessionService';
 import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/settings';
-import { validateWorkspaceData } from '../utils/workspaceValidation';
 import { isActiveTask, isFocusTask } from '../utils/taskSelectors';
 import { dbService } from '../services/dbService';
+import { downloadJson } from '../utils/fileExporter';
+import { validateWorkspaceData } from '../utils/workspaceValidation';
 
 import { useUIStore, useFocusStore } from '../store';
 
@@ -266,33 +267,18 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     clearTaskSelection,
   } = uiState;
 
-  const focusState = useFocusStore();
-  const { focusElapsedSeconds, activeTimerSeconds } = focusState;
-
+  const storeFocusSession = useFocusStore((s) => s.focusSession);
+  const focusSession = (preferences.focusSession as FocusSession | null) || storeFocusSession;
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const todayStr = getTodayStr();
   const settings = useMemo<UserWorkflowSettings>(
     () => ({ ...DEFAULT_WORKFLOW_SETTINGS, ...((preferences.settings as Partial<UserWorkflowSettings>) || {}) }),
     [preferences.settings]
   );
-  const focusSession = (preferences.focusSession as FocusSession | null) || focusState.focusSession;
   const focusLogs = useMemo<FocusLog[]>(
     () => (Array.isArray(preferences.focusLogs) ? (preferences.focusLogs as FocusLog[]) : []),
     [preferences.focusLogs]
   );
-  const totalFocusedTodaySeconds = useMemo(() => {
-    const completedToday = focusLogs
-      .filter((log) => log.endedAt && formatLocalDate(new Date(log.endedAt)) === todayStr)
-      .reduce((acc, log) => acc + (log.seconds || 0), 0);
-
-    const isLiveToday =
-      focusSession &&
-      (focusSession.state === 'running' || focusSession.state === 'paused') &&
-      formatLocalDate(new Date(focusSession.startedAt)) === todayStr;
-    const liveSec = isLiveToday ? focusElapsedSeconds : 0;
-
-    return completedToday + liveSec;
-  }, [focusLogs, focusSession, focusElapsedSeconds, todayStr]);
 
   const interruptionStash = (preferences.interruptionStash as InterruptionStash | null) || null;
   const calendarIcsUrl = (preferences.calendarUrl as string) || '';
@@ -595,7 +581,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const toggleTaskTimer = (id: string) => { const session = current().preferences.focusSession as FocusSession | null; if (session?.taskId !== id) startTaskTimer(id); else if (session.state === 'running') pauseFocusSession(); else resumeFocusSession(); };
   const stashActiveFocus = (override?: { id: string; title: string; projectId?: string }, elapsed?: number) => {
     const session = current().preferences.focusSession as FocusSession | null, id = override?.id || session?.taskId; if (!id) return;
-    setWorkspacePreference('interruptionStash', { taskId: id, taskTitle: override?.title || session?.taskTitle || 'Focus', elapsedSeconds: elapsed ?? focusElapsedSeconds, stashedAt: Date.now(), projectId: override?.projectId }); stopFocusSession();
+    setWorkspacePreference('interruptionStash', { taskId: id, taskTitle: override?.title || session?.taskTitle || 'Focus', elapsedSeconds: elapsed ?? useFocusStore.getState().focusElapsedSeconds, stashedAt: Date.now(), projectId: override?.projectId }); stopFocusSession();
   };
   const clearInterruptionStash = () => setWorkspacePreference('interruptionStash', null);
   const restoreStashedFocus = () => { const stash = current().preferences.interruptionStash as InterruptionStash | null; if (stash) { startFocusSession('stopwatch', stash.taskId, stash.taskTitle); clearInterruptionStash(); } };
@@ -628,8 +614,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   }
   const forceSyncToCloud = async () => { if (!connected) { setIsAuthModalOpen(true); return; } await store.retry(); };
   const downloadWorkspaceBackup = () => {
-    const blob = new Blob([JSON.stringify({ ...current(), version: 3 }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = `flowtask-${workspaceId}-${todayStr}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadJson({ ...current(), version: 3 }, `flowtask-${workspaceId}-${todayStr}.json`);
   };
   const resolveSyncConflict = async (choice: 'local' | 'remote') => { try { await store.resolveConflict(choice); } catch (error) { showToast((error as Error).message); } };
   const importLocalWorkspace = async () => { const local = await dbService.loadWorkspace('local'); if (local) await importTasks(local.tasks, local.projects); };
@@ -656,9 +641,24 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     setIsAuthModalOpen,
     forceSyncToCloud,
     focusSession,
-    focusElapsedSeconds,
+    get focusElapsedSeconds() {
+      return useFocusStore.getState().focusElapsedSeconds;
+    },
     focusLogs,
-    totalFocusedTodaySeconds,
+    get totalFocusedTodaySeconds() {
+      const logs = (Array.isArray(preferences.focusLogs) ? preferences.focusLogs : []) as FocusLog[];
+      const tStr = getTodayStr();
+      const completedToday = logs
+        .filter((log) => log.endedAt && formatLocalDate(new Date(log.endedAt)) === tStr)
+        .reduce((acc, log) => acc + (log.seconds || 0), 0);
+      const session = (preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
+      const isLiveToday =
+        session &&
+        (session.state === 'running' || session.state === 'paused') &&
+        formatLocalDate(new Date(session.startedAt)) === tStr;
+      const liveSec = isLiveToday ? useFocusStore.getState().focusElapsedSeconds : 0;
+      return completedToday + liveSec;
+    },
     startFocusSession,
     pauseFocusSession,
     resumeFocusSession,
@@ -667,7 +667,9 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     switchFocusSubtask,
     logFocusSegment,
     activeTimerTaskId,
-    activeTimerSeconds,
+    get activeTimerSeconds() {
+      return useFocusStore.getState().activeTimerSeconds;
+    },
     startTaskTimer,
     stopTaskTimer,
     toggleTaskTimer,
@@ -753,7 +755,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     workspaceId, preferences, tasks, projects, activeView, viewLayout, selectedTaskId,
     searchQuery, priorityFilter, quickWinsOnly, theme, soundEnabled, soundProfile,
     overdueTasks, isTriageDismissed, toast, syncStatus, lastSyncedAt, isAuthModalOpen,
-    focusSession, focusElapsedSeconds, focusLogs, totalFocusedTodaySeconds, activeTimerTaskId, activeTimerSeconds,
+    focusSession, focusLogs, activeTimerTaskId,
     selectedTaskIds, interruptionStash, isInterruptionModalOpen, isQuickAddOpen,
     quickAddDraft, isTemplatePickerOpen, isWeeklyReviewOpen, calendarEvents,
     calendarIcsUrl, isEveningShutdownOpen, isShutdownDismissed, smartViews,
