@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar, X, ExternalLink } from 'lucide-react';
 
 interface TimelineCalendarModalProps {
@@ -17,10 +17,11 @@ export const TimelineCalendarModal: React.FC<TimelineCalendarModalProps> = ({
   onDisconnect,
 }) => {
   const [icsUrlInput, setIcsUrlInput] = useState(calendarIcsUrl);
-
-  useEffect(() => {
+  const [prevCalendarIcsUrl, setPrevCalendarIcsUrl] = useState(calendarIcsUrl);
+  if (calendarIcsUrl !== prevCalendarIcsUrl) {
+    setPrevCalendarIcsUrl(calendarIcsUrl);
     setIcsUrlInput(calendarIcsUrl);
-  }, [calendarIcsUrl]);
+  }
 
   if (!isOpen) return null;
 

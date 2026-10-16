@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { useTodayStr } from '../../hooks/useCurrentDate';
+import { useTotalFocusedTodaySeconds } from '../../hooks/useTotalFocusedTodaySeconds';
 import {
   TrendingUp,
   Flame,
@@ -23,12 +24,17 @@ interface InsightsViewProps {
   onSelectTask: (taskId: string) => void;
 }
 
+const EMPTY_TASKS: any[] = [];
+const EMPTY_PROJECTS: any[] = [];
+const EMPTY_FOCUS_LOGS: any[] = [];
+
 export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   const context = useTaskContext();
-  const tasks = context?.tasks || [];
-  const projects = context?.projects || [];
-  const focusLogs = context?.focusLogs || [];
-  const totalFocusedTodaySeconds = context?.totalFocusedTodaySeconds || 0;
+  const tasks = context?.tasks ?? EMPTY_TASKS;
+  const projects = context?.projects ?? EMPTY_PROJECTS;
+  const focusLogs = context?.focusLogs ?? EMPTY_FOCUS_LOGS;
+  const liveTotalFocusedTodaySeconds = useTotalFocusedTodaySeconds();
+  const totalFocusedTodaySeconds = (context as any)?.totalFocusedTodaySeconds ?? liveTotalFocusedTodaySeconds;
 
   const [hoveredScatterPoint, setHoveredScatterPoint] = useState<{
     id: string;
@@ -266,7 +272,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
       wowDiff: diff,
       wowPercent: pct,
     };
-  }, [tasks, todayStr, currentHour]);
+  }, [tasks, todayStr, currentHour, focusLogs, totalFocusedTodaySeconds]);
 
   // Estimation Accuracy & Velocity Metrics (memoized)
   const accuracyMetrics = useMemo(() => calculateEstimationAccuracy(tasks), [tasks]);

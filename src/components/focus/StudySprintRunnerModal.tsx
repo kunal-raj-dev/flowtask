@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { useFocusStore } from '../../store/useFocusStore';
+import { useTotalFocusedTodaySeconds } from '../../hooks/useTotalFocusedTodaySeconds';
 import { audioEngine, type AmbientSoundType } from '../../utils/audioEngine';
+import { formatSecondsToHumanReadable, formatTimerClock } from '../../utils/focusTimeFormat';
+import { useFocusModalShortcuts } from './useFocusModalShortcuts';
+import { useFocusAmbientSound } from './useFocusAmbientSound';
 import confetti from 'canvas-confetti';
 import {
   X,
@@ -34,23 +39,20 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
   const tasks = context?.tasks || [];
   const toggleSubTask = context?.toggleSubTask || (() => {});
   const focusSession = context?.focusSession || null;
-  const focusElapsedSeconds = context?.focusElapsedSeconds || 0;
+  const liveElapsed = useFocusStore((s) => s.focusElapsedSeconds);
+  const focusElapsedSeconds = (context as any)?.focusElapsedSeconds ?? liveElapsed;
   const startFocusSession = context?.startFocusSession;
   const pauseFocusSession = context?.pauseFocusSession;
   const resumeFocusSession = context?.resumeFocusSession;
   const switchFocusSubtask = context?.switchFocusSubtask;
   const logFocusSegment = context?.logFocusSegment;
-  const totalFocusedTodaySeconds = context?.totalFocusedTodaySeconds || 0;
+  const liveTotalFocusedTodaySeconds = useTotalFocusedTodaySeconds();
+  const totalFocusedTodaySeconds = (context as any)?.totalFocusedTodaySeconds ?? liveTotalFocusedTodaySeconds;
 
-  const formattedTodayFocus = useMemo(() => {
-    const hours = Math.floor(totalFocusedTodaySeconds / 3600);
-    const mins = Math.floor((totalFocusedTodaySeconds % 3600) / 60);
-    const secs = totalFocusedTodaySeconds % 60;
-    if (hours > 0) return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
-    if (mins > 0) return `${mins}m`;
-    if (secs > 0) return `${secs}s`;
-    return '0m';
-  }, [totalFocusedTodaySeconds]);
+  const formattedTodayFocus = useMemo(
+    () => formatSecondsToHumanReadable(totalFocusedTodaySeconds),
+    [totalFocusedTodaySeconds]
+  );
 
   const task = taskId ? tasks.find((t) => t.id === taskId) : null;
 
@@ -86,14 +88,16 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
   const isSprintRunning = Boolean(isThisSprintActive && focusSession?.state === 'running');
 
   // Align active subtask index if global focusSession points to a specific subtask
-  useEffect(() => {
-    if (isThisSprintActive && focusSession?.subtaskId) {
+  const [prevSubtaskId, setPrevSubtaskId] = useState(focusSession?.subtaskId);
+  if (isThisSprintActive && focusSession?.subtaskId !== prevSubtaskId) {
+    setPrevSubtaskId(focusSession?.subtaskId);
+    if (focusSession?.subtaskId) {
       const idx = subtasks.findIndex((s) => s.id === focusSession.subtaskId);
       if (idx >= 0 && idx !== activeSubtaskIndex) {
         setActiveSubtaskIndex(idx);
       }
     }
-  }, [isThisSprintActive, focusSession?.subtaskId, subtasks, activeSubtaskIndex]);
+  }
 
   // Local timer fallback for isolated testing/rendering
   const [localRunning, setLocalRunning] = useState(false);
@@ -116,10 +120,18 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
 
   // Banked time (in seconds)
   const [bankedSeconds, setBankedSeconds] = useState(0);
-
-  // Ambient sound state
-  const [ambientSound, setAmbientSound] = useState<AmbientSoundType>('none');
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Shared ambient sound management & lifecycle unmount cleanup
+  const { ambientSound, setAmbientSound } = useFocusAmbientSound({ isActive: isOpen });
+
+  // Shared fullscreen keyboard shortcut with input protection & escape handling
+  useFocusModalShortcuts({
+    isFullscreen,
+    setIsFullscreen,
+    onClose,
+    enabled: isOpen && Boolean(task),
+  });
 
   // Explicit subtask selection and timer reset handler
   const selectSubtask = (idx: number) => {
@@ -157,57 +169,13 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
     };
   }, [isThisSprintActive, localRunning]);
 
-  // Ambient sound lifecycle management & unmount cleanup
-  useEffect(() => {
-    return () => {
-      audioEngine.stopAmbientSound();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen || ambientSound === 'none') {
-      audioEngine.stopAmbientSound();
-    } else {
-      audioEngine.startAmbientSound(ambientSound);
-    }
-  }, [isOpen, ambientSound]);
-
-  // Fullscreen keyboard shortcut with input protection & escape handling
-  useEffect(() => {
-    if (!isOpen || !task) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const tag = (target?.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
-
-      if (e.key === 'f' || e.key === 'F') {
-        e.preventDefault();
-        setIsFullscreen((prev) => !prev);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        if (isFullscreen) {
-          setIsFullscreen(false);
-        } else {
-          onClose();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, task, isFullscreen, onClose]);
-
   if (!isOpen || !task) return null;
 
   const completedCount = subtasks.filter((s) => s.completed).length;
   const progressPercent = subtasks.length > 0 ? Math.round((completedCount / subtasks.length) * 100) : 0;
 
-  // Format MM:SS
-  const formatTime = (totalSeconds: number) => {
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
+  // Format MM:SS using shared clock formatter
+  const formatTime = (totalSeconds: number) => formatTimerClock(totalSeconds);
 
   // Format Banked time
   const formatBankedTime = (seconds: number) => {

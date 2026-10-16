@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
+import { useFocusStore } from '../../../store/useFocusStore';
 import type { Task, RecurrenceFrequency } from '../../../types/task';
 import { Badge } from '../../ui/Badge';
 import { getVelocityCalibration } from '../../../utils/velocityCalibrator';
+import { formatTimerClock } from '../../../utils/focusTimeFormat';
 import { Repeat, Clock, Play, Pause, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface TaskDrawerRecurrenceProps {
@@ -14,15 +16,18 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
   task,
   onOpenRecurrenceModal,
 }) => {
+  const context = useTaskContext();
   const {
     tasks,
     projects,
     updateTask,
     focusSession,
     activeTimerTaskId,
-    activeTimerSeconds,
     toggleTaskTimer,
-  } = useTaskContext();
+  } = context;
+
+  const storeSeconds = useFocusStore((s) => (s.activeTimerTaskId === task.id ? s.activeTimerSeconds : 0));
+  const activeTimerSeconds = (context as any)?.activeTimerSeconds ?? storeSeconds;
 
   const [isRecurrenceExpanded, setIsRecurrenceExpanded] = useState(false);
 
@@ -42,13 +47,7 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
       : 'similar';
 
   const formatStopwatch = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) {
-      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return formatTimerClock(seconds);
   };
 
   return (

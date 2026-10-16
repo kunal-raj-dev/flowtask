@@ -1,11 +1,14 @@
 import { isTodayTask } from '../../utils/taskSelectors';
+import { partitionTodayTasks } from '../../utils/todayPartition';
 import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
-import { Omnibar } from '../tasks/Omnibar';
+import { TaskComposer } from '../tasks/TaskComposer';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
+import { useTotalFocusedTodaySeconds } from '../../hooks/useTotalFocusedTodaySeconds';
 import { formatLocalDate } from '../../utils/nlpParser';
+import { formatSecondsToHumanReadable } from '../../utils/focusTimeFormat';
 import { useTodayStr, getTomorrowStr } from '../../hooks/useCurrentDate';
 import {
   Sun,
@@ -36,6 +39,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   onStartSprint,
   onOpenStudySession,
 }) => {
+  const context = useTaskContext();
   const {
     tasks,
     quickWinsOnly,
@@ -48,8 +52,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
     settings,
     showToast,
     focusSession,
-    totalFocusedTodaySeconds,
-  } = useTaskContext();
+  } = context;
+
+  const liveTotalFocusedTodaySeconds = useTotalFocusedTodaySeconds();
+  const totalFocusedTodaySeconds = (context as any)?.totalFocusedTodaySeconds ?? liveTotalFocusedTodaySeconds;
 
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState<boolean>(() => {
     try {
@@ -133,28 +139,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
     [activeTodayTasks, priorityFilter, quickWinsOnly]
   );
 
-  // Top 3 Focus
-  const topThreeTasks = useMemo(
-    () => filteredActiveTasks.filter(
-      (t) => t.isPinnedToday && (t.topThreeDate === todayStr || (!t.topThreeDate && t.plannedDate === todayStr))
-    ),
+  // Things 3-style partitioned task buckets (Top 3, Daytime, This Evening)
+  const { topThreeTasks, daytimeTasks, eveningTasks } = useMemo(
+    () => partitionTodayTasks(filteredActiveTasks, todayStr),
     [filteredActiveTasks, todayStr]
-  );
-
-  // Daytime tasks (not Top 3, not marked for evening)
-  const daytimeTasks = useMemo(
-    () => filteredActiveTasks.filter(
-      (t) => !topThreeTasks.some((top) => top.id === t.id) && !t.isEvening
-    ),
-    [filteredActiveTasks, topThreeTasks]
-  );
-
-  // Things 3-style "This Evening" tasks (not Top 3, marked for evening)
-  const eveningTasks = useMemo(
-    () => filteredActiveTasks.filter(
-      (t) => !topThreeTasks.some((top) => top.id === t.id) && Boolean(t.isEvening)
-    ),
-    [filteredActiveTasks, topThreeTasks]
   );
 
   // Completed today based on completion timestamp
@@ -205,21 +193,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
   );
   const isOverbooked = activePlannedMinutes > targetWorkCapacityMinutes;
 
-  const focusedTodayFormatted = useMemo(() => {
-    const hours = Math.floor(totalFocusedTodaySeconds / 3600);
-    const mins = Math.floor((totalFocusedTodaySeconds % 3600) / 60);
-    const secs = totalFocusedTodaySeconds % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
-    }
-    if (mins > 0) {
-      return `${mins}m`;
-    }
-    if (secs > 0) {
-      return `${secs}s`;
-    }
-    return '0m';
-  }, [totalFocusedTodaySeconds]);
+  const focusedTodayFormatted = useMemo(
+    () => formatSecondsToHumanReadable(totalFocusedTodaySeconds),
+    [totalFocusedTodaySeconds]
+  );
 
   const focusedCapacityPercent = targetWorkCapacityMinutes > 0
     ? Math.min(100, Math.round(((totalFocusedTodaySeconds / 60) / targetWorkCapacityMinutes) * 100))
@@ -402,7 +379,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
       )}
 
       {/* Quick Capture Omnibar with Editable Chips */}
-      <Omnibar />
+      <TaskComposer />
 
       {/* Overcommitment Protection Banner */}
       {isOverbooked && !isOverloadDismissed && daytimeTasks.length > 0 && (

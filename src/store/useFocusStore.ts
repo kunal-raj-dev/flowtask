@@ -216,3 +216,7 @@ export const useIsTaskTimerActive = (taskId: string) => {
   const seconds = useFocusStore((s) => (s.activeTimerTaskId === taskId ? s.activeTimerSeconds : 0));
   return { isActive, isRunning, seconds };
 };
+
+export const useFocusElapsedSeconds = () => useFocusStore((s) => s.focusElapsedSeconds);
+export const useActiveTimerSeconds = () => useFocusStore((s) => s.activeTimerSeconds);
+export const useActiveTimerTaskId = () => useFocusStore((s) => s.activeTimerTaskId);

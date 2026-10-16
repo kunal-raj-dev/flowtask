@@ -21,6 +21,10 @@ interface RecoveryViewProps {
 }
 
 const priorityBadges: Record<string, { label: string; className: string }> = {
+  p1: { label: 'Urgent (P1)', className: 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20' },
+  p2: { label: 'High (P2)', className: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  p3: { label: 'Medium (P3)', className: 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  p4: { label: 'Low (P4)', className: 'text-stone-500 bg-stone-500/10 border-stone-500/20' },
   urgent: { label: 'Urgent', className: 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20' },
   high: { label: 'High', className: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20' },
   medium: { label: 'Medium', className: 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20' },

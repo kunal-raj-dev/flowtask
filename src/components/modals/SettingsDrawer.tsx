@@ -64,32 +64,44 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   const [isRefreshingCalendar, setIsRefreshingCalendar] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && initialTab) {
+  // Sync activeTab when initialTab prop changes
+  const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
+  if (initialTab !== prevInitialTab) {
+    setPrevInitialTab(initialTab);
+    if (initialTab) {
       setActiveTab(initialTab);
     }
-  }, [isOpen, initialTab]);
+  }
 
   // Capacity & Duration local states
   const [capacityInput, setCapacityInput] = useState(settings.targetWorkCapacityHours.toString());
   const [isCustomDurationOpen, setIsCustomDurationOpen] = useState(false);
   const [customDurationInput, setCustomDurationInput] = useState(settings.defaultTaskDuration.toString());
 
-  useEffect(() => {
+  // Sync capacity input when settings change
+  const [prevCapacityHours, setPrevCapacityHours] = useState(settings.targetWorkCapacityHours);
+  if (settings.targetWorkCapacityHours !== prevCapacityHours) {
+    setPrevCapacityHours(settings.targetWorkCapacityHours);
     setCapacityInput(settings.targetWorkCapacityHours.toString());
-  }, [settings.targetWorkCapacityHours]);
+  }
 
-  useEffect(() => {
+  // Sync duration input when settings change
+  const [prevDefaultDuration, setPrevDefaultDuration] = useState(settings.defaultTaskDuration);
+  if (settings.defaultTaskDuration !== prevDefaultDuration) {
+    setPrevDefaultDuration(settings.defaultTaskDuration);
     setCustomDurationInput(settings.defaultTaskDuration.toString());
     const isPreset = (DURATION_PRESETS as readonly number[]).includes(settings.defaultTaskDuration);
     if (!isPreset) {
       setIsCustomDurationOpen(true);
     }
-  }, [settings.defaultTaskDuration]);
+  }
 
-  useEffect(() => {
+  // Sync calendar URL input when calendarIcsUrl changes
+  const [prevCalendarIcsUrl, setPrevCalendarIcsUrl] = useState(calendarIcsUrl);
+  if (calendarIcsUrl !== prevCalendarIcsUrl) {
+    setPrevCalendarIcsUrl(calendarIcsUrl);
     setIcsInput(calendarIcsUrl || '');
-  }, [calendarIcsUrl]);
+  }
 
   // Handle Escape key
   useEffect(() => {
@@ -212,7 +224,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
         className="relative z-10 w-full max-w-xl sm:max-w-2xl bg-[var(--bg-surface-l1)] border-l border-[var(--border-hairline)] shadow-2xl flex flex-col h-full transform transition-transform duration-300 ease-out animate-slide-left"
         role="dialog"
         aria-modal="true"
-        aria-label="Application Settings"
+        aria-label={activeTab === 'aesthetics' ? 'Aesthetics & Tactile Sound Profiles' : 'Application Settings'}
       >
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-[var(--border-hairline)] flex items-center justify-between bg-[var(--bg-surface-l1)]/90 backdrop-blur-md sticky top-0 z-20">

@@ -48,8 +48,8 @@ export const dbService = {
     const record = emptyWorkspace(id);
     // Unscoped legacy data belongs only to the local workspace, never a new account.
     if (id === 'local') {
-      const tasks = localStorage.getItem('flowtask_tasks_v1');
-      const projects = localStorage.getItem('flowtask_projects_v1');
+      const tasks = localStorage.getItem('flowtask_tasks_v1') || localStorage.getItem('flowtask_tasks');
+      const projects = localStorage.getItem('flowtask_projects_v1') || localStorage.getItem('flowtask_projects');
       if (tasks || projects) {
         localStorage.setItem('flowtask_legacy_backup_raw', JSON.stringify({ tasks, projects }));
         let parsedTasks = [];

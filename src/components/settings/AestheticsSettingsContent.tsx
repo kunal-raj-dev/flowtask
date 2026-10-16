@@ -61,20 +61,7 @@ export const AestheticsSettingsContent: React.FC<AestheticsSettingsContentProps>
   );
   const [auditioningKey, setAuditioningKey] = useState<string | null>(null);
 
-  // Sync ambient & diurnal state
-  useEffect(() => {
-    if (typeof audioEngine?.getCurrentAmbientType === 'function') {
-      setAmbientType(audioEngine.getCurrentAmbientType());
-    }
-    if (typeof audioEngine?.getAmbientVolume === 'function') {
-      setAmbientVolume(audioEngine.getAmbientVolume());
-    }
-    if (typeof audioEngine?.getVolume === 'function') {
-      setTactileVolume(audioEngine.getVolume());
-    }
-    setDiurnalOverride(loadDiurnalOverride());
-    setDiurnalIntensity(loadDiurnalIntensity());
-  }, []);
+
 
   useEffect(() => {
     const handleDiurnalEvent = () => {

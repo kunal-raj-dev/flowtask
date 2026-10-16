@@ -8,7 +8,6 @@ const CommandPalette = lazy(() => import('./CommandPalette').then(m => ({ defaul
 const ShortcutsModal = lazy(() => import('./ShortcutsModal').then(m => ({ default: m.ShortcutsModal })));
 const BrainDumpModal = lazy(() => import('./BrainDumpModal').then(m => ({ default: m.BrainDumpModal })));
 const ExportImportModal = lazy(() => import('./ExportImportModal').then(m => ({ default: m.ExportImportModal })));
-const AestheticsModal = lazy(() => import('./AestheticsModal').then(m => ({ default: m.AestheticsModal })));
 const AuthModal = lazy(() => import('./AuthModal').then(m => ({ default: m.AuthModal })));
 const EveningShutdownModal = lazy(() => import('./EveningShutdownModal').then(m => ({ default: m.EveningShutdownModal })));
 const InterruptionModal = lazy(() => import('./InterruptionModal').then(m => ({ default: m.InterruptionModal })));
@@ -149,11 +148,12 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
         <ExportImportModal onClose={() => closeModal('exportImport')} />
       )}
 
-      {/* Aesthetics & Themes Customization */}
+      {/* Aesthetics & Themes Customization via SettingsDrawer */}
       {isModalOpen('aesthetics') && (
-        <AestheticsModal
+        <SettingsDrawer
           isOpen={true}
           onClose={() => closeModal('aesthetics')}
+          initialTab="aesthetics"
         />
       )}
 

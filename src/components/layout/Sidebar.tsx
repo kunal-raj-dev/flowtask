@@ -139,7 +139,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [isProjectsCollapsed]);
 
   // Ensure current activeView section is expanded so user never loses their position
-  useEffect(() => {
+  const [prevActiveView, setPrevActiveView] = useState(activeView);
+  if (activeView !== prevActiveView) {
+    setPrevActiveView(activeView);
     if (['review', 'all', 'someday'].includes(activeView)) {
       setIsMoreCollapsed(false);
     } else if (['timeline', 'kanban', 'matrix'].includes(activeView)) {
@@ -149,7 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     } else if (activeView.startsWith('project:')) {
       setIsProjectsCollapsed(false);
     }
-  }, [activeView]);
+  }
 
   const todayStr = useTodayStr();
 
@@ -258,7 +260,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   if (isCollapsed) {
     return (
-      <aside className="w-16 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col items-center select-none transition-all duration-200 py-3 justify-between">
+      <aside
+        aria-label={isMobileDrawer ? 'Mobile navigation drawer' : 'Desktop navigation'}
+        className="w-16 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col items-center select-none transition-all duration-200 py-3 justify-between"
+      >
         {/* Top: FlowTask Brand Logo & Expand Toggle */}
         <div className="flex flex-col items-center gap-2">
           <button
@@ -470,7 +475,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-64 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/80 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col select-none transition-colors duration-200">
+    <aside
+      aria-label={isMobileDrawer ? 'Mobile navigation drawer' : 'Desktop navigation'}
+      className="w-64 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/80 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col select-none transition-colors duration-200"
+    >
       {/* Workspace Brand Header */}
       <div className="p-3 border-b border-[var(--border-hairline)] flex items-center justify-between gap-1.5">
         <button

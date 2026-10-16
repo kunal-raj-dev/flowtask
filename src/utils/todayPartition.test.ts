@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Task } from '../types/task';
+import { partitionTodayTasks } from './todayPartition';
 
 describe('Today View task partitioning logic', () => {
   const todayStr = '2026-10-03';
@@ -55,27 +56,14 @@ describe('Today View task partitioning logic', () => {
     },
   ];
 
-  it('correctly partitions tasks into Top 3, Daytime, and This Evening', () => {
-    // 1. Top 3
-    const topThree = sampleTasks.filter(
-      (t) => t.isPinnedToday && (t.topThreeDate === todayStr || (!t.topThreeDate && t.plannedDate === todayStr))
-    );
-    expect(topThree.map((t) => t.id)).toEqual(['task-1']);
+  it('correctly partitions tasks into Top 3, Daytime, and This Evening via partitionTodayTasks', () => {
+    const { topThreeTasks, daytimeTasks, eveningTasks } = partitionTodayTasks(sampleTasks, todayStr);
 
-    // 2. Daytime tasks (not Top 3, not marked for evening)
-    const daytime = sampleTasks.filter(
-      (t) => !topThree.some((top) => top.id === t.id) && !t.isEvening
-    );
-    expect(daytime.map((t) => t.id)).toEqual(['task-2']);
+    expect(topThreeTasks.map((t) => t.id)).toEqual(['task-1']);
+    expect(daytimeTasks.map((t) => t.id)).toEqual(['task-2']);
+    expect(eveningTasks.map((t) => t.id)).toEqual(['task-3', 'task-4']);
 
-    // 3. Evening tasks (not Top 3, marked for evening)
-    const evening = sampleTasks.filter(
-      (t) => !topThree.some((top) => top.id === t.id) && Boolean(t.isEvening)
-    );
-    expect(evening.map((t) => t.id)).toEqual(['task-3', 'task-4']);
-
-    // 4. Combined active list maintains logical order
-    const linearOrder = [...topThree, ...daytime, ...evening];
+    const linearOrder = [...topThreeTasks, ...daytimeTasks, ...eveningTasks];
     expect(linearOrder.map((t) => t.id)).toEqual(['task-1', 'task-2', 'task-3', 'task-4']);
   });
 });

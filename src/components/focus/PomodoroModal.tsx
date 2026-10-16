@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { useFocusStore } from '../../store/useFocusStore';
+import { useTotalFocusedTodaySeconds } from '../../hooks/useTotalFocusedTodaySeconds';
 import { ModalContext } from '../../context/ModalContext';
 import { audioEngine } from '../../utils/audioEngine';
+import { formatSecondsToHumanReadable, formatTimerClock } from '../../utils/focusTimeFormat';
+import { useFocusModalShortcuts } from './useFocusModalShortcuts';
+import { useFocusAmbientSound } from './useFocusAmbientSound';
 import {
   X,
   Play,
@@ -31,35 +36,37 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
   const stashActiveFocus = context?.stashActiveFocus;
   const toggleTaskStatus = context?.toggleTaskStatus;
   const focusSession = context?.focusSession;
-  const focusElapsedSeconds = context?.focusElapsedSeconds || 0;
+  const liveElapsed = useFocusStore((s) => s.focusElapsedSeconds);
+  const focusElapsedSeconds = (context as any)?.focusElapsedSeconds ?? liveElapsed;
   const startFocusSession = context?.startFocusSession;
   const pauseFocusSession = context?.pauseFocusSession;
   const resumeFocusSession = context?.resumeFocusSession;
   const stopFocusSession = context?.stopFocusSession;
-  const totalFocusedTodaySeconds = context?.totalFocusedTodaySeconds || 0;
+  const liveTotalFocusedTodaySeconds = useTotalFocusedTodaySeconds();
+  const totalFocusedTodaySeconds = (context as any)?.totalFocusedTodaySeconds ?? liveTotalFocusedTodaySeconds;
 
   const modalContext = useContext(ModalContext);
   const task = tasks.find((t) => t.id === taskId);
 
-  const formattedTodayFocus = useMemo(() => {
-    const hours = Math.floor(totalFocusedTodaySeconds / 3600);
-    const mins = Math.floor((totalFocusedTodaySeconds % 3600) / 60);
-    const secs = totalFocusedTodaySeconds % 60;
-    if (hours > 0) return `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
-    if (mins > 0) return `${mins}m`;
-    if (secs > 0) return `${secs}s`;
-    return '0m';
-  }, [totalFocusedTodaySeconds]);
+  const formattedTodayFocus = useMemo(
+    () => formatSecondsToHumanReadable(totalFocusedTodaySeconds),
+    [totalFocusedTodaySeconds]
+  );
 
   const [mode, setMode] = useState<Mode>('focus');
   const [focusDuration, setFocusDuration] = useState(25 * 60); // 25 mins
-  const [ambientSound, setAmbientSound] = useState<AmbientSoundType>('none');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cycleCount, setCycleCount] = useState<number>(1);
 
   // Check if an active session belongs to pomodoro
   const isPomodoroActive = Boolean(focusSession && (focusSession.mode === 'pomodoro' || !focusSession.mode));
   const isRunning = Boolean(isPomodoroActive && focusSession?.state === 'running');
+
+  // Ambient sound management via shared hook
+  const { ambientSound, setAmbientSound } = useFocusAmbientSound({
+    isActive: isRunning,
+    initialVolume: 0.08,
+  });
 
   // Derive remaining seconds from global focusSession if active, else local duration
   const activeRemainingSec = focusSession?.targetDurationSec
@@ -70,26 +77,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
   const timeLeft = isPomodoroActive && activeRemainingSec !== null ? activeRemainingSec : localTimeLeft;
 
   // Keyboard shortcut: F to toggle Zen Fullscreen, Escape to exit fullscreen or close modal
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      const tag = (document.activeElement?.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea') return;
-
-      if (e.key === 'f' || e.key === 'F') {
-        e.preventDefault();
-        setIsFullscreen((prev) => !prev);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        if (isFullscreen) {
-          setIsFullscreen(false);
-        } else {
-          onClose();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isFullscreen, onClose]);
+  useFocusModalShortcuts({ isFullscreen, setIsFullscreen, onClose });
 
   // Switch modes
   const handleModeChange = (newMode: Mode) => {
@@ -111,34 +99,26 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
       audioEngine.stopAmbientSound();
       stopFocusSession();
 
-      if (mode === 'focus') {
-        if (cycleCount >= 4) {
-          setCycleCount(1);
-          setMode('long_break');
-          setLocalTimeLeft(15 * 60);
+      const timerId = setTimeout(() => {
+        if (mode === 'focus') {
+          if (cycleCount >= 4) {
+            setCycleCount(1);
+            setMode('long_break');
+            setLocalTimeLeft(15 * 60);
+          } else {
+            setCycleCount((c) => c + 1);
+            setMode('short_break');
+            setLocalTimeLeft(5 * 60);
+          }
         } else {
-          setCycleCount((c) => c + 1);
-          setMode('short_break');
-          setLocalTimeLeft(5 * 60);
+          setMode('focus');
+          setLocalTimeLeft(focusDuration);
         }
-      } else {
-        setMode('focus');
-        setLocalTimeLeft(focusDuration);
-      }
+      }, 0);
+
+      return () => clearTimeout(timerId);
     }
   }, [isPomodoroActive, activeRemainingSec, mode, cycleCount, focusDuration, stopFocusSession]);
-
-  // Ambient sound management
-  useEffect(() => {
-    if (isRunning && ambientSound !== 'none') {
-      audioEngine.startAmbientSound(ambientSound, 0.08);
-    } else {
-      audioEngine.stopAmbientSound();
-    }
-    return () => {
-      audioEngine.stopAmbientSound();
-    };
-  }, [isRunning, ambientSound]);
 
   const toggleTimer = () => {
     if (isRunning) {
@@ -164,9 +144,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
     setLocalTimeLeft(dur);
   };
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const timeFormatted = formatTimerClock(timeLeft);
 
   const currentDurationTotal =
     mode === 'focus' ? focusDuration : mode === 'short_break' ? 5 * 60 : 15 * 60;

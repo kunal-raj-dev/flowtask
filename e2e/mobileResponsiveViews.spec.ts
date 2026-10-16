@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
@@ -99,6 +99,7 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
         },
       ];
       localStorage.setItem('flowtask_tasks', JSON.stringify(mockTasks));
+      localStorage.setItem('flowtask_tasks_v1', JSON.stringify(mockTasks));
       localStorage.setItem('flowtask_onboarding_dismissed', 'true');
       localStorage.setItem('flowtask_onboarding_completed', 'true');
       localStorage.setItem('flowtask_sidebar_perspectives_collapsed', 'false');

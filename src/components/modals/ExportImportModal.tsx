@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
-import { exportToMarkdown, exportToJSON, exportToCSV } from '../../utils/storage';
+import { exportToMarkdown, exportToJSON, exportToCSV, downloadFile } from '../../utils/fileExporter';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { generateSnapshotShareUrl } from '../../utils/snapshotShare';
 import { validateWorkspaceData } from '../../utils/workspaceValidation';
@@ -100,13 +100,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   };
 
   const handleDownloadFile = (content: string, filename: string, type: string) => {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadFile(content, filename, type);
   };
 
   const handleImportSubmit = async (e: React.FormEvent) => {

@@ -29,11 +29,41 @@ export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): 
     if (taskIds.has(t.id)) fail(`Duplicate task ID: ${t.id}`);
     taskIds.add(t.id);
     if (!['todo', 'in_progress', 'done'].includes(String(t.status)) || !['p1', 'p2', 'p3', 'p4'].includes(String(t.priority))) fail(`${label}: invalid status or priority.`);
-    if (!projectIds.has(String(t.projectId))) fail(`${label}: project "${t.projectId}" is missing. Include its project in the backup.`);
-    if (typeof t.createdAt !== 'number' || !Number.isFinite(t.createdAt) || t.createdAt < 0) fail(`${label}: invalid creation timestamp.`);
+    let projectId = typeof t.projectId === 'string' && t.projectId ? t.projectId : 'inbox';
+    let isSomeday = Boolean(t.isSomeday);
+    if (projectId === 'ideas') {
+      isSomeday = true;
+      if (!projectIds.has('ideas')) {
+        projectId = 'inbox';
+      }
+    } else if (!projectIds.has(projectId)) {
+      projectId = 'inbox';
+    }
+    const createdAt = typeof t.createdAt === 'string' ? Date.parse(t.createdAt) : t.createdAt;
+    if (typeof createdAt !== 'number' || !Number.isFinite(createdAt) || createdAt < 0) fail(`${label}: invalid creation timestamp.`);
     for (const key of ['plannedDate', 'dueDate', 'topThreeDate']) validateDate(t[key], `${label} ${key}`);
     for (const key of ['dueTime', 'scheduledStart', 'scheduledEnd']) if (t[key] !== undefined && t[key] !== '' && (typeof t[key] !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(t[key] as string))) fail(`${label}: invalid ${key}.`);
-    for (const key of ['estimatedMinutes', 'timeSpentMinutes', 'updatedAt', 'completedAt', 'deletedAt', 'archivedAt', 'revision']) if (t[key] !== undefined && (typeof t[key] !== 'number' || !Number.isFinite(t[key]) || (t[key] as number) < 0)) fail(`${label}: invalid ${key}.`);
+    const coerceTimestamp = (val: unknown): unknown => {
+      if (typeof val === 'string') {
+        const parsed = Date.parse(val);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+      return val;
+    };
+    const updatedAt = coerceTimestamp(t.updatedAt);
+    const completedAt = coerceTimestamp(t.completedAt);
+    const deletedAt = coerceTimestamp(t.deletedAt);
+    const archivedAt = coerceTimestamp(t.archivedAt);
+    const timeChecked: Record<string, unknown> = {
+      estimatedMinutes: t.estimatedMinutes,
+      timeSpentMinutes: t.timeSpentMinutes,
+      updatedAt,
+      completedAt,
+      deletedAt,
+      archivedAt,
+      revision: t.revision,
+    };
+    for (const key of ['estimatedMinutes', 'timeSpentMinutes', 'updatedAt', 'completedAt', 'deletedAt', 'archivedAt', 'revision']) if (timeChecked[key] !== undefined && (typeof timeChecked[key] !== 'number' || !Number.isFinite(timeChecked[key] as number) || (timeChecked[key] as number) < 0)) fail(`${label}: invalid ${key}.`);
     if (t.recurrence !== undefined && !['none', 'daily', 'weekdays', 'weekly', 'biweekly', 'monthly', 'yearly', 'custom'].includes(String(t.recurrence))) fail(`${label}: invalid recurrence.`);
     if (t.recurrence === 'custom') {
       const rule = t.customRecurrence;
@@ -49,7 +79,18 @@ export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): 
       if (s.url && (typeof s.url !== 'string' || !isSafeUrl(s.url))) fail(`${label}: subtask links must use http or https.`);
       if (s.estimatedMinutes !== undefined && (typeof s.estimatedMinutes !== 'number' || !Number.isFinite(s.estimatedMinutes) || s.estimatedMinutes < 0)) fail(`${label}: invalid subtask duration.`);
     }
-    return { ...t, title: t.title.trim(), subtasks: subs } as unknown as Task;
+    return {
+      ...t,
+      title: t.title.trim(),
+      projectId,
+      isSomeday,
+      createdAt,
+      ...(updatedAt !== undefined ? { updatedAt } : {}),
+      ...(completedAt !== undefined ? { completedAt } : {}),
+      ...(deletedAt !== undefined ? { deletedAt } : {}),
+      ...(archivedAt !== undefined ? { archivedAt } : {}),
+      subtasks: subs,
+    } as unknown as Task;
   });
   for (const task of tasks) for (const blocker of task.blockedBy || []) {
     if (!taskIds.has(blocker)) fail(`Task "${task.title}" references a missing dependency.`);

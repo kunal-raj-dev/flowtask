@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import {
   loadTemplates,
@@ -29,14 +29,8 @@ export const TemplatePickerModal: React.FC = () => {
     projects,
   } = useTaskContext();
 
-  const [templates, setTemplates] = useState<TaskTemplate[]>([]);
+  const [templates, setTemplates] = useState<TaskTemplate[]>(() => loadTemplates());
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isTemplatePickerOpen) {
-      setTemplates(loadTemplates());
-    }
-  }, [isTemplatePickerOpen]);
 
   if (!isTemplatePickerOpen) return null;
 

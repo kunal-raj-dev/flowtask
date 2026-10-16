@@ -408,8 +408,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       value={effectivePlannedDate || ''}
                       onChange={(e) => setExplicitPlannedDate(e.target.value || null)}
                       className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
-                    >
-                    </input>
+                    />
                     {effectivePlannedDate && (
                       <button
                         type="button"
@@ -432,8 +431,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       value={effectiveDueDate || ''}
                       onChange={(e) => setExplicitDueDate(e.target.value || null)}
                       className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
-                    >
-                    </input>
+                    />
                     {effectiveDueDate && (
                       <button
                         type="button"
