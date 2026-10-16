@@ -440,7 +440,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     Default Task Duration
                   </span>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    Fallback time allocated when no ~duration is parsed in the Omnibar.
+                    Fallback time allocated when no ~duration is parsed in the Task Composer.
                   </p>
                 </div>
 
@@ -637,6 +637,40 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       Sunday
                     </button>
                   </div>
+                </div>
+              </div>
+
+              {/* Universal Keyboard Halo Dock */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold text-[var(--text-primary)] block">
+                      Universal Keyboard Halo Dock
+                    </span>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Show quick-action shortcut helper dock when navigating tasks.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings.keyboardHaloEnabled !== false}
+                    aria-label="Toggle Universal Keyboard Halo Dock"
+                    onClick={() => {
+                      updateSettings({ keyboardHaloEnabled: settings.keyboardHaloEnabled === false });
+                      triggerSaveToast();
+                    }}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      settings.keyboardHaloEnabled !== false ? 'bg-amber-500' : 'bg-stone-300 dark:bg-stone-700'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        settings.keyboardHaloEnabled !== false ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
 

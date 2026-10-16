@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { commandService } from './commandService';
 import type { Task } from '../types/task';
 
@@ -170,5 +170,149 @@ describe('commandService', () => {
     expect(undone[0].status).toBe('todo');
     expect(undone[0].isPinnedToday).toBe(true);
     expect(undone[0].completedAt).toBeUndefined();
+  });
+
+  describe('Bidirectional Command History (BUG-17)', () => {
+    beforeEach(() => {
+      commandService.clearHistory();
+    });
+
+    it('initializes with empty undoStack and redoStack and canUndo/canRedo returning false', () => {
+      expect(commandService.undoStack.length).toBe(0);
+      expect(commandService.redoStack.length).toBe(0);
+      expect(commandService.canUndo()).toBe(false);
+      expect(commandService.canRedo()).toBe(false);
+      expect(commandService.undoLastAction([])).toBeNull();
+      expect(commandService.redoLastAction([])).toBeNull();
+    });
+
+    it('records an action into undoStack and clears redoStack', () => {
+      const initial: Task[] = [initialTask];
+      commandService.executeAction(initial, (tasks) =>
+        commandService.archiveTask(tasks, 'task-1')
+      );
+
+      expect(commandService.undoStack.length).toBe(1);
+      expect(commandService.redoStack.length).toBe(0);
+      expect(commandService.canUndo()).toBe(true);
+      expect(commandService.canRedo()).toBe(false);
+    });
+
+    it('supports full roundtrip undoLastAction followed by redoLastAction', () => {
+      const initial: Task[] = [initialTask];
+      const execResult = commandService.executeAction(initial, (tasks) =>
+        commandService.archiveTask(tasks, 'task-1')
+      );
+
+      // Verify task is archived
+      expect(execResult.updatedTasks[0].archivedAt).toBeDefined();
+
+      // Undo the action
+      const undoResult = commandService.undoLastAction(execResult.updatedTasks);
+      expect(undoResult).not.toBeNull();
+      expect(undoResult!.updatedTasks[0].archivedAt).toBeUndefined();
+      expect(commandService.canUndo()).toBe(false);
+      expect(commandService.canRedo()).toBe(true);
+      expect(commandService.redoStack.length).toBe(1);
+
+      // Redo the action
+      const redoResult = commandService.redoLastAction(undoResult!.updatedTasks);
+      expect(redoResult).not.toBeNull();
+      expect(redoResult!.updatedTasks[0].archivedAt).toBeDefined();
+      expect(commandService.canUndo()).toBe(true);
+      expect(commandService.canRedo()).toBe(false);
+      expect(commandService.undoStack.length).toBe(1);
+      expect(commandService.redoStack.length).toBe(0);
+    });
+
+    it('clears redoStack when a new action is performed after an undo', () => {
+      const initial: Task[] = [initialTask];
+      const res1 = commandService.executeAction(initial, (tasks) =>
+        commandService.archiveTask(tasks, 'task-1')
+      );
+
+      // Undo
+      commandService.undoLastAction(res1.updatedTasks);
+      expect(commandService.canRedo()).toBe(true);
+
+      // Execute a new, different action
+      commandService.executeAction(initial, (tasks) =>
+        commandService.updateTask(tasks, 'task-1', { title: 'Brand new title' })
+      );
+
+      // redoStack must now be cleared
+      expect(commandService.redoStack.length).toBe(0);
+      expect(commandService.canRedo()).toBe(false);
+      expect(commandService.canUndo()).toBe(true);
+    });
+
+    it('supports multiple sequential undos and redos in correct LIFO order', () => {
+      const initial: Task[] = [initialTask];
+
+      // Action 1: update title
+      const res1 = commandService.executeAction(initial, (tasks) =>
+        commandService.updateTask(tasks, 'task-1', { title: 'Step 1' })
+      );
+
+      // Action 2: update priority to p1
+      const res2 = commandService.executeAction(res1.updatedTasks, (tasks) =>
+        commandService.updateTask(tasks, 'task-1', { priority: 'p1' })
+      );
+
+      expect(commandService.undoStack.length).toBe(2);
+
+      // Undo Action 2
+      const undo1 = commandService.undoLastAction(res2.updatedTasks);
+      expect(undo1!.updatedTasks[0].priority).toBe('p2');
+      expect(undo1!.updatedTasks[0].title).toBe('Step 1');
+
+      // Undo Action 1
+      const undo2 = commandService.undoLastAction(undo1!.updatedTasks);
+      expect(undo2!.updatedTasks[0].title).toBe('Complete project documentation');
+
+      // Both are in redoStack
+      expect(commandService.redoStack.length).toBe(2);
+
+      // Redo Action 1
+      const redo1 = commandService.redoLastAction(undo2!.updatedTasks);
+      expect(redo1!.updatedTasks[0].title).toBe('Step 1');
+
+      // Redo Action 2
+      const redo2 = commandService.redoLastAction(redo1!.updatedTasks);
+      expect(redo2!.updatedTasks[0].title).toBe('Step 1');
+      expect(redo2!.updatedTasks[0].priority).toBe('p1');
+    });
+
+    it('preserves concurrent external tasks in currentTasks during surgical redo without clobbering', () => {
+      const initial: Task[] = [initialTask];
+
+      // Action: update task-1 title
+      const res = commandService.executeAction(initial, (tasks) =>
+        commandService.updateTask(tasks, 'task-1', { title: 'Updated title' })
+      );
+
+      // Undo action
+      const undone = commandService.undoLastAction(res.updatedTasks);
+      expect(undone!.updatedTasks[0].title).toBe('Complete project documentation');
+
+      // Concurrently a new task arrives in workspace
+      const concurrentTask: Task = {
+        id: 'task-concurrent',
+        title: 'Concurrent task from background sync',
+        status: 'todo',
+        priority: 'p3',
+        projectId: 'inbox',
+        subtasks: [],
+        createdAt: Date.now(),
+      };
+      const currentTasksWithConcurrent = [concurrentTask, ...undone!.updatedTasks];
+
+      // Redo action
+      const redone = commandService.redoLastAction(currentTasksWithConcurrent);
+      expect(redone).not.toBeNull();
+      // Both the redone update and the concurrent task must be present!
+      expect(redone!.updatedTasks.some((t) => t.id === 'task-concurrent')).toBe(true);
+      expect(redone!.updatedTasks.find((t) => t.id === 'task-1')?.title).toBe('Updated title');
+    });
   });
 });

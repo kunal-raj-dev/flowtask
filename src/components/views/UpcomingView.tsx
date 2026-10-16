@@ -9,7 +9,6 @@ import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { Calendar, CalendarDays, Clock, List } from 'lucide-react';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { EmptyState } from '../ui/EmptyState';
-import { KeyboardHaloDock } from '../tasks/KeyboardHaloDock';
 
 interface UpcomingViewProps {
   onSelectTask: (taskId: string) => void;
@@ -121,7 +120,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
     };
   }, [activeTasksToDisplay, tomorrowStr, endOfWeekStr, nextWeekEndStr]);
 
-  const { focusedTaskId, setFocusedIndex } = useKeyboardNavigation({
+  const { focusedTaskId } = useKeyboardNavigation({
     tasks: activeTasksToDisplay,
     onSelectTask,
     onToggleStatus: toggleTaskStatus,
@@ -131,8 +130,6 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
     onStartFocus,
     enabled: presentationMode === 'list',
   });
-
-  const focusedTask = activeTasksToDisplay.find((t) => t.id === focusedTaskId);
 
   const renderSection = (title: string, sectionTasks: typeof activeTasksToDisplay, subtitle?: string) => {
     if (sectionTasks.length === 0) return null;
@@ -276,21 +273,6 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
               title={selectedHorizonDate ? 'No tasks on this date' : 'No upcoming tasks'}
               description="Capture future work or schedule tasks from your Inbox."
               icon={<Calendar size={28} className="text-purple-500" />}
-            />
-          )}
-
-          {/* Keyboard Halo Dock */}
-          {focusedTask && (
-            <KeyboardHaloDock
-              task={focusedTask}
-              onSelect={() => onSelectTask(focusedTask.id)}
-              onToggleStatus={() => toggleTaskStatus(focusedTask.id)}
-              onStartFocus={() => onStartFocus(focusedTask.id)}
-              onRescheduleToday={() => updateTask(focusedTask.id, { plannedDate: todayStr })}
-              onRescheduleTomorrow={() => updateTask(focusedTask.id, { plannedDate: tomorrowStr })}
-              onRescheduleSomeday={() => updateTask(focusedTask.id, { isSomeday: true, plannedDate: undefined })}
-              onSetPriority={(p) => updateTask(focusedTask.id, { priority: p })}
-              onDismiss={() => setFocusedIndex(-1)}
             />
           )}
         </>

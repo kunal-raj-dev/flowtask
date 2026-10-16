@@ -14,6 +14,7 @@ export interface UIState {
   activeView: ViewId;
   viewLayout: 'list' | 'kanban' | 'matrix';
   selectedTaskId: string | null;
+  focusedTaskId: string | null;
   selectedTaskIds: string[];
   searchQuery: string;
   priorityFilter: Priority | 'all';
@@ -37,6 +38,7 @@ export interface UIState {
   setActiveView: (view: ViewId) => void;
   setViewLayout: (layout: 'list' | 'kanban' | 'matrix') => void;
   setSelectedTaskId: (id: string | null) => void;
+  setFocusedTaskId: (id: string | null) => void;
   toggleTaskSelection: (id: string) => void;
   selectTask: (id: string) => void;
   deselectTask: (id: string) => void;
@@ -92,6 +94,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   activeView: parseInitialView(),
   viewLayout: 'list',
   selectedTaskId: null,
+  focusedTaskId: null,
   selectedTaskIds: [],
   searchQuery: '',
   priorityFilter: 'all',
@@ -125,6 +128,7 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   setViewLayout: (layout) => set({ viewLayout: layout }),
   setSelectedTaskId: (id) => set({ selectedTaskId: id }),
+  setFocusedTaskId: (id) => set({ focusedTaskId: id }),
 
   toggleTaskSelection: (id) =>
     set((state) => ({

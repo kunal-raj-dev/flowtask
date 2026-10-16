@@ -25,6 +25,7 @@ import {
   Circle,
   AlertCircle,
   Undo2,
+  Redo2,
 } from 'lucide-react';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { audioEngine } from '../../utils/audioEngine';
@@ -66,6 +67,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setIsSmartFilterModalOpen,
     setIsWeeklyReviewOpen,
     undoLastAction,
+    redoLastAction,
   } = useTaskContext();
 
   const [query, setQuery] = useState('');
@@ -226,6 +228,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
     {
+      id: 'redo',
+      title: 'Redo Last Action (Ctrl+Shift+Z / Ctrl+Y)',
+      icon: Redo2,
+      run: () => {
+        onClose();
+        redoLastAction();
+      },
+    },
+    {
       id: 'standup',
       title: 'Copy Daily Standup & Digest (Slack / Markdown)',
       icon: MessageSquare,
@@ -297,6 +308,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     onOpenBrainDump,
     onOpenScratchpad,
     undoLastAction,
+    redoLastAction,
     onOpenExportImport,
     setIsAuthModalOpen,
     onOpenAesthetics,

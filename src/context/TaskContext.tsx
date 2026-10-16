@@ -186,6 +186,7 @@ interface TaskContextType {
   addStudySessions: (sessions: ParsedSession[], dateStr?: string, projectId?: string) => Task[];
   bulkRescheduleOverdue: (action: 'today' | 'someday' | 'dismiss') => void;
   undoLastAction: () => void;
+  redoLastAction: () => void;
 
   // Project Actions
   addProject: (name: string, color: string, icon?: string) => void;
@@ -325,6 +326,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     return result;
   }
   const undoLastAction = () => { try { store.undo(); } catch (error) { showToast(String((error as Error).message)); } };
+  const redoLastAction = () => { try { store.redo(); showToast('Action redone'); } catch (error) { showToast(String((error as Error).message)); } };
   const addTask = (input: string, overrides?: Partial<Task>): Task => {
     const result = commandService.createTask(current().tasks, input, overrides, { defaultPlannedDate: activeView === 'today' ? todayStr : undefined, defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox' });
     if (!current().projects.some(p => p.id === result.createdTask.projectId)) result.createdTask.projectId = 'inbox';
@@ -740,6 +742,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     addStudySessions,
     bulkRescheduleOverdue,
     undoLastAction,
+    redoLastAction,
     addProject,
     updateProject,
     deleteProject,

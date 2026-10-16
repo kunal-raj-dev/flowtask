@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Task, Project, CalendarEvent } from '../../../types/task';
 import { TimelineCurrentTimeRail } from '../TimelineCurrentTimeRail';
 import {
@@ -55,6 +55,127 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
   const [quickAddHour, setQuickAddHour] = useState<number | null>(null);
   const [quickAddTitle, setQuickAddTitle] = useState('');
 
+  // Interactive Drag & Resize State
+  const [dragState, setDragState] = useState<{ taskId: string; currentStartMin: number } | null>(null);
+  const [resizeState, setResizeState] = useState<{ taskId: string; currentDuration: number } | null>(null);
+
+  const dragStartRef = useRef<{ startY: number; initialStartMin: number; duration: number }>({
+    startY: 0,
+    initialStartMin: 0,
+    duration: 30,
+  });
+  const resizeStartRef = useRef<{ startY: number; initialDuration: number; initialStartMin: number }>({
+    startY: 0,
+    initialDuration: 30,
+    initialStartMin: 0,
+  });
+  const hasDraggedRef = useRef(false);
+
+  const dragStateRef = useRef(dragState);
+  const resizeStateRef = useRef(resizeState);
+  useEffect(() => {
+    dragStateRef.current = dragState;
+    resizeStateRef.current = resizeState;
+  }, [dragState, resizeState]);
+  const isInteracting = Boolean(dragState || resizeState);
+
+  useEffect(() => {
+    if (!isInteracting) return;
+
+    const handleGlobalPointerMove = (e: PointerEvent) => {
+      const activeDrag = dragStateRef.current;
+      const activeResize = resizeStateRef.current;
+
+      if (activeDrag) {
+        const deltaY = e.clientY - dragStartRef.current.startY;
+        if (Math.abs(deltaY) > 3) {
+          hasDraggedRef.current = true;
+        }
+        const deltaMinutes = Math.round(((deltaY / hourHeightPx) * 60) / 15) * 15;
+        const minStart = startHour * 60;
+        const maxStart = Math.min(
+          (endHour * 60) - dragStartRef.current.duration,
+          1440 - dragStartRef.current.duration
+        );
+        let clamped = Math.max(minStart, Math.min(maxStart, dragStartRef.current.initialStartMin + deltaMinutes));
+
+        // Magnetic snap to external calendar events if within 10 minutes
+        for (const ev of calendarEvents) {
+          if (ev.isAllDay) continue;
+          const evStart = parseTimeToMinutes(ev.startTime);
+          const evEnd = parseTimeToMinutes(ev.endTime);
+          if (evEnd !== null && Math.abs(clamped - evEnd) <= 10) {
+            clamped = evEnd;
+            break;
+          }
+          if (evStart !== null && Math.abs((clamped + dragStartRef.current.duration) - evStart) <= 10) {
+            clamped = Math.max(minStart, evStart - dragStartRef.current.duration);
+            break;
+          }
+        }
+
+        setDragState({ taskId: activeDrag.taskId, currentStartMin: clamped });
+      } else if (activeResize) {
+        const deltaY = e.clientY - resizeStartRef.current.startY;
+        const deltaMinutes = Math.round(((deltaY / hourHeightPx) * 60) / 15) * 15;
+        const maxDuration = Math.min(
+          (endHour * 60) - resizeStartRef.current.initialStartMin,
+          1440 - resizeStartRef.current.initialStartMin
+        );
+        let clampedDuration = Math.max(15, Math.min(maxDuration, resizeStartRef.current.initialDuration + deltaMinutes));
+
+        // Magnetic snap to external calendar start if within 10 minutes
+        const currentEndMin = resizeStartRef.current.initialStartMin + clampedDuration;
+        for (const ev of calendarEvents) {
+          if (ev.isAllDay) continue;
+          const evStart = parseTimeToMinutes(ev.startTime);
+          if (evStart !== null && Math.abs(currentEndMin - evStart) <= 10) {
+            clampedDuration = Math.max(15, evStart - resizeStartRef.current.initialStartMin);
+            break;
+          }
+        }
+
+        setResizeState({ taskId: activeResize.taskId, currentDuration: clampedDuration });
+      }
+    };
+
+    const handleGlobalPointerUp = () => {
+      const activeDrag = dragStateRef.current;
+      const activeResize = resizeStateRef.current;
+
+      if (activeDrag) {
+        const { taskId, currentStartMin } = activeDrag;
+        const { initialStartMin, duration } = dragStartRef.current;
+        setDragState(null);
+        if (currentStartMin !== initialStartMin) {
+          const timeStr = minutesToTimeStr(currentStartMin);
+          const endStr = minutesToTimeStr(currentStartMin + duration);
+          onUpdateTask(taskId, { scheduledStart: timeStr, scheduledEnd: endStr });
+        }
+      } else if (activeResize) {
+        const { taskId, currentDuration } = activeResize;
+        const { initialDuration, initialStartMin } = resizeStartRef.current;
+        setResizeState(null);
+        if (currentDuration !== initialDuration) {
+          const newEndMin = initialStartMin + currentDuration;
+          onUpdateTask(taskId, {
+            estimatedMinutes: currentDuration,
+            scheduledEnd: minutesToTimeStr(newEndMin),
+          });
+        }
+      }
+    };
+
+    window.addEventListener('pointermove', handleGlobalPointerMove);
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalPointerMove);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+    };
+  }, [isInteracting, hourHeightPx, startHour, endHour, calendarEvents, onUpdateTask]);
+
   const totalHours = endHour - startHour;
 
   const handleQuickAddSubmit = (hour: number) => {
@@ -70,6 +191,51 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
   const handleUnschedule = (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     onUpdateTask(taskId, { scheduledStart: undefined });
+  };
+
+  const handleBlockPointerDown = (
+    e: React.PointerEvent,
+    task: Task,
+    startMin: number,
+    duration: number,
+    isDone: boolean
+  ) => {
+    if (isDone) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if ((e.target as HTMLElement).closest('button, input, [data-resize-handle]')) {
+      return;
+    }
+    hasDraggedRef.current = false;
+    dragStartRef.current = {
+      startY: e.clientY,
+      initialStartMin: startMin,
+      duration,
+    };
+    setDragState({
+      taskId: task.id,
+      currentStartMin: startMin,
+    });
+  };
+
+  const handleResizePointerDown = (
+    e: React.PointerEvent,
+    task: Task,
+    startMin: number,
+    duration: number,
+    isDone: boolean
+  ) => {
+    if (isDone) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    e.stopPropagation();
+    resizeStartRef.current = {
+      startY: e.clientY,
+      initialDuration: duration,
+      initialStartMin: startMin,
+    };
+    setResizeState({
+      taskId: task.id,
+      currentDuration: duration,
+    });
   };
 
   return (
@@ -234,28 +400,58 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
 
         {/* Scheduled Task Blocks */}
         {scheduledTasks.map(({ task, startMin, duration }) => {
-          const { topPx, heightPx } = calculateBlockPosition(startMin, duration, startHour, hourHeightPx);
+          const isDragging = dragState?.taskId === task.id;
+          const isResizing = resizeState?.taskId === task.id;
+          const effectiveStartMin = isDragging ? dragState.currentStartMin : startMin;
+          const effectiveDuration = isResizing ? resizeState.currentDuration : duration;
+
+          const { topPx, heightPx } = calculateBlockPosition(
+            effectiveStartMin,
+            effectiveDuration,
+            startHour,
+            hourHeightPx
+          );
           const project = projects.find((p) => p.id === task.projectId);
           const isDone = task.status === 'done';
-          const overlapEvent = findOverlappingCalendarEvent(startMin, duration, calendarEvents);
+          const overlapEvent = findOverlappingCalendarEvent(effectiveStartMin, effectiveDuration, calendarEvents);
 
           return (
             <div
               key={task.id}
-              onClick={() => onSelectTask(task.id)}
-              className={`absolute left-16 right-2 rounded-lg p-2.5 border transition-all duration-150 cursor-pointer shadow-subtle hover:shadow-card hover:-translate-y-[1px] flex items-center justify-between gap-3 overflow-hidden ${
-                isDone
-                  ? 'bg-stone-100/60 dark:bg-white/[0.03] border-[var(--border-hairline)] opacity-60'
-                  : overlapEvent
-                  ? 'bg-rose-500/[0.08] dark:bg-rose-500/[0.12] border-rose-400/50 dark:border-rose-500/40 shadow-xs ring-1 ring-rose-500/20'
-                  : task.isPinnedToday
-                  ? 'bg-amber-500/[0.08] dark:bg-amber-500/[0.12] border-amber-400/50 dark:border-amber-500/40 shadow-xs'
-                  : 'bg-white dark:bg-[var(--bg-surface-l2)] border-stone-200/90 dark:border-white/10'
-              }`}
+              data-testid={`timeline-task-${task.id}`}
+              data-timeline-task={task.id}
+              data-dragging={isDragging ? 'true' : undefined}
+              data-resizing={isResizing ? 'true' : undefined}
+              onPointerDown={(e) => handleBlockPointerDown(e, task, startMin, duration, isDone)}
+              onClick={() => {
+                if (hasDraggedRef.current) {
+                  hasDraggedRef.current = false;
+                  return;
+                }
+                onSelectTask(task.id);
+              }}
+              className={`absolute left-16 right-2 rounded-lg p-2.5 border transition-all duration-75 select-none ${
+                isDragging
+                  ? 'cursor-grabbing ring-2 ring-amber-500 shadow-xl opacity-90 z-30 bg-amber-50/90 dark:bg-amber-950/40 border-amber-500'
+                  : isResizing
+                  ? 'cursor-ns-resize ring-2 ring-indigo-500 shadow-xl z-30 bg-indigo-50/90 dark:bg-indigo-950/40 border-indigo-500'
+                  : isDone
+                  ? 'cursor-pointer bg-stone-100/60 dark:bg-white/[0.03] border-[var(--border-hairline)] opacity-60'
+                  : 'cursor-grab shadow-subtle hover:shadow-card hover:-translate-y-[1px]'
+              } ${
+                !isDragging && !isResizing && !isDone
+                  ? overlapEvent
+                    ? 'bg-rose-500/[0.08] dark:bg-rose-500/[0.12] border-rose-400/50 dark:border-rose-500/40 shadow-xs ring-1 ring-rose-500/20'
+                    : task.isPinnedToday
+                    ? 'bg-amber-500/[0.08] dark:bg-amber-500/[0.12] border-amber-400/50 dark:border-amber-500/40 shadow-xs'
+                    : 'bg-white dark:bg-[var(--bg-surface-l2)] border-stone-200/90 dark:border-white/10'
+                  : ''
+              } flex items-center justify-between gap-3 overflow-hidden`}
               style={{
                 top: `${topPx}px`,
                 height: `${heightPx}px`,
-                zIndex: 10,
+                zIndex: isDragging || isResizing ? 30 : 10,
+                touchAction: 'none',
               }}
             >
               {/* Left accent bar matching project */}
@@ -330,9 +526,19 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
                   <div className="text-[10px] text-[var(--text-muted)] font-mono flex items-center gap-1 mt-0.5">
                     <Clock size={10} />
                     <span>
-                      {minutesToTimeStr(startMin)} – {minutesToTimeStr(startMin + duration)}
+                      {minutesToTimeStr(effectiveStartMin)} – {minutesToTimeStr(effectiveStartMin + effectiveDuration)}
                     </span>
-                    <span>({duration}m)</span>
+                    <span>({effectiveDuration}m)</span>
+                    {isDragging && (
+                      <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 animate-pulse ml-1">
+                        Moving
+                      </span>
+                    )}
+                    {isResizing && (
+                      <span className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 animate-pulse ml-1">
+                        Resizing
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -424,6 +630,19 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
                   ✕
                 </button>
               </div>
+
+              {/* Bottom Edge Resize Handle */}
+              {!isDone && (
+                <div
+                  data-resize-handle="true"
+                  data-testid={`timeline-resize-handle-${task.id}`}
+                  onPointerDown={(e) => handleResizePointerDown(e, task, effectiveStartMin, effectiveDuration, isDone)}
+                  title="Drag bottom edge to resize duration (15m increments)"
+                  className="absolute left-0 right-0 bottom-0 h-2.5 cursor-ns-resize group/resize flex items-center justify-center hover:bg-amber-500/20 active:bg-amber-500/40 transition-colors z-20"
+                >
+                  <div className="w-8 h-1 rounded-full bg-stone-300 dark:bg-stone-600 group-hover/resize:bg-amber-500 opacity-60 group-hover/resize:opacity-100 transition-all" />
+                </div>
+              )}
             </div>
           );
         })}

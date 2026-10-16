@@ -34,6 +34,8 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   const [addingToPriority, setAddingToPriority] = useState<Priority | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
   const [dragOverQuadrant, setDragOverQuadrant] = useState<Priority | null>(null);
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const pointerStartRef = React.useRef<{ x: number; y: number; moved: boolean } | null>(null);
 
   // Multi-Factor Prioritization settings
   const [scoringMode, setScoringMode] = useState<'manual' | 'smart'>(() => {
@@ -191,6 +193,64 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
     setDragOverQuadrant(null);
   };
 
+  const handleCardPointerDown = (_taskId: string, e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, textarea, a, select')) return;
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, moved: false };
+    if (typeof e.currentTarget.setPointerCapture === 'function') {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
+
+  const handleCardPointerMove = (taskId: string, e: React.PointerEvent) => {
+    if (!pointerStartRef.current) return;
+    const dist = Math.hypot(e.clientX - pointerStartRef.current.x, e.clientY - pointerStartRef.current.y);
+    if (dist > 8) {
+      pointerStartRef.current.moved = true;
+      if (draggingTaskId !== taskId) {
+        setDraggingTaskId(taskId);
+      }
+      const elem = document.elementFromPoint?.(e.clientX, e.clientY);
+      const quadElem = elem?.closest('[data-quadrant]');
+      const targetPriority = quadElem?.getAttribute('data-quadrant') as Priority | null;
+      setDragOverQuadrant(targetPriority);
+    }
+  };
+
+  const handleCardPointerUp = (taskId: string, e: React.PointerEvent) => {
+    if (typeof e.currentTarget.releasePointerCapture === 'function') {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+    if (pointerStartRef.current?.moved && draggingTaskId) {
+      const elem = document.elementFromPoint?.(e.clientX, e.clientY);
+      const quadElem = elem?.closest('[data-quadrant]');
+      const targetPriority = quadElem?.getAttribute('data-quadrant') as Priority | null;
+      if (targetPriority) {
+        updateTask(taskId, { priority: targetPriority });
+      }
+    } else if (!pointerStartRef.current?.moved) {
+      onSelectTask(taskId);
+    }
+    pointerStartRef.current = null;
+    setDraggingTaskId(null);
+    setDragOverQuadrant(null);
+  };
+
+  const handleCardPointerCancel = (_taskId: string, e: React.PointerEvent) => {
+    if (typeof e.currentTarget.releasePointerCapture === 'function') {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+    pointerStartRef.current = null;
+    setDraggingTaskId(null);
+    setDragOverQuadrant(null);
+  };
+
   const handleQuickAdd = (priority: Priority) => {
     setAddingToPriority(priority);
     setQuickTitle('');
@@ -343,13 +403,17 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
               : q.priority === 'p3'
               ? 'Delegate'
               : 'Backlog';
+          const isDragTarget = dragOverQuadrant === q.priority;
           return (
             <button
               key={q.priority}
               type="button"
+              data-quadrant={q.priority}
               onClick={() => setMobileQuadrant(q.priority)}
               className={`flex-1 min-w-[70px] min-h-[42px] flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
-                isActive
+                isDragTarget
+                  ? 'bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/60'
+                  : isActive
                   ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
@@ -399,6 +463,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
           return (
             <div
               key={q.priority}
+              data-quadrant={q.priority}
               onDrop={(e) => handleDrop(e, q.priority)}
               onDragOver={(e) => handleDragOver(e, q.priority)}
               onDragLeave={handleDragLeave}
@@ -406,7 +471,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                 isVisibleOnMobile ? 'flex' : 'hidden lg:flex'
               } bg-[var(--bg-surface-l2)] rounded-xl border ${
                 isOver
-                  ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-500/[0.02]'
+                  ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-500/[0.04]'
                   : 'border-[var(--border-hairline)]'
               } p-4 sm:p-5 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
             >
@@ -567,10 +632,18 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                     return (
                       <div
                         key={task.id}
+                        data-task-id={task.id}
                         draggable
                         onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)}
-                        onClick={() => onSelectTask(task.id)}
-                        className="group p-2.5 sm:p-3 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l2)] shadow-subtle cursor-grab active:cursor-grabbing transition-all flex items-center justify-between gap-2.5 card-surface hover:-translate-y-[0.5px]"
+                        onPointerDown={(e) => handleCardPointerDown(task.id, e)}
+                        onPointerMove={(e) => handleCardPointerMove(task.id, e)}
+                        onPointerUp={(e) => handleCardPointerUp(task.id, e)}
+                        onPointerCancel={(e) => handleCardPointerCancel(task.id, e)}
+                        className={`group p-2.5 sm:p-3 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l2)] shadow-subtle cursor-grab active:cursor-grabbing touch-none select-none transition-all flex items-center justify-between gap-2.5 card-surface hover:-translate-y-[0.5px] ${
+                          draggingTaskId === task.id
+                            ? 'opacity-80 scale-105 shadow-2xl z-50 ring-2 ring-indigo-500 bg-indigo-500/[0.08]'
+                            : ''
+                        }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <button

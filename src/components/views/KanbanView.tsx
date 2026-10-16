@@ -20,6 +20,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
   const [addingToStatus, setAddingToStatus] = useState<TaskStatus | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [dragOverTargetColumn, setDragOverTargetColumn] = useState<TaskStatus | null>(null);
+  const pointerStartRef = React.useRef<{ x: number; y: number; moved: boolean } | null>(null);
 
   // Hotkey navigation: '1', '2', '3' or 'h', 'j', 'k', 'l' or Arrow keys
   useEffect(() => {
@@ -138,30 +141,94 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     },
   ];
 
+  const moveTaskToStatus = (taskId: string, status: TaskStatus) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || task.status === status) return;
+    if (status === 'done' && task.status !== 'done') {
+      toggleTaskStatus(taskId);
+    } else if (status !== 'done' && task.status === 'done') {
+      toggleTaskStatus(taskId);
+      if (status === 'in_progress') {
+        updateTask(taskId, { status: 'in_progress' });
+      }
+    } else {
+      updateTask(taskId, {
+        status,
+        completedAt: undefined,
+      });
+    }
+  };
+
   const handleDrop = (e: React.DragEvent, status: TaskStatus) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('text/plain');
     if (taskId) {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-      if (status === 'done' && task.status !== 'done') {
-        toggleTaskStatus(taskId);
-      } else if (status !== 'done' && task.status === 'done') {
-        toggleTaskStatus(taskId);
-        if (status === 'in_progress') {
-          updateTask(taskId, { status: 'in_progress' });
-        }
-      } else {
-        updateTask(taskId, {
-          status,
-          completedAt: undefined,
-        });
-      }
+      moveTaskToStatus(taskId, status);
     }
+    setDragOverTargetColumn(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+  };
+
+  const handleCardPointerDown = (_taskId: string, e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, textarea, a, select')) return;
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, moved: false };
+    if (typeof e.currentTarget.setPointerCapture === 'function') {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
+
+  const handleCardPointerMove = (taskId: string, e: React.PointerEvent) => {
+    if (!pointerStartRef.current) return;
+    const dist = Math.hypot(e.clientX - pointerStartRef.current.x, e.clientY - pointerStartRef.current.y);
+    if (dist > 8) {
+      pointerStartRef.current.moved = true;
+      if (draggingTaskId !== taskId) {
+        setDraggingTaskId(taskId);
+      }
+      const elem = document.elementFromPoint?.(e.clientX, e.clientY);
+      const colElem = elem?.closest('[data-kanban-column]');
+      const targetStatus = colElem?.getAttribute('data-kanban-column') as TaskStatus | null;
+      setDragOverTargetColumn(targetStatus);
+    }
+  };
+
+  const handleCardPointerUp = (taskId: string, e: React.PointerEvent) => {
+    if (typeof e.currentTarget.releasePointerCapture === 'function') {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+    if (pointerStartRef.current?.moved && draggingTaskId) {
+      const elem = document.elementFromPoint?.(e.clientX, e.clientY);
+      const colElem = elem?.closest('[data-kanban-column]');
+      const targetStatus = colElem?.getAttribute('data-kanban-column') as TaskStatus | null;
+      if (targetStatus) {
+        moveTaskToStatus(taskId, targetStatus);
+      }
+    } else if (!pointerStartRef.current?.moved) {
+      setFocusedCardId(taskId);
+      onSelectTask(taskId);
+    }
+    pointerStartRef.current = null;
+    setDraggingTaskId(null);
+    setDragOverTargetColumn(null);
+  };
+
+  const handleCardPointerCancel = (_taskId: string, e: React.PointerEvent) => {
+    if (typeof e.currentTarget.releasePointerCapture === 'function') {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+    pointerStartRef.current = null;
+    setDraggingTaskId(null);
+    setDragOverTargetColumn(null);
   };
 
   const handleAddTaskToColumn = (status: TaskStatus) => {
@@ -192,13 +259,17 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
         {columns.map((col) => {
           const count = tasks.filter((t) => t.status === col.status).length;
           const isActive = mobileColumn === col.status;
+          const isDragTarget = dragOverTargetColumn === col.status;
           return (
             <button
               key={col.status}
               type="button"
+              data-kanban-column={col.status}
               onClick={() => setMobileColumn(col.status)}
               className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-1 sm:px-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap min-w-0 ${
-                isActive
+                isDragTarget
+                  ? 'bg-amber-500/25 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/60'
+                  : isActive
                   ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
@@ -215,16 +286,26 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
         {columns.map((col) => {
           const colTasks = tasks.filter((t) => t.status === col.status);
           const ColIcon = col.icon;
+          const isDragTarget = dragOverTargetColumn === col.status;
 
           const isVisibleOnMobile = mobileColumn === col.status;
           return (
             <div
               key={col.status}
+              data-kanban-column={col.status}
               onDrop={(e) => handleDrop(e, col.status)}
-              onDragOver={handleDragOver}
+              onDragOver={(e) => {
+                handleDragOver(e);
+                setDragOverTargetColumn(col.status);
+              }}
+              onDragLeave={() => setDragOverTargetColumn(null)}
               className={`${
                 isVisibleOnMobile ? 'flex' : 'hidden lg:flex'
-              } bg-[var(--bg-surface-l1)]/60 rounded-xl p-3.5 sm:p-4 border border-[var(--border-hairline)] flex-col h-full max-h-full min-h-0 backdrop-blur-xs shadow-xs`}
+              } ${
+                isDragTarget
+                  ? 'bg-amber-500/[0.06] border-amber-500/50 ring-2 ring-amber-500/30'
+                  : 'bg-[var(--bg-surface-l1)]/60 border-[var(--border-hairline)]'
+              } rounded-xl p-3.5 sm:p-4 border flex-col h-full max-h-full min-h-0 backdrop-blur-xs shadow-xs transition-colors`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between mb-3.5 px-1 shrink-0 gap-2">
@@ -308,6 +389,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                     {colTasks.map((task) => (
                       <motion.div
                         key={task.id}
+                        data-task-id={task.id}
                         layout="position"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -319,12 +401,14 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         }}
                         draggable
                         onDragStart={(e) => (e as unknown as React.DragEvent).dataTransfer?.setData('text/plain', task.id)}
-                        onClick={() => {
-                          setFocusedCardId(task.id);
-                          onSelectTask(task.id);
-                        }}
-                        className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-lg border transition-colors space-y-2 card-surface cursor-grab active:cursor-grabbing hover:-translate-y-[0.5px] ${
-                          focusedCardId === task.id
+                        onPointerDown={(e) => handleCardPointerDown(task.id, e)}
+                        onPointerMove={(e) => handleCardPointerMove(task.id, e)}
+                        onPointerUp={(e) => handleCardPointerUp(task.id, e)}
+                        onPointerCancel={(e) => handleCardPointerCancel(task.id, e)}
+                        className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-lg border transition-all space-y-2 card-surface cursor-grab active:cursor-grabbing touch-none select-none hover:-translate-y-[0.5px] ${
+                          draggingTaskId === task.id
+                            ? 'opacity-80 scale-105 shadow-2xl z-50 ring-2 ring-amber-500 bg-amber-500/[0.08]'
+                            : focusedCardId === task.id
                             ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-elevated'
                             : 'border-[var(--border-hairline)] shadow-card hover:border-stone-300 dark:hover:border-stone-700'
                         }`}

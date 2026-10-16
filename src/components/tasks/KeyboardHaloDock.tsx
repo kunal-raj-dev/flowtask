@@ -13,6 +13,7 @@ interface KeyboardHaloDockProps {
   onSetPriority: (priority: Priority) => void;
   onToggleEvening?: () => void;
   onDismiss: () => void;
+  onOpenShortcuts?: () => void;
 }
 
 export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
@@ -26,6 +27,7 @@ export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
   onSetPriority,
   onToggleEvening,
   onDismiss,
+  onOpenShortcuts,
 }) => {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden sm:flex items-center gap-3 px-4 py-2.5 rounded-xl bg-stone-900/95 dark:bg-stone-900/95 text-white border border-stone-700/70 shadow-2xl backdrop-blur-xl animate-slide-up select-none">
@@ -141,12 +143,26 @@ export const KeyboardHaloDock: React.FC<KeyboardHaloDockProps> = ({
           ))}
         </div>
 
+        {/* Shortcut Cheatsheet (?) */}
+        {onOpenShortcuts && (
+          <button
+            type="button"
+            onClick={onOpenShortcuts}
+            className="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white transition-colors"
+            title="Keyboard Shortcuts Cheatsheet (?)"
+            aria-label="Keyboard Shortcuts Cheatsheet"
+          >
+            <kbd className="px-1 py-0.5 rounded bg-stone-700 font-mono text-[9px] font-bold text-stone-200">?</kbd>
+          </button>
+        )}
+
         {/* Dismiss */}
         <button
           type="button"
           onClick={onDismiss}
           className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition-colors ml-1"
           title="Dismiss focus highlight (Esc)"
+          aria-label="Dismiss keyboard halo dock"
         >
           <X size={13} />
         </button>

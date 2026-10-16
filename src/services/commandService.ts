@@ -7,6 +7,7 @@ export interface CommandResult {
   updatedTasks: Task[];
   description: string;
   inverse: (currentTasks: Task[]) => Task[];
+  forward?: (currentTasks: Task[]) => Task[];
   sideEffects?: {
     nextRecurringTaskId?: string;
     actionType?: 'complete' | 'uncomplete' | 'delete' | 'archive' | 'create';
@@ -83,6 +84,7 @@ export const commandService = {
       description: `Created task "${createdTask.title}"`,
       sideEffects: { actionType: 'create', toastMessage: `Task added` },
       inverse: (currentTasks: Task[]) => currentTasks.filter((t) => t.id !== id),
+      forward: (currentTasks: Task[]) => [createdTask, ...currentTasks.filter((t) => t.id !== id)],
     };
   },
 
@@ -128,6 +130,12 @@ export const commandService = {
         currentTasks.map((t) =>
           t.id === taskId
             ? { ...t, ...previousValues, revision: (t.revision || 1) + 1, updatedAt: Date.now() }
+            : t
+        ),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) =>
+          t.id === taskId
+            ? { ...t, ...updates, revision: (t.revision || 1) + 1, updatedAt: Date.now() }
             : t
         ),
     };
@@ -223,6 +231,13 @@ export const commandService = {
           }
           return reverted;
         },
+        forward: (currentTasks: Task[]) => {
+          let applied = currentTasks.map((t) => (t.id === taskId ? completedTask : t));
+          if (nextRecurringTask && !applied.some((t) => t.id === nextRecurringTask!.id)) {
+            applied = [nextRecurringTask, ...applied];
+          }
+          return applied;
+        },
       };
     } else {
       // Revert to todo
@@ -252,6 +267,8 @@ export const commandService = {
                 }
               : t
           ),
+        forward: (currentTasks: Task[]) =>
+          currentTasks.map((t) => (t.id === taskId ? uncompletedTask : t)),
       };
     }
   },
@@ -279,6 +296,10 @@ export const commandService = {
         currentTasks.map((t) =>
           t.id === taskId ? { ...t, deletedAt: undefined, updatedAt: Date.now() } : t
         ),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) =>
+          t.id === taskId ? { ...t, deletedAt: now, revision: (t.revision || 1) + 1, updatedAt: Date.now() } : t
+        ),
     };
   },
 
@@ -295,6 +316,7 @@ export const commandService = {
       updatedTasks,
       description: `Permanently deleted "${task.title}"`,
       inverse: (currentTasks: Task[]) => [task, ...currentTasks],
+      forward: (currentTasks: Task[]) => currentTasks.filter((t) => t.id !== taskId),
     };
   },
 
@@ -319,6 +341,10 @@ export const commandService = {
       inverse: (currentTasks: Task[]) =>
         currentTasks.map((t) =>
           t.id === taskId ? { ...t, archivedAt: undefined, updatedAt: Date.now() } : t
+        ),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) =>
+          t.id === taskId ? { ...t, archivedAt: now, revision: (t.revision || 1) + 1, updatedAt: Date.now() } : t
         ),
     };
   },
@@ -345,6 +371,10 @@ export const commandService = {
       inverse: (currentTasks: Task[]) =>
         currentTasks.map((t) =>
           t.id === taskId ? { ...t, deletedAt: prevDeleted, archivedAt: prevArchived } : t
+        ),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) =>
+          t.id === taskId ? { ...t, deletedAt: undefined, archivedAt: undefined, updatedAt: Date.now() } : t
         ),
     };
   },
@@ -439,6 +469,10 @@ export const commandService = {
           const prev = prevSnapshots.get(t.id);
           return prev ? { ...t, ...prev, updatedAt: Date.now() } : t;
         }),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) =>
+          idSet.has(t.id) ? { ...t, ...updates, revision: (t.revision || 1) + 1, updatedAt: Date.now() } : t
+        ),
     };
   },
 
@@ -460,6 +494,130 @@ export const commandService = {
         currentTasks.map((t) =>
           idSet.has(t.id) ? { ...t, deletedAt: undefined, updatedAt: Date.now() } : t
         ),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) =>
+          idSet.has(t.id) ? { ...t, deletedAt: now, updatedAt: Date.now() } : t
+        ),
+    };
+  },
+
+  /**
+   * Bidirectional Command History Stack (BUG-17)
+   */
+  undoStack: [] as Array<{
+    description: string;
+    inverse: (tasks: Task[]) => Task[];
+    forward: (tasks: Task[]) => Task[];
+    sideEffects?: CommandResult['sideEffects'];
+  }>,
+
+  redoStack: [] as Array<{
+    description: string;
+    inverse: (tasks: Task[]) => Task[];
+    forward: (tasks: Task[]) => Task[];
+    sideEffects?: CommandResult['sideEffects'];
+  }>,
+
+  /**
+   * Clear both undo and redo stacks
+   */
+  clearHistory() {
+    this.undoStack = [];
+    this.redoStack = [];
+  },
+
+  /**
+   * Check if an undo action is available
+   */
+  canUndo(): boolean {
+    return this.undoStack.length > 0;
+  },
+
+  /**
+   * Check if a redo action is available
+   */
+  canRedo(): boolean {
+    return this.redoStack.length > 0;
+  },
+
+  /**
+   * Record an executed action into the undo stack and clear redo stack
+   */
+  recordAction(entry: {
+    description: string;
+    inverse: (tasks: Task[]) => Task[];
+    forward: (tasks: Task[]) => Task[];
+    sideEffects?: CommandResult['sideEffects'];
+  }) {
+    this.redoStack = [];
+    this.undoStack.push(entry);
+    if (this.undoStack.length > 50) {
+      this.undoStack.shift();
+    }
+  },
+
+  /**
+   * Execute a command function, record its inverse in undoStack, clear redoStack, and return result
+   */
+  executeAction(
+    tasks: Task[],
+    commandFn: (currentTasks: Task[]) => CommandResult
+  ): CommandResult {
+    const result = commandFn(tasks);
+    const forwardFn =
+      result.forward ||
+      ((currentTasks: Task[]) => {
+        const updatedMap = new Map(result.updatedTasks.map((t) => [t.id, t]));
+        return currentTasks.map((t) => updatedMap.get(t.id) || t);
+      });
+    this.recordAction({
+      description: result.description,
+      inverse: result.inverse,
+      forward: forwardFn,
+      sideEffects: result.sideEffects,
+    });
+    return result;
+  },
+
+  /**
+   * Pop from undoStack, apply inverse, and push forward action to redoStack
+   */
+  undoLastAction(currentTasks: Task[] = []): {
+    updatedTasks: Task[];
+    description: string;
+    sideEffects?: CommandResult['sideEffects'];
+  } | null {
+    const entry = this.undoStack.pop();
+    if (!entry) return null;
+
+    const updatedTasks = entry.inverse(currentTasks);
+    this.redoStack.push(entry);
+
+    return {
+      updatedTasks,
+      description: `Undo: ${entry.description}`,
+      sideEffects: entry.sideEffects,
+    };
+  },
+
+  /**
+   * Pop from redoStack, execute forward action, and push to undoStack
+   */
+  redoLastAction(currentTasks: Task[] = []): {
+    updatedTasks: Task[];
+    description: string;
+    sideEffects?: CommandResult['sideEffects'];
+  } | null {
+    const entry = this.redoStack.pop();
+    if (!entry) return null;
+
+    const updatedTasks = entry.forward(currentTasks);
+    this.undoStack.push(entry);
+
+    return {
+      updatedTasks,
+      description: `Redo: ${entry.description}`,
+      sideEffects: entry.sideEffects,
     };
   },
 };

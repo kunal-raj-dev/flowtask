@@ -25,7 +25,7 @@ export function useKeyboardNavigation({
   enabled = true,
 }: UseKeyboardNavigationProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(() => {
-    const currentSelected = useUIStore.getState().selectedTaskId;
+    const currentSelected = useUIStore.getState().selectedTaskId || useUIStore.getState().focusedTaskId;
     if (currentSelected) {
       const idx = tasks.findIndex((t) => t.id === currentSelected);
       if (idx !== -1) return idx;
@@ -33,11 +33,12 @@ export function useKeyboardNavigation({
     return -1;
   });
 
-  // Sync keyboard focused index with externally selected task
+  // Sync keyboard focused index with externally selected or focused task
   useEffect(() => {
     const unsub = useUIStore.subscribe((state) => {
-      if (state.selectedTaskId) {
-        const idx = tasks.findIndex((t) => t.id === state.selectedTaskId);
+      const targetId = state.selectedTaskId || state.focusedTaskId;
+      if (targetId) {
+        const idx = tasks.findIndex((t) => t.id === targetId);
         if (idx !== -1) {
           setFocusedIndex(idx);
         }
@@ -48,6 +49,18 @@ export function useKeyboardNavigation({
 
   const safeFocusedIndex = tasks.length === 0 ? -1 : Math.min(focusedIndex, tasks.length - 1);
   const focusedTaskId = safeFocusedIndex >= 0 && safeFocusedIndex < tasks.length ? tasks[safeFocusedIndex].id : null;
+
+  useEffect(() => {
+    useUIStore.getState().setFocusedTaskId(focusedTaskId);
+  }, [focusedTaskId]);
+
+  useEffect(() => {
+    return () => {
+      if (useUIStore.getState().focusedTaskId === focusedTaskId) {
+        useUIStore.getState().setFocusedTaskId(null);
+      }
+    };
+  }, [focusedTaskId]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -233,7 +246,7 @@ export function useKeyboardNavigation({
   useEffect(() => {
     if (focusedTaskId) {
       const el = document.getElementById(`task-${focusedTaskId}`);
-      if (el) {
+      if (el && typeof el.scrollIntoView === 'function') {
         el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     }

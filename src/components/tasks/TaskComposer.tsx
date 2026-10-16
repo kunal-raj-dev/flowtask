@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SPRING_TACTILE } from '../../utils/springPhysics';
 import { useTaskContext } from '../../context/TaskContext';
 import { parseTaskInput } from '../../utils/nlpParser';
 import { useTodayStr } from '../../hooks/useCurrentDate';
@@ -138,6 +140,15 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   const effectiveDuration = explicitDuration !== null ? explicitDuration : parsed.estimatedMinutes;
   const effectiveRecurrence = explicitRecurrence || parsed.recurrence || 'none';
 
+  // NLP Progressive Auto-Disclosure flags (BUG-18)
+  const hasParsedProject = explicitProjectId === 'inbox' && !parsed.projectTag ? false : Boolean(parsed.projectTag || (explicitProjectId && explicitProjectId !== defaultProjectId));
+  const hasParsedPlannedDate = explicitPlannedDate === '' ? false : Boolean(parsed.plannedDate || (explicitPlannedDate && explicitPlannedDate !== ''));
+  const hasParsedDueDate = explicitDueDate === '' ? false : Boolean(parsed.dueDate || (explicitDueDate && explicitDueDate !== ''));
+  const hasParsedPriority = explicitPriority === 'p4' && !parsed.priority ? false : Boolean((parsed.priority && parsed.priority !== 'p4') || (explicitPriority && explicitPriority !== 'p4'));
+  const hasParsedDuration = explicitDuration === null && !parsed.estimatedMinutes ? false : Boolean(parsed.estimatedMinutes || explicitDuration);
+  const hasParsedRecurrence = explicitRecurrence === 'none' && !parsed.recurrence ? false : Boolean((parsed.recurrence && parsed.recurrence !== 'none') || (explicitRecurrence && explicitRecurrence !== 'none'));
+  const hasAnyParsedTokens = hasParsedProject || hasParsedPlannedDate || hasParsedDueDate || hasParsedPriority || hasParsedDuration || hasParsedRecurrence || isSessionActive;
+
   // Duplicate detection preview
   const duplicateCandidates = React.useMemo(() => {
     if (!input.trim() || input.trim().length < 3 || isMultiline) return [];
@@ -218,8 +229,8 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
         tags: parsed.tags,
         contextTags: parsed.contextTags,
         customRecurrence: parsed.customRecurrence,
-        plannedDate: isSessionActive ? (effectivePlannedDate || todayStr) : effectivePlannedDate,
-        dueDate: effectiveDueDate,
+        plannedDate: isSessionActive ? (effectivePlannedDate || todayStr) : (effectivePlannedDate || undefined),
+        dueDate: effectiveDueDate || undefined,
         priority: effectivePriority,
         estimatedMinutes: isSessionActive ? sessionDuration.minutes : effectiveDuration,
         recurrence: effectiveRecurrence,
@@ -360,8 +371,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   onClick={() => setShowDetails(!showDetails)}
                 >
                   <span>{showDetails ? '▾ Hide properties' : '▸ Set properties'}</span>
-                  {!showDetails && (parsed.dueDate || parsed.priority || parsed.estimatedMinutes || parsed.projectTag) && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title="Parsed tags available" />
+                  {!showDetails && hasAnyParsedTokens && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30" title="Parsed parameters active">
+                      Parsed
+                    </span>
                   )}
                 </button>
               </div>
@@ -379,13 +392,24 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
             </div>
           </div>
 
-          {/* Editable Chips Bar (Only in Single Task mode) */}
-          {!isMultiline && showDetails && (
+          {/* Editable Chips Bar (Only in Single Task mode: auto-reveals on parsed NLP tokens or manual toggle) */}
+          {!isMultiline && (showDetails || hasAnyParsedTokens) && (
             <div className="overflow-x-auto no-scrollbar flex items-center gap-1.5 mt-3 pt-2.5 border-t border-[var(--border-hairline)] text-xs py-1">
-                  {/* Project Chip */}
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
+              <AnimatePresence mode="popLayout">
+                {/* Project Chip */}
+                {(showDetails || hasParsedProject) && (
+                  <motion.div
+                    key="chip-project"
+                    layout="position"
+                    initial={{ opacity: 0, scale: 0.85, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, y: -4 }}
+                    transition={SPRING_TACTILE}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] shrink-0"
+                  >
                     <Folder size={12} strokeWidth={1.75} style={{ color: projectObj.color }} />
-                    <select aria-label="Project"
+                    <select
+                      aria-label="Project"
                       value={projectObj.id}
                       onChange={(e) => setExplicitProjectId(e.target.value)}
                       className="bg-transparent font-medium cursor-pointer focus:outline-none focus-visible:outline-none outline-none text-[11px]"
@@ -396,10 +420,30 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                         </option>
                       ))}
                     </select>
-                  </div>
+                    {(explicitProjectId || parsed.projectTag) && (
+                      <button
+                        type="button"
+                        onClick={() => setExplicitProjectId('inbox')}
+                        className="hover:text-rose-500 ml-0.5 active:scale-90"
+                        title="Reset project to Inbox"
+                      >
+                        <X size={11} strokeWidth={1.75} />
+                      </button>
+                    )}
+                  </motion.div>
+                )}
 
-                  {/* Planned Date Chip */}
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
+                {/* Planned Date Chip */}
+                {(showDetails || hasParsedPlannedDate) && (
+                  <motion.div
+                    key="chip-planned-date"
+                    layout="position"
+                    initial={{ opacity: 0, scale: 0.85, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, y: -4 }}
+                    transition={SPRING_TACTILE}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] shrink-0"
+                  >
                     <Calendar size={12} strokeWidth={1.75} className="text-amber-500" />
                     <span className="text-[11px]">Plan:</span>
                     <input
@@ -419,10 +463,20 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                         <X size={11} strokeWidth={1.75} />
                       </button>
                     )}
-                  </div>
+                  </motion.div>
+                )}
 
-                  {/* Due Date (Deadline) Chip */}
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
+                {/* Due Date (Deadline) Chip */}
+                {(showDetails || hasParsedDueDate) && (
+                  <motion.div
+                    key="chip-due-date"
+                    layout="position"
+                    initial={{ opacity: 0, scale: 0.85, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, y: -4 }}
+                    transition={SPRING_TACTILE}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] shrink-0"
+                  >
                     <Clock size={12} strokeWidth={1.75} className="text-purple-500" />
                     <span className="text-[11px]">Due:</span>
                     <input
@@ -442,91 +496,177 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                         <X size={11} strokeWidth={1.75} />
                       </button>
                     )}
-                  </div>
+                  </motion.div>
+                )}
 
-                  {/* Priority Chip */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const cycle: Priority[] = ['p4', 'p3', 'p2', 'p1'];
-                      const next = cycle[(cycle.indexOf(effectivePriority) + 1) % cycle.length];
-                      setExplicitPriority(next);
-                    }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border font-bold text-[11px] transition-colors active:scale-95 ${getPriorityStyle(
-                      effectivePriority
-                    )}`}
-                    title="Click to cycle priority"
+                {/* Priority Chip */}
+                {(showDetails || hasParsedPriority) && (
+                  <motion.div
+                    key="chip-priority"
+                    layout="position"
+                    initial={{ opacity: 0, scale: 0.85, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, y: -4 }}
+                    transition={SPRING_TACTILE}
+                    className="shrink-0"
                   >
-                    <Flag size={11} strokeWidth={1.75} />
-                    <span>{effectivePriority.toUpperCase()}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cycle: Priority[] = ['p4', 'p3', 'p2', 'p1'];
+                        const next = cycle[(cycle.indexOf(effectivePriority) + 1) % cycle.length];
+                        setExplicitPriority(next);
+                      }}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border font-bold text-[11px] transition-colors active:scale-95 ${getPriorityStyle(
+                        effectivePriority
+                      )}`}
+                      title="Click to cycle priority"
+                    >
+                      <Flag size={11} strokeWidth={1.75} />
+                      <span>{effectivePriority.toUpperCase()}</span>
+                      {effectivePriority !== 'p4' && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExplicitPriority('p4');
+                          }}
+                          className="hover:text-rose-500 ml-0.5 cursor-pointer active:scale-90"
+                          title="Reset priority to P4"
+                        >
+                          <X size={10} strokeWidth={1.75} />
+                        </span>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
 
-                  {/* Duration Chip */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const times = [15, 30, 45, 60, 90, null];
-                      const next = times[(times.indexOf(effectiveDuration ?? null) + 1) % times.length];
-                      setExplicitDuration(next);
-                    }}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] active:scale-95"
-                    title="Click to cycle estimated duration"
+                {/* Duration Chip */}
+                {(showDetails || hasParsedDuration) && (
+                  <motion.div
+                    key="chip-duration"
+                    layout="position"
+                    initial={{ opacity: 0, scale: 0.85, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, y: -4 }}
+                    transition={SPRING_TACTILE}
+                    className="shrink-0"
                   >
-                    <Sparkles size={11} strokeWidth={1.75} className="text-teal-500" />
-                    <span className="tabular-nums">{effectiveDuration ? `~${effectiveDuration}m` : 'Estimate'}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const times = [15, 30, 45, 60, 90, null];
+                        const next = times[(times.indexOf(effectiveDuration ?? null) + 1) % times.length];
+                        setExplicitDuration(next);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] active:scale-95"
+                      title="Click to cycle estimated duration"
+                    >
+                      <Sparkles size={11} strokeWidth={1.75} className="text-teal-500" />
+                      <span className="tabular-nums">{effectiveDuration ? `~${effectiveDuration}m` : 'Estimate'}</span>
+                      {effectiveDuration && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExplicitDuration(null);
+                          }}
+                          className="hover:text-rose-500 ml-0.5 cursor-pointer active:scale-90"
+                          title="Clear duration"
+                        >
+                          <X size={10} strokeWidth={1.75} />
+                        </span>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
 
-                  {/* Recurrence Chip */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const freqs: RecurrenceFrequency[] = ['none', 'daily', 'weekdays', 'weekly', 'monthly'];
-                      const next = freqs[(freqs.indexOf(effectiveRecurrence) + 1) % freqs.length];
-                      setExplicitRecurrence(next);
-                    }}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] cursor-pointer active:scale-95"
-                    title="Click to cycle recurrence"
+                {/* Recurrence Chip */}
+                {(showDetails || hasParsedRecurrence) && (
+                  <motion.div
+                    key="chip-recurrence"
+                    layout="position"
+                    initial={{ opacity: 0, scale: 0.85, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, y: -4 }}
+                    transition={SPRING_TACTILE}
+                    className="shrink-0"
                   >
-                    <Repeat size={11} strokeWidth={1.75} className="text-indigo-500" />
-                    <span>{effectiveRecurrence !== 'none' ? effectiveRecurrence : 'Repeat'}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const freqs: RecurrenceFrequency[] = ['none', 'daily', 'weekdays', 'weekly', 'monthly'];
+                        const next = freqs[(freqs.indexOf(effectiveRecurrence) + 1) % freqs.length];
+                        setExplicitRecurrence(next);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] cursor-pointer active:scale-95"
+                      title="Click to cycle recurrence"
+                    >
+                      <Repeat size={11} strokeWidth={1.75} className="text-indigo-500" />
+                      <span>{effectiveRecurrence !== 'none' ? effectiveRecurrence : 'Repeat'}</span>
+                      {effectiveRecurrence !== 'none' && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExplicitRecurrence('none');
+                          }}
+                          className="hover:text-rose-500 ml-0.5 cursor-pointer active:scale-90"
+                          title="Clear recurrence"
+                        >
+                          <X size={10} strokeWidth={1.75} />
+                        </span>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
 
-                  {/* Session Chip */}
-                  <button
-                    type="button"
-                    onClick={() => setIsSessionActive((prev) => !prev)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer active:scale-95 ${
-                      isSessionActive
-                        ? 'bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30 font-semibold'
-                        : 'bg-[var(--bg-surface-l2)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
-                    title={isSessionActive ? 'Click to toggle session off' : 'Click to configure custom session duration & timeline block'}
+                {/* Session Chip */}
+                {(showDetails || isSessionActive) && (
+                  <motion.div
+                    key="chip-session"
+                    layout="position"
+                    initial={{ opacity: 0, scale: 0.85, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, y: -4 }}
+                    transition={SPRING_TACTILE}
+                    className="shrink-0"
                   >
-                    <Timer size={11} strokeWidth={1.75} className={isSessionActive ? 'text-teal-500' : ''} />
-                    <span className="tabular-nums">
-                      {isSessionActive
-                        ? `Session ${activeSessionNum} (${sessionStartTime}–${sessionEndTime})`
-                        : '+ Session'}
-                    </span>
-                    {isSessionActive && (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsSessionActive(false);
-                        }}
-                        className="ml-0.5 hover:text-rose-500 cursor-pointer active:scale-90"
-                        title="Remove session"
-                      >
-                        <X size={10} strokeWidth={1.75} />
+                    <button
+                      type="button"
+                      onClick={() => setIsSessionActive((prev) => !prev)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer active:scale-95 ${
+                        isSessionActive
+                          ? 'bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30 font-semibold'
+                          : 'bg-[var(--bg-surface-l2)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      }`}
+                      title={isSessionActive ? 'Click to toggle session off' : 'Click to configure custom session duration & timeline block'}
+                    >
+                      <Timer size={11} strokeWidth={1.75} className={isSessionActive ? 'text-teal-500' : ''} />
+                      <span className="tabular-nums">
+                        {isSessionActive
+                          ? `Session ${activeSessionNum} (${sessionStartTime}–${sessionEndTime})`
+                          : '+ Session'}
                       </span>
-                    )}
-                  </button>
-                </div>
-              )}
+                      {isSessionActive && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsSessionActive(false);
+                          }}
+                          className="ml-0.5 hover:text-rose-500 cursor-pointer active:scale-90"
+                          title="Remove session"
+                        >
+                          <X size={10} strokeWidth={1.75} />
+                        </span>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
-              {/* Session Duration Generator Card */}
-              {!isMultiline && showDetails && isSessionActive && (
-                <div className="mt-2.5 p-3 rounded-xl bg-teal-500/[0.07] dark:bg-teal-500/[0.1] border border-teal-500/25 space-y-2.5 animate-slide-down">
+          {/* Session Duration Generator Card */}
+          {!isMultiline && (showDetails || isSessionActive) && isSessionActive && (
+            <div className="mt-2.5 p-3 rounded-xl bg-teal-500/[0.07] dark:bg-teal-500/[0.1] border border-teal-500/25 space-y-2.5 animate-slide-down">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-teal-900 dark:text-teal-200">
                       <Timer size={14} strokeWidth={1.75} className="text-teal-600 dark:text-teal-400" />

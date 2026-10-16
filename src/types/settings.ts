@@ -6,6 +6,7 @@ export interface UserWorkflowSettings {
   autoSlotBufferMinutes: number; // default 10
   weekStartDay: 'sunday' | 'monday'; // default 'monday'
   onboardingCompleted: boolean;
+  keyboardHaloEnabled?: boolean;
 }
 
 export const DEFAULT_WORKFLOW_SETTINGS: UserWorkflowSettings = {
@@ -16,6 +17,7 @@ export const DEFAULT_WORKFLOW_SETTINGS: UserWorkflowSettings = {
   autoSlotBufferMinutes: 10,
   weekStartDay: 'monday',
   onboardingCompleted: false,
+  keyboardHaloEnabled: true,
 };
 
 export const MIN_CAPACITY_HOURS = 1.0;

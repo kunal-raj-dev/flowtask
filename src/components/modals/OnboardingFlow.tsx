@@ -74,7 +74,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
       {/* Backdrop with ambient blur */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300"
-        onClick={onClose}
+        onClick={handleSkip}
         aria-hidden="true"
       />
 
@@ -412,7 +412,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
                 </ul>
               ) : (
                 <p className="text-[var(--text-muted)] italic">
-                  No initial tasks entered. You can use the Omnibar or press &apos;N&apos; anytime.
+                  No initial tasks entered. You can use the Task Composer or press &apos;N&apos; anytime.
                 </p>
               )}
             </div>

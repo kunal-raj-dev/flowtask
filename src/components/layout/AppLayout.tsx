@@ -23,7 +23,9 @@ import { MobileBottomNav } from './MobileBottomNav';
 import { FocusMiniPlayer } from '../focus/FocusMiniPlayer';
 import { Menu, Search, Share2, X, Plus, Timer, Settings, Cloud } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
-import { useTodayStr } from '../../hooks/useCurrentDate';
+import { useTodayStr, useTomorrowStr } from '../../hooks/useCurrentDate';
+import { useUIStore } from '../../store/useUIStore';
+import { KeyboardHaloDock } from '../tasks/KeyboardHaloDock';
 import { audioEngine } from '../../utils/audioEngine';
 import {
   getDiurnalPeriod,
@@ -52,14 +54,34 @@ export const AppLayout: React.FC = () => {
     isWeeklyReviewOpen,
     addTask,
     undoLastAction,
+    redoLastAction,
     isQuickAddOpen,
     setIsQuickAddOpen,
     syncStatus,
     setIsAuthModalOpen,
+    toggleTaskStatus,
+    updateTask,
+    settings,
   } = useTaskContext();
+
+  const todayStr = useTodayStr();
+  const tomorrowStr = useTomorrowStr();
+  const focusedTaskId = useUIStore((s) => s.focusedTaskId);
+  const activeHaloTaskId = focusedTaskId || selectedTaskId;
+  const activeHaloTask = activeHaloTaskId ? tasks.find((t) => t.id === activeHaloTaskId) : null;
 
   const { user, isAnonymous } = useAuth();
   const { openModal, closeModal, isModalOpen, hasAnyModalOpen } = useModal();
+
+  // Auto-invoke guided onboarding ritual on first visit for new users (BUG-08)
+  useEffect(() => {
+    try {
+      const legacyCompleted = typeof localStorage !== 'undefined' && localStorage.getItem('flowtask_onboarding_completed') === 'true';
+      if (!settings?.onboardingCompleted && !legacyCompleted && tasks.length === 0 && syncStatus !== 'syncing') {
+        openModal('onboarding');
+      }
+    } catch {}
+  }, [settings?.onboardingCompleted, tasks.length, syncStatus, openModal]);
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -117,17 +139,21 @@ export const AppLayout: React.FC = () => {
       const tag = (target?.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
 
-      // Suspend all global single-key shortcuts while ANY modal or slide-over drawer is open
+      // Suspend all global single-key shortcuts while ANY modal dialog is open
       const isAnyModalActive =
         hasAnyModalOpen ||
         isQuickAddOpen ||
         isAuthModalOpen ||
         isEveningShutdownOpen ||
         isWeeklyReviewOpen ||
-        isSmartFilterModalOpen ||
-        selectedTaskId !== null;
+        isSmartFilterModalOpen;
 
       if (isAnyModalActive) return;
+
+      // Suspend single-letter hotkeys while task drawer is open, but allow Cmd/Ctrl combos
+      if (selectedTaskId !== null && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        return;
+      }
 
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault();
@@ -160,6 +186,12 @@ export const AppLayout: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
         e.preventDefault();
         undoLastAction();
+      } else if (
+        ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && e.shiftKey) ||
+        ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y'))
+      ) {
+        e.preventDefault();
+        redoLastAction();
       }
     };
 
@@ -167,6 +199,7 @@ export const AppLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     undoLastAction,
+    redoLastAction,
     setIsQuickAddOpen,
     isQuickAddOpen,
     isAuthModalOpen,
@@ -179,8 +212,6 @@ export const AppLayout: React.FC = () => {
     closeModal,
     isModalOpen,
   ]);
-
-  const todayStr = useTodayStr();
 
   // Count active tasks for views with exact view-selector parity (memoized)
   const todayCount = useMemo(() => tasks.filter(t => isTodayTask(t, todayStr)).length, [tasks, todayStr]);
@@ -857,6 +888,27 @@ export const AppLayout: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Universal Keyboard Halo Dock (BUG-13) */}
+      {activeHaloTask && settings?.keyboardHaloEnabled !== false && (
+        <KeyboardHaloDock
+          key={`keyboard-halo-${activeHaloTask.id}`}
+          task={activeHaloTask}
+          onSelect={() => setSelectedTaskId(activeHaloTask.id)}
+          onToggleStatus={() => toggleTaskStatus(activeHaloTask.id)}
+          onStartFocus={() => handleStartFocus(activeHaloTask.id)}
+          onRescheduleToday={() => updateTask(activeHaloTask.id, { plannedDate: todayStr })}
+          onRescheduleTomorrow={() => updateTask(activeHaloTask.id, { plannedDate: tomorrowStr })}
+          onRescheduleSomeday={() => updateTask(activeHaloTask.id, { isSomeday: true, plannedDate: undefined })}
+          onSetPriority={(p) => updateTask(activeHaloTask.id, { priority: p })}
+          onToggleEvening={() => updateTask(activeHaloTask.id, { isEvening: !activeHaloTask.isEvening })}
+          onDismiss={() => {
+            setSelectedTaskId(null);
+            useUIStore.getState().setFocusedTaskId(null);
+          }}
+          onOpenShortcuts={() => openModal('shortcuts')}
+        />
+      )}
 
       {/* Batch Actions Dock */}
       <BatchActionBar />

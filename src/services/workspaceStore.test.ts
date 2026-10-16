@@ -43,4 +43,32 @@ describe('ordered workspace commands', () => {
     create(store, 'unsaved'); await expect(store.settled()).rejects.toThrow(/not saved/); expect(store.getSnapshot().record.tasks).toHaveLength(1);
     await store.retry(); expect(store.getSnapshot().error).toBeNull();
   });
+  it('supports redo, verifies canRedo, and clears redoStack on subsequent mutation', async () => {
+    const { store } = harness(); await store.load();
+    expect(store.canUndo()).toBe(false);
+    expect(store.canRedo()).toBe(false);
+
+    create(store, 'Task 1');
+    expect(store.canUndo()).toBe(true);
+    expect(store.canRedo()).toBe(false);
+
+    store.undo();
+    expect(store.getSnapshot().record.tasks).toHaveLength(0);
+    expect(store.canUndo()).toBe(false);
+    expect(store.canRedo()).toBe(true);
+
+    store.redo();
+    expect(store.getSnapshot().record.tasks).toHaveLength(1);
+    expect(store.getSnapshot().record.tasks[0].title).toBe('Task 1');
+    expect(store.canUndo()).toBe(true);
+    expect(store.canRedo()).toBe(false);
+
+    // Undo again, then make a new mutation -> redo stack must be cleared
+    store.undo();
+    expect(store.canRedo()).toBe(true);
+    create(store, 'Task 2');
+    expect(store.canRedo()).toBe(false);
+    expect(store.getSnapshot().record.tasks).toHaveLength(1);
+    expect(store.getSnapshot().record.tasks[0].title).toBe('Task 2');
+  });
 });

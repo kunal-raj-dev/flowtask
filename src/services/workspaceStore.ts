@@ -51,6 +51,7 @@ export class WorkspaceStore {
   private writes = 0;
   private disposed = false;
   private generation = 0;
+  private redoStack: PendingOperation[] = [];
   readonly id: string;
   readonly connected: boolean;
   private persistence: typeof dbService;
@@ -89,6 +90,9 @@ export class WorkspaceStore {
     if (!changes.length && same(before.preferences, after.preferences) && same(before.customViews, after.customViews)) return;
     after = applyChanges(after, changes);
     const operation: PendingOperation = { id: uid(), description, changes, createdAt: Date.now() };
+    if (remember && changes.length) {
+      this.redoStack = [];
+    }
     after = { ...after, updatedAt: Date.now(),
       pending: this.connected && changes.length ? [...before.pending, operation] : before.pending,
       undo: remember && changes.length ? [...before.undo.slice(-19), operation] : after.undo,
@@ -96,6 +100,8 @@ export class WorkspaceStore {
     this.publish({ record: after, sync: this.connected && changes.length ? 'syncing' : this.snapshot.sync });
     void this.persist().then(() => this.flush()).catch(() => {});
   }
+  canUndo() { return (this.snapshot.record.undo?.length || 0) > 0; }
+  canRedo() { return this.redoStack.length > 0; }
   undo() {
     const operation = this.snapshot.record.undo.at(-1);
     if (!operation) return;
@@ -104,7 +110,19 @@ export class WorkspaceStore {
       const current = record[change.collection].find(x => x.id === change.id) || null;
       if (!same(semantic(current), semantic(change.after))) throw new Error('This task changed after that action. Review its current details before undoing.');
     }
+    this.redoStack.push(operation);
     this.run(`Undo: ${operation.description}`, current => ({ ...applyChanges(current, operation.changes.map(c => ({ ...c, before: c.after, after: c.before }))), undo: current.undo.slice(0, -1) }), false);
+  }
+  redo() {
+    const operation = this.redoStack.at(-1);
+    if (!operation) return;
+    const record = this.snapshot.record;
+    for (const change of operation.changes) {
+      const current = record[change.collection].find(x => x.id === change.id) || null;
+      if (!same(semantic(current), semantic(change.before))) throw new Error('This task changed after that action. Review its current details before redoing.');
+    }
+    this.redoStack.pop();
+    this.run(`Redo: ${operation.description}`, current => ({ ...applyChanges(current, operation.changes), undo: [...current.undo.slice(-19), operation] }), false);
   }
   connect(adapter: CloudAdapter) { this.adapter = adapter; this.disposed = false; void this.flush(); }
   disconnect() { this.disposed = true; this.generation++; this.adapter = undefined; }
