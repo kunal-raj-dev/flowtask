@@ -849,7 +849,7 @@ export const AppLayout: React.FC = () => {
       <AnimatePresence>
         {selectedTaskId && (
           <TaskDrawer
-            key={selectedTaskId}
+            key="slide-over-task-drawer"
             taskId={selectedTaskId}
             onClose={() => setSelectedTaskId(null)}
             onStartFocus={handleStartFocus}

@@ -12,6 +12,12 @@ describe('audioEngine enhancements', () => {
     expect(spy).toHaveBeenCalled();
   });
 
+  it('exposes playPopSound as an alias for playClickSound', () => {
+    const spy = vi.spyOn(audioEngine, 'playClickSound').mockImplementation(() => {});
+    audioEngine.playPopSound();
+    expect(spy).toHaveBeenCalled();
+  });
+
   it('provides playRuleOf3Fanfare without crashing in non-audio or disabled environments', () => {
     expect(() => audioEngine.playRuleOf3Fanfare()).not.toThrow();
   });

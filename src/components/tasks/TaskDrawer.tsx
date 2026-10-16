@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
+import { SPRING_TACTILE } from '../../utils/springPhysics';
 import { RecurrenceModal } from '../modals/RecurrenceModal';
 import {
   TaskDrawerHeader,
@@ -35,6 +36,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
   const task = tasks.find((t) => t.id === taskId);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   // Mobile drag-to-dismiss gesture state
   const [dragY, setDragY] = useState(0);
@@ -50,6 +52,34 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // On desktop, clicking blank canvas closes the drawer, while clicking other task cards selects them
+  useEffect(() => {
+    if (isMobile) return;
+
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      if (drawerRef.current && drawerRef.current.contains(target)) {
+        return;
+      }
+
+      // If clicked on an interactive task element or modal, allow task selection to proceed
+      if (
+        target.closest(
+          '[id^="task-"], button, a, input, textarea, select, [role="button"], [role="menu"], [role="dialog"]'
+        )
+      ) {
+        return;
+      }
+
+      onClose();
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    return () => window.removeEventListener('mousedown', handlePointerDown);
+  }, [isMobile, onClose]);
 
   // Accessibility: store active element and bind Escape key
   useEffect(() => {
@@ -109,23 +139,34 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.18 }}
-      className="fixed inset-0 z-40 bg-black/30 dark:bg-black/50 backdrop-blur-[2px] flex items-end md:items-stretch md:justify-end"
-      onClick={onClose}
+      transition={{ duration: 0.16 }}
+      className="fixed inset-0 z-40 pointer-events-none flex items-end md:items-stretch md:justify-end"
     >
+      {/* Mobile Backdrop Overlay (dismiss on tap) */}
       <motion.div
+        className="md:hidden fixed inset-0 bg-black/25 dark:bg-black/45 backdrop-blur-[2px] pointer-events-auto"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.16 }}
+      />
+
+      <motion.div
+        ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-label="Task Details"
+        data-task-drawer="true"
         initial={isMobile ? { y: '100%' } : { x: '100%' }}
         animate={isMobile ? { y: dragY > 0 ? dragY : 0 } : { x: 0 }}
         exit={isMobile ? { y: '100%' } : { x: '100%' }}
         transition={
           isDragging
             ? { duration: 0 }
-            : { type: 'spring', damping: 30, stiffness: 350 }
+            : SPRING_TACTILE
         }
-        className="w-full md:max-w-xl lg:max-w-2xl h-[100dvh] md:h-full max-h-[100dvh] md:max-h-full bg-[var(--bg-surface-l1)] rounded-t-2xl md:rounded-none border-t md:border-t-0 md:border-l border-[var(--border-subtle)] shadow-modal flex flex-col overflow-hidden"
+        className="pointer-events-auto w-full sm:w-[460px] md:w-[480px] lg:w-[540px] h-[100dvh] md:h-full max-h-[100dvh] md:max-h-full bg-[var(--bg-surface-l1)] rounded-t-2xl md:rounded-l-2xl md:rounded-r-none border-t md:border-t-0 md:border-l border-[var(--border-subtle)] shadow-cute-modal flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header & Gesture handles */}

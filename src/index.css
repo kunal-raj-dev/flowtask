@@ -16,11 +16,44 @@
   --color-brand-subtle: var(--color-brand-subtle);
   --color-brand-border: var(--color-brand-border);
   --color-focus: var(--color-focus-ring);
+
+  /* Pastel Accent Tokens */
+  --color-pastel-amber: var(--pastel-amber);
+  --color-pastel-amber-subtle: var(--pastel-amber-subtle);
+  --color-pastel-sage: var(--pastel-sage);
+  --color-pastel-sage-subtle: var(--pastel-sage-subtle);
+  --color-pastel-coral: var(--pastel-coral);
+  --color-pastel-coral-subtle: var(--pastel-coral-subtle);
+  --color-pastel-sky: var(--pastel-sky);
+  --color-pastel-sky-subtle: var(--pastel-sky-subtle);
+  --color-pastel-lavender: var(--pastel-lavender);
+  --color-pastel-lavender-subtle: var(--pastel-lavender-subtle);
+
+  /* Multi-Layer Tactile Cute Shadows */
   --shadow-subtle: var(--shadow-subtle);
   --shadow-card: var(--shadow-card);
   --shadow-elevated: var(--shadow-elevated);
   --shadow-modal: var(--shadow-modal);
   --shadow-glow-amber: var(--shadow-glow-amber);
+  --shadow-cute-card: var(--shadow-cute-card);
+  --shadow-cute-modal: var(--shadow-cute-modal);
+  --shadow-cute-glow: var(--shadow-cute-glow);
+
+  /* Radii Ladder */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Spring Easings */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snappy: cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Typography */
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
@@ -31,16 +64,16 @@
   --bg-main: #FAF9F6;
   --bg-surface: var(--bg-surface-l1);
   --bg-surface-hover: var(--bg-surface-l3);
-  --bg-surface-l1: #F4F1EB;
+  --bg-surface-l1: #F3F0E8;
   --bg-surface-l2: #FFFFFF;
-  --bg-surface-l3: #FAF8F5;
-  --bg-surface-l4: #F5F2EC;
+  --bg-surface-l3: #F7F5F0;
+  --bg-surface-l4: #EDE8DE;
 
-  /* Borders */
-  --border-color: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.14);
-  --border-hairline: rgba(0, 0, 0, 0.06);
-  --border-subtle: rgba(0, 0, 0, 0.035);
+  /* Borders: Hairline & Subtle */
+  --border-color: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.14);
+  --border-hairline: rgba(15, 23, 42, 0.06);
+  --border-subtle: rgba(15, 23, 42, 0.035);
 
   /* Typography (WCAG 2.2 AA compliant high-contrast slate) */
   --text-primary: #0F172A;
@@ -48,23 +81,49 @@
   --text-muted: #64748B;
 
   /* Calibrated Semantic Action Tokens (Golden Amber / Warm Slate) */
-  --color-brand: #D97706;
-  --color-brand-hover: #B45309;
-  --color-brand-subtle: rgba(217, 119, 6, 0.08);
-  --color-brand-border: rgba(217, 119, 6, 0.22);
-  --color-focus-ring: rgba(217, 119, 6, 0.35);
+  --color-brand: #F59E0B;
+  --color-brand-hover: #D97706;
+  --color-brand-subtle: rgba(245, 158, 11, 0.10);
+  --color-brand-border: rgba(245, 158, 11, 0.25);
+  --color-focus-ring: rgba(245, 158, 11, 0.35);
 
-  /* Chromatic Slate Drop Shadows - Jakub Krehel multi-layered ambient depth */
+  /* Pastel Accent Tokens */
+  --pastel-amber: #F59E0B;
+  --pastel-amber-subtle: rgba(245, 158, 11, 0.10);
+  --pastel-sage: #10B981;
+  --pastel-sage-subtle: rgba(16, 185, 129, 0.10);
+  --pastel-coral: #F43F5E;
+  --pastel-coral-subtle: rgba(244, 63, 94, 0.10);
+  --pastel-sky: #0EA5E9;
+  --pastel-sky-subtle: rgba(14, 165, 233, 0.10);
+  --pastel-lavender: #8B5CF6;
+  --pastel-lavender-subtle: rgba(139, 92, 246, 0.10);
+
+  /* Radii Ladder */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Multi-Layer Tactile Cute Shadows */
   --shadow-subtle: 0 0 0 1px rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
-  --shadow-card: 0 0 0 1px rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 0 0 1px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.05), 0 6px 16px -3px rgba(15, 23, 42, 0.04);
   --shadow-elevated: 0 0 0 1px rgba(15, 23, 42, 0.05), 0 3px 6px -1px rgba(15, 23, 42, 0.06), 0 12px 28px -4px rgba(15, 23, 42, 0.09);
-  --shadow-modal: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 20px 48px -12px rgba(15, 23, 42, 0.18), 0 8px 16px -4px rgba(15, 23, 42, 0.08);
+  --shadow-modal: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 24px 60px -12px rgba(15, 23, 42, 0.22), 0 12px 24px -4px rgba(15, 23, 42, 0.08);
 
-  /* Rule of 3 Golden Amber Focus Glow */
+  --shadow-cute-card: 0 0 0 1px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.05), 0 6px 16px -3px rgba(15, 23, 42, 0.04);
+  --shadow-cute-modal: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 24px 60px -12px rgba(15, 23, 42, 0.22), 0 12px 24px -4px rgba(15, 23, 42, 0.08);
+  --shadow-cute-glow: 0 0 0 3px rgba(245, 158, 11, 0.25), 0 2px 8px 0 rgba(245, 158, 11, 0.15);
+
+  /* Golden Amber Focus Glow */
   --shadow-glow-amber: 0 0 24px -2px rgba(245, 158, 11, 0.22), 0 0 0 1px rgba(245, 158, 11, 0.4);
 
   /* Emil Kowalski / Linear Spring Curves */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snappy: cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
 
   color-scheme: light;
@@ -72,13 +131,13 @@
 
 .dark {
   /* Surface Ladder (Dark: Deep Cosmic Obsidian + CNC Machined Carbon) */
-  --bg-main: #090B0F;
+  --bg-main: #0B0D12;
   --bg-surface: var(--bg-surface-l1);
   --bg-surface-hover: var(--bg-surface-l3);
-  --bg-surface-l1: #0E1117;
-  --bg-surface-l2: #14171F;
-  --bg-surface-l3: #1C212B;
-  --bg-surface-l4: #222836;
+  --bg-surface-l1: #12151D;
+  --bg-surface-l2: #181C26;
+  --bg-surface-l3: #202533;
+  --bg-surface-l4: #2A3042;
 
   /* Borders */
   --border-color: rgba(255, 255, 255, 0.1);
@@ -98,11 +157,27 @@
   --color-brand-border: rgba(245, 158, 11, 0.28);
   --color-focus-ring: rgba(245, 158, 11, 0.4);
 
+  /* Dark Pastel Accent Tokens */
+  --pastel-amber: #F59E0B;
+  --pastel-amber-subtle: rgba(245, 158, 11, 0.15);
+  --pastel-sage: #10B981;
+  --pastel-sage-subtle: rgba(16, 185, 129, 0.15);
+  --pastel-coral: #F43F5E;
+  --pastel-coral-subtle: rgba(244, 63, 94, 0.15);
+  --pastel-sky: #0EA5E9;
+  --pastel-sky-subtle: rgba(14, 165, 233, 0.15);
+  --pastel-lavender: #8B5CF6;
+  --pastel-lavender-subtle: rgba(139, 92, 246, 0.15);
+
   /* Dark Elevation Shadows - Deep Obsidian CNC Machined Depth */
   --shadow-subtle: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
   --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 2px 8px -2px rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
   --shadow-elevated: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 12px 32px -4px rgba(0, 0, 0, 0.6), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
   --shadow-modal: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 24px 48px -12px rgba(0, 0, 0, 0.85);
+
+  --shadow-cute-card: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 2px 8px -2px rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-cute-modal: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 24px 48px -12px rgba(0, 0, 0, 0.85);
+  --shadow-cute-glow: 0 0 0 3px rgba(245, 158, 11, 0.35), 0 2px 12px 0 rgba(245, 158, 11, 0.25);
 
   /* Dark Rule of 3 Golden Amber Focus Glow */
   --shadow-glow-amber: 0 0 28px -4px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.45);

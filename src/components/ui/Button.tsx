@@ -18,19 +18,19 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-[var(--text-primary)] text-[var(--bg-main)] hover:opacity-90 shadow-xs active:scale-[0.97] transition-all',
+    'bg-[var(--text-primary)] text-[var(--bg-main)] hover:opacity-90 shadow-xs active:scale-[0.96] transition-all ease-spring',
   brand:
-    'bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white shadow-xs active:scale-[0.97] transition-all',
+    'bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white shadow-xs active:scale-[0.96] transition-all ease-spring',
   secondary:
-    'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] hover:bg-[var(--bg-surface-hover)] shadow-xs active:scale-[0.97] transition-all',
+    'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] hover:bg-[var(--bg-surface-hover)] shadow-xs active:scale-[0.96] transition-all ease-spring',
   outline:
-    'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.97] transition-all',
+    'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.96] transition-all ease-spring',
   ghost:
-    'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.97] transition-all',
+    'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] active:scale-[0.96] transition-all ease-spring',
   destructive:
-    'bg-rose-600 hover:bg-rose-700 text-white shadow-xs active:scale-[0.97] transition-all',
+    'bg-rose-600 hover:bg-rose-700 text-white shadow-xs active:scale-[0.96] transition-all ease-spring',
   'destructive-subtle':
-    'text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 active:scale-[0.97] transition-all',
+    'text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 active:scale-[0.96] transition-all ease-spring',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

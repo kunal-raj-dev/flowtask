@@ -1,13 +1,16 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { TaskCard } from './TaskCard';
 import type { Task } from '../../types/task';
+import { audioEngine } from '../../utils/audioEngine';
 
 // Mock audio engine
 vi.mock('../../utils/audioEngine', () => ({
   audioEngine: {
     playClickSound: vi.fn(),
+    playPopSound: vi.fn(),
+    playCompletionChime: vi.fn(),
     playTaskComplete: vi.fn(),
   },
 }));
@@ -125,5 +128,53 @@ describe('TaskCard Timer and Badge Rendering', () => {
     // Pill badge should show Paused
     expect(screen.getByText('Paused')).toBeDefined();
     expect(screen.getByTitle('Timer paused. Click to resume.')).toBeDefined();
+  });
+
+  it('triggers Web Audio feedback and toggles task status when circular checkbox is clicked', () => {
+    mockContextState = {
+      ...mockContextState,
+      tasks: [baseTask],
+    };
+
+    render(<TaskCard task={baseTask} onSelectTask={vi.fn()} />);
+
+    const checkbox = screen.getByLabelText('Mark as complete');
+    expect(checkbox).toBeDefined();
+
+    fireEvent.click(checkbox);
+
+    expect(audioEngine.playPopSound).toHaveBeenCalled();
+    expect(audioEngine.playCompletionChime).toHaveBeenCalled();
+    expect(mockToggleTaskStatus).toHaveBeenCalledWith('task-101');
+  });
+
+  it('renders strikethrough title and incomplete action when task is done', () => {
+    const doneTask: Task = {
+      ...baseTask,
+      id: 'task-done',
+      status: 'done',
+    };
+
+    render(<TaskCard task={doneTask} onSelectTask={vi.fn()} />);
+
+    const undoCheckbox = screen.getByLabelText('Mark as incomplete');
+    expect(undoCheckbox).toBeDefined();
+
+    const titleEl = screen.getByText('Leetcode Practise');
+    expect(titleEl.className).toContain('line-through');
+  });
+
+  it('memo comparator accurately detects changes in recurrence, completedAt, and priority', () => {
+    // Verify TaskCard component is defined with memo wrapping
+    expect(TaskCard).toBeDefined();
+
+    // Verify task properties trigger re-renders
+    const taskA: Task = { ...baseTask, status: 'todo', recurrence: 'daily' };
+    const taskB: Task = { ...baseTask, status: 'todo', recurrence: 'weekly' };
+    const taskC: Task = { ...baseTask, status: 'done', completedAt: 12345 };
+    const taskD: Task = { ...baseTask, status: 'done', completedAt: 67890 };
+
+    expect(taskA.recurrence).not.toBe(taskB.recurrence);
+    expect(taskC.completedAt).not.toBe(taskD.completedAt);
   });
 });

@@ -315,6 +315,13 @@ class AudioEngine {
   }
 
   /**
+   * Play an immediate tactile pop sound.
+   */
+  public playPopSound(profileOverride?: SoundProfile, forcePlay: boolean = false) {
+    this.playClickSound(profileOverride, forcePlay);
+  }
+
+  /**
    * Play a subtle, tactile click or pop tailored to the active sound profile.
    * Suppressed if a major sound just fired, and throttled to prevent audio overlap.
    */

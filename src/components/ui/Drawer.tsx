@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { SPRING_TACTILE } from '../../utils/springPhysics';
 
 export type DrawerPosition = 'right' | 'left' | 'bottom';
 export type DrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
@@ -136,7 +137,7 @@ export const Drawer: React.FC<DrawerProps> = ({
           initial: { x: '100%' },
           animate: { x: 0 },
           exit: { x: '100%' },
-          containerClasses: 'right-0 top-0 bottom-0 h-full border-l',
+          containerClasses: 'right-0 top-0 bottom-0 h-full border-l md:rounded-l-2xl',
           sizeClass: sizeWidthStyles[size],
         };
     }
@@ -161,8 +162,8 @@ export const Drawer: React.FC<DrawerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs"
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-[2px]"
             onClick={() => {
               if (closeOnBackdropClick) onClose();
             }}
@@ -173,9 +174,9 @@ export const Drawer: React.FC<DrawerProps> = ({
             initial={motionConfig.initial}
             animate={motionConfig.animate}
             exit={motionConfig.exit}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            transition={SPRING_TACTILE}
             onClick={(e) => e.stopPropagation()}
-            className={`fixed ${motionConfig.containerClasses} w-full bg-[var(--bg-surface-l1)] border-[var(--border-hairline)] shadow-2xl flex flex-col z-10 card-surface ${motionConfig.sizeClass} ${className}`}
+            className={`fixed ${motionConfig.containerClasses} w-full bg-[var(--bg-surface-l1)] border-[var(--border-hairline)] shadow-cute-modal flex flex-col z-10 card-surface ${motionConfig.sizeClass} ${className}`}
           >
             {/* Header */}
             {(title || description) && (

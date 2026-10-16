@@ -17,7 +17,7 @@ export const Toast: React.FC = () => {
           transition={{ type: 'spring', damping: 26, stiffness: 360 }}
           role="status"
           aria-live="polite"
-          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex items-center gap-3 px-4 py-3 bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 rounded-xl shadow-elevated border border-stone-800 dark:border-stone-200 text-sm font-medium"
+          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex items-center gap-3 px-4 py-3 bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 rounded-2xl shadow-cute-modal border border-stone-800 dark:border-stone-200 text-sm font-medium"
         >
           <span className="leading-snug">{toast.message}</span>
           {toast.actionLabel && toast.onAction && (
@@ -27,7 +27,7 @@ export const Toast: React.FC = () => {
                 toast.onAction?.();
                 clearToast();
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 text-amber-300 dark:text-amber-800 hover:bg-amber-500/30 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 text-amber-300 dark:text-amber-800 hover:bg-amber-500/30 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors active:scale-95"
             >
               <Undo2 size={13} />
               <span>{toast.actionLabel}</span>

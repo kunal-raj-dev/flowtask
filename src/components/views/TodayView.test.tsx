@@ -2,11 +2,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TodayView } from './TodayView';
+import type { Task } from '../../types/task';
 
 let mockTotalFocusedTodaySeconds = 0;
 let mockFocusSession: any = null;
 
-const mockTasks = [
+const mockTasks: Task[] = [
   {
     id: 't-1',
     title: 'Solve Priority Problem',
@@ -16,6 +17,8 @@ const mockTasks = [
     createdAt: Date.now(),
     plannedDate: '2026-10-07',
     isPinnedToday: true,
+    estimatedMinutes: 30,
+    subtasks: [],
   },
 ];
 
@@ -96,5 +99,17 @@ describe('TodayView Component', () => {
     fireEvent.click(resumeBtn);
 
     expect(mockStartSprint).toHaveBeenCalledWith('t-1');
+  });
+
+  it('renders overcommitment protection banner when planned work exceeds capacity', () => {
+    mockTasks[0] = {
+      ...mockTasks[0],
+      estimatedMinutes: 480, // 8 hours planned > 6 hours capacity
+    };
+
+    render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
+
+    expect(screen.getByText(/Workload Capacity Exceeded/i)).toBeDefined();
+    expect(screen.getByText(/8\.0h planned vs 6h target/i)).toBeDefined();
   });
 });

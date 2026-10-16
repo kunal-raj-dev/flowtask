@@ -94,9 +94,9 @@ const variantStyles: Record<BadgeVariant, { container: string; dot: string }> = 
 };
 
 const sizeStyles: Record<BadgeSize, string> = {
-  xs: 'text-[10px] px-1.5 py-0.5 rounded-[4px] gap-1 font-mono',
-  sm: 'text-[11px] px-2 py-0.5 rounded-md gap-1 font-medium',
-  md: 'text-xs px-2.5 py-1 rounded-lg gap-1.5 font-medium',
+  xs: 'text-[10px] px-1.5 py-0.5 rounded-sm gap-1 font-mono',
+  sm: 'text-[11px] px-2 py-0.5 rounded-sm gap-1 font-medium',
+  md: 'text-xs px-2.5 py-1 rounded-sm gap-1.5 font-medium',
 };
 
 export const Badge: React.FC<BadgeProps> = ({

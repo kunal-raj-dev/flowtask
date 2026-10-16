@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { SPRING_TACTILE } from '../../utils/springPhysics';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -93,9 +94,9 @@ export const Dialog: React.FC<DialogProps> = ({
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            transition={SPRING_TACTILE}
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-modal card-surface z-10 overflow-hidden ${sizeStyles[size]} ${className}`}
+            className={`relative w-full rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-cute-modal card-surface z-10 overflow-hidden ${sizeStyles[size]} ${className}`}
           >
             {/* Header */}
             {(title || description) && (

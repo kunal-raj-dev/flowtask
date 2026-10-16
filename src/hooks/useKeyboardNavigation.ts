@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Task, Priority } from '../types/task';
 import { formatLocalDate } from '../utils/nlpParser';
+import { useUIStore } from '../store/useUIStore';
 
 interface UseKeyboardNavigationProps {
   tasks: Task[];
@@ -23,14 +24,35 @@ export function useKeyboardNavigation({
   onStartFocus,
   enabled = true,
 }: UseKeyboardNavigationProps) {
-  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const [focusedIndex, setFocusedIndex] = useState<number>(() => {
+    const currentSelected = useUIStore.getState().selectedTaskId;
+    if (currentSelected) {
+      const idx = tasks.findIndex((t) => t.id === currentSelected);
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  });
+
+  // Sync keyboard focused index with externally selected task
+  useEffect(() => {
+    const unsub = useUIStore.subscribe((state) => {
+      if (state.selectedTaskId) {
+        const idx = tasks.findIndex((t) => t.id === state.selectedTaskId);
+        if (idx !== -1) {
+          setFocusedIndex(idx);
+        }
+      }
+    });
+    return unsub;
+  }, [tasks]);
 
   const safeFocusedIndex = tasks.length === 0 ? -1 : Math.min(focusedIndex, tasks.length - 1);
   const focusedTaskId = safeFocusedIndex >= 0 && safeFocusedIndex < tasks.length ? tasks[safeFocusedIndex].id : null;
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (document.querySelector('[aria-modal="true"], [data-overlay-open="true"]')) return;
+      // Allow keyboard navigation if right slide-over TaskDrawer is open, but block on full modal dialogs
+      if (document.querySelector('[aria-modal="true"]:not([data-task-drawer="true"]), [data-overlay-open="true"]')) return;
       if (!enabled || tasks.length === 0) return;
 
       // Ignore when user is actively typing in form inputs, textareas, or contenteditables
@@ -38,6 +60,11 @@ export function useKeyboardNavigation({
       const tag = (activeEl?.tagName || '').toLowerCase();
       const isEditable = activeEl?.getAttribute('contenteditable') === 'true';
       if (tag === 'input' || tag === 'textarea' || tag === 'select' || isEditable) {
+        return;
+      }
+
+      // If user is focused on an interactive button or anchor, let Space/Enter activate natively
+      if ((tag === 'button' || tag === 'a') && (e.key === ' ' || e.key === 'Enter')) {
         return;
       }
 
@@ -53,6 +80,10 @@ export function useKeyboardNavigation({
           e.preventDefault();
           setFocusedIndex((prev) => {
             const next = prev < tasks.length - 1 ? prev + 1 : 0;
+            const currentSelected = useUIStore.getState().selectedTaskId;
+            if (currentSelected && tasks[next]) {
+              onSelectTask(tasks[next].id);
+            }
             return next;
           });
           break;
@@ -64,6 +95,10 @@ export function useKeyboardNavigation({
           e.preventDefault();
           setFocusedIndex((prev) => {
             const next = prev > 0 ? prev - 1 : tasks.length - 1;
+            const currentSelected = useUIStore.getState().selectedTaskId;
+            if (currentSelected && tasks[next]) {
+              onSelectTask(tasks[next].id);
+            }
             return next;
           });
           break;

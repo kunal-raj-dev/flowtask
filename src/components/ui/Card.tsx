@@ -12,15 +12,15 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const variantStyles: Record<CardVariant, string> = {
   default:
-    'bg-white dark:bg-[var(--bg-surface-l2)] border border-stone-200/80 dark:border-[var(--border-hairline)] shadow-card card-surface',
+    'bg-white dark:bg-[var(--bg-surface-l2)] border border-stone-200/80 dark:border-[var(--border-hairline)] shadow-cute-card shadow-card card-surface',
   surface:
-    'bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-card card-surface',
+    'bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-cute-card shadow-card card-surface',
   elevated:
-    'bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] shadow-modal card-surface',
+    'bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] shadow-cute-modal shadow-modal card-surface',
   subtle:
     'bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]',
   focus:
-    'bg-white dark:bg-[var(--bg-surface-l2)] border border-amber-500/40 dark:border-amber-500/45 shadow-[0_4px_20px_-2px_rgba(245,158,11,0.15)] dark:shadow-glow-amber card-surface',
+    'bg-white dark:bg-[var(--bg-surface-l2)] border border-amber-500/40 dark:border-amber-500/45 shadow-cute-glow dark:shadow-glow-amber card-surface',
   ghost:
     'bg-transparent border border-[var(--border-hairline)]',
 };

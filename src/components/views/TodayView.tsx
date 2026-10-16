@@ -7,6 +7,7 @@ import { TaskCard } from '../tasks/TaskCard';
 import { TaskComposer } from '../tasks/TaskComposer';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { useTotalFocusedTodaySeconds } from '../../hooks/useTotalFocusedTodaySeconds';
+import { SPRING_TACTILE } from '../../utils/springPhysics';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { formatSecondsToHumanReadable } from '../../utils/focusTimeFormat';
 import { useTodayStr, getTomorrowStr } from '../../hooks/useCurrentDate';
@@ -382,7 +383,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
       <TaskComposer />
 
       {/* Overcommitment Protection Banner */}
-      {isOverbooked && !isOverloadDismissed && daytimeTasks.length > 0 && (
+      {isOverbooked && !isOverloadDismissed && (
         <div className="my-5 p-3.5 sm:p-4 rounded-xl bg-amber-500/[0.08] dark:bg-amber-500/[0.12] border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
           <div className="flex items-start gap-2.5">
             <ShieldAlert size={18} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
@@ -396,24 +397,32 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-            <button
-              type="button"
-              onClick={handleDeferNonMitToTomorrow}
-              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-200 border border-amber-500/30 transition-colors"
-            >
-              Defer to Tomorrow
-            </button>
-            <button
-              type="button"
-              onClick={handleMoveNonMitToEvening}
-              className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-stone-200/60 dark:bg-white/[0.08] hover:bg-stone-200 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors"
-            >
-              To Evening
-            </button>
+            {daytimeTasks.length > 0 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleDeferNonMitToTomorrow}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-200 border border-amber-500/30 transition-colors"
+                >
+                  Defer to Tomorrow
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMoveNonMitToEvening}
+                  className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-stone-200/60 dark:bg-white/[0.08] hover:bg-stone-200 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors"
+                >
+                  To Evening
+                </button>
+              </>
+            ) : (
+              <span className="text-[11px] font-medium text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded bg-amber-500/10">
+                Focus MITs exceed daily budget
+              </span>
+            )}
             <button
               type="button"
               onClick={() => setIsOverloadDismissed(true)}
-              className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded"
+              className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded cursor-pointer"
               title="Dismiss warning"
             >
               ✕
@@ -445,7 +454,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
             <span>Click the star on any task to choose your Top 3 for today</span>
           </div>
         ) : (
-          <div className="p-2 sm:p-2.5 rounded-2xl bg-amber-500/[0.03] dark:bg-amber-500/[0.04] border border-amber-500/20 shadow-xs space-y-2">
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-amber-500/[0.04] dark:bg-amber-500/[0.06] border border-amber-500/25 shadow-cute-glow space-y-2 transition-shadow">
             <AnimatePresence initial={false} mode="popLayout">
               {topThreeTasks.map((task) => (
                 <motion.div
@@ -454,7 +463,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  transition={SPRING_TACTILE}
                 >
                   <TaskCard
                     task={task}
@@ -555,7 +564,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  transition={SPRING_TACTILE}
                 >
                   <TaskCard
                     task={task}
@@ -611,7 +620,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    transition={SPRING_TACTILE}
                   >
                     <TaskCard
                       task={task}
@@ -637,9 +646,17 @@ export const TodayView: React.FC<TodayViewProps> = ({
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 size={15} strokeWidth={1.75} className="text-emerald-500" />
-              <span>Completed Today ({completedTodayTasks.length})</span>
+              <span>Completed Today</span>
+              <Badge variant="success" size="xs">
+                {completedTodayTasks.length}
+              </Badge>
             </div>
-            <ChevronDown size={15} strokeWidth={1.75} className={`transition-transform duration-200 ${!isCompletedCollapsed ? 'rotate-180' : ''}`} />
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[var(--text-muted)] font-mono font-medium">
+                {progressPercent}%
+              </span>
+              <ChevronDown size={15} strokeWidth={1.75} className={`transition-transform duration-200 ${!isCompletedCollapsed ? 'rotate-180' : ''}`} />
+            </div>
           </button>
 
           {!isCompletedCollapsed && (
@@ -652,7 +669,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    transition={SPRING_TACTILE}
                   >
                     <TaskCard
                       task={task}

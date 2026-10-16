@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import type { Task } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
 import { useFocusStore } from '../../store/useFocusStore';
@@ -41,7 +42,7 @@ interface TaskCardProps {
   isKeyboardFocused?: boolean;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({
+const TaskCardInner: React.FC<TaskCardProps> = ({
   task,
   onSelectTask,
   onStartFocus,
@@ -120,10 +121,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const isTimerRunning = isActiveTimer && focusSession?.state === 'running';
   const isTimerPaused = isActiveTimer && focusSession?.state === 'paused';
   const isSelected = selectedTaskIds.includes(task.id);
-  const blockedInfo = isTaskBlocked(task, tasks);
+  const blockedInfo = useMemo(() => isTaskBlocked(task, tasks), [task, tasks]);
 
   const handleToggleStatus = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isDone) {
+      audioEngine.playPopSound();
+      audioEngine.playCompletionChime();
+    } else {
+      audioEngine.playPopSound();
+    }
+
     if (!isDone && blockedInfo.isBlocked) {
       const blockerTitles = blockedInfo.blockingTasks.map((t) => `"${t.title}"`).join(', ');
       toggleTaskStatus(task.id);
@@ -311,10 +319,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       </button>
 
       {/* Tactile Micro-Spring Circular Checkbox Button */}
-      <button
+      <motion.button
         type="button"
         onClick={handleToggleStatus}
-        className={`mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-200 active:scale-90 focus-ring cursor-pointer ${
+        whileTap={{ scale: 0.88 }}
+        animate={isDone ? { scale: [1, 1.18, 1] } : { scale: 1 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+        className={`mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border transition-all duration-200 focus-ring cursor-pointer ${
           isDone
             ? 'bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--bg-main)] shadow-xs scale-100'
             : 'border-[var(--border-strong)] hover:border-[var(--color-brand)] hover:ring-2 hover:ring-[var(--color-focus-ring)] bg-transparent'
@@ -337,7 +348,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             />
           </svg>
         )}
-      </button>
+      </motion.button>
 
       {/* Main Content Area */}
       <div className="flex-1 min-w-0">
@@ -363,13 +374,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 }
               }}
               title="Double-click to edit title"
-              className={`text-sm leading-snug font-medium transition-all ${
-                isDone
-                  ? 'line-through text-[var(--text-muted)]'
-                  : 'text-[var(--text-primary)]'
-              }`}
+              className="relative inline-flex items-center text-sm leading-snug font-medium transition-colors"
             >
-              {task.title}
+              <span
+                className={`transition-colors duration-200 ${
+                  isDone
+                    ? 'line-through text-[var(--text-muted)]'
+                    : 'text-[var(--text-primary)]'
+                }`}
+              >
+                {task.title}
+              </span>
+              {isDone && (
+                <motion.span
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute left-0 top-1/2 w-full h-[1.5px] bg-[var(--text-muted)] origin-left pointer-events-none"
+                />
+              )}
             </span>
           )}
 
@@ -836,3 +859,37 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     </div>
   );
 };
+
+export const TaskCard = React.memo<TaskCardProps>(TaskCardInner, (prev, next) => {
+  if (prev.isKeyboardFocused !== next.isKeyboardFocused) return false;
+  if (prev.onSelectTask !== next.onSelectTask) return false;
+  if (prev.onStartFocus !== next.onStartFocus) return false;
+  if (prev.onStartSprint !== next.onStartSprint) return false;
+  if (prev.task === next.task) return true;
+  return (
+    prev.task.id === next.task.id &&
+    prev.task.title === next.task.title &&
+    prev.task.status === next.task.status &&
+    prev.task.priority === next.task.priority &&
+    prev.task.isPinnedToday === next.task.isPinnedToday &&
+    prev.task.dueDate === next.task.dueDate &&
+    prev.task.dueTime === next.task.dueTime &&
+    prev.task.plannedDate === next.task.plannedDate &&
+    prev.task.projectId === next.task.projectId &&
+    prev.task.estimatedMinutes === next.task.estimatedMinutes &&
+    prev.task.timeSpentMinutes === next.task.timeSpentMinutes &&
+    prev.task.subtasks === next.task.subtasks &&
+    prev.task.blockedBy === next.task.blockedBy &&
+    prev.task.updatedAt === next.task.updatedAt &&
+    prev.task.completedAt === next.task.completedAt &&
+    prev.task.recurrence === next.task.recurrence &&
+    prev.task.customRecurrence === next.task.customRecurrence &&
+    prev.task.description === next.task.description &&
+    prev.task.tags === next.task.tags &&
+    prev.task.contextTags === next.task.contextTags &&
+    prev.task.topThreeDate === next.task.topThreeDate &&
+    prev.task.isEvening === next.task.isEvening &&
+    prev.task.isSomeday === next.task.isSomeday
+  );
+});
+
