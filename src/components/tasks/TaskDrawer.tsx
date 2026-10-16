@@ -38,6 +38,65 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
+  const [localTitle, setLocalTitle] = useState(task?.title || '');
+  const lastTitleTaskIdRef = useRef(task?.id);
+  const lastCommittedTitleRef = useRef(task?.title || '');
+  const titleDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const currentTaskId = task?.id;
+  const currentTaskTitle = task?.title;
+
+  useEffect(() => {
+    if (currentTaskId && currentTaskTitle !== undefined) {
+      if (lastTitleTaskIdRef.current !== currentTaskId) {
+        lastTitleTaskIdRef.current = currentTaskId;
+        lastCommittedTitleRef.current = currentTaskTitle;
+        setLocalTitle(currentTaskTitle);
+      } else if (currentTaskTitle !== lastCommittedTitleRef.current) {
+        lastCommittedTitleRef.current = currentTaskTitle;
+        setLocalTitle(currentTaskTitle);
+      }
+    }
+  }, [currentTaskId, currentTaskTitle]);
+
+  useEffect(() => {
+    return () => {
+      if (titleDebounceTimerRef.current) {
+        clearTimeout(titleDebounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalTitle(val);
+    if (!task) return;
+    if (titleDebounceTimerRef.current) {
+      clearTimeout(titleDebounceTimerRef.current);
+    }
+    titleDebounceTimerRef.current = setTimeout(() => {
+      if (val.trim()) {
+        lastCommittedTitleRef.current = val;
+        updateTask(task.id, { title: val });
+      }
+    }, 300);
+  };
+
+  const handleTitleBlur = () => {
+    if (!task) return;
+    if (titleDebounceTimerRef.current) {
+      clearTimeout(titleDebounceTimerRef.current);
+      titleDebounceTimerRef.current = null;
+    }
+    const trimmed = localTitle.trim();
+    if (trimmed && trimmed !== task.title) {
+      lastCommittedTitleRef.current = trimmed;
+      updateTask(task.id, { title: trimmed });
+    } else if (!trimmed) {
+      setLocalTitle(task.title);
+    }
+  };
+
   // Mobile drag-to-dismiss gesture state
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -52,6 +111,11 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // On desktop, clicking blank canvas closes the drawer, while clicking other task cards selects them
   useEffect(() => {
@@ -74,20 +138,32 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
         return;
       }
 
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener('mousedown', handlePointerDown);
     return () => window.removeEventListener('mousedown', handlePointerDown);
-  }, [isMobile, onClose]);
+  }, [isMobile]);
 
-  // Accessibility: store active element, focus dialog container, and bind Escape key
+  // Accessibility: store active element on mount and focus container if not focused; restore focus on unmount
   useEffect(() => {
     previousActiveElementRef.current = document.activeElement as HTMLElement | null;
-    if (drawerRef.current) {
+    if (drawerRef.current && !drawerRef.current.contains(document.activeElement)) {
       drawerRef.current.focus();
     }
 
+    return () => {
+      if (
+        previousActiveElementRef.current &&
+        typeof previousActiveElementRef.current.focus === 'function'
+      ) {
+        previousActiveElementRef.current.focus();
+      }
+    };
+  }, []);
+
+  // Keyboard shortcut listener (Escape to close sub-modals or drawer)
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (isMergeModalOpen) {
@@ -100,21 +176,13 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
         }
         e.preventDefault();
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      if (
-        previousActiveElementRef.current &&
-        typeof previousActiveElementRef.current.focus === 'function'
-      ) {
-        previousActiveElementRef.current.focus();
-      }
-    };
-  }, [isMergeModalOpen, isRecurrenceModalOpen, onClose]);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMergeModalOpen, isRecurrenceModalOpen]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -195,8 +263,14 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               name="taskTitle"
               aria-label="Task title"
               type="text"
-              value={task.title}
-              onChange={(e) => updateTask(task.id, { title: e.target.value })}
+              value={localTitle}
+              onChange={handleTitleChange}
+              onBlur={handleTitleBlur}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.currentTarget.blur();
+                }
+              }}
               className={`w-full bg-transparent text-lg font-bold outline-none transition-all tracking-tight pb-1 border-b-2 border-transparent focus:border-amber-500/80 ${
                 isDone ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'
               }`}

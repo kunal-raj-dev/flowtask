@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import type { Task } from '../../../types/task';
 import { Eye, Edit3 } from 'lucide-react';
@@ -10,6 +10,66 @@ interface TaskDrawerNotesProps {
 export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
   const { updateTask } = useTaskContext();
   const [isMarkdownPreview, setIsMarkdownPreview] = useState(false);
+  const [localNotes, setLocalNotes] = useState(task.description || '');
+  const lastTaskIdRef = useRef(task.id);
+  const lastCommittedRef = useRef(task.description || '');
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync if task changes or external update happens
+  useEffect(() => {
+    if (lastTaskIdRef.current !== task.id) {
+      lastTaskIdRef.current = task.id;
+      lastCommittedRef.current = task.description || '';
+      setLocalNotes(task.description || '');
+    } else if (task.description !== lastCommittedRef.current) {
+      lastCommittedRef.current = task.description || '';
+      setLocalNotes(task.description || '');
+    }
+  }, [task.id, task.description]);
+
+  // Flush pending changes on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setLocalNotes(val);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      lastCommittedRef.current = val;
+      updateTask(task.id, { description: val });
+    }, 300);
+  };
+
+  const handleBlur = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (localNotes !== (task.description || '')) {
+      lastCommittedRef.current = localNotes;
+      updateTask(task.id, { description: localNotes });
+    }
+  };
+
+  const handleTogglePreview = () => {
+    if (!isMarkdownPreview && localNotes !== (task.description || '')) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      lastCommittedRef.current = localNotes;
+      updateTask(task.id, { description: localNotes });
+    }
+    setIsMarkdownPreview((prev) => !prev);
+  };
 
   const renderBoldCode = (text: string): React.ReactNode => {
     const tokenRegex = /(\*\*[^*]+\*\*)|(`[^`]+`)/g;
@@ -172,7 +232,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
         </label>
         <button
           type="button"
-          onClick={() => setIsMarkdownPreview((prev) => !prev)}
+          onClick={handleTogglePreview}
           className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] transition-colors"
           title={isMarkdownPreview ? 'Switch to raw edit mode' : 'Switch to formatted markdown preview'}
         >
@@ -196,7 +256,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
           className="w-full min-h-[100px] p-3.5 bg-[var(--bg-surface-l1)]/50 border border-[var(--border-hairline)] rounded-xl cursor-pointer hover:border-stone-400 dark:hover:border-stone-600 transition-colors card-surface"
           title="Click to edit notes"
         >
-          {renderMarkdownNotes(task.description || '')}
+          {renderMarkdownNotes(localNotes)}
         </div>
       ) : (
         <textarea
@@ -204,8 +264,9 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
           name="taskNotes"
           aria-label="Task notes and description"
           rows={5}
-          value={task.description || ''}
-          onChange={(e) => updateTask(task.id, { description: e.target.value })}
+          value={localNotes}
+          onChange={handleNotesChange}
+          onBlur={handleBlur}
           placeholder="Add details, links, checklists (- [ ]), or code (`code`)..."
           className="w-full text-xs p-3.5 bg-[var(--bg-surface-l1)]/50 text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-xl outline-none focus:border-stone-400 dark:focus:border-stone-600 resize-none leading-relaxed card-surface font-mono"
         />

@@ -1,6 +1,6 @@
 import { isTodayTask } from '../../utils/taskSelectors';
 import { RecoveryView } from '../views/RecoveryView';
-import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import { Sidebar } from './Sidebar';
@@ -278,13 +278,17 @@ export const AppLayout: React.FC = () => {
     }
   };
 
-  const handleStartFocus = (taskId: string) => {
+  const handleStartFocus = useCallback((taskId: string) => {
     openModal('pomodoro', { taskId });
-  };
+  }, [openModal]);
 
-  const handleStartStudySprint = (taskId: string) => {
+  const handleStartStudySprint = useCallback((taskId: string) => {
     openModal('studySprint', { taskId });
-  };
+  }, [openModal]);
+
+  const handleCloseDrawer = useCallback(() => {
+    setSelectedTaskId(null);
+  }, [setSelectedTaskId]);
 
   const renderActiveView = () => {
     if (activeView === 'trash' || activeView === 'archive') return <RecoveryView mode={activeView} />;
@@ -883,7 +887,7 @@ export const AppLayout: React.FC = () => {
           <TaskDrawer
             key="slide-over-task-drawer"
             taskId={selectedTaskId}
-            onClose={() => setSelectedTaskId(null)}
+            onClose={handleCloseDrawer}
             onStartFocus={handleStartFocus}
             onStartSprint={handleStartStudySprint}
           />

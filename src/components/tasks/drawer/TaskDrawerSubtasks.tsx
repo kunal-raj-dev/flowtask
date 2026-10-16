@@ -15,6 +15,8 @@ import {
   ArrowUpRight,
   X,
   ExternalLink,
+  Pencil,
+  Check,
 } from 'lucide-react';
 
 interface TaskDrawerSubtasksProps {
@@ -27,6 +29,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
     toggleSubTask,
     addSubTask,
     addSubTasks,
+    updateSubTask,
     deleteSubTask,
     promoteSubTaskToTask,
     moveSubTask,
@@ -36,6 +39,37 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskEstimate, setNewSubtaskEstimate] = useState<number | undefined>(undefined);
   const [isDecomposing, setIsDecomposing] = useState(false);
+
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [editingEstimate, setEditingEstimate] = useState<number | undefined>(undefined);
+
+  const handleStartEdit = (sub: { id: string; title: string; estimatedMinutes?: number }) => {
+    setEditingSubtaskId(sub.id);
+    setEditingTitle(sub.title);
+    setEditingEstimate(sub.estimatedMinutes);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSubtaskId(null);
+    setEditingTitle('');
+    setEditingEstimate(undefined);
+  };
+
+  const handleSaveEdit = (subId: string) => {
+    const trimmed = editingTitle.trim();
+    if (!trimmed) {
+      handleCancelEdit();
+      return;
+    }
+    updateSubTask(task.id, subId, {
+      title: trimmed,
+      estimatedMinutes: editingEstimate,
+    });
+    setEditingSubtaskId(null);
+    setEditingTitle('');
+    setEditingEstimate(undefined);
+  };
 
   const completedSubs = task.subtasks?.filter((s) => s.completed).length || 0;
   const totalSubs = task.subtasks?.length || 0;
@@ -147,138 +181,225 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
 
       {/* Subtasks List */}
       <div className="space-y-1.5">
-        {task.subtasks?.map((sub) => (
-          <div
-            key={sub.id}
-            className="flex items-center justify-between p-2 rounded-lg hover:bg-[var(--bg-surface-l1)] group transition-colors border border-transparent hover:border-[var(--border-hairline)]"
-          >
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <button
-                type="button"
-                onClick={() => toggleSubTask(task.id, sub.id)}
-                className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all active:scale-90 ${
-                  sub.completed
-                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                    : 'border-[var(--border-strong)] hover:border-amber-500'
-                }`}
-                aria-label={sub.completed ? 'Mark subtask incomplete' : 'Mark subtask complete'}
+        {task.subtasks?.map((sub) => {
+          if (editingSubtaskId === sub.id) {
+            return (
+              <div
+                key={sub.id}
+                className="flex items-center gap-1.5 p-1.5 rounded-lg bg-[var(--bg-surface-l1)] border border-amber-500/60 shadow-xs"
               >
-                {sub.completed && (
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-2.5 h-2.5 animate-check-spring"
-                  >
-                    <polyline points="20 6 9 17 4 12" className="animate-check-draw" />
-                  </svg>
-                )}
-              </button>
+                <input
+                  type="text"
+                  autoFocus
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveEdit(sub.id);
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      handleCancelEdit();
+                    }
+                  }}
+                  placeholder="Subtask title..."
+                  className="flex-1 text-xs px-2.5 py-1 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none font-medium"
+                  aria-label="Edit subtask title"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  step="5"
+                  placeholder="min"
+                  value={editingEstimate !== undefined ? editingEstimate : ''}
+                  onChange={(e) =>
+                    setEditingEstimate(e.target.value ? parseInt(e.target.value, 10) : undefined)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveEdit(sub.id);
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      handleCancelEdit();
+                    }
+                  }}
+                  className="w-14 text-xs px-1.5 py-1 bg-[var(--bg-surface-l2)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-md outline-none text-center font-mono"
+                  aria-label="Edit subtask duration in minutes"
+                  title="Duration estimate in minutes"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSaveEdit(sub.id)}
+                  disabled={!editingTitle.trim()}
+                  title="Save changes (Enter)"
+                  aria-label="Save subtask"
+                  className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/15 disabled:opacity-40 rounded-md transition-colors"
+                >
+                  <Check size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  title="Cancel (Esc)"
+                  aria-label="Cancel editing subtask"
+                  className="p-1 text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-500/10 rounded-md transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            );
+          }
 
-              {sub.difficulty && (
+          return (
+            <div
+              key={sub.id}
+              className="flex items-center justify-between p-2 rounded-lg hover:bg-[var(--bg-surface-l1)] group transition-colors border border-transparent hover:border-[var(--border-hairline)]"
+            >
+              <div
+                className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
+                onDoubleClick={() => handleStartEdit(sub)}
+                title="Double-click to edit"
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSubTask(task.id, sub.id);
+                  }}
+                  className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all active:scale-90 ${
+                    sub.completed
+                      ? 'bg-emerald-500 border-emerald-500 text-white'
+                      : 'border-[var(--border-strong)] hover:border-amber-500'
+                  }`}
+                  aria-label={sub.completed ? 'Mark subtask incomplete' : 'Mark subtask complete'}
+                >
+                  {sub.completed && (
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-2.5 h-2.5 animate-check-spring"
+                    >
+                      <polyline points="20 6 9 17 4 12" className="animate-check-draw" />
+                    </svg>
+                  )}
+                </button>
+
+                {sub.difficulty && (
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono shrink-0 ${
+                      sub.difficulty === 'HARD'
+                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                        : sub.difficulty === 'MEDIUM'
+                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                        : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                    }`}
+                  >
+                    {sub.difficulty}
+                  </span>
+                )}
+
+                {sub.problemNumber && (
+                  <span className="text-[10px] font-mono font-bold text-[var(--text-muted)] shrink-0">
+                    #{sub.problemNumber}
+                  </span>
+                )}
+
                 <span
-                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono shrink-0 ${
-                    sub.difficulty === 'HARD'
-                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
-                      : sub.difficulty === 'MEDIUM'
-                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                  className={`text-xs ${
+                    sub.completed ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'
                   }`}
                 >
-                  {sub.difficulty}
+                  {sub.title}
                 </span>
-              )}
 
-              {sub.problemNumber && (
-                <span className="text-[10px] font-mono font-bold text-[var(--text-muted)] shrink-0">
-                  #{sub.problemNumber}
-                </span>
-              )}
+                {sub.url && (
+                  <a
+                    href={sub.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[var(--color-brand)] hover:opacity-80 p-0.5 shrink-0"
+                    title="Open Problem Link"
+                  >
+                    <ExternalLink size={12} />
+                  </a>
+                )}
 
-              <span
-                className={`text-xs ${
-                  sub.completed ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-primary)]'
-                }`}
-              >
-                {sub.title}
-              </span>
+                {sub.tags && sub.tags.length > 0 && (
+                  <div className="hidden sm:flex items-center gap-1 shrink-0">
+                    {sub.tags.map((tg) => (
+                      <span
+                        key={tg}
+                        className="text-[9px] px-1.5 py-0.2 rounded bg-stone-200/60 dark:bg-stone-800 text-[var(--text-muted)] font-medium"
+                      >
+                        {tg}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-              {sub.url && (
-                <a
-                  href={sub.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-[var(--color-brand)] hover:opacity-80 p-0.5 shrink-0"
-                  title="Open Problem Link"
+                {sub.estimatedMinutes && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--bg-surface-l1)] text-[var(--text-muted)] font-semibold border border-[var(--border-hairline)] shrink-0">
+                    {sub.estimatedMinutes}m
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                <button
+                  type="button"
+                  onClick={() => handleStartEdit(sub)}
+                  title="Edit subtask"
+                  aria-label="Edit subtask"
+                  className="text-[var(--text-muted)] hover:text-[var(--color-brand)] p-1 rounded-md transition-all"
                 >
-                  <ExternalLink size={12} />
-                </a>
-              )}
-
-              {sub.tags && sub.tags.length > 0 && (
-                <div className="hidden sm:flex items-center gap-1 shrink-0">
-                  {sub.tags.map((tg) => (
-                    <span
-                      key={tg}
-                      className="text-[9px] px-1.5 py-0.2 rounded bg-stone-200/60 dark:bg-stone-800 text-[var(--text-muted)] font-medium"
-                    >
-                      {tg}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {sub.estimatedMinutes && (
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--bg-surface-l1)] text-[var(--text-muted)] font-semibold border border-[var(--border-hairline)] shrink-0">
-                  {sub.estimatedMinutes}m
-                </span>
-              )}
+                  <Pencil size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveSubTask(task.id, sub.id, 'up')}
+                  title="Move step up"
+                  aria-label="Move step up"
+                  className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md transition-all"
+                >
+                  <ChevronUp size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveSubTask(task.id, sub.id, 'down')}
+                  title="Move step down"
+                  aria-label="Move step down"
+                  className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md transition-all"
+                >
+                  <ChevronDown size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => promoteSubTaskToTask(task.id, sub.id)}
+                  title="Promote subtask to independent task"
+                  aria-label="Promote subtask to independent task"
+                  className="text-[var(--text-muted)] hover:text-[var(--color-brand)] p-1 rounded-md transition-all"
+                >
+                  <ArrowUpRight size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteSubTask(task.id, sub.id)}
+                  title="Delete subtask"
+                  aria-label="Delete subtask"
+                  className="text-[var(--text-muted)] hover:text-rose-500 p-1 rounded-md transition-all"
+                >
+                  <X size={13} />
+                </button>
+              </div>
             </div>
-
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-              <button
-                type="button"
-                onClick={() => moveSubTask(task.id, sub.id, 'up')}
-                title="Move step up"
-                aria-label="Move step up"
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md transition-all"
-              >
-                <ChevronUp size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => moveSubTask(task.id, sub.id, 'down')}
-                title="Move step down"
-                aria-label="Move step down"
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md transition-all"
-              >
-                <ChevronDown size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => promoteSubTaskToTask(task.id, sub.id)}
-                title="Promote subtask to independent task"
-                aria-label="Promote subtask to independent task"
-                className="text-[var(--text-muted)] hover:text-[var(--color-brand)] p-1 rounded-md transition-all"
-              >
-                <ArrowUpRight size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => deleteSubTask(task.id, sub.id)}
-                title="Delete subtask"
-                aria-label="Delete subtask"
-                className="text-[var(--text-muted)] hover:text-rose-500 p-1 rounded-md transition-all"
-              >
-                <X size={13} />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Add Subtask Form */}
