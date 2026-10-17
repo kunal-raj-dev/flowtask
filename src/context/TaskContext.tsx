@@ -1,5 +1,11 @@
+import { normalizeAppearance } from '../utils/appearance';
+import { THEMES, type AppTheme } from '../utils/themeRegistry';
+import { writeFocusCheckpoint } from '../services/focusCheckpoint';
+import { nextStudioPhase, pausedSeconds } from '../services/studioSessionEngine';
+import { createWorkspaceBackup, validateBackupExtras, mergeBackupExtras, type BackupExtras } from '../utils/workspaceBackup';
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import type { Task, SubTask, Project, ViewId, Priority, CalendarEvent, InterruptionStash, SmartFilterView, SmartFilterPredicate, FocusSession, FocusSessionMode, FocusLog } from '../types/task';
+import type { WorkspaceDashboard } from '../types/dashboard';
 import { getTodayStr } from '../hooks/useCurrentDate';
 import { formatLocalDate } from '../utils/nlpParser';
 import { BUILT_IN_SMART_VIEWS } from '../utils/smartViewUtils';
@@ -9,6 +15,7 @@ import { fetchICSFeed } from '../services/calendarService';
 import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser';
 import { commandService, type CommandResult } from '../services/commandService';
 import { WorkspaceStore } from '../services/workspaceStore';
+import { registerWebMcpTools } from '../services/webMcpService';
 import { focusSessionService } from '../services/focusSessionService';
 import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/settings';
 import { isActiveTask, isFocusTask } from '../utils/taskSelectors';
@@ -19,10 +26,9 @@ import { validateWorkspaceData } from '../utils/workspaceValidation';
 import { useUIStore, useFocusStore } from '../store';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local' | 'conflict' | 'error';
-export type AppTheme = 'light' | 'dark' | 'tokyo' | 'nord' | 'matcha' | 'sepia' | 'crimson' | 'cobalt';
+export type { AppTheme } from '../utils/themeRegistry';
 
 export {
-  useTheme,
   useSound,
   useActiveView,
   useSearchFilter,
@@ -68,6 +74,10 @@ interface TaskContextType {
   setIsAuthModalOpen: (open: boolean) => void;
   forceSyncToCloud: () => Promise<void>;
 
+  // Dashboards & Personal Workspace Canvas
+  dashboards: WorkspaceDashboard[];
+  updateDashboards: (dashboards: WorkspaceDashboard[], newActiveId?: string) => void;
+
   // Focus Session Engine (Mini-player, Study Sprints, & Timers)
   focusSession: FocusSession | null;
   focusElapsedSeconds: number;
@@ -103,6 +113,7 @@ interface TaskContextType {
   deselectTask: (taskId: string) => void;
   selectAllTasks: (taskIds: string[]) => void;
   clearTaskSelection: () => void;
+  applyTaskChanges: (changes: Array<{ id: string; updates: Partial<Task> }>, description?: string) => void;
   batchUpdateTasks: (taskIds: string[], updates: Partial<Task>) => void;
   batchDeleteTasks: (taskIds: string[]) => void;
   batchToggleStatus: (taskIds: string[]) => void;
@@ -194,7 +205,7 @@ interface TaskContextType {
   deleteProject: (id: string, reassignToProjectId?: string) => void;
   archiveProject: (id: string) => void;
 
-  importTasks: (tasks: Task[], projects?: Project[], replace?: boolean) => Promise<void>;
+  importTasks: (tasks: Task[], projects?: Project[], replace?: boolean, extras?: BackupExtras) => Promise<void>;
   showToast: (message: string, actionLabel?: string, onAction?: () => void) => void;
   clearToast: () => void;
 }
@@ -209,7 +220,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 const WorkspaceProvider = ({ children, workspaceId, connected }: { children: ReactNode; workspaceId: string; connected: boolean }) => {
   const [store] = useState(() => new WorkspaceStore(workspaceId, connected));
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
-  const { tasks, projects, preferences, customViews: customSmartViews } = snapshot.record;
+  useEffect(() => {
+    if (!snapshot.ready) return;
+    return registerWebMcpTools({ store });
+  }, [store, snapshot.ready]);
+  const { tasks, projects, preferences, customViews: customSmartViews, dashboards = [] } = snapshot.record;
   const current = () => store.getSnapshot().record;
   const syncStatus = snapshot.sync;
   const lastSyncedAt = useMemo(
@@ -245,8 +260,6 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     setSearchQuery,
     setPriorityFilter,
     setQuickWinsOnly,
-    setTheme,
-    toggleTheme,
     toggleSound,
     setSoundProfile,
     showToast,
@@ -269,7 +282,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   } = uiState;
 
   const storeFocusSession = useFocusStore((s) => s.focusSession);
-  const focusSession = (preferences.focusSession as FocusSession | null) || storeFocusSession;
+  const focusSession = (preferences.focusSession as FocusSession | null) || (storeFocusSession?.workspaceId === workspaceId ? storeFocusSession : null);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const todayStr = getTodayStr();
   const settings = useMemo<UserWorkflowSettings>(
@@ -286,10 +299,9 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const overdueTasks = tasks.filter(t => isActiveTask(t) && t.dueDate && t.dueDate < todayStr);
 
   useEffect(() => {
-    if (preferences.focusSession) {
-      useFocusStore.getState().setFocusSession(preferences.focusSession as FocusSession);
-    }
-  }, [preferences.focusSession]);
+    if (preferences.focusSession) useFocusStore.getState().setFocusSession({ ...(preferences.focusSession as FocusSession), workspaceId });
+    else if (snapshot.ready) useFocusStore.getState().setFocusSession(null);
+  }, [preferences.focusSession, snapshot.ready, workspaceId]);
 
   useEffect(() => {
     const abort = new AbortController();
@@ -317,7 +329,9 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     window.addEventListener('online', retry);
     return () => { cancelled = true; stop?.(); store.disconnect(); window.removeEventListener('online', retry); };
   }, [connected, snapshot.ready, store, workspaceId, showToast]);
-  const setWorkspacePreference = (key: string, value: unknown) => store.run('Update workspace preference', r => ({ ...r, preferences: { ...r.preferences, [key]: value } }), false);
+  const setWorkspacePreference = (key: string, value: unknown) => { const checkpointAt = key === 'focusSession' ? writeFocusCheckpoint(workspaceId, value as FocusSession | null) : undefined; store.run('Update workspace preference', r => ({ ...r, preferences: { ...r.preferences, [key]: value, ...(checkpointAt ? { focusCheckpointAt: checkpointAt } : {}) } }), false); };
+  const setTheme = (value: AppTheme) => { setWorkspacePreference('appearance', { ...normalizeAppearance(current().preferences.appearance), theme: value, mode: 'manual', accent: '' }); };
+  const toggleTheme = () => setTheme(THEMES[useUIStore.getState().theme].scheme === 'dark' ? 'light' : 'dark');
   const updateSettings = (updates: Partial<UserWorkflowSettings>) => setWorkspacePreference('settings', { ...DEFAULT_WORKFLOW_SETTINGS, ...(current().preferences.settings as object || {}), ...updates });
   const resetSettings = () => setWorkspacePreference('settings', DEFAULT_WORKFLOW_SETTINGS);
   function execute(factory: (list: Task[]) => CommandResult) {
@@ -397,6 +411,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const addStudySessions = (sessions: ParsedSession[], date = todayStr, projectId = 'inbox') => {
     const created = sessions.map(s => convertSessionToTask(s, date, projectId)); store.run('Add study sessions', r => ({ ...r, tasks: [...created, ...r.tasks] })); return created;
   };
+  const applyTaskChanges = (changes: Array<{ id: string; updates: Partial<Task> }>, description = 'Update tasks') => store.run(description, r => ({ ...r, tasks: r.tasks.map(task => { const change = changes.find(c => c.id === task.id); return change ? { ...task, ...change.updates } : task; }) }));
   const batchUpdateTasks = (ids: string[], updates: Partial<Task>) => { execute(list => commandService.batchUpdate(list, ids, updates)); };
   const batchDeleteTasks = (ids: string[]) => {
     execute(list => commandService.batchDelete(list, ids));
@@ -415,9 +430,14 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   };
   function stopFocusSession() {
     const result = useFocusStore.getState().stopFocusSession();
+    const candidateSession = (current().preferences.focusSession as FocusSession | null) || result.session;
+    const pendingSession = candidateSession && (!candidateSession.workspaceId || candidateSession.workspaceId === workspaceId) ? candidateSession : null;
+    const pendingSeconds = pendingSession ? result.finalElapsedSeconds || focusSessionService.getElapsedSeconds(pendingSession) : 0;
+    const finishedAt = pendingSession?.finishedAt || Date.now();
+    const checkpointAt = writeFocusCheckpoint(workspaceId, pendingSession && pendingSeconds > 0 ? { ...pendingSession, finishedAt, state: 'completed', accumulatedElapsedMs: pendingSeconds * 1000, totalPausedMs: (pendingSession.totalPausedMs || 0) + (pendingSession.state === 'paused' ? Math.max(0, finishedAt - (pendingSession.pausedAt || finishedAt)) : 0) } : null, Boolean(pendingSession && pendingSeconds > 0));
     store.run('Log focus session', r => {
       const session = (r.preferences.focusSession as FocusSession | null) || result.session;
-      if (!session) return { ...r, preferences: { ...r.preferences, focusSession: null } };
+      if (!session || session.workspaceId && session.workspaceId !== workspaceId) return { ...r, preferences: { ...r.preferences, focusSession: null } };
       const logs = (r.preferences.focusLogs || []) as FocusLog[];
       if (logs.some(log => log.id === session.id)) {
         return { ...r, preferences: { ...r.preferences, focusSession: null } };
@@ -434,10 +454,15 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
         subtaskId: session.subtaskId,
         subtaskTitle: session.subtaskTitle,
         mode: session.mode,
-        startedAt: session.startedAt,
-        endedAt: Date.now(),
+        startedAt: session.originalStartedAt || session.startedAt,
+        endedAt: session.finishedAt || Date.now(),
+        phase: session.pomodoroPhase || 'focus',
+        recipeId: session.recipeId,
+        outcome: session.outcome || 'interrupted',
+        rating: session.rating,
+        pausedSeconds: pausedSeconds(session),
       };
-      const minutesSpent = Math.max(1, Math.round(seconds / 60));
+      const minutesSpent = session.pomodoroPhase && session.pomodoroPhase !== 'focus' ? 0 : seconds / 60;
       return {
         ...r,
         tasks: r.tasks.map(t => t.id === session.taskId
@@ -452,7 +477,10 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
         preferences: {
           ...r.preferences,
           focusSession: null,
-          focusLogs: [...logs, newLog]
+          focusCheckpointAt: checkpointAt,
+          focusLogs: [...logs, newLog],
+          ...(session.timerConfiguration ? { studioLastSession: { session: { ...session, outcome: session.outcome || 'interrupted' }, seconds, ...nextStudioPhase(session), finishedAt: session.finishedAt || Date.now() } } : {}),
+          ...(session.timerConfiguration && (r.preferences.studio as { shuffleAtBoundary?: boolean; favorites?: string[] })?.shuffleAtBoundary ? { studio: (()=>{const studio=r.preferences.studio as { sceneId: string; favorites: string[] }; const choices=(studio.favorites||[]).filter(id=>id!==studio.sceneId);return choices.length ? {...studio,sceneId:choices[Math.floor(Math.random()*choices.length)]} : studio;})() } : {})
         }
       };
     }, false);
@@ -477,6 +505,8 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
       subtaskId: subtaskId || undefined,
       subtaskTitle: subtaskTitle || undefined,
       startedAt: Date.now(),
+      originalStartedAt: Date.now(),
+      workspaceId,
       accumulatedElapsedMs: 0,
       targetDurationSec: targetSec,
       state: 'running',
@@ -510,6 +540,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
       const updated: FocusSession = {
         ...session,
         startedAt: Date.now(),
+        totalPausedMs: (session.totalPausedMs || 0) + Math.max(0, Date.now() - (session.pausedAt || Date.now())),
         pausedAt: null,
         state: 'running',
       };
@@ -548,6 +579,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
       const logs = (r.preferences.focusLogs || []) as FocusLog[];
       const newLog: FocusLog = {
         id: crypto.randomUUID(),
+        phase: 'focus',
         seconds,
         taskId,
         taskTitle: taskId ? r.tasks.find(t => t.id === taskId)?.title : undefined,
@@ -605,24 +637,41 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     const view = { id: crypto.randomUUID(), name, icon, color, predicate }; store.run('Save view', r => ({ ...r, customViews: [...r.customViews, view] }), false); return view;
   };
   const deleteSmartView = (id: string) => store.run('Remove saved view', r => ({ ...r, customViews: r.customViews.filter(v => v.id !== id) }), false);
-  async function importTasks(importedTasks: Task[], importedProjects?: Project[], replace = false) {
+  async function importTasks(importedTasks: Task[], importedProjects?: Project[], replace = false, extras?: BackupExtras) {
     const before = current();
     const nextProjects = replace ? importedProjects || before.projects : [...before.projects, ...(importedProjects || []).filter(p => !before.projects.some(old => old.id === p.id))];
     const nextTasks = replace ? importedTasks : [...before.tasks, ...importedTasks.filter(t => !before.tasks.some(old => old.id === t.id))];
     const validated = validateWorkspaceData(nextTasks, nextProjects);
+    const validatedExtras = extras ? validateBackupExtras(extras) : undefined;
     localStorage.setItem(`flowtask_pre_import_${workspaceId}`, JSON.stringify(before));
-    store.run(replace ? 'Restore backup' : 'Import tasks', r => ({ ...r, ...validated }));
+    if (replace && validatedExtras && current().preferences.focusSession) stopFocusSession();
+    const restoreCheckpoint = replace && validatedExtras ? writeFocusCheckpoint(workspaceId,null) : 0;
+    store.run(replace ? 'Restore backup' : 'Import tasks', r => { const restored = { ...r, ...validated, ...(validatedExtras ? mergeBackupExtras(r, validatedExtras, replace) : {}) }; return restoreCheckpoint ? {...restored,preferences:{...restored.preferences,focusSession:null,focusCheckpointAt:restoreCheckpoint}} : restored; });
     await store.settled(); showToast(`Saved ${importedTasks.length} imported tasks`);
   }
   const forceSyncToCloud = async () => { if (!connected) { setIsAuthModalOpen(true); return; } await store.retry(); };
   const downloadWorkspaceBackup = () => {
-    downloadJson({ ...current(), version: 3 }, `flowtask-${workspaceId}-${todayStr}.json`);
+    downloadJson(createWorkspaceBackup(current()), `flowtask-${workspaceId}-${todayStr}.json`);
   };
   const resolveSyncConflict = async (choice: 'local' | 'remote') => { try { await store.resolveConflict(choice); } catch (error) { showToast((error as Error).message); } };
-  const importLocalWorkspace = async () => { const local = await dbService.loadWorkspace('local'); if (local) await importTasks(local.tasks, local.projects); };
+  const importLocalWorkspace = async () => {
+    const local = await dbService.loadWorkspace('local');
+    if (local) await importTasks(local.tasks, local.projects);
+  };
+  const updateDashboards = (nextDashboards: WorkspaceDashboard[], newActiveId?: string) => {
+    store.run('Update dashboards', (r) => ({
+      ...r,
+      dashboards: nextDashboards,
+      preferences: newActiveId
+        ? { ...r.preferences, activeDashboardId: newActiveId }
+        : r.preferences,
+    }));
+  };
 
   const contextValue = useMemo<TaskContextType>(() => ({
     workspaceId, workspacePreferences: preferences, setWorkspacePreference, downloadWorkspaceBackup, resolveSyncConflict, importLocalWorkspace,
+    dashboards,
+    updateDashboards,
     tasks,
     projects,
     activeView,
@@ -651,14 +700,14 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
       const logs = (Array.isArray(preferences.focusLogs) ? preferences.focusLogs : []) as FocusLog[];
       const tStr = getTodayStr();
       const completedToday = logs
-        .filter((log) => log.endedAt && formatLocalDate(new Date(log.endedAt)) === tStr)
+        .filter((log) => (!log.phase || log.phase === 'focus') && log.endedAt && formatLocalDate(new Date(log.endedAt)) === tStr)
         .reduce((acc, log) => acc + (log.seconds || 0), 0);
       const session = (preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
       const isLiveToday =
         session &&
         (session.state === 'running' || session.state === 'paused') &&
         formatLocalDate(new Date(session.startedAt)) === tStr;
-      const liveSec = isLiveToday ? useFocusStore.getState().focusElapsedSeconds : 0;
+      const liveSec = isLiveToday && (!session.pomodoroPhase || session.pomodoroPhase === 'focus') ? useFocusStore.getState().focusElapsedSeconds : 0;
       return completedToday + liveSec;
     },
     startFocusSession,
@@ -682,6 +731,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     selectAllTasks,
     clearTaskSelection,
     batchUpdateTasks,
+    applyTaskChanges,
     batchDeleteTasks,
     batchToggleStatus,
     interruptionStash,
@@ -755,7 +805,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     resetSettings,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [
-    workspaceId, preferences, tasks, projects, activeView, viewLayout, selectedTaskId,
+    workspaceId, preferences, dashboards, tasks, projects, activeView, viewLayout, selectedTaskId,
     searchQuery, priorityFilter, quickWinsOnly, theme, soundEnabled, soundProfile,
     overdueTasks, isTriageDismissed, toast, syncStatus, lastSyncedAt, isAuthModalOpen,
     focusSession, focusLogs, activeTimerTaskId,
@@ -781,4 +831,10 @@ export const useTaskContext = (): TaskContextType => {
     throw new Error('useTaskContext must be used within a TaskProvider');
   }
   return context;
+};
+
+/** Public theme controls persist to the current workspace; UI store setters are runtime state. */
+export const useTheme = () => {
+  const { theme, setTheme, toggleTheme } = useTaskContext();
+  return { theme, setTheme, toggleTheme };
 };
