@@ -2,9 +2,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { AestheticsSettingsContent } from './AestheticsSettingsContent';
-import { loadDiurnalOverride, loadDiurnalIntensity } from '../../utils/diurnalAura';
+import { THEMES, THEME_IDS } from '../../utils/themeRegistry';
 
 const mockSetTheme = vi.fn();
+const mockSetWorkspacePreference = vi.fn();
 const mockToggleSound = vi.fn();
 const mockSetSoundProfile = vi.fn();
 const mockOnSaveToast = vi.fn();
@@ -12,6 +13,7 @@ const mockOnSaveToast = vi.fn();
 vi.mock('../../context/TaskContext', () => ({
   useTaskContext: () => ({
     theme: 'dark',
+    setWorkspacePreference: mockSetWorkspacePreference,
     setTheme: mockSetTheme,
     soundEnabled: true,
     toggleSound: mockToggleSound,
@@ -68,44 +70,20 @@ describe('AestheticsSettingsContent Unified Component', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders all 8 color space themes with miniature UI preview cards and allows direct theme selection', () => {
+  it('offers complete palettes with shared previews and persists theme selection', () => {
     render(<AestheticsSettingsContent onSaveToast={mockOnSaveToast} />);
-
-    // Check Theme Header
-    expect(screen.getByText('Color Space & Visual Aura')).toBeDefined();
-    expect(screen.getByText('8 Presets')).toBeDefined();
-
-    // Verify all 8 themes are rendered
-    const themes = [
-      'Alabaster Dawn',
-      'Obsidian Night',
-      'Tokyo Dusk',
-      'Nordic Slate',
-      'Forest Matcha',
-      'Solarized Sepia',
-      'Cyber Crimson',
-      'Deep Cobalt',
-    ];
-
-    themes.forEach((t) => {
-      expect(screen.getAllByText(t).length).toBeGreaterThanOrEqual(1);
-    });
-
-    // Click Tokyo Dusk
-    const tokyoBtn = screen.getByRole('button', { name: /Tokyo Dusk/i });
-    act(() => {
-      fireEvent.click(tokyoBtn);
-    });
-
-    expect(mockSetTheme).toHaveBeenCalledWith('tokyo');
-    expect(mockPlayClickSound).toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Theme library' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    THEME_IDS.forEach(id => expect(screen.getByRole('button', { name: `Apply ${THEMES[id].label} theme` })).toBeDefined());
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Northern Aurora theme' }));
+    expect(mockSetWorkspacePreference).toHaveBeenCalledWith('appearance', expect.objectContaining({ theme: 'aurora', mode: 'manual', accent: '' }));
     expect(mockOnSaveToast).toHaveBeenCalled();
   });
 
   it('renders all 8 tactile audio profiles with audition Pop, Toggle, Chime buttons and volume slider', () => {
     render(<AestheticsSettingsContent onSaveToast={mockOnSaveToast} />);
 
-    expect(screen.getByText('Tactile Audio Engine')).toBeDefined();
+    expect(screen.getByText('Interface sounds')).toBeDefined();
     expect(screen.getByText('8 Profiles')).toBeDefined();
 
     // Check profiles
@@ -157,51 +135,15 @@ describe('AestheticsSettingsContent Unified Component', () => {
     expect(mockStartAmbientSound).toHaveBeenCalledWith('rain', expect.any(Number));
   });
 
-  it('renders all 12 diurnal atmospheric presets across Circadian and Thematic Flow categories with intensity slider and reset to auto', () => {
-    render(<AestheticsSettingsContent onSaveToast={mockOnSaveToast} />);
-
-    expect(screen.getByText('Diurnal Ambient Atmosphere')).toBeDefined();
-    expect(screen.getByText('12 Atmospheres')).toBeDefined();
-
-    // Check circadian presets
-    expect(screen.getByText('Circadian Presets')).toBeDefined();
-    expect(screen.getByText('Auto (Circadian Sync)')).toBeDefined();
-    expect(screen.getByText('Morning Dawn')).toBeDefined();
-    expect(screen.getByText('Midday Zenith')).toBeDefined();
-    expect(screen.getByText('Golden Dusk')).toBeDefined();
-    expect(screen.getByText('Evening Cosmic')).toBeDefined();
-    expect(screen.getByText('Midnight Starlight')).toBeDefined();
-
-    // Check thematic flow presets
-    expect(screen.getByText('Thematic Flow Atmospheres')).toBeDefined();
-    expect(screen.getByText('Northern Aurora')).toBeDefined();
-    expect(screen.getByText('Solar Flare')).toBeDefined();
-    expect(screen.getByText('Forest Canopy')).toBeDefined();
-    expect(screen.getByText('Cyber Synthwave')).toBeDefined();
-    expect(screen.getByText('Oceanic Abyss')).toBeDefined();
-    expect(screen.getByText('Twilight Lavender')).toBeDefined();
-
-    // Adjust intensity slider
-    const intensitySlider = screen.getByTitle('Adjust diurnal atmosphere intensity') as HTMLInputElement;
-    act(() => {
-      fireEvent.change(intensitySlider, { target: { value: '0.9' } });
-    });
-    expect(loadDiurnalIntensity()).toBe(0.9);
-    expect(mockOnSaveToast).toHaveBeenCalled();
-
-    // Select Northern Aurora
-    const auroraBtn = screen.getByRole('button', { name: /Northern Aurora/i });
-    act(() => {
-      fireEvent.click(auroraBtn);
-    });
-    expect(loadDiurnalOverride()).toBe('aurora');
-
-    // Reset to Auto button
-    const resetBtn = screen.getByRole('button', { name: /Reset to Auto/i });
-    expect(resetBtn).toBeDefined();
-    act(() => {
-      fireEvent.click(resetBtn);
-    });
-    expect(loadDiurnalOverride()).toBe('auto');
+  it('separates optional atmosphere from full themes, and offers a real zero intensity', () => {
+    render(<AestheticsSettingsContent section="appearance" />);
+    expect(screen.getByRole('heading', { name: 'Optional atmosphere' })).toBeDefined();
+    expect(screen.getByLabelText('Atmosphere color').getAttribute('value')).not.toBe('auto');
+    const slider = screen.getByRole('slider', { name: 'Glow intensity' }) as HTMLInputElement;
+    expect(slider.min).toBe('0');
+    expect(slider.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Atmosphere color'), { target: { value: 'aurora' } });
+    expect(mockSetWorkspacePreference).toHaveBeenCalledWith('appearance', expect.objectContaining({ theme: 'dark', atmosphere: { preset: 'aurora', intensity: .35 } }));
+    expect(screen.queryByText('Ambient Focus Soundscapes')).toBeNull();
   });
 });

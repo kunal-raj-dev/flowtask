@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 export interface BrandLogoProps {
   size?: number;
@@ -7,68 +7,52 @@ export interface BrandLogoProps {
   subtitle?: string;
 }
 
+/** Flow Ribbon F: one continuous silhouette, with a gently rising terminal. */
 export const BrandLogo: React.FC<BrandLogoProps> = ({
   size = 32,
   className = '',
   showWordmark = false,
-  subtitle = 'Local-First OS',
+  subtitle = 'Plan your day. Enter your flow.',
 }) => {
+  const gradientId = `ft-ribbon-${useId().replace(/:/g, '')}`;
+
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      {/* Precision Geometric Brand Mark */}
-      <div
+      <svg
+        viewBox="0 0 64 64"
+        fill="none"
+        width={size}
+        height={size}
         style={{ width: size, height: size }}
-        className="relative shrink-0 rounded-xl bg-gradient-to-b from-stone-900 via-stone-950 to-stone-900 dark:from-stone-850 dark:via-stone-900 dark:to-stone-950 border border-white/10 dark:border-white/15 shadow-sm flex items-center justify-center p-1.5 overflow-hidden group select-none transition-transform group-hover:scale-105"
+        className="shrink-0 select-none"
+        role={showWordmark ? undefined : 'img'}
+        aria-label={showWordmark ? undefined : 'FlowTask'}
+        aria-hidden={showWordmark ? true : undefined}
+        focusable="false"
       >
-        <svg viewBox="0 0 32 32" fill="none" className="w-full h-full">
-          <defs>
-            <linearGradient id="ft-brand-flow" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#F59E0B" />
-              <stop offset="50%" stopColor="#EA580C" />
-              <stop offset="100%" stopColor="#D97706" />
-            </linearGradient>
-            <linearGradient id="ft-brand-glow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#EA580C" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Dynamic Flow Aura Arc */}
-          <path
-            d="M6.5 16.5C6.5 11.5 10.5 8.5 16 8.5C21.5 8.5 25.5 11.5 25.5 16.5C25.5 21.5 21.5 23.5 16 23.5"
-            stroke="rgba(245, 158, 11, 0.22)"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-
-          {/* Aerodynamic Flow Checkmark */}
-          <path
-            d="M8.5 16L13.5 21L24 9.5"
-            stroke="url(#ft-brand-flow)"
-            strokeWidth="3.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Luminous Apex Momentum Spark */}
-          <circle cx="24" cy="9.5" r="1.5" fill="#FEF3C7" className="animate-pulse" />
-        </svg>
-      </div>
+        <defs>
+          <linearGradient id={gradientId} x1="26" y1="11" x2="41" y2="54" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#F9CC72" />
+            <stop offset="0.52" stopColor="#F5A623" />
+            <stop offset="1" stopColor="#E18A16" />
+          </linearGradient>
+        </defs>
+        <rect x="0.5" y="0.5" width="63" height="63" rx="17.5" fill="#23211E" stroke="#FFFFFF" strokeOpacity="0.1" />
+        <path
+          d="M17 51L22.5 18.5C23.2 14.2 26.1 12 30.3 12H43.5L51 7L47.8 18.4C47.1 21 45 22.5 42.1 22.5H31.7L30.2 31H43.5L38.3 40H28.7L26.8 51H17Z"
+          fill={`url(#${gradientId})`}
+        />
+        <path d="M22.5 18.5L31.7 22.5L30.2 31H20.4L22.5 18.5Z" fill="#B96B10" fillOpacity="0.22" />
+      </svg>
 
       {showWordmark && (
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-extrabold text-[13px] tracking-tight text-[var(--text-primary)] group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-              FlowTask
-            </span>
-            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25 tracking-wide uppercase">
-              Zen
-            </span>
+          <div className="font-extrabold text-[13px] tracking-tight text-[var(--text-primary)]">
+            FlowTask
           </div>
           {subtitle && (
-            <div className="flex items-center gap-1.2 text-[10px] text-[var(--text-muted)] font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0 ring-2 ring-emerald-500/20" />
-              <span className="truncate">{subtitle}</span>
+            <div className="truncate text-[10px] leading-relaxed text-[var(--text-muted)]">
+              {subtitle}
             </div>
           )}
         </div>

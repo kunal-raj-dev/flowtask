@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import type { ViewId, Priority } from '../types/task';
 import { audioEngine, type SoundProfile } from '../utils/audioEngine';
 
-export type AppTheme = 'light' | 'dark' | 'tokyo' | 'nord' | 'matcha' | 'sepia' | 'crimson' | 'cobalt';
+import { isAppTheme, type AppTheme } from '../utils/themeRegistry';
+export type { AppTheme } from '../utils/themeRegistry';
 
 export interface ToastState {
   message: string;
@@ -70,7 +71,7 @@ const parseInitialView = (): ViewId => {
   if (typeof window === 'undefined') return 'today';
   try {
     const view = new URL(window.location.href).searchParams.get('view') || 'today';
-    return /^(today|inbox|upcoming|projects|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view)
+    return /^(today|inbox|upcoming|projects|study|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view)
       ? (view as ViewId)
       : 'today';
   } catch {
@@ -82,7 +83,7 @@ const getInitialTheme = (): AppTheme => {
   if (typeof localStorage === 'undefined') return 'light';
   try {
     const saved = localStorage.getItem('flowtask_theme') as AppTheme;
-    return ['light', 'dark', 'tokyo', 'nord', 'matcha', 'sepia', 'crimson', 'cobalt'].includes(saved) ? saved : 'light';
+    return isAppTheme(saved) ? saved : 'light';
   } catch {
     return 'light';
   }
@@ -152,29 +153,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   setQuickWinsOnly: (enabled) => set({ quickWinsOnly: enabled }),
 
   setTheme: (theme) => {
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem('flowtask_theme', theme);
-      } catch {}
-    }
-    if (typeof document !== 'undefined') {
-      document.documentElement.classList.remove(
-        'dark',
-        'theme-tokyo',
-        'theme-nord',
-        'theme-matcha',
-        'theme-sepia',
-        'theme-crimson',
-        'theme-cobalt'
-      );
-      if (['dark', 'tokyo', 'nord', 'crimson', 'cobalt'].includes(theme)) {
-        document.documentElement.classList.add('dark');
-      }
-      if (!['light', 'dark'].includes(theme)) {
-        document.documentElement.classList.add(`theme-${theme}`);
-      }
-      document.documentElement.setAttribute('data-theme', theme);
-    }
     set({ theme });
   },
 

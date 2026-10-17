@@ -34,3 +34,9 @@ dist-ssr
 test-results/
 playwright-report/
 screenshots/
+
+# Browser engine diagnostics
+test-results-*/
+
+# Agent traces & transcripts
+.agents/

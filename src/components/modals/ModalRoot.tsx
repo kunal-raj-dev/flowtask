@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
 import { useTaskContext } from '../../context/TaskContext';
 import { ModalSkeleton } from '../ui';
+import { FeatureBoundary } from '../ui/FeatureBoundary';
 
 // Modals
 const CommandPalette = lazy(() => import('./CommandPalette').then(m => ({ default: m.CommandPalette })));
@@ -17,7 +18,7 @@ const TemplatePickerModal = lazy(() => import('./TemplatePickerModal').then(m =>
 const WeeklyReviewModal = lazy(() => import('./WeeklyReviewModal').then(m => ({ default: m.WeeklyReviewModal })));
 const StudySessionModal = lazy(() => import('./StudySessionModal').then(m => ({ default: m.StudySessionModal })));
 const StudySprintRunnerModal = lazy(() => import('../focus/StudySprintRunnerModal').then(m => ({ default: m.StudySprintRunnerModal })));
-const PomodoroModal = lazy(() => import('../focus/PomodoroModal').then(m => ({ default: m.PomodoroModal })));
+const PomodoroModal = lazy(() => import('../focus/FocusStudio').then(m => ({ default: m.FocusStudio })));
 const SettingsDrawer = lazy(() => import('./SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
 const OnboardingFlow = lazy(() => import('./OnboardingFlow').then(m => ({ default: m.OnboardingFlow })));
 
@@ -38,6 +39,10 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
     isEveningShutdownOpen,
     setIsEveningShutdownOpen,
     isWeeklyReviewOpen,
+    isInterruptionModalOpen,
+    isTemplatePickerOpen,
+    setIsInterruptionModalOpen,
+    setIsTemplatePickerOpen,
     setIsWeeklyReviewOpen,
     setSelectedTaskId,
   } = useTaskContext();
@@ -102,7 +107,11 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
   ]);
 
   return (
-    <Suspense fallback={<ModalSkeleton />}>
+    <FeatureBoundary resetKey={JSON.stringify([activeModals, isAuthModalOpen, isEveningShutdownOpen, isWeeklyReviewOpen, isSmartFilterModalOpen, isInterruptionModalOpen, isTemplatePickerOpen])} title="This panel" modal onBack={() => {
+      activeModals.forEach(closeModal);
+      setIsAuthModalOpen(false); setIsEveningShutdownOpen(false); setIsWeeklyReviewOpen(false); setIsSmartFilterModalOpen(false); setIsInterruptionModalOpen(false); setIsTemplatePickerOpen(false);
+    }}>
+    <Suspense fallback={activeModals.length || isAuthModalOpen || isEveningShutdownOpen || isWeeklyReviewOpen || isSmartFilterModalOpen || isInterruptionModalOpen || isTemplatePickerOpen ? <ModalSkeleton /> : null}>
       {/* Centralized Settings Slide-Over Panel */}
       {isModalOpen('settings') && (
         <SettingsDrawer
@@ -184,6 +193,8 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
       {isModalOpen('pomodoro') && (
         <PomodoroModal
           taskId={getModalProps<{ taskId?: string | null }>('pomodoro')?.taskId || null}
+          initialPhase={getModalProps<{ initialPhase?: 'focus' | 'short_break' | 'long_break' }>('pomodoro')?.initialPhase}
+          initialPanel={getModalProps<{ initialPanel?: 'sound' | 'timer' }>('pomodoro')?.initialPanel}
           onClose={() => closeModal('pomodoro')}
         />
       )}
@@ -238,10 +249,11 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
       )}
 
       {/* Interruption Stash & Scratchpad Modal */}
-      <InterruptionModal />
+      {isInterruptionModalOpen && <InterruptionModal />}
 
       {/* Template Picker */}
-      <TemplatePickerModal />
+      {isTemplatePickerOpen && <TemplatePickerModal />}
     </Suspense>
+    </FeatureBoundary>
   );
 };

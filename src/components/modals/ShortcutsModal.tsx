@@ -35,6 +35,13 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
     { key: 'Esc', desc: 'Close any modal, drawer, or selection' },
   ];
 
+  const studioShortcuts = [
+    { key: 'C', desc: 'Toggle Clear Mode (minimal UI)' },
+    { key: 'F', desc: 'Toggle Fullscreen mode' },
+    { key: 'Space', desc: 'Pause / Resume focus session' },
+    { key: 'Esc', desc: 'Exit Studio back to planner' },
+  ];
+
   const nlpSyntax = [
     { token: '#work', desc: 'Assigns task to #work project' },
     { token: '@calls / @computer', desc: 'Assigns context location tag' },
@@ -86,6 +93,26 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {shortcuts.map((s) => (
+              <div
+                key={s.key}
+                className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-xs card-surface"
+              >
+                <span className="text-[var(--text-secondary)]">{s.desc}</span>
+                <Kbd size="xs">
+                  {s.key}
+                </Kbd>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Focus Studio Shortcuts */}
+        <div className="space-y-2 mb-6">
+          <div className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+            Focus Studio
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {studioShortcuts.map((s) => (
               <div
                 key={s.key}
                 className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] text-xs card-surface"

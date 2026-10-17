@@ -1,6 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { createWorkspaceBackup, validateBackupExtras } from '../../utils/workspaceBackup';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useTaskContext } from '../../context/TaskContext';
-import { exportToMarkdown, exportToJSON, exportToCSV, downloadFile } from '../../utils/fileExporter';
+import { exportToMarkdown, exportToCSV, downloadFile } from '../../utils/fileExporter';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { generateSnapshotShareUrl } from '../../utils/snapshotShare';
 import { validateWorkspaceData } from '../../utils/workspaceValidation';
@@ -42,7 +44,9 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   onClose,
   initialTab = 'standup',
 }) => {
-  const { tasks, projects, importTasks, showToast } = useTaskContext();
+  const root = useRef<HTMLDivElement>(null);
+  useFocusTrap(root, onClose);
+  const { tasks, projects, importTasks, showToast, workspacePreferences = {}, smartViews = [], dashboards = [] } = useTaskContext();
   const [activeTab, setActiveTab] = useState<'standup' | 'markdown' | 'csv' | 'share' | 'json' | 'import' | 'snapshots'>(
     initialTab
   );
@@ -75,7 +79,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         valid: true as const,
         tasksCount: validated.tasks.length,
         projectsCount: validated.projects.length,
-        data: validated,
+        data: { ...validated, extras: validateBackupExtras(parsed) },
       };
     } catch (err: any) {
       return { valid: false as const, error: err.message || 'Invalid JSON format or schema.' };
@@ -84,7 +88,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 
   const markdownContent = exportToMarkdown(tasks, projects);
   const csvContent = exportToCSV(tasks, projects);
-  const jsonContent = exportToJSON(tasks, projects);
+  const jsonContent = JSON.stringify(createWorkspaceBackup({ tasks, projects, dashboards, preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn) }), null, 2);
   const standupContent = generateDailyStandup(tasks, projects, { format: standupFormat });
   const shareUrl = generateSnapshotShareUrl(
     tasks.filter((t) => t.status !== 'done'),
@@ -112,14 +116,13 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
     }
 
     try {
-      const prevTasks = [...tasks];
-      const prevProjects = [...projects];
 
+      const before = { tasks: [...tasks], projects: [...projects], preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn), dashboards: [...dashboards] };
       if (importMode === 'replace') {
         createLocalSnapshot(tasks, projects, 'Pre-Import Replace Safety Snapshot', 'pre_batch');
       }
 
-      await importTasks(validationPreview.data.tasks, validationPreview.data.projects, importMode === 'replace');
+      await importTasks(validationPreview.data.tasks, validationPreview.data.projects, importMode === 'replace', validationPreview.data.extras);
       audioEngine.playCompletionChime();
       confetti({ particleCount: 40, spread: 50 });
 
@@ -127,7 +130,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         importMode === 'replace' ? 'Workspace replaced from backup' : `Imported ${validationPreview.data.tasks.length} tasks`,
         'Undo',
         () => {
-          void importTasks(prevTasks, prevProjects, true).catch((err: Error) => showToast(err.message));
+          void importTasks(before.tasks, before.projects, true, { preferences: before.preferences, customViews: before.customViews, dashboards: before.dashboards }).catch((err: Error) => showToast(err.message));
         }
       );
       onClose();
@@ -138,7 +141,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 
   return (
     <div
-      role="dialog" aria-modal="true" aria-label="Backups and export"
+      ref={root} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Backups and export"
       className="fixed inset-0 z-50 bg-black/40 dark:bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
     >
@@ -148,6 +151,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
       >
         <button
           onClick={onClose}
+          aria-label="Close backups and export"
           className="absolute top-5 right-5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
         >
           <X size={18} />

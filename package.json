@@ -1,32 +1,37 @@
 {
   "name": "flowtask",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0-beta.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
-    "test:e2e": "playwright test",
-    "preview": "vite preview"
+    "test:e2e": "playwright test --project=chromium",
+    "preview": "vite preview",
+    "test:security": "node --test scripts/security.test.mjs",
+    "test:rules": "node --test scripts/firestore-rules.test.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
     "chrono-node": "^2.10.1",
     "clsx": "^2.1.1",
     "firebase": "^12.19.0",
+    "firebase-admin": "^14.5.0",
     "framer-motion": "^14.0.0",
     "ical.js": "^2.2.1",
     "idb": "^8.0.3",
     "lucide-react": "^1.49.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-grid-layout": "^2.3.0",
     "tailwind-merge": "^3.7.0",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/react": "^16.3.3",
@@ -46,5 +51,8 @@
     "vite": "^8.3.0",
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
   }
 }

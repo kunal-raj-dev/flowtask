@@ -1,7 +1,10 @@
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef, useSyncExternalStore } from 'react';
 import { X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { SPRING_TACTILE } from '../../utils/springPhysics';
+
+const emptySubscribe = () => () => {};
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -36,6 +39,8 @@ export const Dialog: React.FC<DialogProps> = ({
   className = '',
 }) => {
   const rootRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
+  const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const closeRef = useRef(onClose);
   useEffect(() => {
     closeRef.current = onClose;
@@ -44,7 +49,7 @@ export const Dialog: React.FC<DialogProps> = ({
   const descId = useId();
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !isClient) return;
     const previous = document.activeElement as HTMLElement | null;
     const root = rootRef.current;
     const focusables = () => [...(root?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]') || [])].filter(el => el.getClientRects().length > 0);
@@ -63,9 +68,9 @@ export const Dialog: React.FC<DialogProps> = ({
     };
     document.addEventListener('keydown', handleKeyDown, true);
     return () => { document.removeEventListener('keydown', handleKeyDown, true); document.body.style.overflow = overflow; if (previous?.isConnected) previous.focus(); };
-  }, [isOpen]);
+  }, [isOpen, isClient]);
 
-  return (
+  const content = (
     <AnimatePresence>
       {isOpen && (
         <div
@@ -91,10 +96,10 @@ export const Dialog: React.FC<DialogProps> = ({
 
           {/* Dialog Surface */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.98, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={SPRING_TACTILE}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.99, y: 3 }}
+            transition={reducedMotion ? { duration: 0 } : { ...SPRING_TACTILE, duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
             className={`relative w-full rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-cute-modal card-surface z-10 overflow-hidden ${sizeStyles[size]} ${className}`}
           >
@@ -144,4 +149,5 @@ export const Dialog: React.FC<DialogProps> = ({
       )}
     </AnimatePresence>
   );
+  return isClient ? createPortal(content, document.body) : content;
 };

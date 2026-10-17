@@ -1,35 +1,107 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-
-      match /tasks/{taskId} {
-        allow read, delete: if request.auth != null && request.auth.uid == userId;
-        allow create, update: if request.auth != null && request.auth.uid == userId
-          && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 1000))
-          && (!('status' in request.resource.data) || request.resource.data.status in ['todo', 'in_progress', 'done'])
-          && (!('priority' in request.resource.data) || request.resource.data.priority in ['p1', 'p2', 'p3', 'p4']);
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid
+        && (!exists(/databases/$(database)/documents/users/$(uid))
+          || get(/databases/$(database)/documents/users/$(uid)).data.get('deletionPending', false) == false);
+    }
+    function revision() {
+      return request.resource.data.revision is int && request.resource.data.revision >= 1
+        && request.resource.data.updatedAt is number;
+    }
+    function validWidget(w) {
+      // Enforce the renderable shape here; bounded optional metadata is normalized
+      // on import/receive. Repeated per-field checks exceed the 24-widget rule budget.
+      return w.id is string
+        && w.type.matches('^(top3|taskList|dayAgenda|capacityProgress|focusLaunchpad|projects|studyContinuation|quickNotes|weeklyWorkload|recentActivity|resources|quietScene)$')
+        && w.config is map;
+    }
+    function validDashboard() {
+      let d = request.resource.data;
+      let widgets = d.widgets;
+      let count = widgets.size();
+      return d.keys().hasOnly(['id','name','icon','coverImage','isDefault','order','widgets','layouts','revision','createdAt','updatedAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 100
+        && d.order is int && d.order >= 0 && d.order <= 100
+        && d.createdAt is number && d.widgets is list && d.widgets.size() <= 24
+        && d.layouts is map && d.layouts.keys().hasOnly(['lg','md'])
+        && d.layouts.lg is list && d.layouts.lg.size() <= 24
+        && (!('md' in d.layouts) || (d.layouts.md is list && d.layouts.md.size() <= 24))
+        && (count <= 0 || validWidget(widgets[0]))
+        && (count <= 1 || validWidget(widgets[1]))
+        && (count <= 2 || validWidget(widgets[2]))
+        && (count <= 3 || validWidget(widgets[3]))
+        && (count <= 4 || validWidget(widgets[4]))
+        && (count <= 5 || validWidget(widgets[5]))
+        && (count <= 6 || validWidget(widgets[6]))
+        && (count <= 7 || validWidget(widgets[7]))
+        && (count <= 8 || validWidget(widgets[8]))
+        && (count <= 9 || validWidget(widgets[9]))
+        && (count <= 10 || validWidget(widgets[10]))
+        && (count <= 11 || validWidget(widgets[11]))
+        && (count <= 12 || validWidget(widgets[12]))
+        && (count <= 13 || validWidget(widgets[13]))
+        && (count <= 14 || validWidget(widgets[14]))
+        && (count <= 15 || validWidget(widgets[15]))
+        && (count <= 16 || validWidget(widgets[16]))
+        && (count <= 17 || validWidget(widgets[17]))
+        && (count <= 18 || validWidget(widgets[18]))
+        && (count <= 19 || validWidget(widgets[19]))
+        && (count <= 20 || validWidget(widgets[20]))
+        && (count <= 21 || validWidget(widgets[21]))
+        && (count <= 22 || validWidget(widgets[22]))
+        && (count <= 23 || validWidget(widgets[23]));
+    }
+    match /users/{uid} {
+      allow read: if owner(uid);
+      allow write: if false;
+      match /tasks/{id} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid) && revision() && request.resource.data.id == id
+          && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 10000
+          && request.resource.data.status in ['todo','in_progress','done'] && request.resource.data.priority in ['p1','p2','p3','p4']
+          && request.resource.data.projectId is string && request.resource.data.subtasks is list;
       }
-
-      match /projects/{projectId} {
-        allow read, delete: if request.auth != null && request.auth.uid == userId;
-        allow create, update: if request.auth != null && request.auth.uid == userId
-          && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200));
+      match /projects/{id} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid) && revision() && request.resource.data.id == id
+          && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
+          && request.resource.data.color is string;
       }
-
-      match /operations/{opId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /dashboards/{id} {
+        allow read, delete: if owner(uid);
+        allow create: if owner(uid) && revision() && request.resource.data.revision == 1 && request.resource.data.id == id && validDashboard();
+        allow update: if owner(uid) && revision() && request.resource.data.revision == resource.data.revision + 1 && request.resource.data.id == id && validDashboard();
       }
-
-      match /{allSubcollections=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /focusLogs/{id} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid) && revision() && request.resource.data.id == id
+          && request.resource.data.seconds is number && request.resource.data.seconds >= 0
+          && request.resource.data.mode in ['pomodoro','countdown','stopwatch','sprint']
+          && request.resource.data.startedAt is number && request.resource.data.endedAt is number
+          && (!('phase' in request.resource.data) || request.resource.data.phase in ['focus','short_break','long_break']);
+      }
+      match /recipes/{id} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid) && revision() && request.resource.data.id == id
+          && request.resource.data.name is string && request.resource.data.name.size() <= 80
+          && request.resource.data.sceneId is string && request.resource.data.layers is list
+          && request.resource.data.layers.size() <= 4 && request.resource.data.timer is map;
+      }
+      match /preferences/{id} {
+        allow read, delete: if owner(uid) && id in ['settings','appearance','studio','templates','customViews','profile','workspace'];
+        allow create, update: if owner(uid) && revision() && request.resource.data.id == id
+          && id in ['settings','appearance','studio','templates','customViews','profile','workspace']
+          && request.resource.data.keys().hasOnly(['id','value','revision','updatedAt']);
+      }
+      match /operations/{id} {
+        allow read, delete: if owner(uid);
+        allow create: if owner(uid) && request.resource.data.keys().hasOnly(['createdAt','description'])
+          && request.resource.data.createdAt is number && request.resource.data.description is string && request.resource.data.description.size() <= 1000;
+        allow update: if false;
       }
     }
-
-    // Default deny all other paths
-    match /{document=**} {
-      allow read, write: false;
-    }
+    match /{document=**} { allow read, write: if false; }
   }
 }

@@ -13,10 +13,7 @@ import {
   CheckCircle2,
   Plus,
   Moon,
-  Volume2,
-  VolumeX,
   Timer,
-  Sparkles,
   TrendingUp,
   Palette,
   PanelLeftClose,
@@ -32,10 +29,11 @@ import {
   Clock,
   Folder,
   Settings,
-  Keyboard,
   DownloadCloud,
   ChevronDown,
   ChevronRight,
+  BookOpen,
+  Cloud,
 } from 'lucide-react';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
 import { Badge, BrandLogo } from '../ui';
@@ -57,7 +55,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({
   onOpenPomodoro,
-  onOpenShortcuts,
+  onOpenShortcuts: _onOpenShortcuts,
   onOpenExportImport,
   onOpenBrainDump,
   onOpenAesthetics,
@@ -76,13 +74,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setActiveView,
     theme,
     toggleTheme,
-    soundEnabled,
-    toggleSound,
     addProject,
     smartViews,
     deleteSmartView,
     setIsSmartFilterModalOpen,
     setIsWeeklyReviewOpen,
+    setIsAuthModalOpen,
+    syncStatus,
+    workspacePreferences,
   } = useTaskContext();
 
   const [isAddingProject, setIsAddingProject] = useState(false);
@@ -219,32 +218,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isNew?: boolean;
   }
 
-  // 4 Primary destinations
+  // 5 Primary destinations: Today, Inbox, Plan, Upcoming, Projects
   const primaryNavItems: SidebarNavItem[] = [
     { id: 'today', label: 'Today', icon: Sun, count: todayCount, color: 'text-amber-500' },
     { id: 'inbox', label: 'Inbox', icon: Inbox, count: inboxCount, color: 'text-blue-500' },
+    { id: 'timeline', label: 'Plan', icon: Clock, count: null, color: 'text-teal-500' },
     { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: upcomingCount, color: 'text-purple-500' },
     { id: 'projects', label: 'Projects', icon: Folder, count: activeProjectCount, color: 'text-indigo-500' },
   ];
 
-  // Secondary "More" Hub
-  const secondaryNavItems: SidebarNavItem[] = [
-    { id: 'trash', label: 'Trash', icon: Trash2, count: null, color: 'text-stone-400' },
-    { id: 'archive', label: 'Archive', icon: Archive, count: null, color: 'text-stone-400' },
+  // Dedicated Tools Group: Study & Review
+  const toolsNavItems: SidebarNavItem[] = [
+    { id: 'study', label: 'Study Hub', icon: BookOpen, count: null, color: 'text-amber-600' },
     { id: 'review', label: 'Review', icon: TrendingUp, count: null, color: 'text-teal-500' },
+  ];
+
+  // Expandable Perspectives: Board, Matrix, All Tasks, Someday, Archive, Trash
+  const perspectiveNavItems: SidebarNavItem[] = [
+    { id: 'kanban', label: 'Board', icon: Kanban, count: null, color: 'text-indigo-500' },
+    { id: 'matrix', label: 'Matrix', icon: Grid2X2, count: null, color: 'text-emerald-500' },
     { id: 'all', label: 'All Tasks', icon: CheckCircle2, count: allCount, color: 'text-stone-400' },
     { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-amber-500' },
+    { id: 'archive', label: 'Archive', icon: Archive, count: null, color: 'text-stone-400' },
+    { id: 'trash', label: 'Trash', icon: Trash2, count: null, color: 'text-stone-400' },
   ];
 
-  // Perspectives
-  const perspectiveNavItems: SidebarNavItem[] = [
-    { id: 'timeline', label: 'Timeline', icon: Clock, count: null, color: 'text-teal-500' },
-    { id: 'kanban', label: 'Kanban Board', icon: Kanban, count: null, color: 'text-indigo-500' },
-    { id: 'matrix', label: 'Priority Matrix', icon: Grid2X2, count: null, color: 'text-emerald-500' },
-    { id: 'study_sessions', label: 'Study Sessions', icon: Sparkles, count: null, color: 'text-amber-500', isNew: true },
+  const workspaceConfig = workspacePreferences?.workspace as { pinnedDestinations?: string[] } | undefined;
+  const pinnedIds = Array.isArray(workspaceConfig?.pinnedDestinations) ? workspaceConfig.pinnedDestinations : [];
+  const pinnedItems: SidebarNavItem[] = [
+    ...projects.filter(p => !p.isArchived && pinnedIds.includes(`project:${p.id}`)).map(p => ({id:`project:${p.id}`,label:p.name,icon:Folder,count:null,color:'text-[var(--color-brand)]'})),
+    ...smartViews.filter(v => pinnedIds.includes(`smart:${v.id}`)).map(v => ({id:`smart:${v.id}`,label:v.name,icon:Filter,count:null,color:'text-[var(--color-brand)]'})),
   ];
-
-  const allNavItems: SidebarNavItem[] = [...primaryNavItems, ...secondaryNavItems, ...perspectiveNavItems];
+  const allNavItems: SidebarNavItem[] = [...primaryNavItems, ...toolsNavItems, ...pinnedItems, ...perspectiveNavItems];
 
   const getSmartViewIcon = (iconName: string) => {
     switch (iconName) {
@@ -276,8 +281,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
               onItemClick?.();
             }}
-            title="FlowTask Zen — Click to expand sidebar ([)"
-            aria-label="FlowTask Zen — Expand Sidebar"
+            title="FlowTask — Click to expand sidebar ([)"
+            aria-label="FlowTask — Expand Sidebar"
             className="cursor-pointer active:scale-95 transition-transform"
           >
             <BrandLogo size={32} />
@@ -487,11 +492,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setActiveView('today');
             onItemClick?.();
           }}
-          title="FlowTask Zen — Return to Today"
-          aria-label="FlowTask Zen — Return to Today"
+          title="FlowTask — Return to Today"
+          aria-label="FlowTask — Return to Today"
           className="flex-1 flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-stone-200/40 dark:hover:bg-white/[0.04] transition-all text-left min-w-0 group cursor-pointer select-none active:scale-[0.98]"
         >
-          <BrandLogo size={32} showWordmark={true} />
+          <BrandLogo size={32} showWordmark={true} subtitle="" />
         </button>
 
         <div className="flex items-center gap-0.5 shrink-0">
@@ -519,31 +524,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation Views */}
       <div className="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-3.5">
-        {/* 4 Primary Destinations */}
+        {/* Primary Destinations */}
         <div className="space-y-0.5">
           <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            Primary
+            Workspace
           </div>
           {primaryNavItems.map(renderNavItem)}
         </div>
 
-        {/* More Hub */}
+        {/* Dedicated Tools Group */}
         <div className="space-y-0.5">
-          <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
-            <span>More</span>
-            <button
-              type="button"
-              onClick={() => setIsMoreCollapsed((prev) => !prev)}
-              className="p-0.5 rounded hover:text-[var(--text-primary)] transition-colors"
-              title={isMoreCollapsed ? 'Expand More' : 'Collapse More'}
-            >
-              {isMoreCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-            </button>
+          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
+            Tools
           </div>
-          {!isMoreCollapsed && secondaryNavItems.map(renderNavItem)}
+          {toolsNavItems.map(renderNavItem)}
         </div>
 
         {/* Perspectives Section */}
+        {pinnedItems.length > 0 && <div className="space-y-0.5"><div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">Pinned</div>{pinnedItems.map(renderNavItem)}</div>}
         <div className="space-y-0.5">
           <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
             <span>Perspectives</span>
@@ -720,119 +718,86 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Utility Footer: Quick Preferences & System Settings */}
-      <div className="p-2.5 border-t border-[var(--border-hairline)] space-y-2 text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        {/* Row 1: Workspace Utilities with Labels */}
-        <div className="flex items-center justify-between px-1 text-[11px]">
-          {onOpenScratchpad && (
-            <button
-              onClick={() => {
-                onOpenScratchpad();
-                onItemClick?.();
-              }}
-              title="Sticky Scratchpad (Alt+N)"
-              aria-label="Sticky Scratchpad"
-              className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-amber-500 p-1 rounded-md hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
-            >
-              <FileEdit size={13} />
-              <span>Scratchpad</span>
-            </button>
-          )}
-
+      {/* Footer: Quick Notes, Settings, and Account/Sync */}
+      <div className="p-2.5 border-t border-[var(--border-hairline)] space-y-1.5 text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {onOpenScratchpad && (
           <button
+            type="button"
             onClick={() => {
-              setIsWeeklyReviewOpen(true);
+              onOpenScratchpad();
               onItemClick?.();
             }}
-            title="Weekly Review & Retrospective (Ctrl+Shift+W)"
-            aria-label="Weekly Review & Retrospective"
-            className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-teal-500 p-1 rounded-md hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
+            title="Sticky Scratchpad (Alt+N)"
+            aria-label="Sticky Scratchpad"
+            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
           >
-            <Compass size={13} />
-            <span>Review</span>
+            <span className="flex items-center gap-2">
+              <FileEdit size={14} className="text-amber-600" />
+              <span>Quick Notes</span>
+            </span>
+            <span className="text-[10px] text-[var(--text-muted)] font-mono">Alt+N</span>
           </button>
+        )}
 
-          <button
-            onClick={() => {
-              onOpenExportImport();
-              onItemClick?.();
-            }}
-            title="Export / Import Data (Backup & Restore)"
-            aria-label="Export or import data"
-            className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
-          >
-            <DownloadCloud size={13} />
-            <span>Backup</span>
-          </button>
-        </div>
-
-        {/* Row 2: Unified Settings Bar with Quick Toggles */}
-        <div className="flex items-center justify-between px-2 py-1.5 rounded-xl bg-[var(--bg-surface-l2)]/70 border border-[var(--border-subtle)] card-surface">
-          <button
-            onClick={() => {
-              if (onOpenSettings) {
-                onOpenSettings();
-              } else {
-                onOpenExportImport();
-              }
-              onItemClick?.();
-            }}
-            title="Preferences & Settings (Ctrl+,)"
-            aria-label="Preferences and Settings"
-            className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-0.5"
-          >
+        <button
+          type="button"
+          onClick={() => {
+            if (onOpenSettings) onOpenSettings();
+            else onOpenExportImport();
+            onItemClick?.();
+          }}
+          title="Preferences & Settings (Ctrl+,)"
+          aria-label="Preferences and Settings"
+          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
+        >
+          <span className="flex items-center gap-2">
             <Settings size={14} />
             <span>Settings</span>
-          </button>
+          </span>
+          <span className="text-[10px] text-[var(--text-muted)] font-mono">Ctrl+,</span>
+        </button>
 
-          <div className="flex items-center gap-0.5">
-            {onOpenAesthetics && (
-              <button
-                onClick={() => {
-                  onOpenAesthetics();
-                  onItemClick?.();
-                }}
-                title="Aesthetics & Sound Profiles"
-                aria-label="Aesthetics & Sound Profiles"
-                className="p-1.5 text-[var(--text-muted)] hover:text-purple-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-              >
-                <Palette size={14} />
-              </button>
-            )}
-
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-              aria-label={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
-
-            <button
-              onClick={toggleSound}
-              title={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
-              aria-label={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
-              className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            </button>
-
-            {onOpenShortcuts && !isMobileDrawer && (
-              <button
-                onClick={() => {
-                  onOpenShortcuts();
-                  onItemClick?.();
-                }}
-                title="Keyboard Shortcuts (?)"
-                aria-label="Keyboard Shortcuts"
-                className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-              >
-                <Keyboard size={14} />
-              </button>
-            )}
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setIsAuthModalOpen(true);
+            onItemClick?.();
+          }}
+          title={
+            syncStatus === 'synced'
+              ? 'Cloud sync active. Click for account & data management.'
+              : `Sync status: ${syncStatus}. Click to manage account.`
+          }
+          aria-label="Account and cloud sync"
+          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
+        >
+          <span className="flex items-center gap-2 truncate">
+            <Cloud
+              size={14}
+              className={
+                syncStatus === 'synced'
+                  ? 'text-emerald-600'
+                  : syncStatus === 'syncing'
+                  ? 'text-amber-500 animate-pulse'
+                  : 'text-[var(--text-muted)]'
+              }
+            />
+            <span className="truncate">
+              {syncStatus === 'synced' ? 'Account & Sync' : 'Cloud Sync'}
+            </span>
+          </span>
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              syncStatus === 'synced'
+                ? 'bg-emerald-500'
+                : syncStatus === 'syncing'
+                ? 'bg-amber-500 animate-ping'
+                : syncStatus === 'conflict'
+                ? 'bg-rose-500'
+                : 'bg-stone-400'
+            }`}
+          />
+        </button>
       </div>
     </aside>
   );

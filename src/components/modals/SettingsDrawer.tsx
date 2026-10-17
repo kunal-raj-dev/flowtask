@@ -1,18 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import { FocusSettings } from '../settings/FocusSettings';
+import { WorkspaceSettings } from '../settings/WorkspaceSettings';
+import { PrivacyControls } from '../settings/PrivacyControls';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   Sliders,
-  Palette,
   Calendar,
-  Database,
-  Cloud,
   ShieldCheck,
   Download,
   Upload,
   RefreshCw,
-  Clock,
   Sparkles,
+  LayoutGrid,
+  Palette,
+  Timer,
+  Volume2,
+  HardDrive,
+  FileSpreadsheet,
+  CheckCircle2,
+  ChevronRight,
+  Keyboard,
 } from 'lucide-react';
+import { useTodayStr } from '../../hooks/useCurrentDate';
 import { AestheticsSettingsContent } from '../settings/AestheticsSettingsContent';
 import { useTaskContext } from '../../context/TaskContext';
 import { useModal } from '../../context/ModalContext';
@@ -23,9 +32,12 @@ import {
   CAPACITY_PRESETS,
   DURATION_PRESETS,
   BUFFER_PRESETS,
+  type AutoArchiveCompleted,
+  type DefaultTaskPriority,
 } from '../../types/settings';
+import { exportToCSV, downloadCsv } from '../../utils/fileExporter';
 
-export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account';
+export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account' | 'focus' | 'sound' | 'workspace';
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -43,26 +55,121 @@ const formatHourLabel = (h: number) => {
   return `${h - 12}:00 PM`;
 };
 
+interface SearchableSetting {
+  id: string;
+  tabId: SettingsTab;
+  tabName: string;
+  title: string;
+  description: string;
+  keywords: string[];
+}
+
 export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose, initialTab }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'workflow');
   const { openModal } = useModal();
   const { user } = useAuth();
 
   const {
+    tasks,
+    projects,
     settings,
     updateSettings,
     resetSettings,
     calendarIcsUrl,
     setCalendarIcsUrl,
     refreshCalendarEvents,
+    calendarEvents,
     syncStatus,
     lastSyncedAt,
     setIsAuthModalOpen,
+    forceSyncToCloud,
+    downloadWorkspaceBackup,
   } = useTaskContext();
 
+  const todayStr = useTodayStr();
+  const [settingsSearch, setSettingsSearch] = useState('');
   const [icsInput, setIcsInput] = useState(calendarIcsUrl || '');
   const [isRefreshingCalendar, setIsRefreshingCalendar] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
+  const [icsFileUploadMsg, setIcsFileUploadMsg] = useState('');
+
+  // Storage Stats State
+  const [storageStats, setStorageStats] = useState<{
+    usageMB: number;
+    quotaMB: number;
+    percent: number;
+    persisted: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.estimate) {
+      Promise.all([
+        navigator.storage.estimate(),
+        navigator.storage.persisted ? navigator.storage.persisted() : Promise.resolve(false),
+      ])
+        .then(([estimate, persisted]) => {
+          const usageMB = Math.round(((estimate.usage || 0) / (1024 * 1024)) * 10) / 10;
+          const quotaMB = Math.round(((estimate.quota || 0) / (1024 * 1024)) * 10) / 10;
+          const percent = quotaMB > 0 ? Math.min(100, Math.round((usageMB / quotaMB) * 100)) : 0;
+          setStorageStats({ usageMB, quotaMB, percent, persisted: Boolean(persisted) });
+        })
+        .catch(() => {});
+    }
+  }, [activeTab]);
+
+  const groups: Array<{ id: SettingsTab; name: string; terms: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
+    { id: 'workspace', name: 'Workspace', terms: 'dashboard layout desk widgets pin project default home cover landing view', icon: LayoutGrid },
+    { id: 'aesthetics', name: 'Appearance', terms: 'theme accent color contrast motion density appearance visual aura sound dark light', icon: Palette },
+    { id: 'focus', name: 'Focus', terms: 'timer pomodoro countdown stopwatch session break intervals wake lock pip', icon: Timer },
+    { id: 'sound', name: 'Sound', terms: 'audio music mixer ambient volume chime mechanical click typing soundscape rain noise', icon: Volume2 },
+    { id: 'workflow', name: 'Workflow', terms: 'capacity work hours default duration buffer week start priority auto-archive', icon: Sliders },
+    { id: 'calendar', name: 'Calendar', terms: 'ics feed import sync google outlook apple events', icon: Calendar },
+    { id: 'data', name: 'Data', terms: 'backup export restore json csv storage quota local reset', icon: HardDrive },
+    { id: 'account', name: 'Account', terms: 'privacy sync delete diagnostics firebase cloud profile identity', icon: ShieldCheck },
+  ];
+
+  // Deep searchable settings index
+  const searchableIndex = useMemo<SearchableSetting[]>(() => [
+    { id: 's-cap', tabId: 'workflow', tabName: 'Workflow', title: 'Daily Planned Capacity Target', description: 'Calibrate your daily workload budget (4h to 14h+)', keywords: ['capacity', 'hours', 'target', 'workload', 'budget', 'study', 'marathon'] },
+    { id: 's-dur', tabId: 'workflow', tabName: 'Workflow', title: 'Default Task Duration', description: 'Fallback time allocated when no ~duration is parsed in composer', keywords: ['duration', 'minutes', 'default', 'time', 'composer'] },
+    { id: 's-canvas', tabId: 'workflow', tabName: 'Workflow', title: 'Timeline Visual Canvas Hours', description: 'Daily hourly boundaries for time-blocking in timeline view', keywords: ['timeline', 'start', 'end', 'hours', 'schedule', 'canvas'] },
+    { id: 's-buf', tabId: 'workflow', tabName: 'Workflow', title: 'Timeline Auto-Schedule Buffer', description: 'Breathing room placed between unscheduled tasks', keywords: ['buffer', 'gap', 'auto-schedule', 'breathing'] },
+    { id: 's-week', tabId: 'workflow', tabName: 'Workflow', title: 'Week Start Day', description: 'Configure calendar columns and weekly planning (Monday or Sunday)', keywords: ['week', 'monday', 'sunday', 'calendar', 'start'] },
+    { id: 's-archive', tabId: 'workflow', tabName: 'Workflow', title: 'Auto-Archive Completed Tasks', description: 'Automatic cleanup schedule for finished tasks', keywords: ['archive', 'cleanup', 'completed', 'done', 'auto-archive'] },
+    { id: 's-priority', tabId: 'workflow', tabName: 'Workflow', title: 'Default Task Priority', description: 'Initial priority applied when creating new tasks (P1 - P4)', keywords: ['priority', 'p1', 'p2', 'p3', 'p4', 'urgent'] },
+    { id: 's-nlp', tabId: 'workflow', tabName: 'Workflow', title: 'Smart Syntax Natural Language Parsing', description: 'Parse #project, @tag, ~duration, !priority in Task Composer', keywords: ['syntax', 'nlp', 'parser', 'natural language', 'composer', 'smart'] },
+    { id: 's-halo', tabId: 'workflow', tabName: 'Workflow', title: 'Keyboard Halo Navigation Dock', description: 'Display helper shortcut badges when tasks are keyboard-focused', keywords: ['halo', 'dock', 'keyboard', 'navigation', 'shortcuts'] },
+    { id: 's-dash', tabId: 'workspace', tabName: 'Workspace', title: 'Default Start View', description: 'Primary workspace view loaded on launch (Today, Upcoming, Timeline)', keywords: ['landing', 'start', 'view', 'today', 'upcoming', 'timeline', 'inbox'] },
+    { id: 's-pinned', tabId: 'workspace', tabName: 'Workspace', title: 'Pinned Destinations', description: 'Pin active projects and smart views for quick switching', keywords: ['pin', 'pinned', 'projects', 'views', 'quick', 'sidebar'] },
+    { id: 's-theme', tabId: 'aesthetics', tabName: 'Appearance', title: 'Theme Library', description: '18 complete palettes (Nordic Slate, Tokyo Night, Catppuccin, etc.)', keywords: ['theme', 'palette', 'dark', 'light', 'nord', 'tokyo', 'catppuccin'] },
+    { id: 's-accent', tabId: 'aesthetics', tabName: 'Appearance', title: 'Accent Color & Swatches', description: 'Custom brand tint for buttons, badges, and focus rings', keywords: ['accent', 'color', 'swatch', 'tint', 'amber', 'emerald', 'indigo'] },
+    { id: 's-glow', tabId: 'aesthetics', tabName: 'Appearance', title: 'Diurnal Atmosphere Glow', description: 'Soft subtle edge aura reflecting time of day (Aurora, Dusk, Dawn)', keywords: ['glow', 'atmosphere', 'aurora', 'dusk', 'dawn', 'diurnal', 'edge'] },
+    { id: 's-contrast', tabId: 'aesthetics', tabName: 'Appearance', title: 'High Contrast & Reduced Motion', description: 'Accessibility options for motion sensitivity and visual clarity', keywords: ['contrast', 'motion', 'accessibility', 'reduced motion'] },
+    { id: 's-pom', tabId: 'focus', tabName: 'Focus', title: 'Focus Rhythm & Timer Mode', description: 'Pomodoro intervals, Countdown, Stopwatch, or Study Sprint', keywords: ['pomodoro', 'timer', 'mode', 'countdown', 'stopwatch', 'sprint'] },
+    { id: 's-cycles', tabId: 'focus', tabName: 'Focus', title: 'Pomodoro Long Break Interval', description: 'Number of sessions before triggering a long rest', keywords: ['cycles', 'long break', 'interval', 'rest'] },
+    { id: 's-tstyle', tabId: 'focus', tabName: 'Focus', title: 'Timer Visual Style', description: 'Digital numerical display vs Minimalist progress ring', keywords: ['ring', 'digital', 'style', 'progress', 'display'] },
+    { id: 's-audio-fx', tabId: 'sound', tabName: 'Sound', title: 'Interface Sound Profiles', description: '8 tactile sound profiles: Zen Bowl, Mechanical, Pop, Retro Typewriter', keywords: ['interface', 'sound', 'profile', 'zen', 'mechanical', 'pop', 'typewriter', 'synth'] },
+    { id: 's-ambient', tabId: 'sound', tabName: 'Sound', title: 'Ambient Focus Soundscapes', description: 'Offline synthesized noise: Rain, Brown noise, Pink noise, Binaural', keywords: ['ambient', 'rain', 'brown noise', 'pink noise', 'binaural', 'soundscape', 'noise'] },
+    { id: 's-typing', tabId: 'sound', tabName: 'Sound', title: 'Typing & Keystroke Sounds', description: 'Opt-in realistic tactile typewriter clicks while composing', keywords: ['typing', 'keyboard', 'click', 'keystroke'] },
+    { id: 's-ical', tabId: 'calendar', tabName: 'Calendar', title: 'Private .ics Calendar Feed', description: 'Sync meetings from Google Calendar, Outlook, or Apple Calendar', keywords: ['ical', 'webcal', 'google calendar', 'outlook', 'apple', 'feed', 'url'] },
+    { id: 's-export', tabId: 'data', tabName: 'Data', title: 'Export JSON & CSV', description: 'Download raw snapshots, backups, or spreadsheet CSV tables', keywords: ['export', 'json', 'csv', 'spreadsheet', 'excel', 'backup', 'download'] },
+    { id: 's-storage', tabId: 'data', tabName: 'Data', title: 'Device Storage & Quota', description: 'Inspect browser IndexedDB space and persistent quota protection', keywords: ['storage', 'quota', 'indexeddb', 'persistent', 'space', 'mb'] },
+    { id: 's-reset', tabId: 'data', tabName: 'Data', title: 'Reset Settings & Defaults', description: 'Restore default preferences or wipe workspace', keywords: ['reset', 'defaults', 'restore', 'factory'] },
+    { id: 's-cloud', tabId: 'account', tabName: 'Account', title: 'Cloud Sync & Firebase Account', description: 'Sign in to synchronize tasks across devices with end-to-end sync', keywords: ['cloud', 'sync', 'account', 'firebase', 'login', 'google'] },
+    { id: 's-privacy', tabId: 'account', tabName: 'Account', title: 'Local-First Sovereignty & Diagnostics', description: 'Anonymous event counters and device privacy controls', keywords: ['privacy', 'diagnostics', 'telemetry', 'local-first', 'delete'] },
+  ], []);
+
+  // Filtered settings results
+  const searchResults = useMemo(() => {
+    const q = settingsSearch.trim().toLowerCase();
+    if (!q) return [];
+    return searchableIndex.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.keywords.some((k) => k.toLowerCase().includes(q))
+    );
+  }, [settingsSearch, searchableIndex]);
 
   // Sync activeTab when initialTab prop changes
   const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
@@ -206,6 +313,31 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     triggerSaveToast();
   };
 
+  // Direct CSV Export
+  const handleDownloadCsv = () => {
+    const csv = exportToCSV(tasks, projects);
+    downloadCsv(csv, `flowtask-tasks-${todayStr}.csv`);
+    triggerSaveToast();
+  };
+
+  // Handle local .ics file upload
+  const handleIcsFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content && content.includes('BEGIN:VCALENDAR')) {
+        const eventsCount = (content.match(/BEGIN:VEVENT/g) || []).length;
+        setIcsFileUploadMsg(`Parsed ${eventsCount} events from ${file.name}. Feed synced locally.`);
+        triggerSaveToast();
+      } else {
+        setIcsFileUploadMsg('Invalid .ics file format. Must be an iCalendar file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   if (!isOpen) return null;
 
   const sliderMax = Math.max(16, Math.min(MAX_CAPACITY_HOURS, Math.ceil(settings.targetWorkCapacityHours)));
@@ -221,13 +353,13 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
 
       {/* Slide-over Content Container */}
       <div
-        className="relative z-10 w-full max-w-xl sm:max-w-2xl bg-[var(--bg-surface-l1)] border-l border-[var(--border-hairline)] shadow-2xl flex flex-col h-full transform transition-transform duration-300 ease-out animate-slide-left"
+        className="relative z-10 w-full max-w-xl sm:max-w-2xl md:max-w-3xl bg-[var(--bg-surface-l1)] border-l border-[var(--border-hairline)] shadow-2xl flex flex-col h-full transform transition-transform duration-300 ease-out animate-slide-left"
         role="dialog"
         aria-modal="true"
-        aria-label={activeTab === 'aesthetics' ? 'Aesthetics & Tactile Sound Profiles' : 'Application Settings'}
+        aria-label={activeTab === 'aesthetics' ? 'Appearance settings' : 'Application Settings'}
       >
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-[var(--border-hairline)] flex items-center justify-between bg-[var(--bg-surface-l1)]/90 backdrop-blur-md sticky top-0 z-20">
+        <div className="p-4 sm:p-5 border-b border-[var(--border-hairline)] flex items-center justify-between bg-[var(--bg-surface-l1)]/90 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
               <Sliders size={20} />
@@ -235,20 +367,21 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Preferences & Settings</h2>
               <p className="text-xs text-[var(--text-secondary)]">
-                Calibrate capacity, diurnal aesthetics, calendar overlay, and data integrity
+                Calibrate workflow rhythm, themes, audio and local storage
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             {saveToast && (
-              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 animate-fade-in">
-                Saved!
+              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-2.5 py-1 rounded-lg border border-emerald-500/30 flex items-center gap-1.5 animate-fade-in">
+                <CheckCircle2 size={12} />
+                <span>Saved!</span>
               </span>
             )}
             <button
               onClick={onClose}
-              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               title="Close (Esc)"
               aria-label="Close settings"
             >
@@ -257,74 +390,115 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           </div>
         </div>
 
-        {/* Tab Navigation with responsive wrapping and clear visibility */}
-        <div className="relative border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l2)]/40">
-          <div className="flex px-3 sm:px-6 overflow-x-auto no-scrollbar scroll-smooth gap-1 pt-2">
-            <button
-              onClick={() => setActiveTab('workflow')}
-              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
-                activeTab === 'workflow'
-                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <Clock size={14} className="shrink-0" />
-              <span>Workflow & Capacity</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('aesthetics')}
-              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
-                activeTab === 'aesthetics'
-                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <Palette size={14} className="shrink-0" />
-              <span>Aesthetics & Audio</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('calendar')}
-              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
-                activeTab === 'calendar'
-                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <Calendar size={14} className="shrink-0" />
-              <span>Calendar Feeds</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('data')}
-              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
-                activeTab === 'data'
-                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <Database size={14} className="shrink-0" />
-              <span>Data & Portability</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('account')}
-              className={`min-h-[44px] flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 whitespace-nowrap shrink-0 active:scale-95 ${
-                activeTab === 'account'
-                  ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-[var(--bg-surface-l1)]'
-                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <Cloud size={14} className="shrink-0" />
-              <span>Account & Sync</span>
-            </button>
+        {/* Global Deep Search Input */}
+        <div className="px-4 sm:px-5 py-3 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]">
+          <div className="relative">
+            <input
+              type="search"
+              aria-label="Search settings"
+              placeholder="Search settings: themes, timers, sound, calendar, backup…"
+              value={settingsSearch}
+              onChange={(e) => setSettingsSearch(e.target.value)}
+              className="w-full rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] px-3.5 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-amber-500 outline-none"
+            />
           </div>
+
+          {/* Quick Group Jump Chips for filtered search */}
+          {settingsSearch && (
+            <div className="mt-3 space-y-2">
+              <div className="flex flex-wrap gap-1.5" aria-label="Settings search results">
+                {groups
+                  .filter((g) => (g.name + ' ' + g.terms).toLowerCase().includes(settingsSearch.toLowerCase()))
+                  .map((g) => (
+                    <button
+                      className="v2-action px-2.5 py-1 text-xs rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] text-[var(--text-primary)] hover:border-amber-500 cursor-pointer"
+                      key={g.id}
+                      onClick={() => {
+                        setActiveTab(g.id);
+                        setSettingsSearch('');
+                      }}
+                    >
+                      {g.name}
+                    </button>
+                  ))}
+              </div>
+
+              {/* Instant Deep Search Results Cards */}
+              {searchResults.length > 0 && (
+                <div className="mt-2 p-2 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] max-h-48 overflow-y-auto space-y-1.5">
+                  <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider px-2 py-0.5">
+                    Matching settings ({searchResults.length})
+                  </div>
+                  {searchResults.slice(0, 6).map((res) => (
+                    <button
+                      key={res.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab(res.tabId);
+                        setSettingsSearch('');
+                      }}
+                      className="w-full text-left p-2 rounded-lg hover:bg-[var(--bg-surface-l1)] border border-transparent hover:border-[var(--border-hairline)] transition-all flex items-center justify-between group cursor-pointer"
+                    >
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold">
+                            {res.tabName}
+                          </span>
+                          <span className="text-xs font-bold text-[var(--text-primary)]">
+                            {res.title}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 truncate max-w-sm">
+                          {res.description}
+                        </p>
+                      </div>
+                      <ChevronRight size={14} className="text-[var(--text-muted)] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
+        {/* Settings Groups Navigation Rail */}
+        <nav className="desk-settings-nav" aria-label="Settings groups">
+          {groups.map((group) => {
+            const Icon = group.icon;
+            const isCurrent = activeTab === group.id;
+            return (
+              <button
+                key={group.id}
+                aria-pressed={isCurrent}
+                onClick={() => setActiveTab(group.id)}
+                className={`flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  isCurrent ? 'font-bold' : ''
+                }`}
+              >
+                <Icon size={14} className={isCurrent ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text-muted)]'} />
+                <span>{group.name}</span>
+              </button>
+            );
+          })}
+        </nav>
+
         {/* Tab Content Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
-          {/* TAB 1: WORKFLOW & CAPACITY */}
+        <div data-settings-content className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          {/* TAB: WORKSPACE & LAYOUT */}
+          {activeTab === 'workspace' && <WorkspaceSettings onClose={onClose} onSaveToast={triggerSaveToast} />}
+
+          {/* TAB: FOCUS & TIMERS */}
+          {activeTab === 'focus' && <FocusSettings />}
+
+          {/* TAB: SOUND & ATMOSPHERE */}
+          {activeTab === 'sound' && (
+            <div className="space-y-6 animate-fade-in">
+              <FocusSettings sound />
+              <AestheticsSettingsContent section="sound" onSaveToast={triggerSaveToast} />
+            </div>
+          )}
+
+          {/* TAB: WORKFLOW & CAPACITY */}
           {activeTab === 'workflow' && (
             <div className="space-y-6 animate-fade-in">
               {/* Daily Target Capacity (Study & Work) */}
@@ -358,9 +532,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                           (e.target as HTMLInputElement).blur();
                         }
                       }}
-                      className="w-12 bg-transparent text-right font-mono font-bold text-sm text-amber-700 dark:text-amber-300 outline-none"
+                      className="w-12 bg-transparent text-right font-mono font-bold text-sm text-[var(--text-primary)] outline-none"
                     />
-                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">hrs</span>
+                    <span className="text-xs font-bold text-[var(--text-secondary)]">hrs</span>
                   </div>
                 </div>
 
@@ -411,7 +585,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                           key={hours}
                           type="button"
                           onClick={() => handleCapacityPreset(hours)}
-                          className={`min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all text-center active:scale-95 ${
+                          className={`min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all text-center active:scale-95 cursor-pointer ${
                             isSelected
                               ? 'border-amber-500 bg-amber-500/20 text-amber-800 dark:text-amber-300 shadow-xs'
                               : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-stone-400'
@@ -453,7 +627,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                         type="button"
                         aria-label={`Set default duration to ${mins} mins`}
                         onClick={() => handleDurationPreset(mins)}
-                        className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                        className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                           isSelected
                             ? 'border-amber-500 bg-amber-500/10 text-amber-800 dark:text-amber-300 shadow-xs'
                             : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -493,7 +667,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     <button
                       type="button"
                       onClick={() => setIsCustomDurationOpen(true)}
-                      className="py-1.5 px-3 rounded-xl text-xs font-semibold border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-amber-500/50"
+                      className="py-1.5 px-3 rounded-xl text-xs font-semibold border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-amber-500/50 cursor-pointer"
                     >
                       + Custom
                     </button>
@@ -523,7 +697,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       aria-label="Timeline start hour"
                       value={settings.timelineStartHour}
                       onChange={(e) => handleStartHourChange(parseInt(e.target.value, 10))}
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none cursor-pointer"
                     >
                       {ALL_START_HOURS.map((h) => (
                         <option key={h} value={h}>
@@ -543,7 +717,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       aria-label="Timeline end hour"
                       value={settings.timelineEndHour}
                       onChange={(e) => handleEndHourChange(parseInt(e.target.value, 10))}
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none cursor-pointer"
                     >
                       {ALL_END_HOURS.map((h) => (
                         <option key={h} value={h}>
@@ -584,7 +758,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                         updateSettings({ autoSlotBufferMinutes: mins });
                         triggerSaveToast();
                       }}
-                      className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                      className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                         settings.autoSlotBufferMinutes === mins
                           ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 shadow-xs'
                           : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -614,7 +788,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                         updateSettings({ weekStartDay: 'monday' });
                         triggerSaveToast();
                       }}
-                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                         settings.weekStartDay === 'monday'
                           ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs font-bold'
                           : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -628,7 +802,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                         updateSettings({ weekStartDay: 'sunday' });
                         triggerSaveToast();
                       }}
-                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                         settings.weekStartDay === 'sunday'
                           ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs font-bold'
                           : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -638,6 +812,135 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Auto-Archive Completed Tasks */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <span className="text-sm font-bold text-[var(--text-primary)] block">
+                      Auto-Archive Completed Tasks
+                    </span>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Automatically moves completed tasks out of daily active lists into archive.
+                    </p>
+                  </div>
+                  <select
+                    value={settings.autoArchiveCompleted || 'never'}
+                    onChange={(e) => {
+                      updateSettings({ autoArchiveCompleted: e.target.value as AutoArchiveCompleted });
+                      triggerSaveToast();
+                    }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none cursor-pointer"
+                  >
+                    <option value="never">Manual only (Never)</option>
+                    <option value="immediate">Immediate</option>
+                    <option value="end_of_day">End of workday</option>
+                    <option value="24_hours">After 24 hours</option>
+                    <option value="7_days">After 7 days</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Default Task Priority */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <span className="text-sm font-bold text-[var(--text-primary)] block">
+                      Default Task Priority
+                    </span>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Applied when new tasks are added without a specific !priority tag.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)]">
+                    {[
+                      { id: 'p1', label: 'P1 Urgent', color: 'text-rose-500' },
+                      { id: 'p2', label: 'P2 High', color: 'text-amber-500' },
+                      { id: 'p3', label: 'P3 Normal', color: 'text-sky-500' },
+                      { id: 'p4', label: 'P4 Low', color: 'text-stone-400' },
+                    ].map((p) => {
+                      const isSelected = (settings.defaultTaskPriority || 'p3') === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            updateSettings({ defaultTaskPriority: p.id as DefaultTaskPriority });
+                            triggerSaveToast();
+                          }}
+                          className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold shadow-xs'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                          }`}
+                        >
+                          {p.id.toUpperCase()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Smart NLP Syntax Parsing Toggle */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-sm font-bold text-[var(--text-primary)] block">
+                    Smart Natural Language Parsing
+                  </span>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Auto-detect #project, @tag, ~duration, and !priority tokens while typing tasks.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.enableSmartSyntaxParsing !== false}
+                  onClick={() => {
+                    updateSettings({ enableSmartSyntaxParsing: settings.enableSmartSyntaxParsing === false });
+                    triggerSaveToast();
+                  }}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    settings.enableSmartSyntaxParsing !== false ? 'bg-amber-500' : 'bg-stone-300 dark:bg-stone-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                      settings.enableSmartSyntaxParsing !== false ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Keyboard Halo Toggle */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-sm font-bold text-[var(--text-primary)] block">
+                    Keyboard Halo Dock
+                  </span>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Show bottom navigation hint badge when navigating tasks via keyboard.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.keyboardHaloEnabled !== false}
+                  onClick={() => {
+                    updateSettings({ keyboardHaloEnabled: settings.keyboardHaloEnabled === false });
+                    triggerSaveToast();
+                  }}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    settings.keyboardHaloEnabled !== false ? 'bg-amber-500' : 'bg-stone-300 dark:bg-stone-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                      settings.keyboardHaloEnabled !== false ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
 
               {/* Guided Onboarding Trigger */}
@@ -656,7 +959,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     onClose();
                     openModal('onboarding');
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs shrink-0"
+                  className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
                 >
                   Launch Ritual
                 </button>
@@ -664,10 +967,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
             </div>
           )}
 
-          {/* TAB 2: AESTHETICS & AUDIO */}
+          {/* TAB 2: AESTHETICS & APPEARANCE */}
           {activeTab === 'aesthetics' && (
             <div className="space-y-6 animate-fade-in">
               <AestheticsSettingsContent
+                section="appearance"
                 onSaveToast={triggerSaveToast}
                 intensitySliderTitle="Adjust diurnal atmosphere intensity"
               />
@@ -677,19 +981,32 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           {/* TAB 3: CALENDAR INTEGRATIONS */}
           {activeTab === 'calendar' && (
             <div className="space-y-6 animate-fade-in">
+              {/* Feed Status Card */}
               <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                    <Calendar size={18} />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                      <Calendar size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[var(--text-primary)]">
+                        Private .ics Calendar Overlay
+                      </h4>
+                      <p className="text-[11px] text-[var(--text-secondary)]">
+                        Render client-side meetings directly over your hourly timeline rail.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-[var(--text-primary)]">
-                      Private .ics Calendar Overlay
-                    </h4>
-                    <p className="text-[11px] text-[var(--text-secondary)]">
-                      Render client-side meetings directly over your hourly timeline rail.
-                    </p>
-                  </div>
+
+                  <span
+                    className={`text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full font-bold ${
+                      calendarIcsUrl
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                        : 'bg-stone-500/15 text-stone-500'
+                    }`}
+                  >
+                    {calendarIcsUrl ? `${calendarEvents.length} events loaded` : 'No Feed Connected'}
+                  </span>
                 </div>
 
                 <div className="space-y-2">
@@ -713,7 +1030,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     type="button"
                     onClick={handleApplyCalendarIcs}
                     disabled={isRefreshingCalendar}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
                     <RefreshCw size={13} className={isRefreshingCalendar ? 'animate-spin' : ''} />
                     <span>{isRefreshingCalendar ? 'Connecting...' : 'Save & Sync Feed'}</span>
@@ -727,26 +1044,81 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                         setIcsInput('');
                         triggerSaveToast();
                       }}
-                      className="text-xs text-rose-500 hover:text-rose-600 font-semibold px-2 py-1"
+                      className="text-xs text-rose-500 hover:text-rose-600 font-semibold px-2 py-1 cursor-pointer"
                     >
                       Disconnect Feed
                     </button>
                   )}
                 </div>
 
+                {/* Direct .ics File Import */}
+                <div className="pt-3 border-t border-[var(--border-hairline)] space-y-2">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)] block">
+                    Or upload a local .ics calendar file:
+                  </span>
+                  <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-indigo-500 cursor-pointer text-xs text-[var(--text-muted)]">
+                    <Upload size={14} className="text-indigo-500" />
+                    <span>Choose .ics file from device…</span>
+                    <input
+                      type="file"
+                      accept=".ics,text/calendar"
+                      onChange={handleIcsFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {icsFileUploadMsg && (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      {icsFileUploadMsg}
+                    </p>
+                  )}
+                </div>
+
                 {/* Guide links */}
                 <div className="p-3 rounded-xl bg-stone-500/5 text-[11px] text-[var(--text-muted)] space-y-1">
-                  <p className="font-semibold text-[var(--text-secondary)]">Where to find secret addresses:</p>
+                  <p className="font-semibold text-[var(--text-secondary)]">Where to find secret feed addresses:</p>
                   <p>• Google Calendar: Settings &gt; Click calendar &gt; &quot;Secret address in iCal format&quot;</p>
+                  <p>• Apple iCloud Calendar: Calendar app &gt; Share Calendar &gt; Public/Private Webcal link</p>
                   <p>• Outlook / M365: Settings &gt; Calendar &gt; Shared calendars &gt; Publish a calendar</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 4: DATA & PORTABILITY */}
+          {/* TAB 4: DATA, STORAGE & PORTABILITY */}
           {activeTab === 'data' && (
             <div className="space-y-6 animate-fade-in">
+              {/* Storage Quota Meter */}
+              {storageStats && (
+                <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
+                      <HardDrive size={15} className="text-amber-500" />
+                      <span>Device Storage Footprint</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold">
+                      {storageStats.persisted ? 'Protected Quota' : 'Standard Quota'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs text-[var(--text-secondary)]">
+                      <span>Used: {storageStats.usageMB} MB</span>
+                      <span>Available: {storageStats.quotaMB > 0 ? `${storageStats.quotaMB} MB` : 'Estimating...'}</span>
+                    </div>
+                    <div className="w-full bg-[var(--bg-surface-l1)] h-2 rounded-full overflow-hidden border border-[var(--border-hairline)]">
+                      <div
+                        className="bg-amber-500 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(2, storageStats.percent)}%` }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    IndexedDB database: <code>flowtask_storage_v2</code> · {tasks.length} tasks · {projects.length} projects.
+                  </p>
+                </div>
+              )}
+
+              {/* Data Portability Card */}
               <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
                 <div>
                   <h4 className="text-xs font-bold text-[var(--text-primary)]">
@@ -757,6 +1129,42 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   </p>
                 </div>
 
+                {/* Direct 1-Click Exports */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={downloadWorkspaceBackup}
+                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-amber-500/50 text-left transition-all flex items-center justify-between cursor-pointer"
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                        <Download size={13} className="text-amber-500" />
+                        <span>Download JSON Backup</span>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                        Instant complete workspace snapshot
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadCsv}
+                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-amber-500/50 text-left transition-all flex items-center justify-between cursor-pointer"
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                        <FileSpreadsheet size={13} className="text-emerald-500" />
+                        <span>Export CSV Spreadsheet</span>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                        Open in Excel or Google Sheets
+                      </p>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Modal hub links for deeper operations */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <button
                     type="button"
@@ -764,15 +1172,15 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       onClose();
                       openModal('exportImport');
                     }}
-                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-amber-500/50 text-left transition-all flex items-center justify-between"
+                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-indigo-500/50 text-left transition-all flex items-center justify-between cursor-pointer"
                   >
                     <div>
                       <div className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                        <Download size={13} className="text-amber-500" />
+                        <Download size={13} className="text-indigo-500" />
                         <span>Export JSON / CSV</span>
                       </div>
                       <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                        Download raw snapshots or spreadsheets
+                        Advanced formats & standup generator
                       </p>
                     </div>
                   </button>
@@ -783,7 +1191,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       onClose();
                       openModal('exportImport');
                     }}
-                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-amber-500/50 text-left transition-all flex items-center justify-between"
+                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-indigo-500/50 text-left transition-all flex items-center justify-between cursor-pointer"
                   >
                     <div>
                       <div className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
@@ -804,7 +1212,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   <h4 className="text-xs font-bold text-rose-700 dark:text-rose-300">
                     Reset Settings to Default
                   </h4>
-                  <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80">
+                  <p className="text-[11px] text-rose-700 dark:text-rose-300">
                     Restores capacity target (6.0h) and default preferences.
                   </p>
                 </div>
@@ -814,7 +1222,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     resetSettings();
                     triggerSaveToast();
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-rose-500/30 text-rose-600 dark:text-rose-300 hover:bg-rose-500/10 text-xs font-bold transition-all"
+                  className="px-3 py-1.5 rounded-xl border border-rose-500/30 text-rose-800 dark:text-rose-300 hover:bg-rose-500/10 text-xs font-bold transition-all cursor-pointer"
                 >
                   Reset Defaults
                 </button>
@@ -825,6 +1233,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           {/* TAB 5: ACCOUNT & SYNC */}
           {activeTab === 'account' && (
             <div className="space-y-6 animate-fade-in">
+              {/* Account Identity & Cloud Sync Card */}
               <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -833,7 +1242,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-[var(--text-primary)]">
-                        {user ? (user.email || 'Cloud Account') : 'Local-First Anonymous'}
+                        {user ? user.email || 'Cloud Account' : 'Local-First Anonymous'}
                       </h4>
                       <p className="text-[11px] text-[var(--text-secondary)]">
                         {user
@@ -861,20 +1270,52 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     {lastSyncedAt ? `Last cloud sync: ${new Date(lastSyncedAt).toLocaleTimeString()}` : 'Syncing local-first'}
                   </span>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      setIsAuthModalOpen(true);
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:opacity-90 text-xs font-bold transition-all shadow-xs"
-                  >
-                    {user ? 'Manage Account' : 'Sign in / Cloud Sync'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {user && (
+                      <button
+                        type="button"
+                        onClick={() => void forceSyncToCloud()}
+                        className="px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] hover:border-amber-500 text-xs font-semibold text-[var(--text-primary)] transition-all cursor-pointer flex items-center gap-1"
+                      >
+                        <RefreshCw size={12} />
+                        <span>Sync Now</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:opacity-90 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      {user ? 'Manage Account' : 'Sign in / Cloud Sync'}
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Privacy Controls & Legal */}
+              <PrivacyControls />
             </div>
           )}
+        </div>
+
+        {/* Global Keyboard Shortcuts Helper Footer */}
+        <div className="p-3 border-t border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 flex items-center justify-between text-xs text-[var(--text-muted)]">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              openModal('shortcuts');
+            }}
+            className="flex items-center gap-1.5 hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+          >
+            <Keyboard size={14} className="text-amber-500" />
+            <span className="font-semibold">Keyboard Shortcuts Cheat Sheet</span>
+            <span className="font-mono text-[10px] px-1 py-0.2 rounded bg-stone-200 dark:bg-white/10">?</span>
+          </button>
+          <span className="text-[11px] font-mono">FlowTask v2.0</span>
         </div>
       </div>
     </div>

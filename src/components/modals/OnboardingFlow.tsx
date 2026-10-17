@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import { ModalContext } from '../../context/ModalContext';
+import React, { useState, useContext, useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { Sparkles, Sun, CheckCircle2, ArrowRight, Clock, Target, ShieldCheck, Flame } from 'lucide-react';
 import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
@@ -11,9 +13,14 @@ interface OnboardingFlowProps {
 }
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose }) => {
+  const root = useRef<HTMLDivElement>(null);
+  useFocusTrap(root, onClose, isOpen);
+  const modal = useContext(ModalContext);
+  const [audience, setAudience] = useState<'student' | 'developer'>('student');
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const {
     addMultipleTasks,
+    setWorkspacePreference,
     updateSettings,
     settings,
     theme,
@@ -36,6 +43,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
   };
 
   const handleFinish = () => {
+    setWorkspacePreference?.('profile', { audience });
     // Save capacity setting
     updateSettings({
       targetWorkCapacityHours: capacity,
@@ -53,9 +61,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
       addMultipleTasks(tasksToAdd, {
         priority: 'p1',
         isPinnedToday: true,
-        dueDate: todayStr,
+        topThreeDate: todayStr,
         plannedDate: todayStr,
-        estimatedMinutes: 45,
+        estimatedMinutes: audience === 'student' ? 25 : 50,
       });
     }
 
@@ -67,6 +75,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
     });
 
     onClose();
+    if (tasksToAdd.length) modal?.openModal('pomodoro');
   };
 
   return (
@@ -81,7 +90,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
       {/* Modal Container */}
       <div
         className="relative z-10 w-full max-w-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] rounded-3xl shadow-2xl overflow-hidden flex flex-col transform transition-all duration-300 animate-scale-up"
-        role="dialog"
+        ref={root} tabIndex={-1} role="dialog"
         aria-modal="true"
         aria-label="Welcome Setup Ritual"
       >
@@ -115,21 +124,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
         {step === 1 && (
           <div className="p-6 sm:p-8 space-y-6 text-center animate-fade-in">
             <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-center mx-auto shadow-inner">
-              <Sun size={32} className="animate-spin-slow" />
+              <Sun size={32}  />
             </div>
 
             <div className="space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Cognitive Psychology-Informed Planning
+                Plan your day. Enter your flow.
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)]">
                 Welcome to FlowTask
               </h2>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed">
-                Traditional to-do lists trigger anxiety with endless backlogs. FlowTask guards your mental bandwidth with the <strong className="text-[var(--text-primary)]">Rule of 3</strong> and realistic daily capacities.
+                Choose a realistic day, make room for your <strong className="text-[var(--text-primary)]">Top 3</strong>, then settle into your own focus room.
               </p>
             </div>
 
+            <div className="flex justify-center gap-3" aria-label="Choose your starter setup">{(['student','developer'] as const).map(value => <button key={value} aria-pressed={audience === value} onClick={() => { setAudience(value); setCapacity(value === 'student' ? 4 : 6); }} className="v2-action">{value === 'student' ? 'Student' : 'Developer'}</button>)}</div>
             <div className="grid grid-cols-3 gap-2.5 pt-2 text-left">
               <div className="p-3 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-1">
                 <Target size={16} className="text-amber-500" />
@@ -175,7 +185,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen, onClose 
                 Calibrate Your Daily Deep Work Capacity
               </h2>
               <p className="text-xs text-[var(--text-secondary)]">
-                Human cognitive energy caps out at 4–6 hours of true deep work per day.
+                Choose the time you can realistically give to tasks. Leave room for meals, classes, meetings and breaks.
               </p>
             </div>
 

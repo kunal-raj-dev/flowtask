@@ -1,69 +1,31 @@
-import { StrictMode } from 'react'
+import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
+import './styles/appearance.css'
+import { FeatureBoundary } from './components/ui/FeatureBoundary';
+const App = lazy(() => import('./App.tsx'));
+const WelcomePage = lazy(() => import('./components/views/WelcomePage').then(m => ({default:m.WelcomePage})));
+const welcome = window.location.pathname.replace(/\/$/, '') === '/welcome';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <FeatureBoundary title="FlowTask"><Suspense fallback={<div role="status" style={{padding:40}}>Opening your space…</div>}>{welcome ? <WelcomePage /> : <App />}</Suspense></FeatureBoundary>
   </StrictMode>,
 )
 
-// Seamless auto-recovery when a new Vite production build is deployed and chunk hashes change
-if (typeof window !== 'undefined') {
-  window.addEventListener('vite:preloadError', (event) => {
-    console.warn('Vite dynamic chunk preload mismatch detected, reloading to latest deployment:', event);
-    window.location.reload();
-  });
-}
-
-// Register PWA service worker in production with automatic seamless update handling
+// Updates wait for explicit user action, and never interrupt an active focus session.
+window.addEventListener('vite:preloadError', event => {
+  event.preventDefault();
+  window.dispatchEvent(new CustomEvent('flowtask:update-available'));
+});
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  let refreshing = false;
-  // Guard: Only reload if there was already an active controller prior to this change.
-  // On first-time visits, navigator.serviceWorker.controller is initially null, so initial SW
-  // claim must NOT trigger an unexpected page reload.
-  const hadController = Boolean(navigator.serviceWorker.controller);
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (hadController && !refreshing) {
-      refreshing = true;
-      window.location.reload();
-    }
-  });
-
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        // If there's an existing worker waiting to activate, trigger it
-        if (registration.waiting) {
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
-
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-              }
-            });
-          }
-        });
-
-        // Check for updates when user returns to the tab
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') {
-            registration.update().catch(() => {});
-          }
-        });
-
-        // Periodic background update check (every 15 minutes)
-        setInterval(() => {
-          registration.update().catch(() => {});
-        }, 15 * 60 * 1000);
-      })
-      .catch(() => {});
+    void navigator.serviceWorker.register('/sw.js').then(registration => {
+      const notify = () => { if (registration.waiting && navigator.serviceWorker.controller) window.dispatchEvent(new CustomEvent('flowtask:update-available')); };
+      notify();
+      registration.addEventListener('updatefound', () => registration.installing?.addEventListener('statechange', notify));
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void registration.update().catch(() => {}); });
+    }).catch(() => {});
   });
 }
 

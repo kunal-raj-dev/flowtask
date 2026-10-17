@@ -4,30 +4,26 @@ import { formatLocalDate } from '../utils/nlpParser';
 
 export function parseICSFeed(content: string, targetDateStr = formatLocalDate(new Date())): CalendarEvent[] {
   if (!content || !content.includes('BEGIN:VCALENDAR')) return [];
+  if (content.length > 2 * 1024 * 1024) throw new Error('Calendar exceeds 2 MB.');
   const calendar = new ICAL.Component(ICAL.parse(content));
   for (const zone of calendar.getAllSubcomponents('vtimezone')) ICAL.TimezoneService.register(zone);
   const startOfDay = new Date(`${targetDateStr}T00:00:00`), endOfDay = new Date(startOfDay);
   endOfDay.setDate(endOfDay.getDate() + 1);
   const items = calendar.getAllSubcomponents('vevent');
   const events: CalendarEvent[] = [];
-  const formatTime = (t: ICAL.Time) => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`;
+  const formatTime = (t: ICAL.Time) => { const d = t.toJSDate(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   function include(event: ICAL.Event, start: ICAL.Time, end: ICAL.Time, suffix = '') {
     if (event.component.getFirstPropertyValue('status') === 'CANCELLED') return;
-    const occurrenceDateStr = `${start.year}-${String(start.month).padStart(2, '0')}-${String(start.day).padStart(2, '0')}`;
-    let matches = occurrenceDateStr === targetDateStr;
-    if (!matches && end) {
-      const targetTime = ICAL.Time.fromDateString(targetDateStr);
-      if (start.compare(targetTime) <= 0 && end.compare(targetTime) >= 0) {
-        matches = true;
-      }
-    }
+    const startDate = start.toJSDate(), endDate = end?.toJSDate() || startDate;
+    const occurrenceDateStr = start.isDate ? `${start.year}-${String(start.month).padStart(2, '0')}-${String(start.day).padStart(2, '0')}` : formatLocalDate(startDate);
+    const matches = start.isDate ? occurrenceDateStr <= targetDateStr && (!end || end.compare(start) === 0 ? occurrenceDateStr === targetDateStr : `${end.year}-${String(end.month).padStart(2, '0')}-${String(end.day).padStart(2, '0')}` > targetDateStr) : startDate < endOfDay && (endDate > startOfDay || +endDate === +startDate && startDate >= startOfDay);
     if (!matches) return;
     events.push({
       id: `${event.uid || 'event'}${suffix}`,
       title: event.summary || 'Untitled event',
       date: targetDateStr,
-      startTime: start.isDate ? '09:00' : formatTime(start),
-      endTime: start.isDate ? '10:00' : formatTime(end),
+      startTime: start.isDate ? '09:00' : startDate < startOfDay ? '00:00' : formatTime(start),
+      endTime: start.isDate ? '10:00' : endDate >= endOfDay ? '24:00' : formatTime(end),
       isAllDay: start.isDate,
       description: event.description || '',
       location: event.location || '',
@@ -42,7 +38,8 @@ export function parseICSFeed(content: string, targetDateStr = formatLocalDate(ne
     let count = 0;
     let next: ICAL.Time | null;
     while ((next = iterator.next())) {
-      if (++count > 150) break;
+      if (++count > 100000) throw new Error('Calendar recurrence is too large to expand safely.');
+      if (next.toJSDate() >= endOfDay) break;
       const occurrence = event.getOccurrenceDetails(next);
       include(occurrence.item, occurrence.startDate, occurrence.endDate, `_${next.toString()}`);
     }
@@ -61,7 +58,7 @@ export async function fetchICSFeed(
   if (!['https:', 'http:'].includes(parsed.protocol)) throw new Error('Use an HTTP or HTTPS calendar URL.');
 
   let response: Response | null = null;
-  let lastError: Error | null = null;
+
 
   // 1. Direct fetch attempt
   try {
@@ -70,20 +67,18 @@ export async function fetchICSFeed(
       signal: AbortSignal.timeout(12000),
     });
   } catch (err) {
-    lastError = err as Error;
+    void err;
   }
 
   // 2. Fallback via CORS proxy if direct fetch is blocked by browser CORS
   if (!response || !response.ok) {
-    const proxiesToTry = [
-      customProxyUrl ? `${customProxyUrl}?url=${encodeURIComponent(cleanUrl)}` : null,
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`,
-    ].filter(Boolean) as string[];
-
+    const proxiesToTry = [customProxyUrl || import.meta.env.VITE_CALENDAR_PROXY_URL].filter(Boolean) as string[];
     for (const proxy of proxiesToTry) {
       try {
         const proxied = await fetch(proxy, {
-          headers: { Accept: 'text/calendar, text/plain' },
+          method: 'POST',
+          headers: { Accept: 'text/calendar', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: cleanUrl }),
           signal: AbortSignal.timeout(12000),
         });
         if (proxied.ok) {
@@ -91,14 +86,14 @@ export async function fetchICSFeed(
           break;
         }
       } catch (err) {
-        lastError = err as Error;
+        void err;
       }
     }
   }
 
   if (!response || !response.ok) {
     throw new Error(
-      lastError?.message || `Calendar server returned ${response?.status || 'network error'}.`
+      'Calendar could not be loaded directly. Configure your private calendar proxy or import an ICS file.'
     );
   }
 

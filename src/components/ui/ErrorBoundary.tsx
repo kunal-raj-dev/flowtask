@@ -1,6 +1,9 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Trash2, DownloadCloud } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
+import { getDatabase } from '../../services/dbService';
+import { createWorkspaceBackup } from '../../utils/workspaceBackup';
+import { downloadJson } from '../../utils/fileExporter';
 
 interface Props {
   children: ReactNode;
@@ -11,6 +14,9 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  recoveryIds: string[];
+  recoveryId: string;
+  recoveryError: string;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -18,15 +24,20 @@ export class ErrorBoundary extends Component<Props, State> {
     hasError: false,
     error: null,
     errorInfo: null,
+    recoveryIds: [], recoveryId: 'local', recoveryError: '',
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error, errorInfo: null };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('FlowTask ErrorBoundary caught an unhandled error:', error, errorInfo);
     this.setState({ errorInfo });
+    void getDatabase().then(db => db.getAllKeys('workspaces')).then(keys => {
+      const recoveryIds = keys.map(String);
+      this.setState({ recoveryIds, recoveryId: recoveryIds.includes('local') ? 'local' : recoveryIds[0] || 'local' });
+    }).catch(() => this.setState({ recoveryError: 'Device storage could not be read. Try reopening the app before exporting.' }));
   }
 
   private handleReload = () => {
@@ -53,28 +64,15 @@ export class ErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
-  private handleExportEmergencyBackup = () => {
+  private handleExportEmergencyBackup = async () => {
     try {
-      const data: Record<string, unknown> = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('flowtask_')) {
-          try {
-            data[key] = JSON.parse(localStorage.getItem(key) || 'null');
-          } catch {
-            data[key] = localStorage.getItem(key);
-          }
-        }
-      }
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `flowtask-emergency-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const db = await getDatabase();
+      const record = await db.get('workspaces', this.state.recoveryId);
+      if (!record) throw new Error('No saved workspace was found on this device.');
+      downloadJson(createWorkspaceBackup(record), `flowtask-recovery-${this.state.recoveryId}.json`);
+      this.setState({ recoveryError: '' });
     } catch (err) {
-      alert('Could not export emergency backup: ' + String(err));
+      this.setState({ recoveryError: 'Could not export the saved workspace: ' + String(err) });
     }
   };
 
@@ -97,7 +95,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="space-y-1.5">
               <h2 className="text-lg font-bold tracking-tight">Something unexpected happened</h2>
               <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed max-w-sm">
-                FlowTask ran into a rendering issue. Your data is safely stored in your local storage.
+                FlowTask could not display this screen. Reload, or download the last workspace saved on this device.
               </p>
             </div>
 
@@ -126,6 +124,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 <span>Clear Cache & Clean Reload</span>
               </button>
 
+              {this.state.recoveryIds.length > 1 && <label className="block text-xs text-left">Workspace to recover<select className="block w-full p-2 mt-1 rounded border" value={this.state.recoveryId} onChange={event => this.setState({ recoveryId: event.target.value })}>{this.state.recoveryIds.map(id => <option key={id} value={id}>{id === 'local' ? 'Guest workspace' : `Account ${id}`}</option>)}</select></label>}
+              {this.state.recoveryError && <p role="alert" className="text-xs">{this.state.recoveryError}</p>}
               <button
                 type="button"
                 onClick={this.handleExportEmergencyBackup}

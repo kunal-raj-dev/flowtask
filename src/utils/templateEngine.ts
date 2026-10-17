@@ -86,6 +86,8 @@ export const BUILT_IN_TEMPLATES: TaskTemplate[] = [
     ],
     contextTags: ['calls', 'computer'],
   },
+  { id: 'tpl_exam_revision', name: 'Exam revision', description: 'Recall first, then practice and review what was difficult.', defaultPriority: 'p1', defaultEstimatedMinutes: 50, subtaskTitles: ['Recall the topic without notes', 'Work through practice questions', 'Check answers and record mistakes', 'Choose the next revision topic'], contextTags: ['focus'] },
+  { id: 'tpl_dsa_practice', name: 'DSA deliberate practice', description: 'Reason about a problem, implement it, then explain the tradeoffs.', defaultPriority: 'p2', defaultEstimatedMinutes: 50, subtaskTitles: ['Restate the problem and edge cases', 'Sketch a solution and complexity', 'Implement and test the solution', 'Explain the tradeoffs and revisit mistakes'], contextTags: ['computer', 'focus'] },
 ];
 
 export const TEMPLATES_STORAGE_KEY = 'flowtask_custom_templates';

@@ -1,3 +1,5 @@
+import { SYNC_COLLECTIONS } from './workspaceEntities';
+import type { SyncCollection, SyncedEntity } from '../types/workspace';
 import {
   collection,
   doc,
@@ -35,6 +37,8 @@ const OPTIONAL_TASK_FIELDS: (keyof Task)[] = [
   'blockedBy',
   'estimatedMinutes',
   'timeSpentMinutes',
+  'scheduleLocked',
+  'nextAction',
 ];
 
 /**
@@ -94,9 +98,11 @@ export async function cleanupExpiredOperationReceipts(uid: string): Promise<numb
 
     if (expiredDocs.length === 0) return 0;
 
-    const batch = writeBatch(db);
-    expiredDocs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
+    for (let i = 0; i < expiredDocs.length; i += 400) {
+      const batch = writeBatch(db);
+      expiredDocs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    }
     return expiredDocs.length;
   } catch (err) {
     console.warn('Failed to clean up expired operation receipts:', err);
@@ -112,13 +118,15 @@ export function createCloudAdapter(uid: string): CloudAdapter {
       // Background 7-day TTL cleanup of expired idempotency receipts
       void cleanupExpiredOperationReceipts(uid);
 
-      const [tasks, projects] = await Promise.all([
-        'tasks',
-        'projects',
-      ].map((name) => getDocs(collection(database, 'users', uid, name))));
+      const snapshots = await Promise.all(SYNC_COLLECTIONS.map(name => getDocs(collection(database, 'users', uid, name))));
+      const [tasks, projects, dashboards, focusLogs, recipes, preferences] = snapshots;
       return {
         tasks: tasks.docs.map((d) => ({ ...d.data(), id: d.id })) as Task[],
         projects: projects.docs.map((d) => ({ ...d.data(), id: d.id })) as Project[],
+        dashboards: dashboards.docs.map((d) => ({ ...d.data(), id: d.id })) as SyncedEntity[],
+        focusLogs: focusLogs.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
+        recipes: recipes.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
+        preferences: preferences.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
       };
     },
     async apply(operation) {
@@ -157,11 +165,11 @@ export function createCloudAdapter(uid: string): CloudAdapter {
 
 export function watchCloud(
   uid: string,
-  receive: (kind: 'tasks' | 'projects', values: Task[] | Project[]) => void,
+  receive: (kind: SyncCollection, values: SyncedEntity[]) => void,
   onError: (error: Error) => void
 ) {
   if (!db) throw new Error('Cloud connection is unavailable.');
-  const stops = (['tasks', 'projects'] as const).map((kind) =>
+  const stops = SYNC_COLLECTIONS.map((kind) =>
     onSnapshot(
       collection(db!, 'users', uid, kind),
       { includeMetadataChanges: true },
@@ -169,7 +177,7 @@ export function watchCloud(
         if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
         receive(
           kind,
-          snapshot.docs.map((d) => ({ ...d.data(), id: d.id })) as Task[] | Project[]
+          snapshot.docs.map((d) => ({ ...d.data(), id: d.id })) as SyncedEntity[]
         );
       },
       onError

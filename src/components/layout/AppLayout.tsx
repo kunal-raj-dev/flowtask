@@ -11,6 +11,7 @@ const EisenhowerView = lazy(() => import('../views/EisenhowerView').then(m => ({
 const KanbanView = lazy(() => import('../views/KanbanView').then(m => ({ default: m.KanbanView })));
 const ProjectsView = lazy(() => import('../views/ProjectsView').then(m => ({ default: m.ProjectsView })));
 const ReviewView = lazy(() => import('../views/ReviewView').then(m => ({ default: m.ReviewView })));
+const StudyView = lazy(() => import('../views/StudyView').then(m => ({ default: m.StudyView })));
 import { TaskList } from '../tasks/TaskList';
 import { TaskDrawer } from '../tasks/TaskDrawer';
 import { QuickAddModal } from '../tasks/QuickAddModal';
@@ -21,23 +22,20 @@ import { Toast } from '../ui/Toast';
 import { Button, ViewSkeleton, Kbd } from '../ui';
 import { MobileBottomNav } from './MobileBottomNav';
 import { FocusMiniPlayer } from '../focus/FocusMiniPlayer';
+import { FocusPipPortal } from '../focus/FocusPipPortal';
+import { transitionView } from '../../utils/viewTransitions';
+import { FeatureBoundary } from '../ui/FeatureBoundary';
 import { Menu, Search, Share2, X, Plus, Timer, Settings, Cloud } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
-import {
-  getDiurnalPeriod,
-  getDiurnalConfig,
-  loadDiurnalIntensity,
-  applyDiurnalToDom,
-  type DiurnalPeriod,
-} from '../../utils/diurnalAura';
 import { useTactileAudioClicks } from '../../hooks/useTactileAudioClicks';
 import { useAuth } from '../../context/AuthContext';
 import confetti from 'canvas-confetti';
 
 export const AppLayout: React.FC = () => {
-  useTactileAudioClicks();
+  const clickPreferences = useTaskContext().workspacePreferences?.appearance as { keyboardSounds?: boolean; mode?: 'manual' | 'system' | 'schedule' } | undefined;
+  useTactileAudioClicks(true, Boolean(clickPreferences?.keyboardSounds));
   const {
     activeView,
     setActiveView,
@@ -85,8 +83,6 @@ export const AppLayout: React.FC = () => {
     }
     return null;
   });
-  const [diurnalPeriod, setDiurnalPeriod] = useState<DiurnalPeriod>(() => getDiurnalPeriod());
-  const [diurnalIntensity, setDiurnalIntensity] = useState<number>(() => loadDiurnalIntensity());
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
   // Reset viewport scroll to top on activeView transition
@@ -95,27 +91,6 @@ export const AppLayout: React.FC = () => {
       mainScrollRef.current.scrollTop = 0;
     }
   }, [activeView]);
-
-  // Diurnal Ambient Shift dynamic listener & interval with DOM cascade
-  useEffect(() => {
-    const handleDiurnalUpdate = () => {
-      const period = getDiurnalPeriod();
-      const intensity = loadDiurnalIntensity();
-      setDiurnalPeriod(period);
-      setDiurnalIntensity(intensity);
-      applyDiurnalToDom(period, intensity);
-    };
-
-    // Apply on initial mount
-    handleDiurnalUpdate();
-
-    const interval = setInterval(handleDiurnalUpdate, 5 * 60 * 1000);
-    window.addEventListener('diurnal-change', handleDiurnalUpdate);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('diurnal-change', handleDiurnalUpdate);
-    };
-  }, []);
 
   useEffect(() => {
     try {
@@ -226,20 +201,6 @@ export const AppLayout: React.FC = () => {
   }).length, [tasks, todayStr]);
 
 
-  const { totalTodayPlanned, todayDoneCount, todayPercent } = useMemo(() => {
-    const list = tasks.filter((t) => {
-      if (t.deletedAt || t.archivedAt) return false;
-      return (
-        t.plannedDate === todayStr ||
-        (!t.plannedDate && t.dueDate === todayStr) ||
-        t.isPinnedToday
-      );
-    });
-    const total = list.length;
-    const done = list.filter((t) => t.status === 'done').length;
-    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-    return { totalTodayPlanned: total, todayDoneCount: done, todayPercent: pct };
-  }, [tasks, todayStr]);
 
   const getViewTitle = () => {
     switch (activeView) {
@@ -250,7 +211,8 @@ export const AppLayout: React.FC = () => {
       case 'review': return 'Review';
       case 'all': return 'All Tasks';
       case 'someday': return 'Someday';
-      case 'timeline': return 'Timeline';
+      case 'timeline': return 'Plan';
+      case 'study': return 'Study Hub';
       case 'matrix': return 'Priority Matrix';
       case 'kanban': return 'Kanban Board';
       case 'insights': return 'Insights';
@@ -342,16 +304,22 @@ export const AppLayout: React.FC = () => {
     ) {
       return <ReviewView key={activeView} initialTab={activeView === 'insights' ? 'insights' : 'logbook'} onSelectTask={(id) => setSelectedTaskId(id)} />;
     }
+    if (activeView === 'study') {
+      return (
+        <StudyView
+          onStartSprint={handleStartStudySprint}
+          onSelectTask={(id) => setSelectedTaskId(id)}
+        />
+      );
+    }
     if (activeView === 'timeline') {
       return (
-        <div className="max-w-5xl mx-auto px-3.5 sm:px-4 py-4 sm:py-6">
           <TimelineView
             onSelectTask={(id) => setSelectedTaskId(id)}
             onStartFocus={handleStartFocus}
             onStartSprint={handleStartStudySprint}
             onOpenStudySession={() => openModal('studySession')}
           />
-        </div>
       );
     }
     if (activeView === 'matrix') {
@@ -392,10 +360,9 @@ export const AppLayout: React.FC = () => {
     );
   };
 
-  const diurnalConfig = getDiurnalConfig(diurnalPeriod);
 
   return (
-    <div className="relative flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-200">
+    <div className="flowtask-workspace relative flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-200">
       {/* Skip to Main Content Link (WCAG 2.2 Level A / AA) */}
       <a
         href="#main-content"
@@ -404,26 +371,15 @@ export const AppLayout: React.FC = () => {
         Skip to main content
       </a>
 
-      {/* Ambient breathing diurnal aurora mesh glow with dynamic intensity calibration */}
-      <div
-        className="pointer-events-none absolute inset-0 overflow-hidden select-none transition-opacity duration-700"
-        style={{ opacity: diurnalIntensity }}
-        aria-hidden="true"
-      >
-        {/* Orb 1: Horizon Prime */}
-        <div className={`absolute -top-[12%] -left-[8%] w-[640px] h-[640px] rounded-full ${diurnalConfig.orb1Class} blur-[95px] animate-aurora-1 transition-all duration-700`} />
-        {/* Orb 2: Ambient Luminescence */}
-        <div className={`absolute top-[6%] -right-[10%] w-[580px] h-[580px] rounded-full ${diurnalConfig.orb2Class} blur-[90px] animate-aurora-2 transition-all duration-700`} />
-        {/* Orb 3: Core Radial Depth */}
-        <div className={`absolute top-[42%] left-[22%] w-[500px] h-[500px] rounded-full ${diurnalConfig.orb3Class} blur-[105px] animate-aurora-3 transition-all duration-700`} />
-        {/* Orb 4: Baseline Earth Ground */}
-        <div className={`absolute -bottom-[14%] right-[10%] w-[660px] h-[520px] rounded-full ${diurnalConfig.orb4Class} blur-[90px] animate-aurora-4 transition-all duration-700`} />
+      <div className="workspace-aurora pointer-events-none absolute inset-0 overflow-hidden select-none" aria-hidden="true"
+        style={{ opacity: 'var(--diurnal-intensity, 0)', display: isModalOpen('pomodoro') ? 'none' : undefined }}>
+        <div className="workspace-atmosphere-edge" />
       </div>
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:block relative z-30 transition-all duration-200">
         <Sidebar
-          onOpenPomodoro={() => openModal('pomodoro')}
+          onOpenPomodoro={() => void transitionView(() => openModal('pomodoro'))}
           onOpenShortcuts={() => openModal('shortcuts')}
           onOpenExportImport={() => openModal('exportImport')}
           onOpenBrainDump={() => openModal('brainDump')}
@@ -460,7 +416,7 @@ export const AppLayout: React.FC = () => {
                 isMobileDrawer={true}
                 onOpenPomodoro={() => {
                   setIsSidebarOpenMobile(false);
-                  openModal('pomodoro');
+                  void transitionView(() => openModal('pomodoro'));
                 }}
                 onOpenShortcuts={() => {
                   setIsSidebarOpenMobile(false);
@@ -501,7 +457,7 @@ export const AppLayout: React.FC = () => {
         {/* Desktop Top Horizon Status Bar */}
         <header
           className="hidden lg:flex items-center justify-between px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/75 backdrop-blur-xl sticky top-0 z-20 transition-all"
-          style={{ borderBottomColor: `color-mix(in srgb, var(--diurnal-glow-1, var(--border-hairline)) 22%, var(--border-hairline))` }}
+          style={{ borderBottomColor: `color-mix(in srgb, var(--color-brand) 12%, var(--border-hairline))` }}
         >
           <div className="flex items-center gap-3 min-w-0">
             {/* Zen Sidebar Collapse/Expand Toggle */}
@@ -534,17 +490,9 @@ export const AppLayout: React.FC = () => {
           {/* Center: Persistent Focus Session Mini-Player or Today Progress Ring */}
           <div className="flex items-center gap-3">
             <FocusMiniPlayer variant="desktop" />
-            {totalTodayPlanned > 0 && (
-              <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] px-3 py-1 rounded-full bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)]">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="tabular-nums">
-                  {todayDoneCount}/{totalTodayPlanned} Today ({todayPercent}%)
-                </span>
-              </div>
-            )}
             <button
               type="button"
-              onClick={() => openModal('pomodoro')}
+              onClick={() => void transitionView(() => openModal('pomodoro'))}
               title="Launch Focus Mode & Pomodoro Timer"
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-amber-600 dark:hover:text-amber-400 bg-[var(--bg-surface-l2)] hover:bg-amber-500/10 border border-[var(--border-hairline)] hover:border-amber-500/30 transition-all shadow-2xs active:scale-95"
             >
@@ -628,7 +576,7 @@ export const AppLayout: React.FC = () => {
                     ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                     : syncStatus === 'offline'
                     ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                    : 'bg-stone-500/10 text-stone-500 dark:text-stone-400 border-stone-500/20'
+                    : 'bg-stone-500/10 text-[var(--text-secondary)] border-stone-500/20'
                 }`}
               >
                 {syncStatus === 'synced'
@@ -682,7 +630,7 @@ export const AppLayout: React.FC = () => {
         {/* Mobile Top Header */}
         <header
           className="lg:hidden flex items-center justify-between px-3.5 sm:px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20 transition-all"
-          style={{ borderBottomColor: `color-mix(in srgb, var(--diurnal-glow-1, var(--border-hairline)) 22%, var(--border-hairline))` }}
+          style={{ borderBottomColor: `color-mix(in srgb, var(--color-brand) 12%, var(--border-hairline))` }}
         >
           <div className="flex items-center gap-2 min-w-0">
             <button
@@ -784,7 +732,7 @@ export const AppLayout: React.FC = () => {
         </header>
 
         {/* View Viewport */}
-        <div ref={mainScrollRef} className="flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
+        <div ref={mainScrollRef} className="desk-view-host flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
           {/* Incoming Shared Task Snapshot Banner */}
           {pendingSnapshot && (
             <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-500/15 via-teal-500/15 to-emerald-500/15 border border-indigo-500/30 shadow-card card-surface flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in">
@@ -842,6 +790,7 @@ export const AppLayout: React.FC = () => {
             </div>
           )}
 
+          <FeatureBoundary key={activeView} title={getViewTitle()} onBack={() => setActiveView('today')}>
           <Suspense fallback={<ViewSkeleton title={`Loading ${getViewTitle()}…`} />}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -850,19 +799,21 @@ export const AppLayout: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -3 }}
                 transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
-                className="h-full flex flex-col"
+                className="desk-view h-full flex flex-col"
+                data-workspace-view={activeView}
               >
                 {renderActiveView()}
               </motion.div>
             </AnimatePresence>
           </Suspense>
+          </FeatureBoundary>
         </div>
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileBottomNav
         activeView={activeView}
-        onSelectView={(viewId) => setActiveView(viewId as any)}
+        onSelectView={(viewId) => void transitionView(() => setActiveView(viewId as any))}
         onQuickAdd={() => setIsQuickAddOpen(true)}
         onOpenMenu={() => setIsSidebarOpenMobile(true)}
         todayCount={todayCount}
@@ -894,6 +845,9 @@ export const AppLayout: React.FC = () => {
         onSelectTask={(id) => setSelectedTaskId(id)}
         onStartStudySprint={handleStartStudySprint}
       />
+
+      {/* Document Picture-in-Picture Floating HUD */}
+      <FocusPipPortal />
 
       {/* Global Toast */}
       <Toast />

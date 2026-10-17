@@ -1,6 +1,9 @@
+import { SYNC_COLLECTIONS, workspaceEntities, replaceEntities, applyEntityChanges } from './workspaceEntities';
 import type { Task, Project } from '../types/task';
-import type { WorkspaceRecord, EntityChange, PendingOperation } from '../types/workspace';
+import type { WorkspaceRecord, EntityChange, PendingOperation, SyncCollection, SyncedEntity } from '../types/workspace';
 import { dbService, emptyWorkspace } from './dbService';
+import { readFocusCheckpoint } from './focusCheckpoint';
+import type { WorkspaceDashboard } from '../types/dashboard';
 
 export interface StoreSnapshot {
   record: WorkspaceRecord;
@@ -11,16 +14,16 @@ export interface StoreSnapshot {
 }
 export interface CloudAdapter {
   apply: (operation: PendingOperation) => Promise<void>;
-  read: () => Promise<{ tasks: Task[]; projects: Project[] }>;
+  read: () => Promise<{ tasks: Task[]; projects: Project[]; dashboards?: SyncedEntity[]; focusLogs?: SyncedEntity[]; recipes?: SyncedEntity[]; preferences?: SyncedEntity[] }>;
 }
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-const semantic = (value: Task | Project | null) => { if (!value) return null; const { revision: _revision, updatedAt: _updatedAt, ...rest } = value; return rest; };
+const semantic = (value: SyncedEntity | null) => { if (!value) return null; const { revision: _revision, updatedAt: _updatedAt, ...rest } = value; return rest; };
 const uid = () => crypto.randomUUID();
 export function changesBetween(before: WorkspaceRecord, after: WorkspaceRecord): EntityChange[] {
   const changes: EntityChange[] = [];
-  for (const collection of ['tasks', 'projects'] as const) {
-    const old = new Map<string, Task | Project>(before[collection].map(x => [x.id, x]));
-    const next = new Map<string, Task | Project>(after[collection].map(x => [x.id, x]));
+  for (const collection of SYNC_COLLECTIONS) {
+    const old = new Map(workspaceEntities(before, collection).map(x => [x.id, x]));
+    const next = new Map(workspaceEntities(after, collection).map(x => [x.id, x]));
     for (const id of new Set([...old.keys(), ...next.keys()])) {
       if (!same(old.get(id), next.get(id))) changes.push({ collection, id, before: old.get(id) || null, after: next.get(id) || null });
     }
@@ -28,16 +31,7 @@ export function changesBetween(before: WorkspaceRecord, after: WorkspaceRecord):
   return changes;
 }
 export function applyChanges(record: WorkspaceRecord, changes: EntityChange[]): WorkspaceRecord {
-  const result = { ...record };
-  for (const collection of ['tasks', 'projects'] as const) {
-    const map = new Map<string, Task | Project>(record[collection].map(x => [x.id, x]));
-    for (const change of changes.filter(c => c.collection === collection)) {
-      if (change.after) map.set(change.id, change.after); else map.delete(change.id);
-    }
-    if (collection === 'tasks') result.tasks = [...map.values()] as Task[];
-    else result.projects = [...map.values()] as Project[];
-  }
-  return result;
+  return applyEntityChanges(record, changes);
 }
 
 /** Synchronous command ordering; serialized durable commits; no effects in React updaters. */
@@ -65,6 +59,12 @@ export class WorkspaceStore {
   load() {
     if (!this.loadPromise) this.loadPromise = this.persistence.ensureLegacyMigrated(this.id).then(record => {
       this.publish({ record, ready: true, error: null });
+      const checkpoint=readFocusCheckpoint(this.id);
+      if(checkpoint && checkpoint.at > Number(record.preferences.focusCheckpointAt || 0)) {
+        const logged=checkpoint.session && ((record.preferences.focusLogs || []) as {id:string}[]).some(log=>log.id===checkpoint.session!.id);
+        this.run('Recover focus lifecycle checkpoint',r=>({...r,preferences:{...r.preferences,focusCheckpointAt:checkpoint.at,
+          focusSession: logged ? null : checkpoint.finished && checkpoint.session ? {...checkpoint.session,recoverCompletion:true} : checkpoint.session}}),false);
+      }
     }).catch(error => { this.loadPromise = undefined; this.publish({ error: `Could not open this workspace: ${String(error.message || error)}`, sync: 'error' }); });
     return this.loadPromise;
   }
@@ -86,15 +86,18 @@ export class WorkspaceStore {
     const changes = changesBetween(before, after).map(change => ({ ...change,
       after: change.after ? { ...change.after, revision: ((change.before as Task | null)?.revision || 0) + 1, updatedAt: Date.now() } : null,
     }));
-    if (this.connected && changes.length > 400) throw new Error('This operation changes more than 400 records. Apply smaller batches, or restore this backup in a local workspace.');
     if (!changes.length && same(before.preferences, after.preferences) && same(before.customViews, after.customViews)) return;
     after = applyChanges(after, changes);
     const operation: PendingOperation = { id: uid(), description, changes, createdAt: Date.now() };
+    // Keep one local undo action, while each cloud transaction stays below its write limit.
+    const deliveries = changes.length > 400
+      ? Array.from({ length: Math.ceil(changes.length / 400) }, (_, index) => ({ ...operation, id: `${operation.id}-${index}`, changes: changes.slice(index * 400, (index + 1) * 400) }))
+      : [operation];
     if (remember && changes.length) {
       this.redoStack = [];
     }
     after = { ...after, updatedAt: Date.now(),
-      pending: this.connected && changes.length ? [...before.pending, operation] : before.pending,
+      pending: this.connected && changes.length ? [...before.pending, ...deliveries] : before.pending,
       undo: remember && changes.length ? [...before.undo.slice(-19), operation] : after.undo,
     };
     this.publish({ record: after, sync: this.connected && changes.length ? 'syncing' : this.snapshot.sync });
@@ -107,7 +110,7 @@ export class WorkspaceStore {
     if (!operation) return;
     const record = this.snapshot.record;
     for (const change of operation.changes) {
-      const current = record[change.collection].find(x => x.id === change.id) || null;
+      const current = workspaceEntities(record, change.collection).find(x => x.id === change.id) || null;
       if (!same(semantic(current), semantic(change.after))) throw new Error('This task changed after that action. Review its current details before undoing.');
     }
     this.redoStack.push(operation);
@@ -118,7 +121,7 @@ export class WorkspaceStore {
     if (!operation) return;
     const record = this.snapshot.record;
     for (const change of operation.changes) {
-      const current = record[change.collection].find(x => x.id === change.id) || null;
+      const current = workspaceEntities(record, change.collection).find(x => x.id === change.id) || null;
       if (!same(semantic(current), semantic(change.before))) throw new Error('This task changed after that action. Review its current details before redoing.');
     }
     this.redoStack.pop();
@@ -154,10 +157,31 @@ export class WorkspaceStore {
       }
     } finally { this.flushing = false; }
   }
-  receive(collection: 'tasks' | 'projects', remote: Task[] | Project[]) {
+  receive(collection: SyncCollection, remote: SyncedEntity[]) {
     if (!this.snapshot.ready || this.disposed) return;
-    let record = { ...this.snapshot.record, [collection]: collection === 'projects' && remote.length === 0 ? emptyWorkspace(this.id).projects : remote } as WorkspaceRecord;
+    const before = this.snapshot.record;
+    if (collection === 'dashboards' && !before.preferences._v5DashboardSeeded) {
+      const local = before.dashboards || [];
+      this.publish({ record: { ...before, dashboards: [], preferences: { ...before.preferences, _v5DashboardSeeded: true, _v5DashboardSeedNeeded: false } } });
+      if (!remote.length && local.length) {
+        this.run('Sync existing workspace dashboards', current => applyChanges(current, local.map(value => ({ collection: 'dashboards', id: value.id, before: null, after: { ...value, revision: 0 } }))), false);
+        return;
+      }
+    }
+    const current = this.snapshot.record;
+    let record: WorkspaceRecord;
+    try { record = replaceEntities(current, collection, collection === 'projects' && remote.length === 0 ? emptyWorkspace(this.id).projects : remote); }
+    catch { this.publish({ record: before, error: 'A cloud dashboard could not be opened. Your local layout is preserved. Export a backup before resolving sync.', sync: 'conflict' }); return; }
     record = applyChanges(record, record.pending.flatMap(op => op.changes.filter(c => c.collection === collection)));
+    const seeded = (before.preferences._v4CloudSeeded || []) as string[];
+    if (before.preferences._v4CloudSeedNeeded && !['tasks', 'projects', 'dashboards'].includes(collection) && !seeded.includes(collection)) {
+      const localOnly = workspaceEntities(before, collection).filter(entity => !remote.some(value => value.id === entity.id));
+      record = { ...record, preferences: { ...record.preferences, _v4CloudSeeded: [...seeded, collection] } };
+      this.publish({ record });
+      if (localOnly.length) this.run('Migrate existing focus history and settings', current => applyChanges(current, localOnly.map(value => ({ collection, id: value.id, before: null, after: { ...value, revision: 0 } }))), false);
+      else void this.persist().catch(() => {});
+      return;
+    }
     this.publish({ record });
     void this.persist().catch(() => {});
   }
@@ -167,9 +191,22 @@ export class WorkspaceStore {
     // Preserve both versions before a deliberate conflict choice.
     localStorage.setItem(`flowtask_conflict_backup_${this.id}`, JSON.stringify({ local: this.snapshot.record, remote, savedAt: Date.now() }));
     const original = this.snapshot.record;
-    const base = { ...original, ...remote, pending: [], undo: [] };
+    let base = { ...original, tasks: remote.tasks, projects: remote.projects, pending: [], undo: [] } as WorkspaceRecord;
+    for (const key of ['dashboards', 'focusLogs', 'recipes', 'preferences'] as const) if (remote[key]) base = replaceEntities(base, key, remote[key]);
+    const dashboardChanges = new Map(original.pending.flatMap(op => op.changes).filter(c => c.collection === 'dashboards').map(c => [c.id, c]));
+    const copies: WorkspaceDashboard[] = [];
+    for (const change of dashboardChanges.values()) {
+      const remoteDashboard = base.dashboards.find(d => d.id === change.id);
+      if (!change.after || !remoteDashboard || same(semantic(change.after), semantic(remoteDashboard))) continue;
+      const preserved = (choice === 'local' ? remoteDashboard : change.after) as WorkspaceDashboard;
+      copies.push({ ...structuredClone(preserved), id: uid(), name: `${preserved.name.slice(0, 80)} (Recovered)`, isDefault: false, order: base.dashboards.length + copies.length, revision: 0, createdAt: Date.now(), updatedAt: Date.now() });
+    }
+    if (base.dashboards.length + copies.length > 20) throw new Error('Both dashboard versions are backed up. Free a dashboard slot before resolving this conflict.');
     this.publish({ record: base, error: null, sync: 'syncing' });
-    if (choice === 'local') this.run('Resolve conflict with device changes', record => applyChanges(record, original.pending.flatMap(op => op.changes)));
+    if (choice === 'local' || copies.length) this.run('Resolve conflict and preserve dashboard versions', record => {
+      const next = choice === 'local' ? applyChanges(record, original.pending.flatMap(op => op.changes)) : record;
+      return { ...next, dashboards: [...next.dashboards, ...copies] };
+    });
     else await this.persist();
     await this.flush();
   }

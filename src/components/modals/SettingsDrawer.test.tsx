@@ -5,15 +5,19 @@ import { SettingsDrawer } from './SettingsDrawer';
 import { DEFAULT_WORKFLOW_SETTINGS } from '../../types/settings';
 
 const mockUpdateSettings = vi.fn();
+const mockSetWorkspacePreference = vi.fn();
 const mockResetSettings = vi.fn();
 const mockOpenModal = vi.fn();
 const mockClose = vi.fn();
 
 let mockSettings = { ...DEFAULT_WORKFLOW_SETTINGS };
 
+const mockDownloadWorkspaceBackup = vi.fn();
+
 vi.mock('../../context/TaskContext', () => ({
   useTaskContext: () => ({
     theme: 'light',
+    setWorkspacePreference: mockSetWorkspacePreference,
     toggleTheme: vi.fn(),
     soundEnabled: true,
     soundProfile: 'zen',
@@ -23,9 +27,14 @@ vi.mock('../../context/TaskContext', () => ({
     calendarIcsUrl: '',
     setCalendarIcsUrl: vi.fn(),
     refreshCalendarEvents: vi.fn(),
+    calendarEvents: [],
     syncStatus: 'synced',
     lastSyncedAt: 123456789,
     setIsAuthModalOpen: vi.fn(),
+    forceSyncToCloud: vi.fn(),
+    downloadWorkspaceBackup: mockDownloadWorkspaceBackup,
+    tasks: [],
+    projects: [],
   }),
 }));
 
@@ -86,14 +95,14 @@ describe('SettingsDrawer Component', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders all 5 tabs and defaults to Workflow & Capacity tab', () => {
+  it('renders eight settings groups and defaults to Workflow', () => {
     render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
 
-    expect(screen.getByRole('button', { name: /workflow & capacity/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /aesthetics & audio/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /calendar feeds/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /data & portability/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /account & sync/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Workflow$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Appearance$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Calendar$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Data$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Account$/i })).toBeDefined();
 
     // Verify Workflow content is present
     expect(screen.getByText(/Daily Planned Capacity Target/i)).toBeDefined();
@@ -223,50 +232,38 @@ describe('SettingsDrawer Component', () => {
 
     // Switch to Aesthetics & Audio
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /aesthetics & audio/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Appearance$/i }));
     });
-    expect(screen.getByText(/Color Space & Visual Aura/i)).toBeDefined();
+    expect(screen.getByText(/Theme library/i)).toBeDefined();
 
     // Switch to Calendar Feeds
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /calendar feeds/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Calendar$/i }));
     });
     expect(screen.getByText(/Private \.ics Calendar Overlay/i)).toBeDefined();
 
     // Switch to Data & Portability
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /data & portability/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Data$/i }));
     });
     expect(screen.getByText(/Local-First Data Sovereignity/i)).toBeDefined();
 
     // Switch to Account & Sync
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /account & sync/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Account$/i }));
     });
     expect(screen.getByText(/Local-First Anonymous/i)).toBeDefined();
   });
 
-  it('renders diurnal atmosphere controls and adjusts intensity in Aesthetics tab', () => {
+  it('shows complete themes and independent optional atmosphere in Appearance', () => {
     render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
-
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /aesthetics & audio/i }));
-    });
-
-    // Check Diurnal Atmosphere section exists with 12 atmospheres
-    expect(screen.getByText('Diurnal Ambient Atmosphere')).toBeDefined();
-    expect(screen.getByText('12 Atmospheres')).toBeDefined();
-    expect(screen.getByText('Circadian Presets')).toBeDefined();
-    expect(screen.getByText('Thematic Flow Atmospheres')).toBeDefined();
-
-    // Check slider
-    const slider = screen.getByTitle('Adjust diurnal atmosphere intensity') as HTMLInputElement;
-    expect(slider).toBeDefined();
-
-    act(() => {
-      fireEvent.change(slider, { target: { value: '0.8' } });
-    });
-    expect(slider.value).toBe('0.8');
+    fireEvent.click(screen.getByRole('button', { name: /^Appearance$/i }));
+    expect(screen.getByRole('heading', { name: 'Optional atmosphere' })).toBeDefined();
+    const slider = screen.getByRole('slider', { name: 'Glow intensity' }) as HTMLInputElement;
+    expect(slider.min).toBe('0');
+    expect(slider.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Atmosphere color'), { target: { value: 'aurora' } });
+    expect(mockSetWorkspacePreference).toHaveBeenCalledWith('appearance', expect.objectContaining({ atmosphere: { preset: 'aurora', intensity: .35 } }));
   });
 
   it('calls onClose when close button is clicked or Escape key pressed', () => {
@@ -282,5 +279,83 @@ describe('SettingsDrawer Component', () => {
       fireEvent.keyDown(window, { key: 'Escape' });
     });
     expect(mockClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('configures auto-archive completed tasks and default task priority', () => {
+    render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
+
+    // Auto-archive select
+    const archiveSelect = screen.getByText(/Auto-Archive Completed Tasks/i).closest('div')?.parentElement?.querySelector('select');
+    expect(archiveSelect).toBeDefined();
+    if (archiveSelect) {
+      act(() => {
+        fireEvent.change(archiveSelect, { target: { value: 'end_of_day' } });
+      });
+      expect(mockUpdateSettings).toHaveBeenCalledWith({ autoArchiveCompleted: 'end_of_day' });
+    }
+
+    // Default priority selection (e.g. P1)
+    const p1Btn = screen.getByRole('button', { name: 'P1' });
+    act(() => {
+      fireEvent.click(p1Btn);
+    });
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ defaultTaskPriority: 'p1' });
+  });
+
+  it('toggles smart syntax parsing and keyboard halo dock', () => {
+    render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
+
+    const switches = screen.getAllByRole('switch');
+    expect(switches.length).toBeGreaterThanOrEqual(2);
+
+    // Toggle smart parsing
+    act(() => {
+      fireEvent.click(switches[0]);
+    });
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ enableSmartSyntaxParsing: false });
+
+    // Toggle keyboard halo
+    act(() => {
+      fireEvent.click(switches[1]);
+    });
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ keyboardHaloEnabled: false });
+  });
+
+  it('triggers in-drawer JSON backup download in Data tab', () => {
+    render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
+
+    // Switch to Data tab
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /^Data$/i }));
+    });
+
+    const downloadBackupBtn = screen.getByRole('button', { name: /Download JSON Backup/i });
+    expect(downloadBackupBtn).toBeDefined();
+
+    act(() => {
+      fireEvent.click(downloadBackupBtn);
+    });
+    expect(mockDownloadWorkspaceBackup).toHaveBeenCalled();
+  });
+
+  it('searches deep settings items and allows jumping to corresponding tab', () => {
+    render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
+
+    const searchInput = screen.getByLabelText(/Search settings/i);
+    act(() => {
+      fireEvent.change(searchInput, { target: { value: 'pomodoro' } });
+    });
+
+    // Should display matching settings
+    expect(screen.getByText(/Focus Rhythm & Timer Mode/i)).toBeDefined();
+
+    // Click matching item
+    const jumpBtn = screen.getByRole('button', { name: /Focus Rhythm & Timer Mode/i });
+    act(() => {
+      fireEvent.click(jumpBtn);
+    });
+
+    // Should have switched to Focus tab
+    expect(screen.getByText(/Your focus rhythm/i)).toBeDefined();
   });
 });

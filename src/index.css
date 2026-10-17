@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "react-grid-layout/css/styles.css";
+@import "./styles/focus-studio.css";
+@import "./styles/themes-v2.css";
+@import "./styles/workflow-v2.css";
+@import "./styles/workspace-v2.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -185,128 +190,7 @@
   color-scheme: dark;
 }
 
-/* Tokyo Dusk Theme (Cyberpunk Indigo & Glowing Midnight) */
-.theme-tokyo {
-  --bg-main: #0B0F19;
-  --bg-surface-l1: #111726;
-  --bg-surface-l2: #182032;
-  --bg-surface-l3: #1F2A40;
-  --bg-surface-l4: #283652;
-  --border-color: rgba(99, 102, 241, 0.18);
-  --border-strong: rgba(99, 102, 241, 0.28);
-  --border-hairline: rgba(99, 102, 241, 0.12);
-  --border-subtle: rgba(99, 102, 241, 0.06);
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --shadow-glow-amber: 0 0 28px -4px rgba(99, 102, 241, 0.35), 0 0 0 1px rgba(99, 102, 241, 0.45);
-  color-scheme: dark;
-}
 
-/* Nordic Slate Theme (Arctic Frost & Ice Blue) */
-.theme-nord {
-  --bg-main: #242933;
-  --bg-surface-l1: #2E3440;
-  --bg-surface-l2: #3B4252;
-  --bg-surface-l3: #434C5E;
-  --bg-surface-l4: #4C566A;
-  --border-color: rgba(216, 222, 233, 0.14);
-  --border-strong: rgba(216, 222, 233, 0.22);
-  --border-hairline: rgba(216, 222, 233, 0.09);
-  --border-subtle: rgba(216, 222, 233, 0.05);
-  --text-primary: #ECEFF4;
-  --text-secondary: #D8DEE9;
-  --text-muted: #9BA4B5;
-  --shadow-glow-amber: 0 0 28px -4px rgba(136, 192, 208, 0.3), 0 0 0 1px rgba(136, 192, 208, 0.45);
-  color-scheme: dark;
-}
-
-/* Forest Matcha Theme (Organic Sage & Calming Earthy Green) */
-.theme-matcha {
-  --bg-main: #F4F6F0;
-  --bg-surface-l1: #EAEFE3;
-  --bg-surface-l2: #FFFFFF;
-  --bg-surface-l3: #DFE8D5;
-  --bg-surface-l4: #D3DFC8;
-  --border-color: rgba(40, 60, 30, 0.1);
-  --border-strong: rgba(40, 60, 30, 0.18);
-  --border-hairline: rgba(40, 60, 30, 0.06);
-  --border-subtle: rgba(40, 60, 30, 0.035);
-  --text-primary: #1A2416;
-  --text-secondary: #43543D;
-  --text-muted: #6C8065;
-  --shadow-glow-amber: 0 0 24px -2px rgba(101, 163, 13, 0.25), 0 0 0 1px rgba(101, 163, 13, 0.4);
-  color-scheme: light;
-}
-
-/* Solarized Sepia Theme (Warm Papyrus & Antique Editorial Parchment) */
-.theme-sepia {
-  --bg-main: #FBF7EE;
-  --bg-surface-l1: #F4EEDC;
-  --bg-surface-l2: #FFFDF8;
-  --bg-surface-l3: #EDE5D0;
-  --bg-surface-l4: #E4D9C0;
-  --border-color: rgba(120, 80, 40, 0.12);
-  --border-strong: rgba(120, 80, 40, 0.22);
-  --border-hairline: rgba(120, 80, 40, 0.08);
-  --border-subtle: rgba(120, 80, 40, 0.04);
-  --text-primary: #2C2218;
-  --text-secondary: #5C4A38;
-  --text-muted: #7E6953;
-  --color-brand: #C26D28;
-  --color-brand-hover: #9E5317;
-  --color-brand-subtle: rgba(194, 109, 40, 0.1);
-  --color-brand-border: rgba(194, 109, 40, 0.25);
-  --color-focus-ring: rgba(194, 109, 40, 0.35);
-  --shadow-glow-amber: 0 0 24px -2px rgba(194, 109, 40, 0.25), 0 0 0 1px rgba(194, 109, 40, 0.4);
-  color-scheme: light;
-}
-
-/* Cyber Crimson Theme (Deep Velvet Obsidian & Neon Ruby/Rose) */
-.theme-crimson {
-  --bg-main: #0D080B;
-  --bg-surface-l1: #150C12;
-  --bg-surface-l2: #1E121A;
-  --bg-surface-l3: #291824;
-  --bg-surface-l4: #351F2F;
-  --border-color: rgba(244, 63, 94, 0.18);
-  --border-strong: rgba(244, 63, 94, 0.3);
-  --border-hairline: rgba(244, 63, 94, 0.12);
-  --border-subtle: rgba(244, 63, 94, 0.06);
-  --text-primary: #FFF1F2;
-  --text-secondary: #FDA4AF;
-  --text-muted: #9F6270;
-  --color-brand: #F43F5E;
-  --color-brand-hover: #FB7185;
-  --color-brand-subtle: rgba(244, 63, 94, 0.15);
-  --color-brand-border: rgba(244, 63, 94, 0.35);
-  --color-focus-ring: rgba(244, 63, 94, 0.45);
-  --shadow-glow-amber: 0 0 28px -4px rgba(244, 63, 94, 0.35), 0 0 0 1px rgba(244, 63, 94, 0.5);
-  color-scheme: dark;
-}
-
-/* Deep Cobalt Theme (Abyssal Ocean & Bioluminescent Cyan/Azure) */
-.theme-cobalt {
-  --bg-main: #060B14;
-  --bg-surface-l1: #0A1220;
-  --bg-surface-l2: #101D33;
-  --bg-surface-l3: #182846;
-  --bg-surface-l4: #22375F;
-  --border-color: rgba(6, 182, 212, 0.18);
-  --border-strong: rgba(6, 182, 212, 0.28);
-  --border-hairline: rgba(6, 182, 212, 0.1);
-  --border-subtle: rgba(6, 182, 212, 0.05);
-  --text-primary: #F0F9FF;
-  --text-secondary: #BAE6FD;
-  --text-muted: #648BA6;
-  --color-brand: #06B6D4;
-  --color-brand-hover: #22D3EE;
-  --color-brand-subtle: rgba(6, 182, 212, 0.15);
-  --color-brand-border: rgba(6, 182, 212, 0.32);
-  --color-focus-ring: rgba(6, 182, 212, 0.4);
-  --shadow-glow-amber: 0 0 28px -4px rgba(6, 182, 212, 0.35), 0 0 0 1px rgba(6, 182, 212, 0.5);
-  color-scheme: dark;
-}
 
 @keyframes audio-wave {
   0%, 100% {
@@ -617,6 +501,21 @@ html, body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Layout Containment for Virtual Task List and Dashboard Widgets (Requirement R4) */
+.desk-task-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 72px;
+}
+
+.widget-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 240px;
+}
+
+.dashboard-editing .widget-card {
+  content-visibility: visible;
 }
 
 
