@@ -110,7 +110,43 @@ export function parseTaskInput(input: string): ParsedTaskInput {
     }
   }
 
-  // 5. Extract Time of Day keywords (morning -> 09:00, afternoon -> 14:00, evening/tonight -> 18:00)
+  // 5. Extract Explicit Dual Date Tokens: plan:date and due:date
+  let plannedDate: string | undefined;
+
+  const parseTokenDate = (tokenVal: string): string | undefined => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(tokenVal)) return tokenVal;
+    if (tokenVal.toLowerCase() === 'today') return formatLocalDate(new Date());
+    if (tokenVal.toLowerCase() === 'tomorrow') {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return formatLocalDate(d);
+    }
+    const parsed = chrono.parse(tokenVal, new Date(), { forwardDate: true });
+    if (parsed.length > 0) return formatLocalDate(parsed[0].start.date());
+    return undefined;
+  };
+
+  const planRegex = /(?:^|\s)(?:plan|schedule):([^\s]+)(?=\s|$)/i;
+  const planMatch = workingText.match(planRegex);
+  if (planMatch) {
+    const parsed = parseTokenDate(planMatch[1]);
+    if (parsed) {
+      plannedDate = parsed;
+      workingText = workingText.replace(planRegex, ' ');
+    }
+  }
+
+  const dueRegex = /(?:^|\s)(?:due|deadline):([^\s]+)(?=\s|$)/i;
+  const dueMatch = workingText.match(dueRegex);
+  if (dueMatch) {
+    const parsed = parseTokenDate(dueMatch[1]);
+    if (parsed) {
+      dueDate = parsed;
+      workingText = workingText.replace(dueRegex, ' ');
+    }
+  }
+
+  // 5b. Extract Time of Day keywords (morning -> 09:00, afternoon -> 14:00, evening/tonight -> 18:00)
   const timeOfDayRegex = /(?:^|\s)(?:(morning)|(afternoon)|(evening|tonight))(?=\s|$)/i;
   const timeOfDayMatch = workingText.match(timeOfDayRegex);
   let timeOfDayHour: string | undefined;
@@ -126,8 +162,11 @@ export function parseTaskInput(input: string): ParsedTaskInput {
   if (parsedResults.length > 0) {
     const primaryResult = parsedResults[0];
     const parsedDate = primaryResult.start.date();
+    const formattedDate = formatLocalDate(parsedDate);
 
-    dueDate = formatLocalDate(parsedDate);
+    if (!dueDate) {
+      dueDate = formattedDate;
+    }
 
     // Check if a specific time component was explicitly mentioned (e.g., at 5pm)
     if (primaryResult.start.isCertain('hour')) {
@@ -143,8 +182,9 @@ export function parseTaskInput(input: string): ParsedTaskInput {
       workingText.substring(primaryResult.index + primaryResult.text.length);
   } else if (timeOfDayHour) {
     dueTime = timeOfDayHour;
+    const todayFormatted = formatLocalDate(new Date());
     if (!dueDate) {
-      dueDate = formatLocalDate(new Date());
+      dueDate = todayFormatted;
     }
   }
 
@@ -157,6 +197,7 @@ export function parseTaskInput(input: string): ParsedTaskInput {
 
   return {
     cleanTitle: cleanTitle || input.trim(), // fallback to input if everything was parsed out
+    plannedDate,
     dueDate,
     dueTime,
     priority,

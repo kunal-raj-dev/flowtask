@@ -33,6 +33,7 @@ export interface UIState {
   isSmartFilterModalOpen: boolean;
   isInterruptionModalOpen: boolean;
   isEveningShutdownOpen: boolean;
+  isMorningKickoffOpen: boolean;
   isShutdownDismissed: boolean;
   isTriageDismissed: boolean;
 
@@ -63,6 +64,7 @@ export interface UIState {
   setIsSmartFilterModalOpen: (open: boolean) => void;
   setIsInterruptionModalOpen: (open: boolean) => void;
   setIsEveningShutdownOpen: (open: boolean) => void;
+  setIsMorningKickoffOpen: (open: boolean) => void;
   dismissShutdown: () => void;
   setIsTriageDismissed: (dismissed: boolean) => void;
 }
@@ -113,6 +115,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isSmartFilterModalOpen: false,
   isInterruptionModalOpen: false,
   isEveningShutdownOpen: false,
+  isMorningKickoffOpen: false,
   isShutdownDismissed: false,
   isTriageDismissed: false,
 
@@ -200,6 +203,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setIsSmartFilterModalOpen: (open) => set({ isSmartFilterModalOpen: open }),
   setIsInterruptionModalOpen: (open) => set({ isInterruptionModalOpen: open }),
   setIsEveningShutdownOpen: (open) => set({ isEveningShutdownOpen: open }),
+  setIsMorningKickoffOpen: (open) => set({ isMorningKickoffOpen: open }),
   dismissShutdown: () => set({ isShutdownDismissed: true }),
   setIsTriageDismissed: (dismissed) => set({ isTriageDismissed: dismissed }),
 }));
@@ -283,6 +287,8 @@ export const useModals = () => {
   const setIsInterruptionModalOpen = useUIStore((s) => s.setIsInterruptionModalOpen);
   const isEveningShutdownOpen = useUIStore((s) => s.isEveningShutdownOpen);
   const setIsEveningShutdownOpen = useUIStore((s) => s.setIsEveningShutdownOpen);
+  const isMorningKickoffOpen = useUIStore((s) => s.isMorningKickoffOpen);
+  const setIsMorningKickoffOpen = useUIStore((s) => s.setIsMorningKickoffOpen);
   const isShutdownDismissed = useUIStore((s) => s.isShutdownDismissed);
   const dismissShutdown = useUIStore((s) => s.dismissShutdown);
   const isTriageDismissed = useUIStore((s) => s.isTriageDismissed);
@@ -305,6 +311,8 @@ export const useModals = () => {
     setIsInterruptionModalOpen,
     isEveningShutdownOpen,
     setIsEveningShutdownOpen,
+    isMorningKickoffOpen,
+    setIsMorningKickoffOpen,
     isShutdownDismissed,
     dismissShutdown,
     isTriageDismissed,

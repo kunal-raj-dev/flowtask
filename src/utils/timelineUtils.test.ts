@@ -8,6 +8,7 @@ import {
   analyzeCognitiveTopology,
   findOverlappingCalendarEvent,
   findNextFreeGap,
+  rippleScheduleGaps,
   TIMELINE_START_HOUR,
   TIMELINE_HOUR_HEIGHT_PX,
 } from './timelineUtils';
@@ -258,4 +259,130 @@ describe('timelineUtils', () => {
       expect(minutesToTimeStr(nextGap!)).toBe('11:00');
     });
   });
+
+  describe('rippleScheduleGaps and cognitive buffers', () => {
+    it('pushes down conflicting tasks along the schedule rail in a cascade', () => {
+      const tasks: Task[] = [
+        {
+          id: 'moved-task',
+          title: 'Heavy Architecture Block',
+          estimatedMinutes: 60,
+          status: 'todo',
+          priority: 'p1',
+          projectId: 'work',
+          subtasks: [],
+          createdAt: 1,
+        },
+        {
+          id: 'task-colliding',
+          title: 'Team Sync',
+          scheduledStart: '10:30',
+          scheduledEnd: '11:00',
+          estimatedMinutes: 30,
+          status: 'todo',
+          priority: 'p2',
+          projectId: 'work',
+          subtasks: [],
+          createdAt: 2,
+        },
+        {
+          id: 'task-subsequent',
+          title: 'Code Review',
+          scheduledStart: '11:30',
+          scheduledEnd: '12:00',
+          estimatedMinutes: 30,
+          status: 'todo',
+          priority: 'p3',
+          projectId: 'work',
+          subtasks: [],
+          createdAt: 3,
+        },
+      ];
+
+      // Schedule moved-task at 10:00 (600m). Duration 60m + 15m auto-buffer = occupied until 11:15 (675m)
+      const updates = rippleScheduleGaps(tasks, 'moved-task', 600, 60);
+
+      expect(updates).toHaveLength(3);
+
+      // moved-task: 10:00 - 11:00 with 15m buffer
+      expect(updates[0]).toEqual({
+        id: 'moved-task',
+        scheduledStart: '10:00',
+        scheduledEnd: '11:00',
+        bufferMinutes: 15,
+      });
+
+      // task-colliding: pushed to 11:15 - 11:45
+      expect(updates[1]).toEqual({
+        id: 'task-colliding',
+        scheduledStart: '11:15',
+        scheduledEnd: '11:45',
+        bufferMinutes: undefined,
+      });
+
+      // task-subsequent: was at 11:30, collides with 11:45 -> pushed to 11:45 - 12:15
+      expect(updates[2]).toEqual({
+        id: 'task-subsequent',
+        scheduledStart: '11:45',
+        scheduledEnd: '12:15',
+        bufferMinutes: undefined,
+      });
+    });
+
+    it('calculates block position with buffer height', () => {
+      const pos = calculateBlockPosition(600, 60, 7, 80, 15);
+      expect(pos.topPx).toBe(((600 - 420) / 60) * 80); // 240px
+      expect(pos.heightPx).toBe(80); // 1h = 80px
+      expect(pos.bufferHeightPx).toBe(20); // 15m = 0.25h * 80px = 20px
+    });
+
+    it('clamps minutesToTimeStr to valid 24h format <= 23:59 without throwing validation error', () => {
+      expect(minutesToTimeStr(1440)).toBe('23:59');
+      expect(minutesToTimeStr(1500)).toBe('23:59');
+      expect(minutesToTimeStr(-10)).toBe('00:00');
+    });
+
+    it('cascades downstream tasks past consecutive calendar events cleanly', () => {
+      const tasks: Task[] = [
+        {
+          id: 'task-a',
+          title: 'Moved Task',
+          estimatedMinutes: 60,
+          status: 'todo',
+          priority: 'p1',
+          projectId: 'work',
+          subtasks: [],
+          createdAt: 1,
+        },
+        {
+          id: 'task-b',
+          title: 'Colliding Task',
+          scheduledStart: '10:30',
+          scheduledEnd: '11:15',
+          estimatedMinutes: 45,
+          status: 'todo',
+          priority: 'p2',
+          projectId: 'work',
+          subtasks: [],
+          createdAt: 2,
+        },
+      ];
+
+      // Calendar has 2 consecutive events: 11:00-11:30 and 11:30-12:00
+      const calendarEvents: CalendarEvent[] = [
+        { id: 'c2', title: 'Meeting 2', startTime: '11:30', endTime: '12:00' },
+        { id: 'c1', title: 'Meeting 1', startTime: '11:00', endTime: '11:30' },
+      ];
+
+      // Place task-a at 10:00 (ends 11:00 + 15m buffer = 11:15)
+      // task-b would bump to 11:15, which collides with Meeting 2 (11:30-12:00)
+      // It must iteratively nudge past Meeting 2 to 12:00
+      const updates = rippleScheduleGaps(tasks, 'task-a', 600, 60, calendarEvents);
+      const bUpdate = updates.find((u) => u.id === 'task-b');
+      expect(bUpdate).toBeDefined();
+      expect(bUpdate?.scheduledStart).toBe('12:00');
+      expect(bUpdate?.scheduledEnd).toBe('12:45');
+    });
+  });
 });
+

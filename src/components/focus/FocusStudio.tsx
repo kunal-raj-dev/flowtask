@@ -20,8 +20,6 @@ import {
   Heart,
   Upload,
   Download,
-  Volume2,
-  VolumeX,
   ListTodo,
   Maximize2,
   Minimize2,
@@ -41,7 +39,6 @@ import { useStudioPreferences, useMediaCatalog } from "../../hooks/useStudio";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import {
   SCENE_CATEGORIES,
-  SYNTHETIC_SOUNDS,
   resolveAsset,
   parseRecipe,
   shareableRecipe,
@@ -54,9 +51,9 @@ import { useTodayStr } from "../../hooks/useCurrentDate";
 import { BrandLogo } from "../ui/BrandLogo";
 import { pictureInPictureService } from "../../services/pictureInPictureService";
 import { transitionView } from "../../utils/viewTransitions";
+import { FocusAudioPanel } from "./FocusAudioPanel";
 import type {
   FocusRecipe,
-  MediaAsset,
   TimerConfiguration,
 } from "../../types/studio";
 import type { FinishedStudioSession } from "../../services/studioSessionEngine";
@@ -161,8 +158,7 @@ export function FocusStudio({
     [note, setNote] = useState(
       String(ctx.workspacePreferences.scratchpad || ""),
     );
-  const [recipeName, setRecipeName] = useState(""),
-    [genre, setGenre] = useState("all");
+  const [recipeName, setRecipeName] = useState("");
   const [downloadProgress, setDownloadProgress] = useState(""),
     [storageUsage, setStorageUsage] = useState("");
   const root = useRef<HTMLDivElement>(null);
@@ -301,12 +297,18 @@ export function FocusStudio({
   }, [scene?.src, motionPaused]);
   useEffect(() => {
     const listener = () => {
-      if (document.hidden) videoRef.current?.pause();
-      else if (!motionPaused) void videoRef.current?.play().catch(() => {});
+      if (document.hidden) {
+        videoRef.current?.pause();
+        if (active?.state === "running" && pictureInPictureService.isSupported() && !pictureInPictureService.isOpen()) {
+          void pictureInPictureService.requestPipWindow({ width: 340, height: 220 }).catch(() => {});
+        }
+      } else if (!motionPaused) {
+        void videoRef.current?.play().catch(() => {});
+      }
     };
     document.addEventListener("visibilitychange", listener);
     return () => document.removeEventListener("visibilitychange", listener);
-  }, [motionPaused]);
+  }, [motionPaused, active?.state]);
   useEffect(
     () => () => {
       packAbort.current?.abort();
@@ -408,16 +410,6 @@ export function FocusStudio({
     });
     setPhase(r.initialPhase || "focus");
     setMessage(`${r.name} is ready.`);
-  };
-  const toggleLayer = (asset: MediaAsset) => {
-    void studioAudio.unlock().catch(() => {});
-    if (p.layers.some((l) => l.id === asset.id))
-      update({ layers: p.layers.filter((l) => l.id !== asset.id) });
-    else if (p.layers.length >= 4)
-      setMessage(
-        "You can mix up to four ambient layers. Remove a layer to add this one.",
-      );
-    else update({ layers: [...p.layers, { id: asset.id, volume: 0.35 }] });
   };
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1052,231 +1044,15 @@ export function FocusStudio({
               </>
             )}
             {panel === "sound" && (
-              <>
-                <p className="studio-panel-intro">
-                  A little rain, a little rhythm. Or the beauty of silence.
-                </p>
-                {musicMissing && (
-                  <p className="studio-help">
-                    Your personal music is only available on the device where it
-                    was uploaded. Choose a built-in track here.
-                  </p>
-                )}
-                <Range
-                  onPreview={(v) => studioAudio.setVolume("master", v)}
-                  label="Master volume"
-                  value={p.masterVolume}
-                  onChange={(v) => update({ masterVolume: v })}
-                />
-                <button
-                  className="studio-secondary"
-                  onClick={() => update({ layers: [], musicId: null })}
-                >
-                  <VolumeX size={15} />
-                  Choose silence
-                </button>
-                <h3>
-                  Ambient layers <small>{p.layers.length}/4</small>
-                </h3>
-                <div className="studio-sound-grid">
-                  {[
-                    ...SYNTHETIC_SOUNDS,
-                    ...media.audio.filter((a) => a.category === "ambient"),
-                  ].map((a) => (
-                    <button
-                      key={a.id}
-                      aria-pressed={p.layers.some((l) => l.id === a.id)}
-                      onClick={() => toggleLayer(a)}
-                    >
-                      <Volume2 size={15} />
-                      {a.title}
-                      {p.layers.some((l) => l.id === a.id) && (
-                        <Check size={14} />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                {p.layers.map((layer) => (
-                  <div className="studio-layer" key={layer.id}>
-                    <Range
-                      onPreview={(v) => studioAudio.setVolume(layer.id, v)}
-                      label={
-                        media.audio.find((a) => a.id === layer.id)?.title ||
-                        `${layer.id} noise`
-                      }
-                      value={layer.volume}
-                      onChange={(v) =>
-                        update({
-                          layers: p.layers.map((l) =>
-                            l.id === layer.id ? { ...l, volume: v } : l,
-                          ),
-                        })
-                      }
-                    />
-                    <div>
-                      <button
-                        aria-label={`Mute ${layer.id}`}
-                        aria-pressed={Boolean(layer.muted)}
-                        onClick={() =>
-                          update({
-                            layers: p.layers.map((l) =>
-                              l.id === layer.id ? { ...l, muted: !l.muted } : l,
-                            ),
-                          })
-                        }
-                      >
-                        <VolumeX size={14} />
-                      </button>
-                      <button
-                        aria-label={`Solo ${layer.id}`}
-                        onClick={() =>
-                          update({
-                            layers: p.layers.map((l) => ({
-                              ...l,
-                              muted: l.id !== layer.id,
-                            })),
-                          })
-                        }
-                      >
-                        Solo
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                <h3>Music for your moment</h3>
-                <select
-                  aria-label="Music genre"
-                  value={genre}
-                  onChange={(e) => setGenre(e.target.value)}
-                >
-                  <option value="all">All genres</option>
-                  {[
-                    ...new Set(
-                      media.audio
-                        .filter((a) => a.category === "music")
-                        .map((a) => a.genre || "Instrumental"),
-                    ),
-                  ].map((g) => (
-                    <option key={g} value={g}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
-                <div className="studio-track-list">
-                  {media.audio
-                    .filter(
-                      (a) =>
-                        a.category === "music" &&
-                        (genre === "all" || a.genre === genre),
-                    )
-                    .map((a) => (
-                      <div
-                        key={a.id}
-                        className={
-                          resolveAsset(p.musicId, media.audio)?.id === a.id
-                            ? "selected"
-                            : ""
-                        }
-                      >
-                        <button
-                          onClick={() =>
-                            update({
-                              musicId: p.musicId === a.id ? null : a.id,
-                            })
-                          }
-                          aria-pressed={
-                            resolveAsset(p.musicId, media.audio)?.id === a.id
-                          }
-                        >
-                          <span className="studio-track-icon">
-                            <Headphones size={17} />
-                          </span>
-                          <span>
-                            {a.title}
-                            <small>
-                              {a.genre} · {a.creator}
-                            </small>
-                          </span>
-                          {resolveAsset(p.musicId, media.audio)?.id ===
-                            a.id && <Check size={16} />}
-                        </button>
-                        <small className="studio-credit">
-                          {a.license}{" "}
-                          {a.sourceUrl && (
-                            <a
-                              href={a.sourceUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Source & license
-                            </a>
-                          )}
-                        </small>
-                      </div>
-                    ))}
-                </div>
-                <Range
-                  onPreview={(v) => {
-                    const asset = resolveAsset(p.musicId, media.audio);
-                    if (asset) studioAudio.setVolume(asset.id, v);
-                  }}
-                  label="Music volume"
-                  value={p.musicVolume}
-                  onChange={(v) => update({ musicVolume: v })}
-                />
-                <label className="studio-upload">
-                  <Upload size={16} />
-                  Add personal music
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={(e) => void upload(e)}
-                    hidden
-                  />
-                </label>
-                <p className="studio-help">
-                  Personal audio up to 50 MB. Playback begins with your session.
-                </p>
-                <label className="studio-check">
-                  <input
-                    type="checkbox"
-                    checked={p.continueAudioOnFinish}
-                    onChange={(e) =>
-                      update({ continueAudioOnFinish: e.target.checked })
-                    }
-                  />
-                  Keep audio playing after a completed session
-                </label>
-                <div className="studio-external">
-                  <a
-                    href="https://open.spotify.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open Spotify ↗
-                  </a>
-                  <a
-                    href="https://www.youtube.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open YouTube ↗
-                  </a>
-                </div>
-                <details className="studio-details">
-                  <summary>Sound credits</summary>
-                  {media.audio
-                    .filter((a) => a.category === "ambient" && a.sourceUrl)
-                    .map((a) => (
-                      <p className="studio-credit" key={a.id}>
-                        {a.title} · {a.creator} · {a.license}{" "}
-                        <a href={a.sourceUrl} target="_blank" rel="noreferrer">
-                          Source
-                        </a>
-                      </p>
-                    ))}
-                </details>
-              </>
+              <FocusAudioPanel
+                preferences={p}
+                media={media}
+                musicMissing={musicMissing}
+                onUpdate={update}
+                onUpload={upload}
+                onMessage={setMessage}
+                Range={Range}
+              />
             )}
             {panel === "recipes" && (
               <>

@@ -1,6 +1,7 @@
 import React, { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Circle, Star, Play, Pause, MoreHorizontal, Flag, Lock, Repeat2, ArrowRight, Clock } from 'lucide-react';
+import { Star, Play, Pause, MoreHorizontal, Flag, Lock, Repeat2, ArrowRight, Clock } from 'lucide-react';
+import { MorphCheckbox } from '../ui/MorphCheckbox';
 import type { Task } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
 import { useFocusStore } from '../../store/useFocusStore';
@@ -8,7 +9,6 @@ import { useUIStore } from '../../store/useUIStore';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { isFocusTask } from '../../utils/taskSelectors';
 import { formatTimerClock } from '../../utils/focusTimeFormat';
-import { audioEngine } from '../../utils/audioEngine';
 import { TaskContextMenu } from './TaskContextMenu';
 
 export interface WorkspaceTaskRowProps {
@@ -34,7 +34,15 @@ export const WorkspaceTaskRow: React.FC<WorkspaceTaskRowProps> = ({ task, onSele
   return <div className="desk-task-row" id={domId} data-task-id={task.id} data-featured={featured || undefined} data-done={done || undefined} data-selected={selected || undefined} data-keyboard-focused={isKeyboardFocused || keyboardId === task.id || undefined}
     onContextMenu={event => { event.preventDefault(); setMenu({ x: event.clientX, y: event.clientY }); }}>
     {featured && <span className="desk-task-rank" aria-label={'Priority ' + rank}>{String(rank).padStart(2, '0')}</span>}
-    <button className="desk-task-check" role="checkbox" aria-checked={done} aria-label={done ? 'Mark as incomplete' : 'Mark as complete'} title={(done ? 'Reopen ' : 'Complete ') + task.title} onClick={() => { audioEngine.playPopSound(); if (!done) audioEngine.playCompletionChime(); toggleTaskStatus(task.id); }}>{done ? <Check size={14}/> : <Circle size={20}/>}</button>
+    <div className="desk-task-check flex items-center justify-center">
+      <MorphCheckbox
+        checked={done}
+        onChange={() => toggleTaskStatus(task.id)}
+        priority={task.priority}
+        ariaLabel={done ? 'Mark as incomplete' : 'Mark as complete'}
+        size={18}
+      />
+    </div>
     <div className="desk-task-content">{editing ? <input ref={input} autoFocus aria-label="Task title" value={title} onChange={e => setTitle(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { e.stopPropagation(); setTitle(task.title); setEditing(false); } }}/> : <button className={'desk-task-title' + (done ? ' line-through' : '')} onClick={open} onDoubleClick={beginEdit} onKeyDown={e => { if (e.key === 'F2') { e.preventDefault(); beginEdit(); } }}>{task.title}</button>}
       {showNextAction && task.nextAction && !done && <p className="desk-next-action"><ArrowRight size={13}/><span>{task.nextAction}</span></p>}
       <div className="desk-task-meta">

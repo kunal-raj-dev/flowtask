@@ -72,8 +72,19 @@ export const TimelineUnscheduledSidebar: React.FC<TimelineUnscheduledSidebarProp
             return (
               <div
                 key={task.id}
+                draggable={!task.scheduleLocked}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(
+                    'application/json',
+                    JSON.stringify({ taskId: task.id, duration: task.estimatedMinutes || 30 })
+                  );
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
                 onClick={() => onSelectTask(task.id)}
-                className="group p-3 rounded-lg bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] hover:border-amber-500/40 transition-all card-surface cursor-pointer text-xs"
+                className={`group p-3 rounded-lg bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] hover:border-amber-500/40 transition-all card-surface text-xs ${
+                  task.scheduleLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
+                }`}
+                title={task.scheduleLocked ? 'Task schedule is locked' : 'Drag onto timeline canvas or choose time slot below'}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">

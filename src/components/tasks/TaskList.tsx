@@ -450,9 +450,16 @@ export const TaskList: React.FC<TaskListProps> = ({
           />
         ) : (
           <EmptyState
+            variant={activeView === 'inbox' ? 'zero-inbox' : activeView === 'today' ? 'day-complete' : 'default'}
             icon={<CheckCircle2 size={24} className="text-amber-500" />}
-            title="No active tasks"
-            description="Add a task using the bar above or press 'N'."
+            title={activeView === 'inbox' ? 'Inbox Zero Achieved' : activeView === 'today' ? "You've cleared today's horizon" : 'No active tasks'}
+            description={
+              activeView === 'inbox'
+                ? 'Your mental runway is clear. Capture ideas as they emerge or enjoy the stillness.'
+                : activeView === 'today'
+                ? 'All scheduled commitments completed. Step away, recharge, and enjoy your evening.'
+                : "Add a task using the bar above or press 'N'."
+            }
           />
         )
       ) : (

@@ -210,7 +210,7 @@ interface TaskContextType {
   clearToast: () => void;
 }
 
-const TaskContext = createContext<TaskContextType | undefined>(undefined);
+export const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -818,12 +818,65 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   if (!snapshot.ready) return <div role="status" className="p-10"><p>{snapshot.error || 'Opening your saved workspace… If it is open in another tab, close that tab to continue here.'}</p>{snapshot.error && <button onClick={() => void store.load()}>Retry</button>}</div>;
 
   return (
-    <TaskContext.Provider value={contextValue}>
-      {(snapshot.error || snapshot.sync === 'offline') && <div role="alert" className="fixed top-0 left-0 right-0 z-[1000] bg-amber-100 text-amber-950 p-3 flex gap-3 items-center"><span>{snapshot.error || 'Cloud unavailable. Changes are saved on this device and queued for retry.'}</span><button onClick={() => void store.retry().catch(error => showToast(error.message))}>Retry</button><button onClick={downloadWorkspaceBackup}>Download backup</button>{snapshot.sync === 'conflict' && <><button onClick={() => void resolveSyncConflict('local')}>Keep device changes</button><button onClick={() => void resolveSyncConflict('remote')}>Use account changes</button></>}</div>}
-      {children}
-    </TaskContext.Provider>
+    <WorkspaceStoreContext.Provider value={store}>
+      <TaskContext.Provider value={contextValue}>
+        {(snapshot.error || snapshot.sync === 'offline') && <div role="alert" className="fixed top-0 left-0 right-0 z-[1000] bg-amber-100 text-amber-950 p-3 flex gap-3 items-center"><span>{snapshot.error || 'Cloud unavailable. Changes are saved on this device and queued for retry.'}</span><button onClick={() => void store.retry().catch(error => showToast(error.message))}>Retry</button><button onClick={downloadWorkspaceBackup}>Download backup</button>{snapshot.sync === 'conflict' && <><button onClick={() => void resolveSyncConflict('local')}>Keep device changes</button><button onClick={() => void resolveSyncConflict('remote')}>Use account changes</button></>}</div>}
+        {children}
+      </TaskContext.Provider>
+    </WorkspaceStoreContext.Provider>
   );
 };
+
+export const WorkspaceStoreContext = createContext<WorkspaceStore | null>(null);
+
+export function useWorkspaceSelector<T>(
+  selector: (snapshot: import('../services/workspaceStore').StoreSnapshot) => T,
+  isEqual: (a: T, b: T) => boolean = Object.is
+): T | undefined {
+  const store = useContext(WorkspaceStoreContext);
+  const lastSelectedRef = useRef<{ hasValue: boolean; value: T | undefined }>({ hasValue: false, value: undefined });
+
+  const getSelection = useCallback(() => {
+    if (!store) return undefined as unknown as T;
+    const next = selector(store.getSnapshot());
+    if (lastSelectedRef.current.hasValue && isEqual(lastSelectedRef.current.value as T, next)) {
+      return lastSelectedRef.current.value as T;
+    }
+    lastSelectedRef.current = { hasValue: true, value: next };
+    return next;
+  }, [store, selector, isEqual]);
+
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      if (!store) return () => {};
+      return store.subscribe(notify);
+    },
+    [store]
+  );
+
+  return useSyncExternalStore(subscribe, getSelection, getSelection);
+}
+
+export function useWorkspaceTasks(): Task[] {
+  const store = useContext(WorkspaceStoreContext);
+  const tasks = useWorkspaceSelector(useCallback(s => s.record.tasks, []));
+  const fallback = useContext(TaskContext);
+  return store ? (tasks || []) : (fallback?.tasks || []);
+}
+
+export function useWorkspaceProjects(): Project[] {
+  const store = useContext(WorkspaceStoreContext);
+  const projects = useWorkspaceSelector(useCallback(s => s.record.projects, []));
+  const fallback = useContext(TaskContext);
+  return store ? (projects || []) : (fallback?.projects || []);
+}
+
+export function useActiveTask(taskId: string | null): Task | null {
+  const store = useContext(WorkspaceStoreContext);
+  const activeTask = useWorkspaceSelector(useCallback(s => taskId ? s.record.tasks.find(t => t.id === taskId) || null : null, [taskId]));
+  const fallback = useContext(TaskContext);
+  return store ? (activeTask || null) : (taskId ? fallback?.tasks.find(t => t.id === taskId) || null : null);
+}
 
 export const useTaskContext = (): TaskContextType => {
   const context = useContext(TaskContext);

@@ -8,6 +8,7 @@ import {
   classifyTaskCognitiveIntensity,
   findOverlappingCalendarEvent,
   findNextFreeGap,
+  rippleScheduleGaps,
 } from '../../../utils/timelineUtils';
 import {
   Calendar,
@@ -31,6 +32,7 @@ interface TimelineCanvasProps {
   onSelectTask: (taskId: string) => void;
   onToggleTaskStatus: (taskId: string) => void;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
+  onApplyBatchChanges?: (changes: { id: string; updates: Partial<Task> }[], description?: string) => void;
   onStartFocus: (taskId: string) => void;
   onStartSprint?: (taskId: string) => void;
   onQuickAdd: (title: string, hour: number) => void;
@@ -48,6 +50,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
   onSelectTask,
   onToggleTaskStatus,
   onUpdateTask: updateUnlockedTask,
+  onApplyBatchChanges,
   onStartFocus,
   onStartSprint,
   onQuickAdd,
@@ -76,8 +79,14 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
   const hasDraggedRef = useRef(false);
 
   const onUpdateTaskRef = useRef(onUpdateTask);
+  const onApplyBatchChangesRef = useRef(onApplyBatchChanges);
+  const todayTasksRef = useRef(todayTasks);
+  const calendarEventsRef = useRef(calendarEvents);
   useEffect(() => {
     onUpdateTaskRef.current = onUpdateTask;
+    onApplyBatchChangesRef.current = onApplyBatchChanges;
+    todayTasksRef.current = todayTasks;
+    calendarEventsRef.current = calendarEvents;
   });
 
   const dragStateRef = useRef(dragState);
@@ -157,20 +166,63 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
         const { initialStartMin, duration } = dragStartRef.current;
         setDragState(null);
         if (currentStartMin !== initialStartMin) {
-          const timeStr = minutesToTimeStr(currentStartMin);
-          const endStr = minutesToTimeStr(currentStartMin + duration);
-          onUpdateTaskRef.current(taskId, { scheduledStart: timeStr, scheduledEnd: endStr });
+          const ripples = rippleScheduleGaps(
+            todayTasksRef.current,
+            taskId,
+            currentStartMin,
+            duration,
+            calendarEventsRef.current
+          );
+          if (onApplyBatchChangesRef.current && ripples.length > 1) {
+            onApplyBatchChangesRef.current(
+              ripples.map((r) => ({
+                id: r.id,
+                updates: {
+                  scheduledStart: r.scheduledStart,
+                  scheduledEnd: r.scheduledEnd,
+                  ...(r.bufferMinutes !== undefined ? { bufferMinutes: r.bufferMinutes } : {}),
+                },
+              })),
+              'Move task with collision ripple'
+            );
+          } else {
+            const timeStr = minutesToTimeStr(currentStartMin);
+            const endStr = minutesToTimeStr(currentStartMin + duration);
+            onUpdateTaskRef.current(taskId, { scheduledStart: timeStr, scheduledEnd: endStr });
+          }
         }
       } else if (activeResize) {
         const { taskId, currentDuration } = activeResize;
         const { initialDuration, initialStartMin } = resizeStartRef.current;
         setResizeState(null);
         if (currentDuration !== initialDuration) {
-          const newEndMin = initialStartMin + currentDuration;
-          onUpdateTaskRef.current(taskId, {
-            estimatedMinutes: currentDuration,
-            scheduledEnd: minutesToTimeStr(newEndMin),
-          });
+          const ripples = rippleScheduleGaps(
+            todayTasksRef.current,
+            taskId,
+            initialStartMin,
+            currentDuration,
+            calendarEventsRef.current
+          );
+          if (onApplyBatchChangesRef.current && ripples.length > 1) {
+            onApplyBatchChangesRef.current(
+              ripples.map((r) => ({
+                id: r.id,
+                updates: {
+                  scheduledStart: r.scheduledStart,
+                  scheduledEnd: r.scheduledEnd,
+                  ...(r.id === taskId ? { estimatedMinutes: currentDuration } : {}),
+                  ...(r.bufferMinutes !== undefined ? { bufferMinutes: r.bufferMinutes } : {}),
+                },
+              })),
+              'Resize task duration with collision ripple'
+            );
+          } else {
+            const newEndMin = initialStartMin + currentDuration;
+            onUpdateTaskRef.current(taskId, {
+              estimatedMinutes: currentDuration,
+              scheduledEnd: minutesToTimeStr(newEndMin),
+            });
+          }
         }
       }
     };
@@ -184,6 +236,71 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
       window.removeEventListener('pointercancel', handleGlobalPointerUp);
     };
   }, [isInteracting, hourHeightPx, startHour, endHour, calendarEvents]);
+
+  const handleCanvasDragOver = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('application/json')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+  };
+
+  const handleCanvasDrop = (e: React.DragEvent) => {
+    try {
+      const rawData = e.dataTransfer.getData('application/json');
+      if (!rawData) return;
+      const { taskId, duration } = JSON.parse(rawData);
+      if (!taskId) return;
+
+      e.preventDefault();
+      const rect = e.currentTarget?.getBoundingClientRect?.() || { top: 0, left: 0 };
+      const clientY = typeof e.clientY === 'number' && !Number.isNaN(e.clientY) ? e.clientY : rect.top;
+      const y = clientY - rect.top;
+      const dur = duration || 30;
+      const rawMin = Math.round(((y / hourHeightPx) * 60) / 15) * 15 + startHour * 60;
+      const minStart = startHour * 60;
+      const maxStart = Math.min((endHour * 60) - dur, 1440 - dur);
+      let clampedStart = Math.max(minStart, Math.min(maxStart, rawMin));
+
+      // Magnetic snap to external calendar events if within 10 minutes
+      for (const ev of calendarEvents) {
+        if (ev.isAllDay) continue;
+        const evStart = parseTimeToMinutes(ev.startTime);
+        const evEnd = parseTimeToMinutes(ev.endTime);
+        if (evEnd !== null && Math.abs(clampedStart - evEnd) <= 10) {
+          clampedStart = evEnd;
+          break;
+        }
+        if (evStart !== null && Math.abs((clampedStart + dur) - evStart) <= 10) {
+          clampedStart = Math.max(minStart, evStart - dur);
+          break;
+        }
+      }
+
+      const ripples = rippleScheduleGaps(todayTasks, taskId, clampedStart, dur, calendarEvents);
+      if (onApplyBatchChanges && ripples.length > 0) {
+        onApplyBatchChanges(
+          ripples.map((r) => ({
+            id: r.id,
+            updates: {
+              scheduledStart: r.scheduledStart,
+              scheduledEnd: r.scheduledEnd,
+              ...(r.id === taskId ? { isSomeday: false } : {}),
+              ...(r.bufferMinutes !== undefined ? { bufferMinutes: r.bufferMinutes } : {}),
+            },
+          })),
+          'Schedule task from sidebar'
+        );
+      } else {
+        onUpdateTask(taskId, {
+          scheduledStart: minutesToTimeStr(clampedStart),
+          scheduledEnd: minutesToTimeStr(clampedStart + dur),
+          isSomeday: false,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to parse dropped task payload', err);
+    }
+  };
 
   const totalHours = endHour - startHour;
 
@@ -270,7 +387,13 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
         </div>
       )}
 
-      <div className="relative" style={{ height: `${totalHours * hourHeightPx}px` }}>
+      <div
+        data-testid="timeline-canvas-grid"
+        onDragOver={handleCanvasDragOver}
+        onDrop={handleCanvasDrop}
+        className="relative"
+        style={{ height: `${totalHours * hourHeightPx}px` }}
+      >
         {/* Hour Rows */}
         {Array.from({ length: totalHours }, (_, i) => {
           const hour = startHour + i;
@@ -413,21 +536,23 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
           const isResizing = resizeState?.taskId === task.id;
           const effectiveStartMin = isDragging ? dragState.currentStartMin : startMin;
           const effectiveDuration = isResizing ? resizeState.currentDuration : duration;
+          const bufferMin = task.bufferMinutes !== undefined ? task.bufferMinutes : (effectiveDuration >= 45 ? 15 : 0);
 
-          const { topPx, heightPx } = calculateBlockPosition(
+          const { topPx, heightPx, bufferHeightPx } = calculateBlockPosition(
             effectiveStartMin,
             effectiveDuration,
             startHour,
-            hourHeightPx
+            hourHeightPx,
+            bufferMin
           );
           const project = projects.find((p) => p.id === task.projectId);
           const isDone = task.status === 'done';
           const overlapEvent = findOverlappingCalendarEvent(effectiveStartMin, effectiveDuration, calendarEvents);
 
           return (
-            <div
-              key={task.id}
-              data-testid={`timeline-task-${task.id}`}
+            <React.Fragment key={task.id}>
+              <div
+                data-testid={`timeline-task-${task.id}`}
               data-timeline-task={task.id}
               data-dragging={isDragging ? 'true' : undefined}
               data-resizing={isResizing ? 'true' : undefined}
@@ -654,8 +779,25 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
                 </div>
               )}
             </div>
-          );
-        })}
+            {/* Rest Buffer Rail for Deep Work / Fatigue Recovery */}
+            {bufferHeightPx > 0 && !isDone && (
+              <div
+                data-testid={`timeline-buffer-${task.id}`}
+                className="absolute left-16 right-2 rounded-b-lg border-x border-b border-dashed border-amber-400/40 dark:border-amber-400/25 bg-amber-500/[0.05] dark:bg-amber-500/[0.08] text-amber-700 dark:text-amber-300 text-[10px] font-mono flex items-center justify-between px-3 pointer-events-none select-none z-[5] transition-all"
+                style={{
+                  top: `${topPx + heightPx}px`,
+                  height: `${bufferHeightPx}px`,
+                }}
+              >
+                <span className="flex items-center gap-1 font-semibold">
+                  ☕ Rest Buffer (+{bufferMin}m)
+                </span>
+                <span className="text-[9px] opacity-75 hidden sm:inline">Cognitive recovery</span>
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ interface TodayViewProps {
   onOpenBrainDump?: () => void; onStartSprint?: (id: string) => void; onOpenStudySession?: () => void;
 }
 export const TodayView: React.FC<TodayViewProps> = ({ onSelectTask, onStartFocus, onStartSprint }) => {
-  const { dashboards = [], updateDashboards, workspacePreferences = {}, workspaceId = 'local', setWorkspacePreference, tasks, smartViews = [], toggleTaskStatus, toggleTaskPinToday, updateTask, deleteTask } = useTaskContext();
+  const { dashboards = [], updateDashboards, workspacePreferences = {}, workspaceId = 'local', setWorkspacePreference, tasks, smartViews = [], toggleTaskStatus, toggleTaskPinToday, updateTask, deleteTask, batchUpdateTasks, batchDeleteTasks } = useTaskContext();
   const [planning, setPlanning] = useState(false);
   const today = useTodayStr();
   const defaultDashboardId = (workspacePreferences.workspace as WorkspacePreferences | undefined)?.defaultDashboardId;
@@ -34,7 +34,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onSelectTask, onStartFocus
     }
     return [...result.values()];
   }, [dashboards,workspacePreferences.activeDashboardId,defaultDashboardId,tasks,smartViews,today]);
-  useKeyboardNavigation({ tasks: visibleTasks, onSelectTask, onToggleStatus: toggleTaskStatus, onTogglePinToday: toggleTaskPinToday, onUpdateTask: updateTask, onDeleteTask: deleteTask, onStartFocus, enabled: true });
+  useKeyboardNavigation({ tasks: visibleTasks, onSelectTask, onToggleStatus: toggleTaskStatus, onTogglePinToday: toggleTaskPinToday, onUpdateTask: updateTask, onDeleteTask: deleteTask, onBatchUpdate: batchUpdateTasks, onBatchDelete: batchDeleteTasks, onBatchArchive: ids => batchUpdateTasks(ids, { archivedAt: Date.now() }), onStartFocus, enabled: true });
   return <div className="desk-today-page">
     {!!workspacePreferences._dashboardRecovery && <p className="desk-notice" role="status">A saved layout needs repair. A recovery copy is preserved on this device; your tasks and notes are safe.</p>}
     {planning && <DailyPlanning showCard={false} isOpen={true} onOpenChange={setPlanning}/>}

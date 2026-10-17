@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
 import { useTaskContext } from '../../context/TaskContext';
+import { useUIStore } from '../../store/useUIStore';
 import { ModalSkeleton } from '../ui';
 import { FeatureBoundary } from '../ui/FeatureBoundary';
 
@@ -11,6 +12,7 @@ const BrainDumpModal = lazy(() => import('./BrainDumpModal').then(m => ({ defaul
 const ExportImportModal = lazy(() => import('./ExportImportModal').then(m => ({ default: m.ExportImportModal })));
 const AuthModal = lazy(() => import('./AuthModal').then(m => ({ default: m.AuthModal })));
 const EveningShutdownModal = lazy(() => import('./EveningShutdownModal').then(m => ({ default: m.EveningShutdownModal })));
+const MorningKickoffModal = lazy(() => import('./MorningKickoffModal').then(m => ({ default: m.MorningKickoffModal })));
 const InterruptionModal = lazy(() => import('./InterruptionModal').then(m => ({ default: m.InterruptionModal })));
 const ScratchpadModal = lazy(() => import('./ScratchpadModal').then(m => ({ default: m.ScratchpadModal })));
 const SmartFilterModal = lazy(() => import('./SmartFilterModal').then(m => ({ default: m.SmartFilterModal })));
@@ -47,6 +49,9 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
     setSelectedTaskId,
   } = useTaskContext();
 
+  const isMorningKickoffOpen = useUIStore((s) => s.isMorningKickoffOpen);
+  const setIsMorningKickoffOpen = useUIStore((s) => s.setIsMorningKickoffOpen);
+
   const handleSelectTask = onSelectTask || ((id: string) => setSelectedTaskId(id));
 
   // Centralized Escape key dismissal for all active modals
@@ -66,6 +71,7 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
         closeModal(topModal);
         if (topModal === 'auth') setIsAuthModalOpen(false);
         if (topModal === 'eveningShutdown') setIsEveningShutdownOpen(false);
+        if (topModal === 'morningKickoff') setIsMorningKickoffOpen(false);
         if (topModal === 'weeklyReview') setIsWeeklyReviewOpen(false);
         if (topModal === 'smartFilter') setIsSmartFilterModalOpen(false);
         return;
@@ -80,6 +86,10 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
         e.preventDefault();
         setIsEveningShutdownOpen(false);
         closeModal('eveningShutdown');
+      } else if (isMorningKickoffOpen) {
+        e.preventDefault();
+        setIsMorningKickoffOpen(false);
+        closeModal('morningKickoff');
       } else if (isWeeklyReviewOpen) {
         e.preventDefault();
         setIsWeeklyReviewOpen(false);
@@ -104,6 +114,8 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
     setIsWeeklyReviewOpen,
     isSmartFilterModalOpen,
     setIsSmartFilterModalOpen,
+    isMorningKickoffOpen,
+    setIsMorningKickoffOpen,
   ]);
 
   return (
@@ -185,6 +197,16 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
           onClose={() => {
             setIsEveningShutdownOpen(false);
             closeModal('eveningShutdown');
+          }}
+        />
+      )}
+
+      {/* Morning Kickoff Ritual */}
+      {(isMorningKickoffOpen || isModalOpen('morningKickoff')) && (
+        <MorningKickoffModal
+          onClose={() => {
+            setIsMorningKickoffOpen(false);
+            closeModal('morningKickoff');
           }}
         />
       )}

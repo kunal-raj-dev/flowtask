@@ -114,4 +114,29 @@ describe('nlpParser', () => {
     expect(res.tags).toEqual(['work', 'backend', 'auth']);
     expect(res.priority).toBe('p1');
   });
+
+  it('sets plannedDate appropriately for explicit plan tokens (e.g. plan:tomorrow)', () => {
+    const res = parseTaskInput('Ship v3 feature plan:tomorrow at 2pm #release');
+    expect(res.cleanTitle).toBe('Ship v3 feature');
+    expect(res.plannedDate).toBeDefined();
+    expect(res.dueTime).toBe('14:00');
+    expect(res.projectTag).toBe('release');
+  });
+
+  it('sets plannedDate appropriately for schedule tokens (e.g. schedule:tomorrow)', () => {
+    const res = parseTaskInput('Ship v3 feature schedule:tomorrow at 2pm #release');
+    expect(res.cleanTitle).toBe('Ship v3 feature');
+    expect(res.plannedDate).toBeDefined();
+    expect(res.dueTime).toBe('14:00');
+    expect(res.projectTag).toBe('release');
+  });
+
+  it('parses explicit dual date tokens (plan: and due:)', () => {
+    const res = parseTaskInput('Finalize sprint audit plan:2026-10-20 due:2026-10-25 #work p1');
+    expect(res.cleanTitle).toBe('Finalize sprint audit');
+    expect(res.plannedDate).toBe('2026-10-20');
+    expect(res.dueDate).toBe('2026-10-25');
+    expect(res.projectTag).toBe('work');
+    expect(res.priority).toBe('p1');
+  });
 });

@@ -133,3 +133,11 @@ export const DEFAULT_STUDIO: StudioPreferences = {
   timerStyle: "digital",
   nextAction: "",
 };
+
+export interface MediaCatalog {
+  scenes: MediaAsset[];
+  audio: MediaAsset[];
+  error?: string;
+  refreshPersonal?: () => void;
+}
+export type FocusStudioPreferences = StudioPreferences;

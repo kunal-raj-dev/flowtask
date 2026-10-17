@@ -9,6 +9,7 @@ export type ModalType =
   | 'aesthetics'
   | 'auth'
   | 'eveningShutdown'
+  | 'morningKickoff'
   | 'interruption'
   | 'scratchpad'
   | 'smartFilter'

@@ -26,25 +26,24 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
     batchUpdateTasks,
     toggleTaskStatus,
     dismissShutdown,
+    workspacePreferences,
+    setWorkspacePreference,
   } = useTaskContext();
 
   const todayStr = useTodayStr();
 
+  const dailyReflections = (workspacePreferences?.dailyReflections as Record<string, string> | undefined) || {};
   const [reflection, setReflection] = useState<string>(() => {
-    try {
-      return localStorage.getItem(`flowtask_shutdown_reflection_${todayStr}`) || '';
-    } catch {
-      return '';
-    }
+    return dailyReflections[todayStr] || '';
   });
 
   const handleSaveReflection = (val: string) => {
     setReflection(val);
-    try {
-      localStorage.setItem(`flowtask_shutdown_reflection_${todayStr}`, val);
-    } catch {
-      // ignore
-    }
+    const updated = {
+      ...((workspacePreferences?.dailyReflections as Record<string, string>) || {}),
+      [todayStr]: val,
+    };
+    setWorkspacePreference('dailyReflections', updated);
   };
 
   // Completed tasks today

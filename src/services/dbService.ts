@@ -61,7 +61,7 @@ export function getDatabase() {
 }
 export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     workspaceId,
     tasks: [],
     projects: DEFAULT_PROJECTS.filter(p => p.id !== 'ideas'),
@@ -90,7 +90,7 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
     ...data,
     dashboards,
     workspaceId: id,
-    schemaVersion: 5,
+    schemaVersion: 6,
     preferences: {
       ...raw.preferences,
       ...(dashboardRecovery ? { _dashboardRecovery: true } : {}),
@@ -101,6 +101,10 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
       ...t,
       isSomeday: t.isSomeday || t.projectId === 'ideas',
       topThreeDate: t.topThreeDate || (t.isPinnedToday ? t.plannedDate || t.dueDate || date : undefined),
+      rolloverCount: t.rolloverCount,
+      lastRolledOverAt: t.lastRolledOverAt,
+      bufferMinutes: t.bufferMinutes,
+      isAutoTriaged: t.isAutoTriaged,
     })),
   };
 }
@@ -118,6 +122,9 @@ export const dbService = {
         }
         if ((record.schemaVersion || 0) < 5 && !await db.get('legacy_backups', `v4:${id}`)) {
           await db.put('legacy_backups', { id: `v4:${id}`, workspaceId: id, savedAt: Date.now(), record });
+        }
+        if ((record.schemaVersion || 0) < 6 && !await db.get('legacy_backups', `v5:${id}`)) {
+          await db.put('legacy_backups', { id: `v5:${id}`, workspaceId: id, savedAt: Date.now(), record });
         }
         return normalize(record, id);
       }

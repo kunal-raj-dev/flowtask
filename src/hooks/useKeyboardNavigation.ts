@@ -11,6 +11,9 @@ interface UseKeyboardNavigationProps {
   onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
   onDeleteTask?: (taskId: string) => void;
   onStartFocus?: (taskId: string) => void;
+  onBatchUpdate?: (taskIds: string[], updates: Partial<Task>) => void;
+  onBatchDelete?: (taskIds: string[]) => void;
+  onBatchArchive?: (taskIds: string[]) => void;
   enabled?: boolean;
 }
 
@@ -22,6 +25,9 @@ export function useKeyboardNavigation({
   onUpdateTask,
   onDeleteTask,
   onStartFocus,
+  onBatchUpdate,
+  onBatchDelete,
+  onBatchArchive,
   enabled = true,
 }: UseKeyboardNavigationProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(() => {
@@ -86,6 +92,68 @@ export function useKeyboardNavigation({
         return;
       }
 
+      const selectedTaskIds = useUIStore.getState().selectedTaskIds;
+      if (selectedTaskIds.length > 0) {
+        // Multi-select batch hotkeys
+        if (e.key === 'e' || e.key === 'E') {
+          e.preventDefault();
+          if (onBatchArchive) onBatchArchive(selectedTaskIds);
+          else if (onBatchUpdate) onBatchUpdate(selectedTaskIds, { archivedAt: Date.now() });
+          else if (onUpdateTask) selectedTaskIds.forEach(id => onUpdateTask(id, { archivedAt: Date.now() }));
+          useUIStore.getState().clearTaskSelection();
+          return;
+        }
+        if (e.key === 'd' || e.key === 'D' || e.key === 'Delete') {
+          e.preventDefault();
+          if (onBatchDelete) onBatchDelete(selectedTaskIds);
+          else if (onDeleteTask) selectedTaskIds.forEach(id => onDeleteTask(id));
+          useUIStore.getState().clearTaskSelection();
+          return;
+        }
+        if (e.key === 't' || e.key === 'T') {
+          e.preventDefault();
+          const todayStr = formatLocalDate(new Date());
+          const updates = { plannedDate: todayStr, isSomeday: false };
+          if (onBatchUpdate) onBatchUpdate(selectedTaskIds, updates);
+          else if (onUpdateTask) selectedTaskIds.forEach(id => onUpdateTask(id, updates));
+          useUIStore.getState().clearTaskSelection();
+          return;
+        }
+        if (e.key === 'm' || e.key === 'M') {
+          e.preventDefault();
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const tomorrowStr = formatLocalDate(tomorrow);
+          const updates = { plannedDate: tomorrowStr, isSomeday: false };
+          if (onBatchUpdate) onBatchUpdate(selectedTaskIds, updates);
+          else if (onUpdateTask) selectedTaskIds.forEach(id => onUpdateTask(id, updates));
+          useUIStore.getState().clearTaskSelection();
+          return;
+        }
+        if (e.key === 's' || e.key === 'S') {
+          e.preventDefault();
+          const updates = { isSomeday: true, plannedDate: undefined, isPinnedToday: false };
+          if (onBatchUpdate) onBatchUpdate(selectedTaskIds, updates);
+          else if (onUpdateTask) selectedTaskIds.forEach(id => onUpdateTask(id, updates));
+          useUIStore.getState().clearTaskSelection();
+          return;
+        }
+        if (['1', '2', '3', '4', 'p', 'P'].includes(e.key)) {
+          e.preventDefault();
+          const pMap: Record<string, Priority> = { '1': 'p1', '2': 'p2', '3': 'p3', '4': 'p4', 'p': 'p1', 'P': 'p1' };
+          const p = pMap[e.key] || 'p1';
+          if (onBatchUpdate) onBatchUpdate(selectedTaskIds, { priority: p });
+          else if (onUpdateTask) selectedTaskIds.forEach(id => onUpdateTask(id, { priority: p }));
+          useUIStore.getState().clearTaskSelection();
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          useUIStore.getState().clearTaskSelection();
+          return;
+        }
+      }
+
       switch (e.key) {
         // Move down
         case 'j':
@@ -93,9 +161,20 @@ export function useKeyboardNavigation({
           e.preventDefault();
           setFocusedIndex((prev) => {
             const next = prev < tasks.length - 1 ? prev + 1 : 0;
-            const currentSelected = useUIStore.getState().selectedTaskId;
-            if (currentSelected && tasks[next]) {
-              onSelectTask(tasks[next].id);
+            if (e.shiftKey) {
+              const currentTaskId = tasks[prev]?.id;
+              const nextTaskId = tasks[next]?.id;
+              if (currentTaskId && !useUIStore.getState().selectedTaskIds.includes(currentTaskId)) {
+                useUIStore.getState().selectTask(currentTaskId);
+              }
+              if (nextTaskId) {
+                useUIStore.getState().selectTask(nextTaskId);
+              }
+            } else {
+              const currentSelected = useUIStore.getState().selectedTaskId;
+              if (currentSelected && tasks[next]) {
+                onSelectTask(tasks[next].id);
+              }
             }
             return next;
           });
@@ -108,9 +187,20 @@ export function useKeyboardNavigation({
           e.preventDefault();
           setFocusedIndex((prev) => {
             const next = prev > 0 ? prev - 1 : tasks.length - 1;
-            const currentSelected = useUIStore.getState().selectedTaskId;
-            if (currentSelected && tasks[next]) {
-              onSelectTask(tasks[next].id);
+            if (e.shiftKey) {
+              const currentTaskId = tasks[prev]?.id;
+              const nextTaskId = tasks[next]?.id;
+              if (currentTaskId && !useUIStore.getState().selectedTaskIds.includes(currentTaskId)) {
+                useUIStore.getState().selectTask(currentTaskId);
+              }
+              if (nextTaskId) {
+                useUIStore.getState().selectTask(nextTaskId);
+              }
+            } else {
+              const currentSelected = useUIStore.getState().selectedTaskId;
+              if (currentSelected && tasks[next]) {
+                onSelectTask(tasks[next].id);
+              }
             }
             return next;
           });
@@ -234,6 +324,9 @@ export function useKeyboardNavigation({
       onUpdateTask,
       onDeleteTask,
       onStartFocus,
+      onBatchUpdate,
+      onBatchDelete,
+      onBatchArchive,
     ]
   );
 

@@ -32,7 +32,9 @@ export function computeHistoricalVelocity(
       if (t.status !== 'done') return false;
       if (!t.estimatedMinutes || t.estimatedMinutes <= 0) return false;
       if (!t.timeSpentMinutes || t.timeSpentMinutes <= 0) return false;
-      return t.contextTags?.some((ct) => ct.replace(/^#/, '').toLowerCase() === cleanTag);
+      const matchContext = t.contextTags?.some((ct) => ct.replace(/^#/, '').toLowerCase() === cleanTag);
+      const matchTag = t.tags?.some((tg) => tg.replace(/^#/, '').toLowerCase() === cleanTag);
+      return Boolean(matchContext || matchTag);
     });
 
     if (tagSample.length >= 2) {

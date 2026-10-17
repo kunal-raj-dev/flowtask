@@ -19,6 +19,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { calculateEstimationAccuracy } from '../../utils/velocityCalibrator';
+import { EmptyState } from '../ui';
 
 interface InsightsViewProps {
   onSelectTask: (taskId: string) => void;
@@ -277,6 +278,36 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   // Estimation Accuracy & Velocity Metrics (memoized)
   const accuracyMetrics = useMemo(() => calculateEstimationAccuracy(tasks), [tasks]);
 
+  // 24-Hour Continuous Chronotype Curve Paths (memoized)
+  const { chronoLinePath, chronoAreaPath } = useMemo(() => {
+    const points: { x: number; y: number }[] = [];
+    const width = 240;
+    const height = 44;
+    for (let h = 0; h < 24; h++) {
+      const x = (h / 23) * width;
+      const count = hourlyCounts[h] || 0;
+      const normalized = maxHourlyCount > 0 ? count / maxHourlyCount : 0;
+      const y = height - (normalized * (height - 8)) - 4;
+      points.push({ x, y });
+    }
+
+    if (points.length === 0) return { chronoLinePath: '', chronoAreaPath: '' };
+    let line = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i === 0 ? 0 : i - 1];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[i + 2] || p2;
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      line += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    const area = `${line} L ${width} ${height} L 0 ${height} Z`;
+    return { chronoLinePath: line, chronoAreaPath: area };
+  }, [hourlyCounts, maxHourlyCount]);
+
   // Project distribution (memoized)
   const projectStats = useMemo(() => {
     const stats: { id: string; name: string; color: string; count: number; percent: number }[] = [];
@@ -400,6 +431,14 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
         </div>
       </div>
 
+      {completedTasks.length === 0 && focusLogs.length === 0 && (
+        <EmptyState
+          variant="no-analytics"
+          title="Your data constellation begins with action"
+          description="Complete tasks and run focus sessions to unlock estimation velocity, deep work heatmaps, and chronotype patterns."
+        />
+      )}
+
       {/* Estimation Velocity & Cognitive Workload Distribution */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Historical Velocity & Calibration Card */}
@@ -459,6 +498,16 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
                   {/* Axis lines */}
                   <line x1="25" y1="10" x2="25" y2="95" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1" />
                   <line x1="25" y1="95" x2="255" y2="95" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1" />
+
+                  {/* ±20% Slippage Parity Tolerance Band (0.8x to 1.2x) */}
+                  <polygon
+                    points="25,95 255,24 255,10 25,95"
+                    fill="#6366F1"
+                    fillOpacity="0.08"
+                  />
+                  <text x="180" y="24" fill="#6366F1" fillOpacity="0.6" fontSize="6.5" fontStyle="italic">
+                    ±20% Calibrated Band
+                  </text>
 
                   {/* 1.0x Parity Diagonal Line */}
                   <line
@@ -669,10 +718,10 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
               )}
             </p>
 
-            {/* 24-Hour Energy Completion Arc */}
+            {/* 24-Hour Energy Completion Arc & Continuous Curve */}
             <div className="mt-3.5 p-3 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
               <div className="flex items-center justify-between text-[11px] mb-2 font-medium">
-                <span className="text-[var(--text-secondary)]">24-Hour Hourly Activity Arc</span>
+                <span className="text-[var(--text-secondary)]">24-Hour Chronotype Energy Curve</span>
                 <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold font-mono">
                   {hoveredHour !== null
                     ? `${hoveredHour.toString().padStart(2, '0')}:00 • ${hourlyCounts[hoveredHour]} task${hourlyCounts[hoveredHour] === 1 ? '' : 's'}`
@@ -680,7 +729,33 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
                 </span>
               </div>
 
-              <div className="flex items-end gap-0.5 h-12 pt-1 pb-1">
+              {/* Continuous 24-Hour SVG Area Path */}
+              {chronoAreaPath && (
+                <div className="relative w-full h-14 mb-1 overflow-hidden">
+                  <svg viewBox="0 0 240 44" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+                    <defs>
+                      <linearGradient id="chronoGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.45" />
+                        <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                    <path d={chronoAreaPath} fill="url(#chronoGradient)" />
+                    <path d={chronoLinePath} fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
+                    {/* Current Hour Indicator Circle */}
+                    <circle
+                      cx={(currentHour / 23) * 240}
+                      cy={44 - ((maxHourlyCount > 0 ? (hourlyCounts[currentHour] || 0) / maxHourlyCount : 0) * 36) - 4}
+                      r="3.5"
+                      fill="#F59E0B"
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                      className="animate-pulse"
+                    />
+                  </svg>
+                </div>
+              )}
+
+              <div className="flex items-end gap-0.5 h-10 pt-1 pb-1">
                 {hourlyCounts.map((count, h) => {
                   const heightPercent = maxHourlyCount > 0 ? Math.max(8, Math.round((count / maxHourlyCount) * 100)) : 8;
                   const isCurrent = h === currentHour;

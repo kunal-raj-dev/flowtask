@@ -21,8 +21,9 @@ export function parseTimeToMinutes(timeStr?: string): number | null {
  * Converts minutes from midnight into a formatted 24h string "HH:mm".
  */
 export function minutesToTimeStr(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
+  const clamped = Math.min(23 * 60 + 59, Math.max(0, Math.floor(totalMinutes)));
+  const h = Math.floor(clamped / 60);
+  const m = clamped % 60;
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 }
 
@@ -75,11 +76,13 @@ export function calculateBlockPosition(
   startMin: number,
   duration: number,
   startHour: number = TIMELINE_START_HOUR,
-  hourHeightPx: number = TIMELINE_HOUR_HEIGHT_PX
-): { topPx: number; heightPx: number } {
+  hourHeightPx: number = TIMELINE_HOUR_HEIGHT_PX,
+  bufferMinutes: number = 0
+): { topPx: number; heightPx: number; bufferHeightPx: number } {
   const topPx = ((startMin - startHour * 60) / 60) * hourHeightPx;
   const heightPx = Math.max(38, (duration / 60) * hourHeightPx);
-  return { topPx, heightPx };
+  const bufferHeightPx = bufferMinutes > 0 ? (bufferMinutes / 60) * hourHeightPx : 0;
+  return { topPx, heightPx, bufferHeightPx };
 }
 
 /**
@@ -298,4 +301,116 @@ export function findNextFreeGap(
   }
 
   return null;
+}
+
+export interface ScheduleRippleUpdate {
+  id: string;
+  scheduledStart: string;
+  scheduledEnd: string;
+  bufferMinutes?: number;
+}
+
+/**
+ * Calculates collision push-down rippling when scheduling or moving a task.
+ * Automatically inserts a cognitive buffer (10-15m) for deep work blocks (>= 45m).
+ * If dropping or resizing a task overlaps with existing tasks, subsequent tasks are
+ * pushed down along the schedule rail in 15-minute aligned increments.
+ */
+export function rippleScheduleGaps(
+  tasks: Task[],
+  movedTaskId: string,
+  newStartMin: number,
+  durationMinutes: number,
+  calendarEvents: CalendarEvent[] = [],
+  customBufferMinutes?: number
+): ScheduleRippleUpdate[] {
+  const updates: ScheduleRippleUpdate[] = [];
+
+  // 1. Determine cognitive buffer for the moved task
+  const movedTask = tasks.find((t) => t.id === movedTaskId);
+  const bufferMinutes =
+    customBufferMinutes !== undefined
+      ? customBufferMinutes
+      : (movedTask?.bufferMinutes !== undefined
+          ? movedTask.bufferMinutes
+          : durationMinutes >= 45 ? 15 : 0);
+
+  const movedEndMin = newStartMin + durationMinutes;
+
+  updates.push({
+    id: movedTaskId,
+    scheduledStart: minutesToTimeStr(newStartMin),
+    scheduledEnd: minutesToTimeStr(movedEndMin),
+    bufferMinutes: bufferMinutes > 0 ? bufferMinutes : undefined,
+  });
+
+  // Total block occupied by moved task including its trailing buffer
+  let currentOccupiedEnd = movedEndMin + bufferMinutes;
+
+  // Other scheduled tasks sorted by their start time
+  const otherScheduledTasks = tasks
+    .filter((t) => t.id !== movedTaskId && !t.deletedAt && !t.archivedAt && Boolean(t.scheduledStart))
+    .map((t) => {
+      const s = parseTimeToMinutes(t.scheduledStart)!;
+      const explicitEnd = parseTimeToMinutes(t.scheduledEnd);
+      const dur = explicitEnd !== null && explicitEnd > s ? explicitEnd - s : t.estimatedMinutes || 30;
+      const buf = t.bufferMinutes !== undefined ? t.bufferMinutes : (dur >= 45 ? 15 : 0);
+      return {
+        task: t,
+        startMin: s,
+        duration: dur,
+        bufferMinutes: buf,
+      };
+    })
+    .sort((a, b) => a.startMin - b.startMin);
+
+  // Extract and sort non-all-day calendar intervals
+  const calendarIntervals = calendarEvents
+    .filter((ev) => !ev.isAllDay && ev.startTime && ev.endTime)
+    .map((ev) => ({
+      start: parseTimeToMinutes(ev.startTime),
+      end: parseTimeToMinutes(ev.endTime),
+    }))
+    .filter((ev): ev is { start: number; end: number } => ev.start !== null && ev.end !== null)
+    .sort((a, b) => a.start - b.start);
+
+  // Check each subsequent task for overlap
+  for (const item of otherScheduledTasks) {
+    if (item.task.scheduleLocked) continue;
+
+    // Check if item starts before currentOccupiedEnd and ends after newStartMin
+    if (item.startMin < currentOccupiedEnd && item.startMin + item.duration > newStartMin) {
+      // Collision detected! Nudge item down so it starts at or after currentOccupiedEnd (snapped to 15m)
+      let nextStart = Math.min(23 * 60 + 45, Math.ceil(currentOccupiedEnd / 15) * 15);
+
+      // Iteratively ensure it doesn't overlap with any calendar event
+      let bumped = true;
+      let iterations = 0;
+      while (bumped && iterations < 20) {
+        bumped = false;
+        iterations++;
+        for (const ev of calendarIntervals) {
+          if (nextStart < ev.end && nextStart + item.duration > ev.start) {
+            nextStart = Math.min(23 * 60 + 45, Math.ceil(ev.end / 15) * 15);
+            bumped = true;
+          }
+        }
+      }
+
+      const nextEnd = Math.min(23 * 60 + 59, nextStart + item.duration);
+      updates.push({
+        id: item.task.id,
+        scheduledStart: minutesToTimeStr(nextStart),
+        scheduledEnd: minutesToTimeStr(nextEnd),
+        bufferMinutes: item.bufferMinutes > 0 ? item.bufferMinutes : undefined,
+      });
+
+      // Update currentOccupiedEnd for subsequent ripples
+      currentOccupiedEnd = nextEnd + item.bufferMinutes;
+    } else if (item.startMin >= currentOccupiedEnd) {
+      currentOccupiedEnd = Math.max(currentOccupiedEnd, item.startMin + item.duration + item.bufferMinutes);
+    }
+  }
+
+  return updates;
 }

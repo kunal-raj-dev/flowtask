@@ -62,8 +62,12 @@ export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): 
       deletedAt,
       archivedAt,
       revision: t.revision,
+      rolloverCount: t.rolloverCount,
+      lastRolledOverAt: t.lastRolledOverAt,
+      bufferMinutes: t.bufferMinutes,
     };
-    for (const key of ['estimatedMinutes', 'timeSpentMinutes', 'updatedAt', 'completedAt', 'deletedAt', 'archivedAt', 'revision']) if (timeChecked[key] !== undefined && (typeof timeChecked[key] !== 'number' || !Number.isFinite(timeChecked[key] as number) || (timeChecked[key] as number) < 0)) fail(`${label}: invalid ${key}.`);
+    for (const key of ['estimatedMinutes', 'timeSpentMinutes', 'updatedAt', 'completedAt', 'deletedAt', 'archivedAt', 'revision', 'rolloverCount', 'lastRolledOverAt', 'bufferMinutes']) if (timeChecked[key] !== undefined && (typeof timeChecked[key] !== 'number' || !Number.isFinite(timeChecked[key] as number) || (timeChecked[key] as number) < 0)) fail(`${label}: invalid ${key}.`);
+    if (t.isAutoTriaged !== undefined && typeof t.isAutoTriaged !== 'boolean') fail(`${label}: invalid isAutoTriaged.`);
     if (t.recurrence !== undefined && !['none', 'daily', 'weekdays', 'weekly', 'biweekly', 'monthly', 'yearly', 'custom'].includes(String(t.recurrence))) fail(`${label}: invalid recurrence.`);
     if (t.recurrence === 'custom') {
       const rule = t.customRecurrence;

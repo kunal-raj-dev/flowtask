@@ -28,6 +28,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { parseTimeToMinutes, minutesToTimeStr } from '../../utils/timelineUtils';
+import { getVelocityCalibration } from '../../utils/velocityCalibrator';
 import { Kbd } from '../ui';
 
 interface TaskComposerProps {
@@ -147,7 +148,14 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   const hasParsedPriority = explicitPriority === 'p4' && !parsed.priority ? false : Boolean((parsed.priority && parsed.priority !== 'p4') || (explicitPriority && explicitPriority !== 'p4'));
   const hasParsedDuration = explicitDuration === null && !parsed.estimatedMinutes ? false : Boolean(parsed.estimatedMinutes || explicitDuration);
   const hasParsedRecurrence = explicitRecurrence === 'none' && !parsed.recurrence ? false : Boolean((parsed.recurrence && parsed.recurrence !== 'none') || (explicitRecurrence && explicitRecurrence !== 'none'));
-  const hasAnyParsedTokens = hasParsedProject || hasParsedPlannedDate || hasParsedDueDate || hasParsedPriority || hasParsedDuration || hasParsedRecurrence || isSessionActive;
+
+  const velocityCalibration = React.useMemo(() => {
+    if (!effectiveDuration) return null;
+    const firstTag = parsed.tags?.[0] || parsed.contextTags?.[0];
+    return getVelocityCalibration(tasks, effectiveDuration, projectObj.id, firstTag);
+  }, [tasks, effectiveDuration, projectObj.id, parsed.tags, parsed.contextTags]);
+
+  const hasAnyParsedTokens = hasParsedProject || hasParsedPlannedDate || hasParsedDueDate || hasParsedPriority || hasParsedDuration || hasParsedRecurrence || isSessionActive || Boolean(velocityCalibration);
 
   // Duplicate detection preview
   const duplicateCandidates = React.useMemo(() => {
@@ -575,6 +583,30 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                           <X size={10} strokeWidth={1.75} />
                         </span>
                       )}
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Anti-Planning Fallacy Velocity Calibration Chip */}
+                {velocityCalibration && (
+                  <motion.div
+                    key="chip-calibration"
+                    layout="position"
+                    initial={{ opacity: 0, scale: 0.85, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, y: -4 }}
+                    transition={SPRING_TACTILE}
+                    className="shrink-0"
+                  >
+                    <button
+                      type="button"
+                      data-testid="chip-velocity-calibration"
+                      onClick={() => setExplicitDuration(velocityCalibration.recommendedMinutes)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 text-[11px] font-medium transition-colors active:scale-95"
+                      title={`Historical velocity suggests ~${velocityCalibration.recommendedMinutes}m (based on ${velocityCalibration.sampleCount} tasks in ${velocityCalibration.scope}). Click to calibrate.`}
+                    >
+                      <Sparkles size={11} strokeWidth={2} className="text-amber-500" />
+                      <span>Calibrated: ~{velocityCalibration.recommendedMinutes}m</span>
                     </button>
                   </motion.div>
                 )}

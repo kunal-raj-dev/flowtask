@@ -211,3 +211,11 @@ export class WorkspaceStore {
     await this.flush();
   }
 }
+
+export {
+  useWorkspaceTasks,
+  useWorkspaceProjects,
+  useActiveTask,
+  useWorkspaceSelector,
+  WorkspaceStoreContext,
+} from '../context/TaskContext';

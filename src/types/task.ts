@@ -80,6 +80,10 @@ export interface Task {
   contextTags?: string[]; // GTD context tags, e.g. ['calls', 'computer', 'errands']
   blockedBy?: string[]; // IDs of tasks that block this task
   sessionMetadata?: SessionMetadata; // Study/Sprint Session configuration & pacing
+  rolloverCount?: number; // Number of times pushed forward
+  lastRolledOverAt?: number; // Timestamp of last rollover
+  bufferMinutes?: number; // Auto-inserted rest buffer after task
+  isAutoTriaged?: boolean; // Flagged by triage engine
   createdAt: number;
   completedAt?: number;
 }

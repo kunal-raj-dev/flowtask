@@ -247,6 +247,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           onSelectTask={onSelectTask}
           onToggleTaskStatus={toggleTaskStatus}
           onUpdateTask={updateTask}
+          onApplyBatchChanges={applyTaskChanges}
           onStartFocus={onStartFocus}
           onStartSprint={onStartSprint}
           onQuickAdd={handleQuickAdd}
