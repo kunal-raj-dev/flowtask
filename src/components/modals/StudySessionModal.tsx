@@ -1,3 +1,4 @@
+import { StudyContinuity } from '../workflow/StudyContinuity';
 import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import {
@@ -240,6 +241,8 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
       }
     >
       <div className="space-y-4">
+        <StudyContinuity onResume={id => { onClose(); launchSprint?.(id); }} />
+        <div className="flex flex-wrap gap-2"><span className="text-xs self-center">Start with a template</span>{['Exam revision','DSA practice'].map(name => <button key={name} className="v2-action" onClick={() => { setActiveTab('builder'); setBuilderTopic(name); setBuilderTargets((name === 'Exam revision' ? ['Recall without notes','Practice questions','Review mistakes'] : ['Restate the problem','Implement and test','Explain complexity']).map((title,i) => ({ id: `starter-${i}`, title, difficulty: 'MEDIUM', tags: [] }))); }}>{name}</button>)}</div>
         {/* Navigation Tabs */}
         <div className="flex items-center justify-between gap-3">
           <SegmentedControl<'paste' | 'builder'>

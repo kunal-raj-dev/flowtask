@@ -49,6 +49,7 @@ export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
   const liveTotalFocusedTodaySeconds = useTotalFocusedTodaySeconds();
   const totalFocusedTodaySeconds = (context as any)?.totalFocusedTodaySeconds ?? liveTotalFocusedTodaySeconds;
 
+
   const formattedTodayFocus = useMemo(
     () => formatSecondsToHumanReadable(totalFocusedTodaySeconds),
     [totalFocusedTodaySeconds]

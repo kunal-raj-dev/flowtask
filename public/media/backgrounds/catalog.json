@@ -1,0 +1,1472 @@
+[
+  {
+    "id": "misty-pines",
+    "title": "Misty Pines",
+    "category": "nature",
+    "src": "/media/backgrounds/v1/misty-pines.webp",
+    "thumbnail": "/media/backgrounds/v1/misty-pines-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/misty-pines-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/misty-pines.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 206826,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "fern-trail",
+    "title": "Fern Trail",
+    "category": "nature",
+    "src": "/media/backgrounds/v1/fern-trail.webp",
+    "thumbnail": "/media/backgrounds/v1/fern-trail-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/fern-trail-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/fern-trail.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 579242,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "hidden-waterfall",
+    "title": "Hidden Waterfall",
+    "category": "nature",
+    "src": "/media/backgrounds/v1/hidden-waterfall.webp",
+    "thumbnail": "/media/backgrounds/v1/hidden-waterfall-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/hidden-waterfall-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/hidden-waterfall.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 534158,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "golden-grove",
+    "title": "Golden Grove",
+    "category": "nature",
+    "src": "/media/backgrounds/v1/golden-grove.webp",
+    "thumbnail": "/media/backgrounds/v1/golden-grove-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/golden-grove-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/golden-grove.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 550874,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "bamboo-retreat",
+    "title": "Bamboo Retreat",
+    "category": "nature",
+    "src": "/media/backgrounds/v1/bamboo-retreat.webp",
+    "thumbnail": "/media/backgrounds/v1/bamboo-retreat-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/bamboo-retreat-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/bamboo-retreat.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 383792,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "meadow-light",
+    "title": "Meadow Light",
+    "category": "nature",
+    "src": "/media/backgrounds/v1/meadow-light.webp",
+    "thumbnail": "/media/backgrounds/v1/meadow-light-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/meadow-light-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/meadow-light.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 392342,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "alpine-mirror",
+    "title": "Alpine Mirror",
+    "category": "mountains",
+    "src": "/media/backgrounds/v1/alpine-mirror.webp",
+    "thumbnail": "/media/backgrounds/v1/alpine-mirror-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/alpine-mirror-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/alpine-mirror.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 298222,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "himalayan-dawn",
+    "title": "Himalayan Dawn",
+    "category": "mountains",
+    "src": "/media/backgrounds/v1/himalayan-dawn.webp",
+    "thumbnail": "/media/backgrounds/v1/himalayan-dawn-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/himalayan-dawn-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/himalayan-dawn.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 142474,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "snowbound-cabin",
+    "title": "Snowbound Cabin",
+    "category": "mountains",
+    "src": "/media/backgrounds/v1/snowbound-cabin.webp",
+    "thumbnail": "/media/backgrounds/v1/snowbound-cabin-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/snowbound-cabin-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/snowbound-cabin.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 310964,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "highland-mist",
+    "title": "Highland Mist",
+    "category": "mountains",
+    "src": "/media/backgrounds/v1/highland-mist.webp",
+    "thumbnail": "/media/backgrounds/v1/highland-mist-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/highland-mist-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/highland-mist.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 242778,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "dolomite-evening",
+    "title": "Dolomite Evening",
+    "category": "mountains",
+    "src": "/media/backgrounds/v1/dolomite-evening.webp",
+    "thumbnail": "/media/backgrounds/v1/dolomite-evening-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/dolomite-evening-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/dolomite-evening.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 413764,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "fjord-silence",
+    "title": "Fjord Silence",
+    "category": "mountains",
+    "src": "/media/backgrounds/v1/fjord-silence.webp",
+    "thumbnail": "/media/backgrounds/v1/fjord-silence-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/fjord-silence-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/fjord-silence.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 302736,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "rainy-desk",
+    "title": "Rainy Desk",
+    "category": "cozy",
+    "src": "/media/backgrounds/v1/rainy-desk.webp",
+    "thumbnail": "/media/backgrounds/v1/rainy-desk-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/rainy-desk-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/rainy-desk.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 232684,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "reading-nook",
+    "title": "Reading Nook",
+    "category": "cozy",
+    "src": "/media/backgrounds/v1/reading-nook.webp",
+    "thumbnail": "/media/backgrounds/v1/reading-nook-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/reading-nook-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/reading-nook.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 351660,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "old-library",
+    "title": "Old Library",
+    "category": "cozy",
+    "src": "/media/backgrounds/v1/old-library.webp",
+    "thumbnail": "/media/backgrounds/v1/old-library-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/old-library-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/old-library.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 254414,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "attic-studio",
+    "title": "Attic Studio",
+    "category": "cozy",
+    "src": "/media/backgrounds/v1/attic-studio.webp",
+    "thumbnail": "/media/backgrounds/v1/attic-studio-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/attic-studio-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/attic-studio.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 323954,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "fireplace-evening",
+    "title": "Fireplace Evening",
+    "category": "cozy",
+    "src": "/media/backgrounds/v1/fireplace-evening.webp",
+    "thumbnail": "/media/backgrounds/v1/fireplace-evening-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/fireplace-evening-960.webp",
+        "width": 960,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/fireplace-evening.webp",
+        "width": 1672,
+        "height": 940
+      }
+    ],
+    "width": 1672,
+    "height": 940,
+    "kind": "image",
+    "bytes": 254846,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "garden-workspace",
+    "title": "Garden Workspace",
+    "category": "cozy",
+    "src": "/media/backgrounds/v1/garden-workspace.webp",
+    "thumbnail": "/media/backgrounds/v1/garden-workspace-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/garden-workspace-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/garden-workspace.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 368324,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "illustrated-rain-room",
+    "title": "Rain Room Illustration",
+    "category": "anime",
+    "src": "/media/backgrounds/v1/illustrated-rain-room.webp",
+    "thumbnail": "/media/backgrounds/v1/illustrated-rain-room-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/illustrated-rain-room-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/illustrated-rain-room.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 334520,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "sunset-rooftop",
+    "title": "Sunset Rooftop",
+    "category": "anime",
+    "src": "/media/backgrounds/v1/sunset-rooftop.webp",
+    "thumbnail": "/media/backgrounds/v1/sunset-rooftop-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/sunset-rooftop-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/sunset-rooftop.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 374720,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "train-window",
+    "title": "Train Window",
+    "category": "anime",
+    "src": "/media/backgrounds/v1/train-window.webp",
+    "thumbnail": "/media/backgrounds/v1/train-window-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/train-window-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/train-window.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 250182,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "moonlit-bookshop",
+    "title": "Moonlit Bookshop",
+    "category": "anime",
+    "src": "/media/backgrounds/v1/moonlit-bookshop.webp",
+    "thumbnail": "/media/backgrounds/v1/moonlit-bookshop-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/moonlit-bookshop-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/moonlit-bookshop.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 387730,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "seaside-room",
+    "title": "Seaside Room",
+    "category": "anime",
+    "src": "/media/backgrounds/v1/seaside-room.webp",
+    "thumbnail": "/media/backgrounds/v1/seaside-room-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/seaside-room-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/seaside-room.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 322038,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "snowy-workshop",
+    "title": "Snowy Workshop",
+    "category": "anime",
+    "src": "/media/backgrounds/v1/snowy-workshop.webp",
+    "thumbnail": "/media/backgrounds/v1/snowy-workshop-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/snowy-workshop-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/snowy-workshop.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 276038,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "rainy-skyline",
+    "title": "Rainy Skyline",
+    "category": "city",
+    "src": "/media/backgrounds/v1/rainy-skyline.webp",
+    "thumbnail": "/media/backgrounds/v1/rainy-skyline-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/rainy-skyline-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/rainy-skyline.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 304830,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "neon-corner",
+    "title": "Neon Corner",
+    "category": "city",
+    "src": "/media/backgrounds/v1/neon-corner.webp",
+    "thumbnail": "/media/backgrounds/v1/neon-corner-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/neon-corner-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/neon-corner.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 406134,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "tokyo-overlook",
+    "title": "City Overlook",
+    "category": "city",
+    "src": "/media/backgrounds/v1/tokyo-overlook.webp",
+    "thumbnail": "/media/backgrounds/v1/tokyo-overlook-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/tokyo-overlook-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/tokyo-overlook.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 258698,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "tram-at-dusk",
+    "title": "Tram at Dusk",
+    "category": "city",
+    "src": "/media/backgrounds/v1/tram-at-dusk.webp",
+    "thumbnail": "/media/backgrounds/v1/tram-at-dusk-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/tram-at-dusk-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/tram-at-dusk.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 424880,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "rooftop-garden",
+    "title": "Night Garden",
+    "category": "city",
+    "src": "/media/backgrounds/v1/rooftop-garden.webp",
+    "thumbnail": "/media/backgrounds/v1/rooftop-garden-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/rooftop-garden-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/rooftop-garden.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 309866,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "canal-lights",
+    "title": "Canal Lights",
+    "category": "city",
+    "src": "/media/backgrounds/v1/canal-lights.webp",
+    "thumbnail": "/media/backgrounds/v1/canal-lights-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/canal-lights-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/canal-lights.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 277112,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "quiet-coast",
+    "title": "Quiet Coast",
+    "category": "ocean",
+    "src": "/media/backgrounds/v1/quiet-coast.webp",
+    "thumbnail": "/media/backgrounds/v1/quiet-coast-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/quiet-coast-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/quiet-coast.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 258514,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "island-dawn",
+    "title": "Island Dawn",
+    "category": "ocean",
+    "src": "/media/backgrounds/v1/island-dawn.webp",
+    "thumbnail": "/media/backgrounds/v1/island-dawn-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/island-dawn-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/island-dawn.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 325168,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "ocean-library",
+    "title": "Sea Cliff",
+    "category": "ocean",
+    "src": "/media/backgrounds/v1/ocean-library.webp",
+    "thumbnail": "/media/backgrounds/v1/ocean-library-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/ocean-library-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/ocean-library.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 450934,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "sandbar-stillness",
+    "title": "Sandbar Stillness",
+    "category": "ocean",
+    "src": "/media/backgrounds/v1/sandbar-stillness.webp",
+    "thumbnail": "/media/backgrounds/v1/sandbar-stillness-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/sandbar-stillness-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/sandbar-stillness.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 302614,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "harbor-morning",
+    "title": "Harbor Morning",
+    "category": "ocean",
+    "src": "/media/backgrounds/v1/harbor-morning.webp",
+    "thumbnail": "/media/backgrounds/v1/harbor-morning-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/harbor-morning-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/harbor-morning.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 301804,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "moonlit-waves",
+    "title": "Moonlit Waves",
+    "category": "ocean",
+    "src": "/media/backgrounds/v1/moonlit-waves.webp",
+    "thumbnail": "/media/backgrounds/v1/moonlit-waves-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/moonlit-waves-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/moonlit-waves.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 177404,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "lunar-horizon",
+    "title": "Lunar Horizon",
+    "category": "space",
+    "src": "/media/backgrounds/v1/lunar-horizon.webp",
+    "thumbnail": "/media/backgrounds/v1/lunar-horizon-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/lunar-horizon-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/lunar-horizon.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 288142,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "violet-nebula",
+    "title": "Violet Nebula",
+    "category": "space",
+    "src": "/media/backgrounds/v1/violet-nebula.webp",
+    "thumbnail": "/media/backgrounds/v1/violet-nebula-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/violet-nebula-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/violet-nebula.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 277086,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "observatory-night",
+    "title": "Observatory Night",
+    "category": "space",
+    "src": "/media/backgrounds/v1/observatory-night.webp",
+    "thumbnail": "/media/backgrounds/v1/observatory-night-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/observatory-night-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/observatory-night.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 307242,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "saturn-drift",
+    "title": "Saturn Drift",
+    "category": "space",
+    "src": "/media/backgrounds/v1/saturn-drift.webp",
+    "thumbnail": "/media/backgrounds/v1/saturn-drift-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/saturn-drift-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/saturn-drift.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 130172,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "aurora-silence",
+    "title": "Aurora Silence",
+    "category": "space",
+    "src": "/media/backgrounds/v1/aurora-silence.webp",
+    "thumbnail": "/media/backgrounds/v1/aurora-silence-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/aurora-silence-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/aurora-silence.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 177930,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "cosmic-cloud",
+    "title": "Cosmic Cloud",
+    "category": "space",
+    "src": "/media/backgrounds/v1/cosmic-cloud.webp",
+    "thumbnail": "/media/backgrounds/v1/cosmic-cloud-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/cosmic-cloud-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/cosmic-cloud.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 241998,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "amber-fold",
+    "title": "Amber Fold",
+    "category": "minimal",
+    "src": "/media/backgrounds/v1/amber-fold.webp",
+    "thumbnail": "/media/backgrounds/v1/amber-fold-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/amber-fold-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/amber-fold.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 98206,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "lavender-haze",
+    "title": "Lavender Haze",
+    "category": "minimal",
+    "src": "/media/backgrounds/v1/lavender-haze.webp",
+    "thumbnail": "/media/backgrounds/v1/lavender-haze-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/lavender-haze-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/lavender-haze.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 52302,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "sand-contours",
+    "title": "Sand Contours",
+    "category": "minimal",
+    "src": "/media/backgrounds/v1/sand-contours.webp",
+    "thumbnail": "/media/backgrounds/v1/sand-contours-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/sand-contours-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/sand-contours.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 152554,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "ink-ripple",
+    "title": "Ink Ripple",
+    "category": "minimal",
+    "src": "/media/backgrounds/v1/ink-ripple.webp",
+    "thumbnail": "/media/backgrounds/v1/ink-ripple-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/ink-ripple-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/ink-ripple.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 69436,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "sage-orbit",
+    "title": "Sage Orbit",
+    "category": "minimal",
+    "src": "/media/backgrounds/v1/sage-orbit.webp",
+    "thumbnail": "/media/backgrounds/v1/sage-orbit-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/sage-orbit-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/sage-orbit.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 198034,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "rose-silk",
+    "title": "Rose Silk",
+    "category": "minimal",
+    "src": "/media/backgrounds/v1/rose-silk.webp",
+    "thumbnail": "/media/backgrounds/v1/rose-silk-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/rose-silk-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/rose-silk.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 114918,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Created specifically for FlowTask with the built-in OpenAI image generation tool; not a stock photograph."
+  },
+  {
+    "id": "rain-window-motion",
+    "title": "Rain Window",
+    "category": "cozy",
+    "kind": "video",
+    "src": "/media/backgrounds/v1/rain-window-motion.mp4",
+    "poster": "/media/backgrounds/v1/rain-window-motion-poster.webp",
+    "thumbnail": "/media/backgrounds/v1/rain-window-motion-thumb.webp",
+    "width": 1280,
+    "height": 720,
+    "durationSeconds": 8,
+    "bytes": 518380,
+    "silent": true,
+    "license": "Original AI-generated artwork and original procedural animation; project use",
+    "creator": "FlowTask / OpenAI image generation and original procedural motion",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Original generated still with original procedural atmospheric motion; not live-action footage.",
+    "sourceAssetId": "rainy-desk",
+    "motionTechnique": "rain"
+  },
+  {
+    "id": "fireplace-motion",
+    "title": "Fireplace",
+    "category": "cozy",
+    "kind": "video",
+    "src": "/media/backgrounds/v1/fireplace-motion.mp4",
+    "poster": "/media/backgrounds/v1/fireplace-motion-poster.webp",
+    "thumbnail": "/media/backgrounds/v1/fireplace-motion-thumb.webp",
+    "width": 1280,
+    "height": 720,
+    "durationSeconds": 8,
+    "bytes": 309741,
+    "silent": true,
+    "license": "Original AI-generated artwork and original procedural animation; project use",
+    "creator": "FlowTask / OpenAI image generation and original procedural motion",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Original generated still with original procedural atmospheric motion; not live-action footage.",
+    "sourceAssetId": "fireplace-evening",
+    "motionTechnique": "fire"
+  },
+  {
+    "id": "ocean-motion",
+    "title": "Ocean",
+    "category": "ocean",
+    "kind": "video",
+    "src": "/media/backgrounds/v1/ocean-motion.mp4",
+    "poster": "/media/backgrounds/v1/ocean-motion-poster.webp",
+    "thumbnail": "/media/backgrounds/v1/ocean-motion-thumb.webp",
+    "width": 1280,
+    "height": 720,
+    "durationSeconds": 8,
+    "bytes": 1318298,
+    "silent": true,
+    "license": "Original AI-generated artwork and original procedural animation; project use",
+    "creator": "FlowTask / OpenAI image generation and original procedural motion",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Original generated still with original procedural atmospheric motion; not live-action footage.",
+    "sourceAssetId": "quiet-coast",
+    "motionTechnique": "water"
+  },
+  {
+    "id": "snowfall-motion",
+    "title": "Snowfall",
+    "category": "mountains",
+    "kind": "video",
+    "src": "/media/backgrounds/v1/snowfall-motion.mp4",
+    "poster": "/media/backgrounds/v1/snowfall-motion-poster.webp",
+    "thumbnail": "/media/backgrounds/v1/snowfall-motion-thumb.webp",
+    "width": 1280,
+    "height": 720,
+    "durationSeconds": 8,
+    "bytes": 302095,
+    "silent": true,
+    "license": "Original AI-generated artwork and original procedural animation; project use",
+    "creator": "FlowTask / OpenAI image generation and original procedural motion",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Original generated still with original procedural atmospheric motion; not live-action footage.",
+    "sourceAssetId": "snowbound-cabin",
+    "motionTechnique": "snow"
+  },
+  {
+    "id": "forest-light-motion",
+    "title": "Forest Light",
+    "category": "nature",
+    "kind": "video",
+    "src": "/media/backgrounds/v1/forest-light-motion.mp4",
+    "poster": "/media/backgrounds/v1/forest-light-motion-poster.webp",
+    "thumbnail": "/media/backgrounds/v1/forest-light-motion-thumb.webp",
+    "width": 1280,
+    "height": 720,
+    "durationSeconds": 8,
+    "bytes": 200458,
+    "silent": true,
+    "license": "Original AI-generated artwork and original procedural animation; project use",
+    "creator": "FlowTask / OpenAI image generation and original procedural motion",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Original generated still with original procedural atmospheric motion; not live-action footage.",
+    "sourceAssetId": "misty-pines",
+    "motionTechnique": "light"
+  },
+  {
+    "id": "space-drift-motion",
+    "title": "Space Drift",
+    "category": "space",
+    "kind": "video",
+    "src": "/media/backgrounds/v1/space-drift-motion.mp4",
+    "poster": "/media/backgrounds/v1/space-drift-motion-poster.webp",
+    "thumbnail": "/media/backgrounds/v1/space-drift-motion-thumb.webp",
+    "width": 1280,
+    "height": 720,
+    "durationSeconds": 8,
+    "bytes": 243143,
+    "silent": true,
+    "license": "Original AI-generated artwork and original procedural animation; project use",
+    "creator": "FlowTask / OpenAI image generation and original procedural motion",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-16",
+    "provenance": "Original generated still with original procedural atmospheric motion; not live-action footage.",
+    "sourceAssetId": "violet-nebula",
+    "motionTechnique": "stars"
+  }
+]

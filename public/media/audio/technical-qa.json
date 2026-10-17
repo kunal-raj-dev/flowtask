@@ -1,0 +1,302 @@
+[
+  {
+    "id": "ambient-rain",
+    "durationSeconds": 63.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.16,
+    "rmsDb": -37.68,
+    "pcmBoundaryStep": 0.006311459932476282,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-window-rain",
+    "durationSeconds": 9.508,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -7.88,
+    "rmsDb": -26.0,
+    "pcmBoundaryStep": 0.0038545075803995132,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-thunder",
+    "durationSeconds": 94.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.47,
+    "rmsDb": -26.0,
+    "pcmBoundaryStep": 0.00045374780893325806,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding; spacious 96-second arrangement of one actual thunder recording"
+  },
+  {
+    "id": "ambient-forest",
+    "durationSeconds": 47.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.16,
+    "rmsDb": -27.73,
+    "pcmBoundaryStep": 0.05194197595119476,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-birds",
+    "durationSeconds": 83.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -4.39,
+    "rmsDb": -26.0,
+    "pcmBoundaryStep": 0.09612508118152618,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-stream",
+    "durationSeconds": 78.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.16,
+    "rmsDb": -28.71,
+    "pcmBoundaryStep": 0.009898679330945015,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-ocean",
+    "durationSeconds": 48.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -7.86,
+    "rmsDb": -26.0,
+    "pcmBoundaryStep": 0.022592436522245407,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-fireplace",
+    "durationSeconds": 37.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.16,
+    "rmsDb": -40.25,
+    "pcmBoundaryStep": 0.0006971450056880713,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-cafe",
+    "durationSeconds": 83.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.16,
+    "rmsDb": -29.72,
+    "pcmBoundaryStep": 0.0024038515985012054,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-library",
+    "durationSeconds": 88.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.16,
+    "rmsDb": -28.37,
+    "pcmBoundaryStep": 0.008343128487467766,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-train",
+    "durationSeconds": 37.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -4.66,
+    "rmsDb": -26.0,
+    "pcmBoundaryStep": 0.0059969061985611916,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "ambient-fan",
+    "durationSeconds": 7.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -13.1,
+    "rmsDb": -26.0,
+    "pcmBoundaryStep": 0.003020305186510086,
+    "processed": "DC removal; peak-limited RMS normalization; 2-second maximum circular seam crossfade; MP3/Opus encoding"
+  },
+  {
+    "id": "lofi-hiphop",
+    "durationSeconds": 150.127,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.61,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "lofi-again",
+    "durationSeconds": 87.809,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -6.17,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "lofi-loop",
+    "durationSeconds": 127.887,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -6.05,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "ambient-contemplation",
+    "durationSeconds": 120.059,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -5.72,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "ambient-heavenly",
+    "durationSeconds": 33.652,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -8.62,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "ambient-searching",
+    "durationSeconds": 104.577,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -6.23,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "piano-vaporware",
+    "durationSeconds": 164.955,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -5.91,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "piano-fireplace",
+    "durationSeconds": 80.386,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -7.89,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "piano-home",
+    "durationSeconds": 81.197,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -5.04,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "jazz-fusion",
+    "durationSeconds": 246.388,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -5.9,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "jazz-cafe",
+    "durationSeconds": 41.848,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -4.66,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "jazz-one-step",
+    "durationSeconds": 154.504,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -6.72,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "chillhop-inspired",
+    "durationSeconds": 97.216,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -5.77,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "chillhop-funky",
+    "durationSeconds": 189.329,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -8.37,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "chillhop-first-snow",
+    "durationSeconds": 174.097,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -7.02,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "electronic-aether",
+    "durationSeconds": 256.0,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -6.0,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "electronic-bells",
+    "durationSeconds": 131.85,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -5.28,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  },
+  {
+    "id": "electronic-synthwave",
+    "durationSeconds": 157.896,
+    "channels": 2,
+    "sampleRate": 44100,
+    "samplePeakDb": -2.56,
+    "rmsDb": -23.0,
+    "pcmBoundaryStep": 0.0,
+    "processed": "DC removal; peak-limited RMS normalization; 60ms edge fades; full composition; MP3 encoding"
+  }
+]

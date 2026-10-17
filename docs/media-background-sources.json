@@ -1,0 +1,338 @@
+[
+  {
+    "id": "misty-pines",
+    "title": "Misty Pines",
+    "category": "nature-forest",
+    "prompt": "Layers of emerald pine forest disappearing into pale morning fog, viewed from a quiet ridge.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-acb66b92-9af2-48d2-b867-8de27b536f20.png"
+  },
+  {
+    "id": "fern-trail",
+    "title": "Fern Trail",
+    "category": "nature-forest",
+    "prompt": "A winding woodland footpath beneath giant ferns and tall wet cedar trunks, overcast light, lush fine foliage, quiet forest floor.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-4f80e087-40d2-4919-9a64-4f7bd512137b.png"
+  },
+  {
+    "id": "hidden-waterfall",
+    "title": "Hidden Waterfall",
+    "category": "nature-forest",
+    "prompt": "A slim waterfall falling into an emerald pool in a mossy basalt forest gorge, fern framing, luminous cloudy daylight.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-2bfd3c7a-f87b-4835-8108-31328a20c948.png"
+  },
+  {
+    "id": "golden-grove",
+    "title": "Golden Grove",
+    "category": "nature-forest",
+    "prompt": "Sunlit autumn birch grove with golden leaves, pale trunks and winding meadow edge, low afternoon sunlight filtering through.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-c2626da3-6806-451c-9af6-217c9a3f2ea2.png"
+  },
+  {
+    "id": "bamboo-retreat",
+    "title": "Bamboo Retreat",
+    "category": "nature-forest",
+    "prompt": "Tall Japanese bamboo grove with a narrow empty stone walkway, soft green daylight and gentle mist, sophisticated photographic detail.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-c4196eae-7e14-433b-ba1b-fb50475f858d.png"
+  },
+  {
+    "id": "meadow-light",
+    "title": "Meadow Light",
+    "category": "nature-forest",
+    "prompt": "Quiet wildflower meadow edged by soft deciduous forest, grasses and tiny flowers foreground, pale spring dawn and distant morning mist.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-d42eb3f4-ec49-4536-8046-10a5d211cc32.png"
+  },
+  {
+    "id": "alpine-mirror",
+    "title": "Alpine Mirror",
+    "category": "mountains-lakes",
+    "prompt": "An impossibly calm turquoise alpine lake reflecting dramatic snow-capped peaks, a few pines at the edge, early morning natural light.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-7f2bdca0-1d47-4cc0-8f72-76bb2a26c1b2.png"
+  },
+  {
+    "id": "himalayan-dawn",
+    "title": "Himalayan Dawn",
+    "category": "mountains-lakes",
+    "prompt": "Remote Himalayan mountain ridges layered in blue haze with a blush dawn above snowy summits, wide vista, no buildings or people.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-d351d86a-492b-446a-9894-130adfd39c32.png"
+  },
+  {
+    "id": "snowbound-cabin",
+    "title": "Snowbound Cabin",
+    "category": "mountains-lakes",
+    "prompt": "A small warm-lit timber cabin beside a frozen alpine lake among snow-covered fir trees at blue hour, photorealistic tranquil winter scene.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-29ff0683-93e8-4d99-a46c-7f42707f7947.png"
+  },
+  {
+    "id": "highland-mist",
+    "title": "Highland Mist",
+    "category": "mountains-lakes",
+    "prompt": "Rolling Scottish highland hills and a still loch with low drifting mist and muted sage moorland, quiet cloudy sky.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-78405020-b7ba-4b32-a1e1-0c55949da093.png"
+  },
+  {
+    "id": "dolomite-evening",
+    "title": "Dolomite Evening",
+    "category": "mountains-lakes",
+    "prompt": "Dolomite peaks glowing pale rose at dusk above a sloping alpine meadow, dramatic rock textures, muted blue shadows.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-432bd598-e1a4-437b-a66e-2a6dd14366b2.png"
+  },
+  {
+    "id": "fjord-silence",
+    "title": "Fjord Silence",
+    "category": "mountains-lakes",
+    "prompt": "Norwegian fjord between steep forested mountains, mirrored grey-blue water and delicate cloud veil, wide photographic composition.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-7330bfa4-f726-4535-9620-b048b6bafa05.png"
+  },
+  {
+    "id": "rainy-desk",
+    "title": "Rainy Desk",
+    "category": "cozy-study",
+    "prompt": "An inviting original study room at night: wooden desk, open unlettered notebook and warm desk lamp beside a large rain-streaked window, distant city bokeh, no readable writing.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-4afc1df5-bb96-4ef5-a31e-8874dda50090.png"
+  },
+  {
+    "id": "reading-nook",
+    "title": "Reading Nook",
+    "category": "cozy-study",
+    "prompt": "A sunny reading nook with linen armchair, warm oak shelves of unlabelled books, folded blanket and a garden-view window, quiet Scandinavian interior photography.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-1ac49c31-c73a-45b1-bee5-96d1585b0793.png"
+  },
+  {
+    "id": "old-library",
+    "title": "Old Library",
+    "category": "cozy-study",
+    "prompt": "An empty intimate historic library reading room with tall bookshelves, oak desk, green shaded lamps and soft window light, luxurious photographic depth, no legible book labels.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-9513a82d-e763-4127-b704-7197915850fb.png"
+  },
+  {
+    "id": "attic-studio",
+    "title": "Attic Studio",
+    "category": "cozy-study",
+    "prompt": "A peaceful attic creative workspace under sloped timber roof with skylight, sketchbooks, a simple chair and warm late-afternoon light, no words or screens.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-512adc8f-6880-4ed8-9d7e-70c3eeb21831.png"
+  },
+  {
+    "id": "fireplace-evening",
+    "title": "Fireplace Evening",
+    "category": "cozy-study",
+    "prompt": "A calm fireside reading corner, small glowing brick fireplace, comfortable armchair, wool blanket and low table, warm sophisticated cabin interior photograph.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-51270dd4-90a3-4403-92e1-ecfebc1a29c6.png"
+  },
+  {
+    "id": "garden-workspace",
+    "title": "Garden Workspace",
+    "category": "cozy-study",
+    "prompt": "A bright conservatory workspace with a simple desk surrounded by green houseplants, glass garden doors and soft diffuse daylight, tasteful natural materials.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-79c5df53-e6f3-4219-bf88-2b7f440582af.png"
+  },
+  {
+    "id": "illustrated-rain-room",
+    "title": "Rain Room Illustration",
+    "category": "anime-inspired",
+    "prompt": "An ORIGINAL hand-painted anime-inspired study room at rainy blue hour, warm desk lamp, empty chair, books and large window with raindrops, richly painted environmental storytelling, cinematic perspective, no characters.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-5c0752a5-92dc-48fd-a171-1e08dcd46b18.png"
+  },
+  {
+    "id": "sunset-rooftop",
+    "title": "Sunset Rooftop",
+    "category": "anime-inspired",
+    "prompt": "An ORIGINAL painterly anime-inspired quiet rooftop garden with potted plants, empty bench, laundry lines far away and distant city skyline under a peach sunset, fine painted texture, no characters.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-42f81144-7065-48a0-b609-555eff3a3493.png"
+  },
+  {
+    "id": "train-window",
+    "title": "Train Window",
+    "category": "anime-inspired",
+    "prompt": "An ORIGINAL hand-painted anime-inspired empty train compartment, foreground seat and broad window overlooking green rice fields and distant mountains at late afternoon, cinematic environmental illustration, no characters.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-68a413f0-29e3-47f0-8f8e-c3e800a9ea47.png"
+  },
+  {
+    "id": "moonlit-bookshop",
+    "title": "Moonlit Bookshop",
+    "category": "anime-inspired",
+    "prompt": "An ORIGINAL beautifully painted anime-inspired little bookshop interior at night with warm shelves, an arched window and blue moonlit street outside, no characters or lettering.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-de95124b-12f9-4231-be55-08712bf8b7d3.png"
+  },
+  {
+    "id": "seaside-room",
+    "title": "Seaside Room",
+    "category": "anime-inspired",
+    "prompt": "An ORIGINAL anime-inspired painterly coastal study room, open windows with gauzy curtains, wooden desk, sparkling blue sea beyond, soft summer sunlight, no characters.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-bdcd1807-c831-4481-b0fd-1216014e46da.png"
+  },
+  {
+    "id": "snowy-workshop",
+    "title": "Snowy Workshop",
+    "category": "anime-inspired",
+    "prompt": "An ORIGINAL richly painted anime-inspired artist workshop with small warm lamp, a drawing table and window onto gently snowy rooftops, navy and amber mood, no characters or legible text.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-fd50fddd-7c81-474b-b64c-97749b2012fe.png"
+  },
+  {
+    "id": "rainy-skyline",
+    "title": "Rainy Skyline",
+    "category": "city-night",
+    "prompt": "A quiet modern apartment window overlooking a rain-soaked city skyline at night, deep navy buildings and soft amber window lights, photorealistic atmospheric depth.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-768759f4-a9c1-4e4d-80f1-819e8c35e256.png"
+  },
+  {
+    "id": "neon-corner",
+    "title": "Neon Corner",
+    "category": "city-night",
+    "prompt": "An empty cinematic city side street after rain with restrained teal and warm coral neon reflections, original storefronts without signs or legible letters, tasteful night photography.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-bc6c3ec8-61eb-4b7d-9379-dd93a0c19c8f.png"
+  },
+  {
+    "id": "tokyo-overlook",
+    "title": "City Overlook",
+    "category": "city-night",
+    "prompt": "A wide nocturnal metropolitan skyline seen from a quiet high-rise balcony, distant towers and warm light grid, subtle mist, deep indigo atmosphere, no logos.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-7c221b1d-8610-4fb1-a0be-bed1750bc3fc.png"
+  },
+  {
+    "id": "tram-at-dusk",
+    "title": "Tram at Dusk",
+    "category": "city-night",
+    "prompt": "An empty European street at blue hour with a distant vintage tram, warm lamplight reflecting on cobblestones, cinematic natural city photography, no readable signs.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-13f19b9e-287e-4a64-b47a-a5ff1d7fc455.png"
+  },
+  {
+    "id": "rooftop-garden",
+    "title": "Night Garden",
+    "category": "city-night",
+    "prompt": "A peaceful rooftop garden above a softly illuminated modern city, grasses and empty chairs in foreground, violet night sky, elegant photographic composition.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-8296bed6-cbeb-44a7-bdf5-669d192586a7.png"
+  },
+  {
+    "id": "canal-lights",
+    "title": "Canal Lights",
+    "category": "city-night",
+    "prompt": "Quiet old city canal at night with warm window lights reflected in dark water, arched bridge far away, peaceful architectural photography, no readable signs.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-5c020cd8-7655-465a-9f04-8586f2079fae.png"
+  },
+  {
+    "id": "quiet-coast",
+    "title": "Quiet Coast",
+    "category": "ocean-escape",
+    "prompt": "A quiet rocky coastline at dawn with soft rolling turquoise surf, smooth stones and pastel horizon, long-exposure professional landscape photograph.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-f291ddb9-df97-4c73-80c8-f14dcca9dfd3.png"
+  },
+  {
+    "id": "island-dawn",
+    "title": "Island Dawn",
+    "category": "ocean-escape",
+    "prompt": "A remote tropical island lagoon at sunrise, gentle shallow turquoise water, one leaning palm at edge, subtle peach sky, natural photorealism.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-aac87cfc-cff0-461f-b355-6e83fd8249fd.png"
+  },
+  {
+    "id": "ocean-library",
+    "title": "Sea Cliff",
+    "category": "ocean-escape",
+    "prompt": "A high coastal cliff overlooking deep blue open ocean, wild grasses foreground and a thin band of cloud on the horizon, cinematic natural landscape.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-de89869c-6851-4a91-b5de-57717922efd3.png"
+  },
+  {
+    "id": "sandbar-stillness",
+    "title": "Sandbar Stillness",
+    "category": "ocean-escape",
+    "prompt": "Minimal aerial view of a delicate pale sandbar between translucent turquoise and deep blue ocean, organic flowing shapes and natural rippled texture.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-fe4a80c5-6441-4a3b-91eb-4734b773ba96.png"
+  },
+  {
+    "id": "harbor-morning",
+    "title": "Harbor Morning",
+    "category": "ocean-escape",
+    "prompt": "A tiny peaceful Mediterranean fishing harbor in pale morning light, a few original unbranded boats reflected in calm water and pastel waterfront, no legible signs.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-c1695a82-c472-4f7e-9a66-0628a3b1b12d.png"
+  },
+  {
+    "id": "moonlit-waves",
+    "title": "Moonlit Waves",
+    "category": "ocean-escape",
+    "prompt": "Silvery moonlight across a dark blue ocean with small gentle waves, a quiet empty shoreline, soft clouds and realistic atmospheric night photography.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-a34fb951-6039-4e0e-a660-b4e12ea0e806.png"
+  },
+  {
+    "id": "lunar-horizon",
+    "title": "Lunar Horizon",
+    "category": "space-cosmic",
+    "prompt": "An original scientifically plausible cinematic moon surface vista, fine grey regolith and low crater rims foreground, small blue Earth above the black horizon, realistic space photography style.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-f0b138dd-8cb4-496e-8ecc-cf05fecd46a6.png"
+  },
+  {
+    "id": "violet-nebula",
+    "title": "Violet Nebula",
+    "category": "space-cosmic",
+    "prompt": "An original deep-space astrophotography-style field with delicate violet and blue nebular gas and fine star detail, broad dark negative space, elegant and credible without fantasy planets.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-8812f962-82cc-4945-b49a-573ef1863aa7.png"
+  },
+  {
+    "id": "observatory-night",
+    "title": "Observatory Night",
+    "category": "space-cosmic",
+    "prompt": "A quiet mountain observatory dome silhouetted beneath a magnificent clear Milky Way, subtle warm path lights and dark blue rock foreground, realistic astrophotography.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-31592acd-a827-4a1f-a5fa-7866d5a4f235.png"
+  },
+  {
+    "id": "saturn-drift",
+    "title": "Saturn Drift",
+    "category": "space-cosmic",
+    "prompt": "An original calm cinematic space view of Saturn and its delicate rings on one side, vast dark starfield and realistic pale golden atmosphere, elegant scientific visualization.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-6d746fe2-b19b-41c1-9c87-d21d1d9826fe.png"
+  },
+  {
+    "id": "aurora-silence",
+    "title": "Aurora Silence",
+    "category": "space-cosmic",
+    "prompt": "Soft green aurora ribbons over a snowy northern landscape and still lake, fine stars and a distant low treeline, natural realistic night landscape photography.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-28f77739-5dea-4e48-843b-7a8d1cbe2ee3.png"
+  },
+  {
+    "id": "cosmic-cloud",
+    "title": "Cosmic Cloud",
+    "category": "space-cosmic",
+    "prompt": "Original astronomical deep space scene with a flowing dusty teal and amber nebula, tiny fine stars and large dark quiet regions, elegant detailed scientific visualization.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-112b2581-54b9-4cc8-a7c2-54c48d9d8784.png"
+  },
+  {
+    "id": "amber-fold",
+    "title": "Amber Fold",
+    "category": "minimal-abstract",
+    "prompt": "Original refined abstract 3D composition of gently folded warm ivory paper with a single amber curve, soft studio shadows, tactile paper grain, architectural restraint.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-f4ebd6c5-250a-4857-aa30-716f65d37f7a.png"
+  },
+  {
+    "id": "lavender-haze",
+    "title": "Lavender Haze",
+    "category": "minimal-abstract",
+    "prompt": "Original atmospheric abstract with translucent lavender and dusty blue glass forms gently layered against a pale background, soft defocused depth, premium minimal art.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-cf37dcda-1a35-4d1d-883f-272fff8f1689.png"
+  },
+  {
+    "id": "sand-contours",
+    "title": "Sand Contours",
+    "category": "minimal-abstract",
+    "prompt": "Original macro fine-art photograph of wind-sculpted cream sand dune contours, soft warm directional light and restrained shadows, fluid natural geometry.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-9b842c38-367d-40f7-aee1-33269eabb286.png"
+  },
+  {
+    "id": "ink-ripple",
+    "title": "Ink Ripple",
+    "category": "minimal-abstract",
+    "prompt": "Original minimal abstract fine-art dark charcoal background with a single broad flowing blue-black liquid ink ripple, subtle specular light, luxurious organic geometry.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-060ebbcf-8cc5-43cc-858d-e23159bf6738.png"
+  },
+  {
+    "id": "sage-orbit",
+    "title": "Sage Orbit",
+    "category": "minimal-abstract",
+    "prompt": "Original sculptural abstract of matte sage green smooth interlocking circular forms with warm off-white negative space, soft shadows and tactile mineral surface.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-3032313e-743a-4646-9abd-5ae5c8488ac8.png"
+  },
+  {
+    "id": "rose-silk",
+    "title": "Rose Silk",
+    "category": "minimal-abstract",
+    "prompt": "Original refined macro abstract of softly folded dusty rose silk, sweeping diagonal fabric curves, luminous smooth highlights and rich subtle shadows, calm luxurious texture.",
+    "path": "C:\\Users\\kunal\\.codex\\generated_images\\01a14541-87a2-71b1-b849-61cd6094d5eb\\exec-687ca7f5-bc28-45c9-85e7-17fc0e3922f6.png"
+  }
+]

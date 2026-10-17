@@ -890,7 +890,7 @@ class AudioEngine {
   }
 
   /**
-   * Synthesize 40Hz Gamma Focus Binaural Beats with soothing carrier tone.
+   * Experimental stereo tones. Headphones required; no cognitive benefit is implied.
    */
   public startBinauralTone(volume: number = 0.08) {
     if (!this.isSoundEnabled) return;
@@ -912,8 +912,10 @@ class AudioEngine {
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume * 0.65), ctx.currentTime + 1.5);
 
-    osc1.connect(gain);
-    osc2.connect(gain);
+    const left = ctx.createStereoPanner(); left.pan.value = -1;
+    const right = ctx.createStereoPanner(); right.pan.value = 1;
+    osc1.connect(left); left.connect(gain);
+    osc2.connect(right); right.connect(gain);
     gain.connect(ctx.destination);
 
     osc1.start();
@@ -972,7 +974,7 @@ class AudioEngine {
       }, fadeDuration * 1000);
     }
 
-    if (this.ambientSource && this.ambientGain && this.ctx) {
+    if ((this.ambientSource || this.ambientGain) && this.ambientGain && this.ctx) {
       const source = this.ambientSource;
       const gain = this.ambientGain;
       const now = this.ctx.currentTime;
@@ -981,12 +983,12 @@ class AudioEngine {
         gain.gain.exponentialRampToValueAtTime(0.0001, now + fadeDuration);
         setTimeout(() => {
           try {
-            (source as AudioScheduledSourceNode).stop();
+            (source as AudioScheduledSourceNode | null)?.stop();
           } catch {}
         }, fadeDuration * 1000);
       } catch {
         try {
-          (source as AudioScheduledSourceNode).stop();
+          (source as AudioScheduledSourceNode | null)?.stop();
         } catch {}
       }
       this.ambientSource = null;

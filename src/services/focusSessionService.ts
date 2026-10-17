@@ -53,6 +53,7 @@ export const focusSessionService = {
       subtaskId: subtaskId || undefined,
       subtaskTitle: subtaskTitle || undefined,
       startedAt: now,
+      originalStartedAt: now,
       pausedAt: null,
       accumulatedElapsedMs: 0,
       targetDurationSec,
@@ -101,6 +102,8 @@ export const focusSessionService = {
       ...session,
       state: 'running',
       startedAt: now,
+      originalStartedAt: session.originalStartedAt || session.startedAt,
+      totalPausedMs: (session.totalPausedMs || 0) + Math.max(0, now - (session.pausedAt || now)),
       pausedAt: null,
     };
 
@@ -115,11 +118,12 @@ export const focusSessionService = {
   },
 
   getElapsedSeconds(session: FocusSession, now: number = Date.now()): number {
+    const cap = (seconds: number) => session.targetDurationSec > 0 ? Math.min(session.targetDurationSec, seconds) : seconds;
     if (session.state === 'running') {
       const currentSegment = Math.max(0, now - session.startedAt);
-      return Math.floor((session.accumulatedElapsedMs + currentSegment) / 1000);
+      return cap(Math.floor((session.accumulatedElapsedMs + currentSegment) / 1000));
     }
-    return Math.floor(session.accumulatedElapsedMs / 1000);
+    return cap(Math.floor(session.accumulatedElapsedMs / 1000));
   },
 
   getRemainingSeconds(session: FocusSession, now: number = Date.now()): number {
