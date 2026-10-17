@@ -3,27 +3,106 @@ import type { WorkspaceRecord } from '../types/workspace';
 import { DEFAULT_PROJECTS } from '../utils/storage';
 import { validateWorkspaceData } from '../utils/workspaceValidation';
 import { formatLocalDate } from '../utils/nlpParser';
+import { createStarterDashboards } from './starterDashboards';
+import { validateDashboards } from '../utils/dashboardModel';
 export type { WorkspaceRecord } from '../types/workspace';
-let database: Promise<IDBPDatabase> | undefined;
-export function getDatabase() {
-  if (!database) database = openDB('flowtask_storage_v2', 1, { upgrade(db) {
-    for (const name of ['workspaces', 'snapshots', 'legacy_backups', 'outbox']) {
-      if (!db.objectStoreNames.contains(name)) {
-        const store = db.createObjectStore(name, { keyPath: name === 'workspaces' ? 'workspaceId' : 'id' });
-        if (name === 'snapshots' || name === 'outbox') store.createIndex('by_workspace', 'workspaceId');
+
+/**
+ * Proactively requests browser storage persistence to safeguard IndexedDB
+ * against automatic disk quota eviction.
+ */
+export async function requestPersistentStorage(): Promise<boolean> {
+  if (
+    typeof navigator === 'undefined' ||
+    !navigator.storage ||
+    typeof navigator.storage.persist !== 'function'
+  ) {
+    return false;
+  }
+
+  try {
+    if (typeof navigator.storage.persisted === 'function') {
+      const isAlreadyPersisted = await navigator.storage.persisted();
+      if (isAlreadyPersisted) {
+        console.debug('[Storage] IndexedDB storage is already persistent.');
+        return true;
       }
     }
-  }}).catch(error => { database = undefined; throw error; });
+
+    const granted = await navigator.storage.persist();
+    if (granted) {
+      console.info('[Storage] Browser granted persistent storage.');
+    } else {
+      console.warn('[Storage] Persistent storage request was not granted.');
+    }
+    return granted;
+  } catch (error) {
+    console.warn('[Storage] Failed to request persistent storage:', error);
+    return false;
+  }
+}
+
+let database: Promise<IDBPDatabase> | undefined;
+export function getDatabase() {
+  if (!database) {
+    if (typeof indexedDB !== 'undefined') {
+      void requestPersistentStorage();
+    }
+    database = openDB('flowtask_storage_v2', 2, { upgrade(db) {
+      for (const name of ['workspaces', 'snapshots', 'legacy_backups', 'outbox', 'media']) {
+        if (!db.objectStoreNames.contains(name)) {
+          const store = db.createObjectStore(name, { keyPath: name === 'workspaces' ? 'workspaceId' : 'id' });
+          if (name === 'snapshots' || name === 'outbox') store.createIndex('by_workspace', 'workspaceId');
+        }
+      }
+    }}).catch(error => { database = undefined; throw error; });
+  }
   return database;
 }
 export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
-  return { schemaVersion: 3, workspaceId, tasks: [], projects: DEFAULT_PROJECTS.filter(p => p.id !== 'ideas'), customViews: [], preferences: {}, pending: [], undo: [], updatedAt: 0 };
+  return {
+    schemaVersion: 5,
+    workspaceId,
+    tasks: [],
+    projects: DEFAULT_PROJECTS.filter(p => p.id !== 'ideas'),
+    dashboards: createStarterDashboards(),
+    customViews: [],
+    preferences: {},
+    pending: [],
+    undo: [],
+    updatedAt: 0,
+  };
 }
 function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
   const data = validateWorkspaceData(raw.tasks || [], raw.projects || DEFAULT_PROJECTS);
   const date = formatLocalDate(new Date());
-  return { ...emptyWorkspace(id), ...raw, ...data, workspaceId: id, schemaVersion: 3,
-    tasks: data.tasks.map(t => ({ ...t, isSomeday: t.isSomeday || t.projectId === 'ideas', topThreeDate: t.topThreeDate || (t.isPinnedToday ? t.plannedDate || t.dueDate || date : undefined) })) };
+  const starters = createStarterDashboards();
+  let dashboards = starters;
+  let dashboardRecovery = false;
+  try { if (Array.isArray(raw.dashboards) && raw.dashboards.length) dashboards = validateDashboards(raw.dashboards); }
+  catch { dashboardRecovery = true; }
+  if (!dashboards.some(d => d.isDefault) && dashboards.length > 0) {
+    dashboards = dashboards.map((d, i) => i === 0 ? { ...d, isDefault: true } : d);
+  }
+  return {
+    ...emptyWorkspace(id),
+    ...raw,
+    ...data,
+    dashboards,
+    workspaceId: id,
+    schemaVersion: 5,
+    preferences: {
+      ...raw.preferences,
+      ...(dashboardRecovery ? { _dashboardRecovery: true } : {}),
+      ...((raw.schemaVersion || 0) < 4 ? { _v4CloudSeedNeeded: true } : {}),
+      ...((raw.schemaVersion || 0) < 5 ? { _v5DashboardSeedNeeded: true } : {}),
+    },
+    tasks: data.tasks.map(t => ({
+      ...t,
+      isSomeday: t.isSomeday || t.projectId === 'ideas',
+      topThreeDate: t.topThreeDate || (t.isPinnedToday ? t.plannedDate || t.dueDate || date : undefined),
+    })),
+  };
 }
 export const dbService = {
   async loadWorkspace(id: string): Promise<WorkspaceRecord | null> {
@@ -31,7 +110,17 @@ export const dbService = {
       // A failed read must not be mistaken for an empty workspace.
       const db = await getDatabase();
       const record = await db.get('workspaces', id);
-      if (record) return normalize(record, id);
+      if (record) {
+        try { if (record.dashboards) validateDashboards(record.dashboards); }
+        catch { if (!await db.get('legacy_backups', `dashboard-repair:${id}`)) await db.put('legacy_backups', { id: `dashboard-repair:${id}`, workspaceId: id, savedAt: Date.now(), record }); }
+        if ((record.schemaVersion || 0) < 4 && !await db.get('legacy_backups', `v3:${id}`)) {
+          await db.put('legacy_backups', { id: `v3:${id}`, workspaceId: id, savedAt: Date.now(), record });
+        }
+        if ((record.schemaVersion || 0) < 5 && !await db.get('legacy_backups', `v4:${id}`)) {
+          await db.put('legacy_backups', { id: `v4:${id}`, workspaceId: id, savedAt: Date.now(), record });
+        }
+        return normalize(record, id);
+      }
     }
     const raw = localStorage.getItem(`flowtask_ws_${id}`);
     if (!raw) return null;
@@ -88,7 +177,18 @@ export const dbService = {
     localStorage.setItem(`flowtask_ws_${id}`, JSON.stringify(record));
   },
   async deleteWorkspace(id: string) {
-    if (typeof indexedDB !== 'undefined') await (await getDatabase()).delete('workspaces', id);
+    if (typeof indexedDB !== 'undefined') {
+      const db = await getDatabase();
+      const tx = db.transaction(['workspaces','outbox','snapshots','legacy_backups','media'], 'readwrite');
+      await tx.objectStore('workspaces').delete(id);
+      for (const name of ['outbox','snapshots','legacy_backups','media']) {
+        const store = tx.objectStore(name);
+        for (const record of await store.getAll()) if (record.workspaceId === id) await store.delete(record.id);
+      }
+      await tx.done;
+    }
     localStorage.removeItem(`flowtask_ws_${id}`);
+    for (const key of Object.keys(localStorage)) if (key.startsWith(`flowtask-dashboard-draft:${id}:`) || key.startsWith(`flowtask-dashboard-mobile:${id}:`)) localStorage.removeItem(key);
+    for (const key of [`flowtask_pre_import_${id}`,`flowtask_conflict_backup_${id}`,`flowtask-diagnostics:${id}`,`flowtask-focus-checkpoint:${id}`]) localStorage.removeItem(key);
   },
 };

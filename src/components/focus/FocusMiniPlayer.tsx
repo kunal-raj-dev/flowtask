@@ -7,7 +7,11 @@ import {
   useActiveTimerSeconds,
 } from '../../store/useFocusStore';
 import { useTotalFocusedTodaySeconds } from '../../hooks/useTotalFocusedTodaySeconds';
-import { Play, Pause, X, Timer } from 'lucide-react';
+import { Play, Pause, X, Timer, PictureInPicture2 } from 'lucide-react';
+import {
+  pictureInPictureService,
+  isDocumentPipSupported,
+} from '../../services/pictureInPictureService';
 
 interface FocusMiniPlayerProps {
   variant?: 'desktop' | 'mobile';
@@ -67,7 +71,7 @@ export const FocusMiniPlayer: React.FC<FocusMiniPlayerProps> = ({ variant = 'des
         >
           <span
             className={`w-1.5 h-1.5 rounded-full bg-amber-500 ${
-              focusSession.state === 'running' ? 'animate-ping' : ''
+              ''
             }`}
           />
           <span>
@@ -112,7 +116,7 @@ export const FocusMiniPlayer: React.FC<FocusMiniPlayerProps> = ({ variant = 'des
       <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-semibold shadow-xs">
         <span
           className={`w-2 h-2 rounded-full bg-amber-500 ${
-            focusSession.state === 'running' ? 'animate-ping' : ''
+            ''
           }`}
         />
         <button
@@ -161,6 +165,23 @@ export const FocusMiniPlayer: React.FC<FocusMiniPlayerProps> = ({ variant = 'des
             className="p-1 hover:bg-amber-500/20 rounded-md transition-colors active:scale-90"
           >
             <Play size={12} strokeWidth={1.75} className="fill-current text-amber-700 dark:text-amber-300" />
+          </button>
+        )}
+        {isDocumentPipSupported() && (
+          <button
+            type="button"
+            onClick={() => {
+              if (pictureInPictureService.isOpen()) {
+                pictureInPictureService.closePipWindow();
+              } else {
+                void pictureInPictureService.requestPipWindow();
+              }
+            }}
+            title="Floating HUD Window"
+            aria-label="Floating HUD Window"
+            className="p-1 hover:bg-amber-500/20 rounded-md transition-colors text-amber-700 dark:text-amber-300 active:scale-90"
+          >
+            <PictureInPicture2 size={12} strokeWidth={1.75} />
           </button>
         )}
         <button
