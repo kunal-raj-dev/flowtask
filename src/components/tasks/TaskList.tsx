@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Task } from '../../types/task';
 import { TaskCard } from './TaskCard';
+import { TaskCollection } from './TaskCollection';
+import { InboxTriage } from '../workflow/InboxTriage';
 import { VirtualTaskList } from './VirtualTaskList';
 import { TaskComposer } from './TaskComposer';
 import { EmptyState } from '../ui';
@@ -196,7 +198,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     ? filtered.filter((t) => t.contextTags && t.contextTags.includes(selectedContextTag))
     : filtered;
 
-  const { focusedTaskId } = useKeyboardNavigation({
+  useKeyboardNavigation({
     tasks: displayedTasks,
     onSelectTask,
     onToggleStatus: toggleTaskStatus,
@@ -204,7 +206,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     onUpdateTask: updateTask,
     onDeleteTask: deleteTask,
     onStartFocus,
-    enabled: true,
+    enabled: false,
   });
 
   // Stale backlog tasks (>14 days untouched or overdue)
@@ -253,15 +255,15 @@ export const TaskList: React.FC<TaskListProps> = ({
   const blockedTasksCount = filtered.filter((t) => isTaskBlocked(t, tasks).isBlocked).length;
 
   return (
-    <div className="max-w-3xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
+    <div className="max-w-5xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
       <div className="flex items-center gap-3 mb-4 sm:mb-6">
         <div className={`p-2 sm:p-2.5 rounded-2xl bg-gradient-to-br ${gradientBg} text-white shadow-sm card-surface flex-shrink-0`}>
           <ViewIcon size={20} className="stroke-[2.2]" />
         </div>
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
+          <h1 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
             {viewTitle}
-          </h2>
+          </h1>
           <p className="text-xs text-[var(--text-secondary)] font-medium">{viewSubtitle}</p>
         </div>
       </div>
@@ -392,6 +394,7 @@ export const TaskList: React.FC<TaskListProps> = ({
         </div>
       )}
 
+      {isInbox && <InboxTriage />}
       <TaskComposer />
 
       {/* GTD Context Filter Rail */}
@@ -453,20 +456,7 @@ export const TaskList: React.FC<TaskListProps> = ({
           />
         )
       ) : (
-        <VirtualTaskList
-          tasks={displayedTasks}
-          className="space-y-2.5"
-          renderTask={(task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onSelectTask={onSelectTask}
-              onStartFocus={onStartFocus}
-              onStartSprint={onStartSprint}
-              isKeyboardFocused={focusedTaskId === task.id}
-            />
-          )}
-        />
+        <TaskCollection tasks={displayedTasks} viewKey={activeView} onSelectTask={onSelectTask} onStartFocus={onStartFocus} onStartSprint={onStartSprint} />
       )}
 
       {/* Completed Accordion for this View */}

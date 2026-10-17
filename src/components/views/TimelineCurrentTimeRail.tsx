@@ -43,9 +43,9 @@ export const TimelineCurrentTimeRail: React.FC<TimelineCurrentTimeRailProps> = (
       className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
       style={{ top: `${topPx}px` }}
     >
-      <div className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-4 ring-rose-500/20 -ml-1 shrink-0 animate-pulse" />
-      <div className="flex-1 h-[2px] bg-rose-500/80 shadow-xs" />
-      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-500 text-white shrink-0 shadow-xs">
+      <div className="w-2.5 h-2.5 rounded-full bg-rose-600 ring-4 ring-rose-500/20 -ml-1 shrink-0 animate-pulse" />
+      <div className="flex-1 h-[2px] bg-rose-600/80 shadow-xs" />
+      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-700 text-white shrink-0 shadow-xs">
         {minutesToTimeStr(currentTimeMinutes)}
       </span>
     </div>

@@ -14,7 +14,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   onSelectTask,
   projectId,
 }) => {
-  const { tasks: allTasks, updateTask, addTask, toggleTaskStatus } = useTaskContext();
+  const { tasks: allTasks, projects = [], updateTask, addTask, toggleTaskStatus } = useTaskContext();
   const tasks = allTasks.filter(t => !t.deletedAt && !t.archivedAt && (!projectId || t.projectId === projectId));
   const [mobileColumn, setMobileColumn] = useState<TaskStatus>('todo');
   const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
@@ -254,6 +254,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
         </div>
       </div>
 
+      {projects.filter(p => p.wipLimit && allTasks.filter(t => t.projectId === p.id && t.status === 'in_progress' && !t.deletedAt && !t.archivedAt).length > p.wipLimit).map(p => <p key={p.id} className="v2-wip" role="status">{p.name} has more than {p.wipLimit} tasks in progress. Consider finishing one before starting another.</p>)}
       {/* Mobile Column Tab Switcher */}
       <div className="lg:hidden flex items-center p-1 bg-stone-200/70 dark:bg-white/[0.06] rounded-xl border border-[var(--border-hairline)] mb-4 shadow-inner shrink-0">
         {columns.map((col) => {

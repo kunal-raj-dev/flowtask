@@ -102,7 +102,7 @@ export const TimelineUnscheduledSidebar: React.FC<TimelineUnscheduledSidebarProp
                       )}
                       <span>~{task.estimatedMinutes || 30}m</span>
                       {task.priority !== 'p4' && (
-                        <span className="uppercase font-bold text-amber-600 dark:text-amber-400">
+                        <span className="uppercase font-bold text-amber-800 dark:text-amber-300">
                           {task.priority}
                         </span>
                       )}

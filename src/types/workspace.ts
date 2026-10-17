@@ -1,10 +1,16 @@
-import type { Task, Project, SmartFilterView } from './task';
+import type { Task, Project, SmartFilterView, FocusLog } from './task';
+import type { FocusRecipe } from './studio';
+import type { WorkspaceDashboard } from './dashboard';
+
+export interface SyncedPreference { id: string; value: unknown; revision?: number; updatedAt?: number }
+export type SyncedEntity = Task | Project | WorkspaceDashboard | FocusLog | FocusRecipe | SyncedPreference;
+export type SyncCollection = 'tasks' | 'projects' | 'dashboards' | 'focusLogs' | 'recipes' | 'preferences';
 
 export interface EntityChange {
-  collection: 'tasks' | 'projects';
+  collection: SyncCollection;
   id: string;
-  before: Task | Project | null;
-  after: Task | Project | null;
+  before: SyncedEntity | null;
+  after: SyncedEntity | null;
 }
 export interface PendingOperation {
   id: string;
@@ -13,10 +19,11 @@ export interface PendingOperation {
   createdAt: number;
 }
 export interface WorkspaceRecord {
-  schemaVersion: 3;
+  schemaVersion: 3 | 4 | 5;
   workspaceId: string;
   tasks: Task[];
   projects: Project[];
+  dashboards: WorkspaceDashboard[];
   customViews: SmartFilterView[];
   preferences: Record<string, unknown>;
   pending: PendingOperation[];

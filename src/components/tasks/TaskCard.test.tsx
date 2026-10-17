@@ -8,7 +8,7 @@ import { audioEngine } from '../../utils/audioEngine';
 // Mock audio engine
 vi.mock('../../utils/audioEngine', () => ({
   audioEngine: {
-    playClickSound: vi.fn(),
+    getSoundEnabled: () => false, getSoundProfile: () => "soft", playClickSound: vi.fn(),
     playPopSound: vi.fn(),
     playCompletionChime: vi.fn(),
     playTaskComplete: vi.fn(),

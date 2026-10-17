@@ -1,115 +1,41 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { TodayView } from './TodayView';
 import type { Task } from '../../types/task';
-
-let mockTotalFocusedTodaySeconds = 0;
-let mockFocusSession: any = null;
-
-const mockTasks: Task[] = [
-  {
-    id: 't-1',
-    title: 'Solve Priority Problem',
-    status: 'todo',
-    priority: 'p1',
-    projectId: 'inbox',
-    createdAt: Date.now(),
-    plannedDate: '2026-10-07',
-    isPinnedToday: true,
-    estimatedMinutes: 30,
-    subtasks: [],
-  },
-];
-
-vi.mock('../../context/TaskContext', () => ({
-  useTaskContext: () => ({
-    activeView: 'today',
-    selectedTaskIds: [],
-    projects: [{ id: 'inbox', name: 'Inbox', color: '#64748B' }],
-    tags: [],
-    tasks: mockTasks,
-    quickWinsOnly: false,
-    priorityFilter: 'all',
-    toggleTaskStatus: vi.fn(),
-    toggleTaskPinToday: vi.fn(),
-    updateTask: vi.fn(),
-    batchUpdateTasks: vi.fn(),
-    deleteTask: vi.fn(),
-    settings: { targetWorkCapacityHours: 6.0 },
-    showToast: vi.fn(),
-    focusSession: mockFocusSession,
-    totalFocusedTodaySeconds: mockTotalFocusedTodaySeconds,
-  }),
-}));
-
-vi.mock('../../hooks/useCurrentDate', () => ({
-  useTodayStr: () => '2026-10-07',
-  getTodayStr: () => '2026-10-07',
-  getTomorrowStr: () => '2026-10-08',
-}));
-
-describe('TodayView Component', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockTotalFocusedTodaySeconds = 0;
-    mockFocusSession = null;
+const state = vi.hoisted(() => ({ seconds:0, estimate:30, updateDashboards:vi.fn(), setPreference:vi.fn() }));
+const task:Task={id:'today-task',title:'Solve Priority Problem',status:'todo',priority:'p1',projectId:'inbox',createdAt:1,plannedDate:'2026-10-07',topThreeDate:'2026-10-07',isPinnedToday:true,estimatedMinutes:30,subtasks:[]};
+vi.mock('../../context/TaskContext',()=>({useTaskContext:()=>({tasks:[{...task,estimatedMinutes:state.estimate}],projects:[{id:'inbox',name:'Inbox',color:'#64748B'}],smartViews:[],workspacePreferences:{},workspaceId:'local',updateDashboards:state.updateDashboards,setWorkspacePreference:state.setPreference,focusLogs:[],focusSession:null,totalFocusedTodaySeconds:state.seconds,settings:{targetWorkCapacityHours:6},toggleTaskStatus:vi.fn(),toggleTaskPinToday:vi.fn(),updateTask:vi.fn(),deleteTask:vi.fn()})}));
+vi.mock('../../hooks/useCurrentDate',()=>({useTodayStr:()=> '2026-10-07',getTodayStr:()=> '2026-10-07',getTomorrowStr:()=> '2026-10-08'}));
+vi.mock('react-grid-layout',()=>({useContainerWidth:()=>({width:1200,mounted:true,containerRef:{current:null}}),ResponsiveGridLayout:({children}:{children:React.ReactNode})=><div>{children}</div>}));
+describe('Today workspace composition',()=>{
+  beforeEach(()=>{state.seconds=0;state.estimate=30;vi.clearAllMocks();});
+  it('presents one day header, visible capture and a separate planning budget',()=>{
+    render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()}/>);
+    expect(screen.getByRole('heading',{name:'Today.'})).toBeDefined();
+    expect(screen.getByRole('textbox',{name:'Add a task to this list'})).toBeDefined();
+    expect(screen.getByText('Room for tasks')).toBeDefined();
+    expect(screen.queryByText(/Focus Session in Progress/)).toBeNull();
   });
-
-  it('renders Today header and default zero focus pill', () => {
-    render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
-
-    expect(screen.getByText('Today')).toBeDefined();
-    expect(screen.getByText('0m')).toBeDefined();
-    expect(screen.getByText(/6h cap/i)).toBeDefined();
+  it('reports recorded focus in the capacity widget without another timer banner',()=>{
+    state.seconds=4500;
+    render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()}/>);
+    expect(screen.getByText('1h 15m focused')).toBeDefined();
   });
-
-  it('renders updated real-time focused time pill when user has focus time', () => {
-    mockTotalFocusedTodaySeconds = 4500; // 1h 15m
-    render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
-
-    expect(screen.getByText('1h 15m')).toBeDefined();
+  it('hands the selected priority to Focus Studio',()=>{
+    const focus=vi.fn(); render(<TodayView onSelectTask={vi.fn()} onStartFocus={focus}/>);
+    fireEvent.click(screen.getByRole('button',{name:'Focus on Solve Priority Problem'}));
+    expect(focus).toHaveBeenCalledWith('today-task');
   });
-
-  it('renders active focus session synchronization banner and invokes callback on resume', () => {
-    mockFocusSession = {
-      id: 'session-sprint-1',
-      taskId: 't-1',
-      taskTitle: 'Solve Priority Problem',
-      mode: 'sprint',
-      state: 'running',
-      subtaskId: 'sub-1',
-      subtaskTitle: 'Question 1',
-    };
-    mockTotalFocusedTodaySeconds = 1200;
-
-    const mockStartSprint = vi.fn();
-    render(
-      <TodayView
-        onSelectTask={vi.fn()}
-        onStartFocus={vi.fn()}
-        onStartSprint={mockStartSprint}
-      />
-    );
-
-    expect(screen.getByText(/Study Sprint in Progress/i)).toBeDefined();
-    expect(screen.getByText(/Question 1/i)).toBeDefined();
-
-    const resumeBtn = screen.getByRole('button', { name: /resume/i });
-    fireEvent.click(resumeBtn);
-
-    expect(mockStartSprint).toHaveBeenCalledWith('t-1');
+  it('opens guided day planning from the single header action',()=>{
+    render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()}/>);
+    fireEvent.click(screen.getByRole('button',{name:'Plan my day'}));
+    expect(screen.getByRole('dialog',{name:'Make room for today'})).toBeDefined();
   });
-
-  it('renders overcommitment protection banner when planned work exceeds capacity', () => {
-    mockTasks[0] = {
-      ...mockTasks[0],
-      estimatedMinutes: 480, // 8 hours planned > 6 hours capacity
-    };
-
-    render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
-
-    expect(screen.getByText(/Workload Capacity Exceeded/i)).toBeDefined();
-    expect(screen.getByText(/8\.0h planned vs 6h target/i)).toBeDefined();
+  it('shows a descriptive overload warning using the shared capacity projection',()=>{
+    state.estimate=480;
+    render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()}/>);
+    expect(screen.getByText(/Overbooked by 120 minutes/)).toBeDefined();
   });
 });

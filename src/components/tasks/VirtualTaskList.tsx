@@ -1,5 +1,4 @@
-import React from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect } from 'react';
 import type { Task } from '../../types/task';
 import { useVirtualList } from '../../hooks/useVirtualList';
 
@@ -22,33 +21,28 @@ export const VirtualTaskList: React.FC<VirtualTaskListProps> = ({
     topSpacerHeight,
     bottomSpacerHeight,
     isVirtual,
+    scrollToIndex,
   } = useVirtualList({
     items: tasks,
     estimatedItemHeight,
     threshold: 25,
   });
 
+  useEffect(() => {
+    if (!isVirtual) return;
+    const reveal = (event: Event) => {
+      const id = (event as CustomEvent<string>).detail;
+      const index = tasks.findIndex(task => task.id === id);
+      if (index >= 0) scrollToIndex(index);
+    };
+    window.addEventListener('flowtask:reveal-task', reveal);
+    return () => window.removeEventListener('flowtask:reveal-task', reveal);
+  }, [tasks, isVirtual, scrollToIndex]);
+
   if (!isVirtual) {
     return (
       <div className={className}>
-        <AnimatePresence initial={false} mode="popLayout">
-          {tasks.map((task, idx) => (
-            <motion.div
-              key={task.id}
-              layout="position"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 30,
-              }}
-            >
-              {renderTask(task, idx)}
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        {tasks.map((task, idx) => <React.Fragment key={task.id}>{renderTask(task, idx)}</React.Fragment>)}
       </div>
     );
   }

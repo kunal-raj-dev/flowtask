@@ -1,3 +1,4 @@
+import { WeeklyWorkload } from '../workflow/WeeklyWorkload';
 import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TaskCard } from '../tasks/TaskCard';
@@ -196,6 +197,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
       </div>
 
       {/* 7-Day Planning Horizon Strip */}
+      <WeeklyWorkload />
       <div className="mb-6 overflow-x-auto pb-1">
         <div className="flex items-center gap-2 min-w-max">
           <button

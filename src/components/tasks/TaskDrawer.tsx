@@ -1,3 +1,4 @@
+import { TaskExecutionDetails } from './TaskExecutionDetails';
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
@@ -42,6 +43,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const lastTitleTaskIdRef = useRef(task?.id);
   const lastCommittedTitleRef = useRef(task?.title || '');
   const titleDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingTitleRef = useRef<(() => void) | null>(null);
 
   const currentTaskId = task?.id;
   const currentTaskTitle = task?.title;
@@ -49,10 +51,13 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   useEffect(() => {
     if (currentTaskId && currentTaskTitle !== undefined) {
       if (lastTitleTaskIdRef.current !== currentTaskId) {
+        clearTimeout(titleDebounceTimerRef.current || undefined);
+        pendingTitleRef.current?.(); pendingTitleRef.current = null;
         lastTitleTaskIdRef.current = currentTaskId;
         lastCommittedTitleRef.current = currentTaskTitle;
         setLocalTitle(currentTaskTitle);
       } else if (currentTaskTitle !== lastCommittedTitleRef.current) {
+        if (pendingTitleRef.current) return;
         lastCommittedTitleRef.current = currentTaskTitle;
         setLocalTitle(currentTaskTitle);
       }
@@ -64,6 +69,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       if (titleDebounceTimerRef.current) {
         clearTimeout(titleDebounceTimerRef.current);
       }
+      pendingTitleRef.current?.(); pendingTitleRef.current = null;
     };
   }, []);
 
@@ -74,12 +80,13 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     if (titleDebounceTimerRef.current) {
       clearTimeout(titleDebounceTimerRef.current);
     }
-    titleDebounceTimerRef.current = setTimeout(() => {
+    pendingTitleRef.current = () => {
       if (val.trim()) {
         lastCommittedTitleRef.current = val;
         updateTask(task.id, { title: val });
       }
-    }, 300);
+    };
+    titleDebounceTimerRef.current = setTimeout(() => { const save = pendingTitleRef.current; pendingTitleRef.current = null; save?.(); }, 300);
   };
 
   const handleTitleBlur = () => {
@@ -89,6 +96,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       titleDebounceTimerRef.current = null;
     }
     const trimmed = localTitle.trim();
+    pendingTitleRef.current = null;
     if (trimmed && trimmed !== task.title) {
       lastCommittedTitleRef.current = trimmed;
       updateTask(task.id, { title: trimmed });
@@ -278,6 +286,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             />
           </div>
 
+          <TaskExecutionDetails key={task.id} task={task} />
           {/* Properties Grid (Project, Dates, Priority) */}
           <TaskDrawerProperties task={task} />
 
@@ -288,19 +297,19 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           <TaskDrawerNotes task={task} />
 
           {/* Recurrence & Schedule Section */}
-          <TaskDrawerRecurrence
+          <details className="desk-inspector-details"><summary>Repeat and schedule</summary><TaskDrawerRecurrence
             task={task}
             onOpenRecurrenceModal={() => setIsRecurrenceModalOpen(true)}
-          />
+          /></details>
 
           {/* Dependencies & Blockers Section */}
-          <TaskDrawerDependencies
+          <details className="desk-inspector-details"><summary>Dependencies and related tasks</summary><TaskDrawerDependencies
             task={task}
             onOpenMergeModal={() => setIsMergeModalOpen(true)}
-          />
+          /></details>
 
           {/* Tags & Contexts Section */}
-          <TaskDrawerTags task={task} />
+          <details className="desk-inspector-details"><summary>Tags and context</summary><TaskDrawerTags task={task} /></details>
 
           {/* Study Session Metadata Section */}
           <TaskDrawerStudySection
@@ -311,7 +320,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           />
 
           {/* Activity & Audit Trail Section */}
-          <TaskDrawerAuditSection task={task} />
+          <details className="desk-inspector-details"><summary>Activity and history</summary><TaskDrawerAuditSection task={task} /></details>
         </div>
 
         {/* Custom Recurrence Modal */}

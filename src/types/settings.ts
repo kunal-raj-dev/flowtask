@@ -1,3 +1,7 @@
+export type AutoArchiveCompleted = 'never' | 'immediate' | 'end_of_day' | '24_hours' | '7_days';
+export type DefaultTaskPriority = 'p1' | 'p2' | 'p3' | 'p4';
+export type DefaultLandingView = 'today' | 'upcoming' | 'timeline' | 'inbox' | 'dashboard';
+
 export interface UserWorkflowSettings {
   targetWorkCapacityHours: number; // default 6.0
   defaultTaskDuration: number; // default 30
@@ -7,6 +11,11 @@ export interface UserWorkflowSettings {
   weekStartDay: 'sunday' | 'monday'; // default 'monday'
   onboardingCompleted: boolean;
   keyboardHaloEnabled?: boolean;
+  autoArchiveCompleted?: AutoArchiveCompleted;
+  defaultTaskPriority?: DefaultTaskPriority;
+  defaultLandingView?: DefaultLandingView;
+  enableSmartSyntaxParsing?: boolean;
+  eveningShutdownPromptHour?: number;
 }
 
 export const DEFAULT_WORKFLOW_SETTINGS: UserWorkflowSettings = {
@@ -18,6 +27,11 @@ export const DEFAULT_WORKFLOW_SETTINGS: UserWorkflowSettings = {
   weekStartDay: 'monday',
   onboardingCompleted: false,
   keyboardHaloEnabled: true,
+  autoArchiveCompleted: 'never',
+  defaultTaskPriority: 'p3',
+  defaultLandingView: 'today',
+  enableSmartSyntaxParsing: true,
+  eveningShutdownPromptHour: 18,
 };
 
 export const MIN_CAPACITY_HOURS = 1.0;

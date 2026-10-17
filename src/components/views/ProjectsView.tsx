@@ -1,7 +1,10 @@
+import { ProjectIntent } from '../workflow/ProjectIntent';
+import { useBuiltInScenes } from '../../hooks/useBuiltInScenes';
 import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Project } from '../../types/task';
 import { TaskCard } from '../tasks/TaskCard';
+import { TaskCollection } from '../tasks/TaskCollection';
 import { TaskComposer } from '../tasks/TaskComposer';
 import { KanbanView } from './KanbanView';
 import { EisenhowerView } from './EisenhowerView';
@@ -45,6 +48,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   } = useTaskContext();
 
   const [presentation, setPresentation] = useState<'list' | 'board' | 'matrix'>('list');
+  const scenes = useBuiltInScenes();
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectColor, setNewProjectColor] = useState('#3B82F6');
@@ -154,6 +158,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           />
         </div>
 
+        <ProjectIntent key={currentProject.id} project={currentProject} />
         {/* Presentation Body */}
         {presentation === 'board' ? (
           <KanbanView projectId={selectedProjectId} onSelectTask={onSelectTask} />
@@ -173,14 +178,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   icon={<Folder size={28} style={{ color: currentProject.color }} />}
                 />
               ) : (
-                activeTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onSelectTask={() => onSelectTask(task.id)}
-                    onStartFocus={() => onStartFocus(task.id)}
-                  />
-                ))
+                <TaskCollection tasks={activeTasks} viewKey={`project:${currentProject.id}`} onSelectTask={onSelectTask} onStartFocus={onStartFocus}/>
               )}
             </div>
 
@@ -270,6 +268,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   key={c}
                   type="button"
                   onClick={() => setNewProjectColor(c)}
+                  aria-label={`Project color ${c}`}
                   className={`w-6 h-6 rounded-full transition-transform ${
                     newProjectColor === c ? 'scale-125 ring-2 ring-offset-2 ring-blue-500' : 'hover:scale-110'
                   }`}
@@ -297,13 +296,16 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           );
           const activeCount = projectTasks.filter((t) => t.status !== 'done').length;
           const doneCount = projectTasks.filter((t) => t.status === 'done').length;
+          const cover = scenes.find(scene => scene.id === project.coverAssetId);
 
           return (
             <div
               key={project.id}
+              data-project-card
               onClick={() => onSelectProject(project.id)}
               className="group p-4 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] hover:border-[var(--border-hairline)] shadow-subtle hover:shadow-card cursor-pointer transition-all flex flex-col justify-between"
             >
+              {cover && <img className="desk-project-gallery-cover" src={cover.thumbnail || cover.src} alt="" loading="lazy" />}
               <div>
                 <div className="flex items-start justify-between mb-3">
                   <div
@@ -342,8 +344,10 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
 
                 <h3 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-blue-500 transition-colors">
-                  {project.name}
+                  <button type="button" aria-label={`Open project ${project.name}`}>{project.name}</button>
                 </h3>
+                {project.outcome && <p className="desk-muted mt-2">{project.outcome}</p>}
+                {project.targetDate && <p className="desk-muted mt-2">Target · {new Date(project.targetDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</p>}
               </div>
 
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--border-hairline)] text-xs text-[var(--text-secondary)]">
@@ -390,6 +394,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         key={c}
                         type="button"
                         onClick={() => setEditColor(c)}
+                        aria-label={`Project color ${c}`}
                         className={`w-7 h-7 rounded-full transition-transform ${
                           editColor === c ? 'scale-125 ring-2 ring-offset-2 ring-blue-500' : 'hover:scale-110'
                         }`}

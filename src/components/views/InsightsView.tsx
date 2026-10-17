@@ -96,14 +96,14 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
     });
 
     // Also incorporate completed focusLogs for non-completed tasks or standalone sessions
-    const safeFocusLogs = focusLogs || [];
+    const safeFocusLogs = (focusLogs || []).filter(log => !log.phase || log.phase === 'focus');
     safeFocusLogs.forEach((log) => {
       if (log.startedAt) {
         const logDate = formatLocalDate(new Date(log.startedAt));
         if (activity[logDate]) {
           const isTaskCompleted = log.taskId ? completed.some((t) => t.id === log.taskId) : false;
           if (!isTaskCompleted) {
-            activity[logDate].minutes += Math.round((log.durationSeconds || 0) / 60);
+            activity[logDate].minutes += Math.round((log.seconds ?? log.durationSeconds ?? 0) / 60);
             if (activity[logDate].count === 0) {
               activity[logDate].count += 1;
             }
@@ -136,7 +136,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
       .reduce((acc, t) => acc + (t.timeSpentMinutes || 0), 0);
     const standaloneMinutes = safeFocusLogs
       .filter((l) => !l.taskId)
-      .reduce((acc, l) => acc + Math.round((l.durationSeconds || 0) / 60), 0);
+      .reduce((acc, l) => acc + Math.round((l.seconds ?? l.durationSeconds ?? 0) / 60), 0);
     const totalMinutes = completedMinutes + nonCompletedMinutes + standaloneMinutes;
     const focusHours = (totalMinutes / 60).toFixed(1);
 
@@ -219,7 +219,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
         const isTaskCompleted = log.taskId ? completed.some((t) => t.id === log.taskId) : false;
         if (!isTaskCompleted) {
           const h = new Date(log.startedAt).getHours();
-          const mins = Math.round((log.durationSeconds || 0) / 60);
+          const mins = Math.round((log.seconds ?? log.durationSeconds ?? 0) / 60);
           counts[h]++;
           hourMins[h] += mins;
           if (h >= 6 && h < 12) {

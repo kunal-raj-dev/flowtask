@@ -44,6 +44,12 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
   const todayStr = useTodayStr();
   const tomorrowStr = useTomorrowStr();
 
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    menuRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    return () => { if (previous?.isConnected) previous.focus(); };
+  }, []);
+
   const isDone = task.status === 'done';
 
   // Click outside and Esc listener
@@ -56,7 +62,14 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault(); e.stopPropagation();
         onClose();
+      }
+      if (['ArrowDown','ArrowUp','Home','End'].includes(e.key)) {
+        const items = [...(menuRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') || [])];
+        const index = items.indexOf(document.activeElement as HTMLButtonElement);
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : (index + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        e.preventDefault(); e.stopPropagation(); items[next]?.focus();
       }
     };
 
@@ -82,6 +95,9 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
   return (
     <div
       ref={menuRef}
+      role="dialog"
+      aria-label={`Actions for ${task.title}`}
+      data-overlay-open="true"
       style={{ left: `${Math.max(16, posX)}px`, top: `${Math.max(16, posY)}px` }}
       className="fixed z-50 w-52 bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] rounded-2xl shadow-modal p-1.5 text-xs text-[var(--text-primary)] card-surface animate-slide-down select-none"
       onClick={(e) => e.stopPropagation()}

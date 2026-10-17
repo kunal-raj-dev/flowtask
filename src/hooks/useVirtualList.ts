@@ -19,6 +19,7 @@ export interface UseVirtualListReturn<T> {
   topSpacerHeight: number;
   bottomSpacerHeight: number;
   isVirtual: boolean;
+  scrollToIndex: (index: number) => void;
 }
 
 /**
@@ -56,6 +57,19 @@ export function useVirtualList<T>({
     }
     return window;
   }, []);
+
+  const scrollToIndex = useCallback((index: number) => {
+    const container = containerRef.current;
+    if (!container || index < 0 || index >= items.length || !isVirtual) return;
+    const parent = getScrollParent(container);
+    const start = Math.max(0, index - overscan);
+    setRange({ start, end: Math.min(items.length, index + overscan + 15) });
+    if (parent === window) window.scrollTo({ top: container.getBoundingClientRect().top + window.scrollY + index * estimatedItemHeight - 80, behavior: 'auto' });
+    else {
+      const element = parent as HTMLElement;
+      element.scrollTop += container.getBoundingClientRect().top - element.getBoundingClientRect().top + index * estimatedItemHeight - 40;
+    }
+  }, [items.length, isVirtual, overscan, estimatedItemHeight, getScrollParent]);
 
   const calculateRange = useCallback(() => {
     if (!isVirtual || typeof window === 'undefined') {
@@ -134,6 +148,7 @@ export function useVirtualList<T>({
       topSpacerHeight: 0,
       bottomSpacerHeight: 0,
       isVirtual: false,
+      scrollToIndex,
     };
   }
 
@@ -158,5 +173,6 @@ export function useVirtualList<T>({
     topSpacerHeight,
     bottomSpacerHeight,
     isVirtual: true,
+    scrollToIndex,
   };
 }

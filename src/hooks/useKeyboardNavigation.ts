@@ -65,7 +65,7 @@ export function useKeyboardNavigation({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       // Allow keyboard navigation if right slide-over TaskDrawer is open, but block on full modal dialogs
-      if (document.querySelector('[aria-modal="true"]:not([data-task-drawer="true"]), [data-overlay-open="true"]')) return;
+      if (document.querySelector('[aria-modal="true"]:not([data-task-drawer="true"]), [data-overlay-open="true"], [data-layout-editing="true"]')) return;
       if (!enabled || tasks.length === 0) return;
 
       // Ignore when user is actively typing in form inputs, textareas, or contenteditables
@@ -245,9 +245,10 @@ export function useKeyboardNavigation({
   // Scroll focused element into view
   useEffect(() => {
     if (focusedTaskId) {
-      const el = document.getElementById(`task-${focusedTaskId}`);
+      const el = [...document.querySelectorAll<HTMLElement>('[data-task-id]')].find(item => item.dataset.taskId === focusedTaskId) || document.getElementById(`task-${focusedTaskId}`);
+      if (!el) window.dispatchEvent(new CustomEvent('flowtask:reveal-task', { detail: focusedTaskId }));
       if (el && typeof el.scrollIntoView === 'function') {
-        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
       }
     }
   }, [focusedTaskId]);

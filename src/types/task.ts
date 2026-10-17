@@ -48,6 +48,8 @@ export interface SessionMetadata {
 }
 
 export interface Task {
+  scheduleLocked?: boolean;
+  nextAction?: string;
   recurrenceSourceId?: string;
   id: string;
   title: string;
@@ -83,6 +85,11 @@ export interface Task {
 }
 
 export interface Project {
+  outcome?: string;
+  targetDate?: string;
+  coverAssetId?: string;
+  focusRecipeId?: string;
+  wipLimit?: number;
   revision?: number;
   id: string;
   name: string;
@@ -106,6 +113,7 @@ export type ViewId =
   | 'insights'
   | 'logbook'
   | 'review'
+  | 'study'
   | 'all'
   | 'trash'
   | 'archive'
@@ -183,7 +191,7 @@ export interface TaskTemplate {
   isCustom?: boolean;
 }
 
-export type FocusSessionMode = 'stopwatch' | 'pomodoro' | 'sprint';
+export type FocusSessionMode = 'stopwatch' | 'pomodoro' | 'sprint' | 'countdown';
 
 export interface FocusSessionSegment {
   startedAt: number;
@@ -194,6 +202,13 @@ export interface FocusSessionSegment {
 }
 
 export interface FocusLog {
+  pausedSeconds?: number;
+  revision?: number;
+  updatedAt?: number;
+  phase?: 'focus' | 'short_break' | 'long_break';
+  recipeId?: string;
+  outcome?: 'completed' | 'interrupted';
+  rating?: 1 | 2 | 3;
   id: string;
   seconds: number;
   durationSeconds?: number;
@@ -207,6 +222,16 @@ export interface FocusLog {
 }
 
 export interface FocusSession {
+  recoverCompletion?: boolean;
+  finishedAt?: number;
+  totalPausedMs?: number;
+  workspaceId?: string;
+  originalStartedAt?: number;
+  recipeId?: string;
+  timerConfiguration?: import('./studio').TimerConfiguration;
+  nextAction?: string;
+  outcome?: 'completed' | 'interrupted';
+  rating?: 1 | 2 | 3;
   id: string;
   mode: FocusSessionMode;
   taskId: string | null;

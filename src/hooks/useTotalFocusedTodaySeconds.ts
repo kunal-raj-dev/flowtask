@@ -28,7 +28,7 @@ export function useTotalFocusedTodaySeconds(): number {
 
     const focusLogs = (context?.focusLogs || []) as FocusLog[];
     const completedToday = focusLogs
-      .filter((log) => log.endedAt && formatLocalDate(new Date(log.endedAt)) === todayStr)
+      .filter((log) => (!log.phase || log.phase === 'focus') && log.endedAt && formatLocalDate(new Date(log.endedAt)) === todayStr)
       .reduce((acc, log) => acc + (log.seconds || 0), 0);
 
     const session = context?.focusSession || liveSession;
@@ -37,7 +37,7 @@ export function useTotalFocusedTodaySeconds(): number {
       (session.state === 'running' || session.state === 'paused') &&
       formatLocalDate(new Date(session.startedAt)) === todayStr;
 
-    const liveSec = isLiveToday ? liveElapsed : 0;
+    const liveSec = isLiveToday && (!session?.pomodoroPhase || session.pomodoroPhase === 'focus') ? liveElapsed : 0;
     return completedToday + liveSec;
   }, [context, liveSession, liveElapsed, todayStr]);
 }

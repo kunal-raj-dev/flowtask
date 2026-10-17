@@ -1,3 +1,4 @@
+import { FocusInsights } from './FocusInsights';
 import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { LogbookView } from './LogbookView';
@@ -5,7 +6,6 @@ import { InsightsView } from './InsightsView';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { exportToCSV, exportToJSON, exportToMarkdown, downloadFile } from '../../utils/fileExporter';
 import { audioEngine } from '../../utils/audioEngine';
-import confetti from 'canvas-confetti';
 import {
   Compass,
   CheckCircle2,
@@ -42,7 +42,6 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
       await navigator.clipboard.writeText(md);
       setCopiedStandup(true);
       audioEngine.playTaskComplete();
-      confetti({ particleCount: 30, spread: 50, origin: { y: 0.5 } });
       showToast('Standup digest copied to clipboard!');
       setTimeout(() => setCopiedStandup(false), 2500);
     } catch {
@@ -88,7 +87,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
               Review & Insights
             </h1>
             <p className="text-xs text-[var(--text-secondary)] font-medium">
-              Reflect on completed work, analyze focus velocity, and export reports
+              Review completed work, focused time, and the shape of your week
             </p>
           </div>
         </div>
@@ -121,7 +120,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
         <SegmentedControl<'logbook' | 'insights' | 'standup' | 'export'>
           items={[
             { id: 'logbook', label: 'Logbook', icon: <CheckCircle2 size={14} /> },
-            { id: 'insights', label: 'Insights & Velocity', icon: <TrendingUp size={14} /> },
+            { id: 'insights', label: 'Insights', icon: <TrendingUp size={14} /> },
             { id: 'standup', label: 'Daily Standup', icon: <FileText size={14} /> },
             { id: 'export', label: 'Export Reports', icon: <Download size={14} /> },
           ]}
@@ -134,7 +133,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
       {activeTab === 'logbook' ? (
         <LogbookView onSelectTask={onSelectTask} />
       ) : activeTab === 'insights' ? (
-        <InsightsView onSelectTask={onSelectTask} />
+        <><FocusInsights /><InsightsView onSelectTask={onSelectTask} /></>
       ) : activeTab === 'standup' ? (
         <div className="p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
           <div className="flex items-center justify-between mb-4">

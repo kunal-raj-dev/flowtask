@@ -7,7 +7,7 @@ import { audioEngine } from '../utils/audioEngine';
  * tabs, checkboxes, cards, switchers, and dropdowns) and plays the active tactile click/pop sound.
  * Automatically excludes text inputs/textareas to maintain calm typing focus.
  */
-export function useTactileAudioClicks(enabled: boolean = true) {
+export function useTactileAudioClicks(enabled: boolean = true, keyboardEnabled = false) {
   useEffect(() => {
     if (!enabled) return;
 
@@ -31,10 +31,13 @@ export function useTactileAudioClicks(enabled: boolean = true) {
       }
     };
 
+    const handleTyping = (e: KeyboardEvent) => { const target = e.target as HTMLInputElement | null; if (!keyboardEnabled || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1 || target?.type === 'password') return; if (target?.matches('input,textarea,[contenteditable=true]')) audioEngine.playClickSound(); };
+    window.addEventListener('keydown', handleTyping);
     window.addEventListener('click', handleGlobalClick, { capture: true, passive: true });
 
     return () => {
+      window.removeEventListener('keydown', handleTyping);
       window.removeEventListener('click', handleGlobalClick, { capture: true });
     };
-  }, [enabled]);
+  }, [enabled, keyboardEnabled]);
 }

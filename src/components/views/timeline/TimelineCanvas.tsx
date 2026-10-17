@@ -47,11 +47,15 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
   projects,
   onSelectTask,
   onToggleTaskStatus,
-  onUpdateTask,
+  onUpdateTask: updateUnlockedTask,
   onStartFocus,
   onStartSprint,
   onQuickAdd,
 }) => {
+  const onUpdateTask: TimelineCanvasProps['onUpdateTask'] = (id, updates) => {
+    if (todayTasks.find(t => t.id === id)?.scheduleLocked && ['scheduledStart','scheduledEnd','estimatedMinutes'].some(key => key in updates)) return;
+    updateUnlockedTask(id, updates);
+  };
   const [quickAddHour, setQuickAddHour] = useState<number | null>(null);
   const [quickAddTitle, setQuickAddTitle] = useState('');
 
@@ -70,6 +74,11 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
     initialStartMin: 0,
   });
   const hasDraggedRef = useRef(false);
+
+  const onUpdateTaskRef = useRef(onUpdateTask);
+  useEffect(() => {
+    onUpdateTaskRef.current = onUpdateTask;
+  });
 
   const dragStateRef = useRef(dragState);
   const resizeStateRef = useRef(resizeState);
@@ -150,7 +159,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
         if (currentStartMin !== initialStartMin) {
           const timeStr = minutesToTimeStr(currentStartMin);
           const endStr = minutesToTimeStr(currentStartMin + duration);
-          onUpdateTask(taskId, { scheduledStart: timeStr, scheduledEnd: endStr });
+          onUpdateTaskRef.current(taskId, { scheduledStart: timeStr, scheduledEnd: endStr });
         }
       } else if (activeResize) {
         const { taskId, currentDuration } = activeResize;
@@ -158,7 +167,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
         setResizeState(null);
         if (currentDuration !== initialDuration) {
           const newEndMin = initialStartMin + currentDuration;
-          onUpdateTask(taskId, {
+          onUpdateTaskRef.current(taskId, {
             estimatedMinutes: currentDuration,
             scheduledEnd: minutesToTimeStr(newEndMin),
           });
@@ -174,7 +183,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
       window.removeEventListener('pointerup', handleGlobalPointerUp);
       window.removeEventListener('pointercancel', handleGlobalPointerUp);
     };
-  }, [isInteracting, hourHeightPx, startHour, endHour, calendarEvents, onUpdateTask]);
+  }, [isInteracting, hourHeightPx, startHour, endHour, calendarEvents]);
 
   const totalHours = endHour - startHour;
 
@@ -200,7 +209,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
     duration: number,
     isDone: boolean
   ) => {
-    if (isDone) return;
+    if (isDone || task.scheduleLocked) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     if ((e.target as HTMLElement).closest('button, input, [data-resize-handle]')) {
       return;
@@ -224,7 +233,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
     duration: number,
     isDone: boolean
   ) => {
-    if (isDone) return;
+    if (isDone || task.scheduleLocked) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     e.stopPropagation();
     resizeStartRef.current = {
