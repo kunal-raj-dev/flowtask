@@ -94,6 +94,7 @@ export interface Project {
   outcome?: string;
   targetDate?: string;
   coverAssetId?: string;
+  coverFocalPoint?: { x: number; y: number };
   focusRecipeId?: string;
   wipLimit?: number;
   revision?: number;

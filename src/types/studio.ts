@@ -27,6 +27,12 @@ export interface MediaAsset {
   creator: string;
   sourceUrl?: string;
   verifiedAt?: string;
+  contexts?: string[];
+  moods?: string[];
+  altText?: string;
+  provenance?: string;
+  bytes?: number;
+  focalPoint?: { x: number; y: number };
 }
 export interface TimerConfiguration {
   mode: FocusSessionMode;
@@ -136,6 +142,8 @@ export const DEFAULT_STUDIO: StudioPreferences = {
 
 export interface MediaCatalog {
   scenes: MediaAsset[];
+  workspaceVisuals?: MediaAsset[];
+  visuals?: MediaAsset[];
   audio: MediaAsset[];
   error?: string;
   refreshPersonal?: () => void;

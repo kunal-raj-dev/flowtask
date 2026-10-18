@@ -9,6 +9,8 @@ export interface PersonalMedia {
   kind: "image" | "audio";
   blob: Blob;
   thumbnail?: Blob;
+  width?: number;
+  height?: number;
   createdAt: number;
 }
 const MEDIA_CACHE = "flowtask-media-v2";
@@ -46,6 +48,7 @@ export const mediaService = {
       );
     let blob: Blob = file,
       thumbnail: Blob | undefined;
+    const recordDimensions: { width?: number; height?: number } = {};
     if (image) {
       const bitmap = await createImageBitmap(file).catch(() => {
         throw new Error("This image could not be decoded.");
@@ -74,6 +77,8 @@ export const mediaService = {
       try {
         blob = await encode(2560, 0.9);
         thumbnail = await encode(400, 0.8);
+        recordDimensions.width = bitmap.width;
+        recordDimensions.height = bitmap.height;
       } finally {
         bitmap.close();
       }
@@ -115,6 +120,9 @@ export const mediaService = {
       kind: image ? "image" : "audio",
       blob,
       thumbnail,
+      ...(image && recordDimensions.width && recordDimensions.height
+        ? { width: recordDimensions.width, height: recordDimensions.height }
+        : {}),
       createdAt: Date.now(),
     };
     try {

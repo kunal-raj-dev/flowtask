@@ -6,6 +6,12 @@ The 48 still scenes in `backgrounds/v1/` were individually created for FlowTask 
 
 The complete prompt set and saved source references are recorded in `docs/media-background-sources.json`. The locally served primary WebP files retain their native generation dimensions; 960px and thumbnail variants are delivery derivatives, not separate counted artworks. Native PNG outputs remain in the generation archive on the creation machine; the repository contains production WebP assets.
 
+## Workspace covers
+
+The workspace cover library contains 36 original AI-generated scenes created specifically for FlowTask on 18 October 2026. It has six scenes each for Study & Research, Code & Build, Writing & Communication, Design & Creative, Planning & Reflection, and Personal & Life Admin. The images are original project artwork, not stock photography; no third-party stock license or CC0 status is asserted. Each catalog record includes its creator, provenance, collection, context tags, alt text, focal point, intrinsic dimensions, and license metadata. The locally served primary WebP retains the generated image dimensions; 960px and thumbnail WebPs are delivery derivatives.
+
+See [`docs/media-workspace-sources.json`](../../docs/media-workspace-sources.json) for the asset records and [`docs/media-workspace-contact-sheet.webp`](../../docs/media-workspace-contact-sheet.webp) for a visual review sheet. The generation originals remain in the creation machine's image archive; the repository contains responsive WebP masters and derivatives.
+
 | ID | Title | Collection | Provenance / license | Creator | Verified |
 | --- | --- | --- | --- | --- | --- |
 | misty-pines | Misty Pines | nature | Original generated artwork | FlowTask / OpenAI image generation | 2026-10-16 |

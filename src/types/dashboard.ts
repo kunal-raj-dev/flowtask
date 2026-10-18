@@ -49,6 +49,7 @@ export interface WorkspaceDashboard {
   name: string;
   icon?: string;
   coverImage?: string;
+  coverFocalPoint?: { x: number; y: number };
   isDefault?: boolean;
   order: number;
   widgets: DashboardWidget[];

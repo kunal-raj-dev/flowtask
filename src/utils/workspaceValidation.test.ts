@@ -7,6 +7,18 @@ describe('validateWorkspaceData (BUG-01 & BUG-02)', () => {
     { id: 'work', name: 'Work', color: '#3B82F6' },
   ];
 
+  it('preserves local project cover references and clamps saved focal points', () => {
+    const result = validateWorkspaceData([], [{ ...defaultProjects[1], coverAssetId: 'local:workspace-cover', coverFocalPoint: { x: 125, y: -10 } }]);
+    const project = result.projects.find(item => item.id === 'work')!;
+    expect(project.coverAssetId).toBe('local:workspace-cover');
+    expect(project.coverFocalPoint).toEqual({ x: 100, y: 0 });
+  });
+
+  it('rejects malformed project cover references and non-finite crop coordinates', () => {
+    expect(() => validateWorkspaceData([], [{ ...defaultProjects[1], coverAssetId: 'bad / id' }])).toThrow(/cover image/);
+    expect(() => validateWorkspaceData([], [{ ...defaultProjects[1], coverFocalPoint: { x: Infinity, y: 50 } }])).toThrow(/focal point/);
+  });
+
   it('allows legacy ideas project ID and cleanly remaps to inbox with isSomeday flag when ideas project is absent', () => {
     const rawTasks = [
       {

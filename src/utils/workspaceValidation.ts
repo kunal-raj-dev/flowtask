@@ -20,6 +20,12 @@ export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): 
     if (!object(p) || !idValid(p.id) || typeof p.name !== 'string' || !p.name.trim()) fail(`Project ${i + 1}: valid ID and name required.`);
     if (projectIds.has(p.id)) fail(`Duplicate project ID: ${p.id}`);
     projectIds.add(p.id);
+    if (p.coverAssetId !== undefined && (typeof p.coverAssetId !== 'string' || !idValid(p.coverAssetId))) fail(`Project ${p.name}: invalid cover image reference.`);
+    let coverFocalPoint: { x: number; y: number } | undefined;
+    if (p.coverFocalPoint !== undefined) {
+      if (!object(p.coverFocalPoint) || typeof p.coverFocalPoint.x !== 'number' || !Number.isFinite(p.coverFocalPoint.x) || typeof p.coverFocalPoint.y !== 'number' || !Number.isFinite(p.coverFocalPoint.y)) fail(`Project ${p.name}: invalid cover focal point.`);
+      coverFocalPoint = { x: Math.round(Math.max(0, Math.min(100, p.coverFocalPoint.x))), y: Math.round(Math.max(0, Math.min(100, p.coverFocalPoint.y))) };
+    }
     if (p.milestones !== undefined && (!Array.isArray(p.milestones) || p.milestones.length > 100)) fail(`Project ${p.name}: milestones must be a list of at most 100 items.`);
     const milestoneIds = new Set<string>();
     const milestones = (p.milestones || []).map((item, index) => {
@@ -30,7 +36,7 @@ export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): 
       if (item.skippedAt !== undefined && (typeof item.skippedAt !== 'number' || !Number.isFinite(item.skippedAt) || item.skippedAt < 0)) fail(`Project ${p.name}: invalid milestone skip time.`);
       return { id: item.id, title: item.title.trim(), order: item.order as number, ...(typeof item.dueDate === 'string' && item.dueDate ? { dueDate: item.dueDate } : {}), ...(typeof item.completedAt === 'number' ? { completedAt: item.completedAt } : {}), ...(typeof item.skippedAt === 'number' ? { skippedAt: item.skippedAt } : {}) };
     });
-    return { ...p, name: p.name.trim(), color: typeof p.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(p.color) ? p.color : '#64748B', ...(p.milestones !== undefined ? { milestones } : {}) } as unknown as Project;
+    return { ...p, name: p.name.trim(), color: typeof p.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(p.color) ? p.color : '#64748B', ...(p.milestones !== undefined ? { milestones } : {}), ...(coverFocalPoint ? { coverFocalPoint } : {}) } as unknown as Project;
   });
   if (!projectIds.has('inbox')) { projects.unshift({ id: 'inbox', name: 'Inbox', color: '#64748B' }); projectIds.add('inbox'); }
   const taskIds = new Set<string>();

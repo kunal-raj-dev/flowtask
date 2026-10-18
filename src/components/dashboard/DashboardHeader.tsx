@@ -3,9 +3,10 @@ import type { WorkspaceDashboard } from '../../types/dashboard';
 import { STARTER_DASHBOARDS } from '../../services/starterDashboards';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { Dialog } from '../ui/Dialog';
-import { useBuiltInScenes } from '../../hooks/useBuiltInScenes';
 import { useTaskContext } from '../../context/TaskContext';
 import { ChevronDown, ArrowRight, SlidersHorizontal, Plus, Copy, Trash2, ArrowUp, ArrowDown, Download, Upload, LayoutTemplate, Check, Compass } from 'lucide-react';
+import { useMediaCatalog } from '../../hooks/useStudio';
+import { WorkspaceVisualPicker } from '../workspace/WorkspaceVisualPicker';
 
 interface DashboardHeaderProps {
   activeDashboard: WorkspaceDashboard; dashboards: WorkspaceDashboard[];
@@ -17,21 +18,22 @@ interface DashboardHeaderProps {
   isEditing: boolean; onToggleEdit: () => void; onPlanMyDay: () => void;
   hasDraft: boolean; onResumeDraft: () => void; onDiscardDraft: () => void;
   onExport?: () => void; onImport?: () => void;
-  onCoverChange?: (id: string) => void;
+  onCoverChange?: (id: string | undefined, focalPoint?: { x: number; y: number }) => void;
   guided?: boolean;
 }
 export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
   const { activeDashboard, dashboards, isEditing } = props;
-  const scenes = useBuiltInScenes();
+  const media = useMediaCatalog();
   const { workspacePreferences = {} } = useTaskContext();
   const showCover = (workspacePreferences.workspace as {showCovers?:boolean}|undefined)?.showCovers !== false;
-  const cover = scenes.find(scene => scene.id === activeDashboard.coverImage);
-  const [open, setOpen] = useState(false), [renaming, setRenaming] = useState<string | null>(null), [name, setName] = useState('');
+  const cover = media.visuals.find(scene => scene.id === activeDashboard.coverImage);
+  const [open, setOpen] = useState(false), [visualPickerOpen, setVisualPickerOpen] = useState(false), [renaming, setRenaming] = useState<string | null>(null), [name, setName] = useState('');
   const today = useTodayStr();
   const date = new Date(today + 'T12:00:00');
   const formatted = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(date);
   return <>
-    {showCover && cover && <img className="desk-dashboard-cover" src={cover.variants?.[0]?.src || cover.src} alt="" loading="lazy"/>}
+    {showCover && cover && <img className="desk-dashboard-cover" src={cover.variants?.[0]?.src || cover.src} alt="" loading="lazy" width={cover.width || 960} height={cover.height || 540} style={{ objectPosition: `${activeDashboard.coverFocalPoint?.x ?? cover.focalPoint?.x ?? 50}% ${activeDashboard.coverFocalPoint?.y ?? cover.focalPoint?.y ?? 50}%` }}/>}
+    {showCover && activeDashboard.coverImage && !cover && !media.loading && <div className="desk-dashboard-cover-missing" role="status"><span>This personal image is unavailable on this device.</span><button type="button" className="desk-button" onClick={() => setVisualPickerOpen(true)}>Choose replacement</button></div>}
     <header className="desk-page-header">
       <div>
         <p className="desk-eyebrow">{formatted}</p>
@@ -51,9 +53,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
           <button className="desk-icon-button danger" aria-label={'Delete ' + desk.name} disabled={dashboards.length <= 1} onClick={() => { props.onDeleteDashboard(desk.id); setOpen(false); }}><Trash2 size={15}/></button></div>
       </div>)}</div>
       <div className="desk-manager-tools"><button className="desk-button" disabled={dashboards.length >= 20} onClick={() => { props.onCreateDashboard(); setOpen(false); }}><Plus size={16}/>Create New Dashboard</button><button className="desk-button" onClick={() => { props.onExport?.(); }}><Download size={16}/>Export layout</button><button className="desk-button" disabled={dashboards.length >= 20} onClick={() => { props.onImport?.(); setOpen(false); }}><Upload size={16}/>Import layout</button></div>
-      <label className="desk-cover-select">Cover for {activeDashboard.name}<select value={activeDashboard.coverImage || ''} onChange={e => props.onCoverChange?.(e.target.value)}><option value="">No cover · Quiet canvas</option>{scenes.map(scene => <option key={scene.id} value={scene.id}>{scene.title}</option>)}</select></label>
+      <div className="desk-cover-select"><span>Cover for {activeDashboard.name}</span>{activeDashboard.coverImage && !cover && !media.loading && <small role="status">Saved personal image is unavailable on this device.</small>}<button type="button" className="desk-button" onClick={() => { setOpen(false); setVisualPickerOpen(true); }}>{cover ? 'Change image' : activeDashboard.coverImage ? 'Choose replacement' : 'Choose an image'}</button></div>
       <div className="desk-template-heading"><LayoutTemplate size={17}/><h3>Start with a little structure</h3></div><p className="desk-muted">Preview a starter on your current desk. Save to apply it, or Cancel to keep your layout.</p>
       <div className="desk-template-grid">{STARTER_DASHBOARDS.map(starter => <button key={starter.id} onClick={() => { props.onResetToStarter(starter.id); setOpen(false); }}><span className="desk-template-mini" aria-hidden="true"><i/><i/><i/></span><strong>{starter.name}</strong><small>{starter.widgets.length} widgets · Make it yours</small></button>)}</div>
     </Dialog>
+    {visualPickerOpen && <WorkspaceVisualPicker isOpen={visualPickerOpen} onClose={() => setVisualPickerOpen(false)} assets={media.visuals} loading={media.loading} catalogError={media.error} value={activeDashboard.coverImage} focalPoint={activeDashboard.coverFocalPoint} context={{ kind: 'dashboard' }} onSelect={(id, point) => props.onCoverChange?.(id, point)}/>}
   </>;
 };

@@ -26,9 +26,16 @@ export function normalizeWidgetConfig(type: WidgetType, raw: unknown): Record<st
   if (type === 'quickNotes') result.mode = ['both', 'scratchpad', 'task'].includes(String(c.mode)) ? c.mode : 'both';
   if (type === 'quietScene') {
     result.clockFormat = c.clockFormat === '24h' ? '24h' : '12h';
-    if (identifier(c.sceneId) && !String(c.sceneId).startsWith('local:')) result.sceneId = c.sceneId;
+    if (identifier(c.sceneId)) result.sceneId = c.sceneId;
+    const point = normalizeFocalPoint(c.focalPoint);
+    if (point) result.focalPoint = point;
   }
   return result;
+}
+
+function normalizeFocalPoint(value: unknown): { x: number; y: number } | undefined {
+  if (!object(value) || typeof value.x !== 'number' || typeof value.y !== 'number' || !Number.isFinite(value.x) || !Number.isFinite(value.y)) return undefined;
+  return { x: Math.round(Math.max(0, Math.min(100, value.x))), y: Math.round(Math.max(0, Math.min(100, value.y))) };
 }
 
 const overlap = (a: DashboardLayoutItem, b: DashboardLayoutItem) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -83,7 +90,8 @@ export function normalizeDashboard(raw: unknown): WorkspaceDashboard {
     widgets, layouts, revision: integer(raw.revision, 0, 0, Number.MAX_SAFE_INTEGER),
     createdAt: typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : Date.now(),
     updatedAt: typeof raw.updatedAt === 'number' && Number.isFinite(raw.updatedAt) ? raw.updatedAt : Date.now(),
-    ...(identifier(raw.coverImage) && !String(raw.coverImage).startsWith('local:') ? { coverImage: raw.coverImage } : {}) };
+    ...(identifier(raw.coverImage) ? { coverImage: raw.coverImage } : {}),
+    ...(normalizeFocalPoint(raw.coverFocalPoint) ? { coverFocalPoint: normalizeFocalPoint(raw.coverFocalPoint) } : {}) };
 }
 
 export function validateDashboards(raw: unknown): WorkspaceDashboard[] {

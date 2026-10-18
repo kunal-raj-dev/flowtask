@@ -172,6 +172,29 @@ export function FocusStudio({
     Number(ctx.workspacePreferences.studioSummaryDismissed || 0),
   );
   const active = session?.workspaceId === ctx.workspaceId ? session : null;
+  const removePersonalAsset = async (assetId: string, title: string) => {
+    const projectReferences = ctx.projects.filter(project => project.coverAssetId === assetId);
+    const dashboardReferences = ctx.dashboards.filter(dashboard => dashboard.coverImage === assetId || dashboard.widgets.some(widget => widget.type === "quietScene" && widget.config.sceneId === assetId));
+    const referenceCount = projectReferences.length + dashboardReferences.reduce((count, dashboard) => count + Number(dashboard.coverImage === assetId) + dashboard.widgets.filter(widget => widget.type === "quietScene" && widget.config.sceneId === assetId).length, 0);
+    const referenceCopy = referenceCount ? ` It is used by ${referenceCount} workspace cover${referenceCount === 1 ? "" : "s"}; those references will be cleared.` : "";
+    if (!window.confirm(`Remove “${title}” from this device?${referenceCopy}`)) return;
+    try {
+      await mediaService.remove(assetId, ctx.workspaceId);
+      projectReferences.forEach(project => ctx.updateProject(project.id, { coverAssetId: undefined, coverFocalPoint: undefined }));
+      if (dashboardReferences.length) {
+        const nextDashboards = ctx.dashboards.map(dashboard => ({
+          ...dashboard,
+          ...(dashboard.coverImage === assetId ? { coverImage: undefined, coverFocalPoint: undefined } : {}),
+          widgets: dashboard.widgets.map(widget => widget.type === "quietScene" && widget.config.sceneId === assetId ? { ...widget, config: { ...widget.config, sceneId: undefined, focalPoint: undefined } } : widget),
+        }));
+        ctx.updateDashboards(nextDashboards);
+      }
+      media.refreshPersonal();
+      if (p.sceneId === assetId || p.breakSceneId === assetId) update({ sceneId: p.sceneId === assetId ? "" : p.sceneId, breakSceneId: p.breakSceneId === assetId ? "" : p.breakSceneId });
+      if (p.musicId === assetId) update({ musicId: null });
+      setMessage(referenceCount ? `Removed ${title} and cleared ${referenceCount} cover reference${referenceCount === 1 ? "" : "s"}.` : `Removed ${title} from this device.`);
+    } catch { setMessage(`Could not remove ${title}. Your workspace data is still safe.`); }
+  };
   const [phase, setPhase] = useState<Phase>(
     active?.pomodoroPhase || initialPhase,
   );
@@ -1489,16 +1512,7 @@ export function FocusStudio({
                         </button>
                         <button
                           aria-label={`Remove ${a.title}`}
-                          onClick={() =>
-                            void mediaService
-                              .remove(a.id, ctx.workspaceId)
-                              .then(() => {
-                                media.refreshPersonal();
-                                if (p.sceneId === a.id) update({ sceneId: "" });
-                                if (p.musicId === a.id)
-                                  update({ musicId: null });
-                              })
-                          }
+                          onClick={() => void removePersonalAsset(a.id, a.title)}
                         >
                           <Trash2 size={15} />
                         </button>

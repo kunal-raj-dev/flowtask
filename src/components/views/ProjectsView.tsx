@@ -1,7 +1,7 @@
 import { ProjectIntent } from '../workflow/ProjectIntent';
-import { useBuiltInScenes } from '../../hooks/useBuiltInScenes';
 import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { useMediaCatalog } from '../../hooks/useStudio';
 import type { Project } from '../../types/task';
 import { TaskCard } from '../tasks/TaskCard';
 import { TaskCollection } from '../tasks/TaskCollection';
@@ -48,7 +48,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   } = useTaskContext();
 
   const [presentation, setPresentation] = useState<'list' | 'board' | 'matrix'>('list');
-  const scenes = useBuiltInScenes();
+  const media = useMediaCatalog();
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectColor, setNewProjectColor] = useState('#3B82F6');
@@ -158,7 +158,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           />
         </div>
 
-        <ProjectIntent key={currentProject.id} project={currentProject} />
+        <ProjectIntent key={currentProject.id} project={currentProject} visualAssets={media.visuals} mediaLoading={media.loading} mediaError={media.error}/>
         {/* Presentation Body */}
         {presentation === 'board' ? (
           <KanbanView projectId={selectedProjectId} onSelectTask={onSelectTask} />
@@ -296,7 +296,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           );
           const activeCount = projectTasks.filter((t) => t.status !== 'done').length;
           const doneCount = projectTasks.filter((t) => t.status === 'done').length;
-          const cover = scenes.find(scene => scene.id === project.coverAssetId);
+          const cover = media.visuals.find(scene => scene.id === project.coverAssetId);
 
           return (
             <div
@@ -305,7 +305,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               onClick={() => onSelectProject(project.id)}
               className="group p-4 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] hover:border-[var(--border-hairline)] shadow-subtle hover:shadow-card cursor-pointer transition-all flex flex-col justify-between"
             >
-              {cover && <img className="desk-project-gallery-cover" src={cover.thumbnail || cover.src} alt="" loading="lazy" />}
+              {cover && <img className="desk-project-gallery-cover" src={cover.thumbnail || cover.src} alt="" loading="lazy" width={cover.width || 400} height={cover.height || 225} style={{ objectPosition: `${project.coverFocalPoint?.x ?? cover.focalPoint?.x ?? 50}% ${project.coverFocalPoint?.y ?? cover.focalPoint?.y ?? 50}%` }} />}
+              {!cover && project.coverAssetId && <div className="desk-project-gallery-cover desk-project-cover-missing">Personal image on another device</div>}
               <div>
                 <div className="flex items-start justify-between mb-3">
                   <div

@@ -1,0 +1,1508 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ws-morning-library",
+      "title": "Morning Library",
+      "category": "study-research",
+      "src": "/media/workspace/v1/ws-morning-library.webp",
+      "thumbnail": "/media/workspace/v1/ws-morning-library-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-morning-library-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-morning-library.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 166750,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "study",
+        "reading",
+        "research"
+      ],
+      "moods": [
+        "quiet",
+        "warm"
+      ],
+      "altText": "Sunlit shelves and an open reading table in a calm library.",
+      "focalPoint": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-archival-reading-room",
+      "title": "Archival Reading Room",
+      "category": "study-research",
+      "src": "/media/workspace/v1/ws-archival-reading-room.webp",
+      "thumbnail": "/media/workspace/v1/ws-archival-reading-room-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-archival-reading-room-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-archival-reading-room.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 176656,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "study",
+        "history",
+        "research"
+      ],
+      "moods": [
+        "focused",
+        "classic"
+      ],
+      "altText": "A quiet archival reading room with long tables and tall shelves.",
+      "focalPoint": {
+        "x": 50,
+        "y": 48
+      }
+    },
+    {
+      "id": "ws-botanical-research",
+      "title": "Botanical Research",
+      "category": "study-research",
+      "src": "/media/workspace/v1/ws-botanical-research.webp",
+      "thumbnail": "/media/workspace/v1/ws-botanical-research-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-botanical-research-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-botanical-research.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 151424,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "study",
+        "science",
+        "biology",
+        "research"
+      ],
+      "moods": [
+        "fresh",
+        "curious"
+      ],
+      "altText": "Botanical specimens and a notebook in a softly lit research room.",
+      "focalPoint": {
+        "x": 52,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-quiet-campus-dawn",
+      "title": "Campus at Dawn",
+      "category": "study-research",
+      "src": "/media/workspace/v1/ws-quiet-campus-dawn.webp",
+      "thumbnail": "/media/workspace/v1/ws-quiet-campus-dawn-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-quiet-campus-dawn-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-quiet-campus-dawn.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 220852,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "study",
+        "school",
+        "university",
+        "exam"
+      ],
+      "moods": [
+        "fresh",
+        "hopeful"
+      ],
+      "altText": "A peaceful university walkway in the early morning.",
+      "focalPoint": {
+        "x": 50,
+        "y": 48
+      }
+    },
+    {
+      "id": "ws-quiet-study-stack",
+      "title": "Quiet Study Stack",
+      "category": "study-research",
+      "src": "/media/workspace/v1/ws-quiet-study-stack.webp",
+      "thumbnail": "/media/workspace/v1/ws-quiet-study-stack-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-quiet-study-stack-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-quiet-study-stack.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 174708,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "study",
+        "reading",
+        "exam"
+      ],
+      "moods": [
+        "cozy",
+        "focused"
+      ],
+      "altText": "A small stack of books beside a warm reading lamp.",
+      "focalPoint": {
+        "x": 50,
+        "y": 52
+      }
+    },
+    {
+      "id": "ws-field-notes-greenhouse",
+      "title": "Field Notes in the Greenhouse",
+      "category": "study-research",
+      "src": "/media/workspace/v1/ws-field-notes-greenhouse.webp",
+      "thumbnail": "/media/workspace/v1/ws-field-notes-greenhouse-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-field-notes-greenhouse-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-field-notes-greenhouse.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 347572,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "study",
+        "science",
+        "biology",
+        "research"
+      ],
+      "moods": [
+        "natural",
+        "curious"
+      ],
+      "altText": "Greenhouse leaves and blank field notes in soft sunlight.",
+      "focalPoint": {
+        "x": 54,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-warm-circuit-bench",
+      "title": "Warm Circuit Bench",
+      "category": "code-build",
+      "src": "/media/workspace/v1/ws-warm-circuit-bench.webp",
+      "thumbnail": "/media/workspace/v1/ws-warm-circuit-bench-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-warm-circuit-bench-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-warm-circuit-bench.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 193154,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "code",
+        "hardware",
+        "engineering",
+        "build"
+      ],
+      "moods": [
+        "inventive",
+        "warm"
+      ],
+      "altText": "A tidy electronics workbench with a small circuit board and tools.",
+      "focalPoint": {
+        "x": 50,
+        "y": 53
+      }
+    },
+    {
+      "id": "ws-quiet-code-studio",
+      "title": "Quiet Code Studio",
+      "category": "code-build",
+      "src": "/media/workspace/v1/ws-quiet-code-studio.webp",
+      "thumbnail": "/media/workspace/v1/ws-quiet-code-studio-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-quiet-code-studio-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-quiet-code-studio.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 97034,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "code",
+        "software",
+        "developer",
+        "build"
+      ],
+      "moods": [
+        "quiet",
+        "focused"
+      ],
+      "altText": "A developer desk with a laptop angled away and soft window light.",
+      "focalPoint": {
+        "x": 52,
+        "y": 52
+      }
+    },
+    {
+      "id": "ws-modular-hardware",
+      "title": "Modular Hardware",
+      "category": "code-build",
+      "src": "/media/workspace/v1/ws-modular-hardware.webp",
+      "thumbnail": "/media/workspace/v1/ws-modular-hardware-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-modular-hardware-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-modular-hardware.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 158080,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "code",
+        "hardware",
+        "engineering",
+        "build"
+      ],
+      "moods": [
+        "precise",
+        "inventive"
+      ],
+      "altText": "Modular electronic parts arranged on a clean work surface.",
+      "focalPoint": {
+        "x": 50,
+        "y": 52
+      }
+    },
+    {
+      "id": "ws-architecture-paper",
+      "title": "Architecture on Paper",
+      "category": "code-build",
+      "src": "/media/workspace/v1/ws-architecture-paper.webp",
+      "thumbnail": "/media/workspace/v1/ws-architecture-paper-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-architecture-paper-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-architecture-paper.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 129994,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "code",
+        "software",
+        "architecture",
+        "planning"
+      ],
+      "moods": [
+        "thoughtful",
+        "precise"
+      ],
+      "altText": "Abstract software architecture represented by blank paper diagrams.",
+      "focalPoint": {
+        "x": 52,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-quiet-server-gallery",
+      "title": "Quiet Server Gallery",
+      "category": "code-build",
+      "src": "/media/workspace/v1/ws-quiet-server-gallery.webp",
+      "thumbnail": "/media/workspace/v1/ws-quiet-server-gallery-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-quiet-server-gallery-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-quiet-server-gallery.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 166286,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "code",
+        "software",
+        "infrastructure",
+        "engineering"
+      ],
+      "moods": [
+        "cool",
+        "focused"
+      ],
+      "altText": "A quiet modern server gallery with soft blue indicator lights.",
+      "focalPoint": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-prototype-workbench",
+      "title": "Prototype Workbench",
+      "category": "code-build",
+      "src": "/media/workspace/v1/ws-prototype-workbench.webp",
+      "thumbnail": "/media/workspace/v1/ws-prototype-workbench-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-prototype-workbench-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-prototype-workbench.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 132514,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "code",
+        "hardware",
+        "engineering",
+        "build"
+      ],
+      "moods": [
+        "hands-on",
+        "inventive"
+      ],
+      "altText": "A prototype object and hand tools on a natural wood workbench.",
+      "focalPoint": {
+        "x": 50,
+        "y": 54
+      }
+    },
+    {
+      "id": "ws-draft-by-window",
+      "title": "Draft by the Window",
+      "category": "writing-communication",
+      "src": "/media/workspace/v1/ws-draft-by-window.webp",
+      "thumbnail": "/media/workspace/v1/ws-draft-by-window-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-draft-by-window-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-draft-by-window.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 149002,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "writing",
+        "communication",
+        "editing"
+      ],
+      "moods": [
+        "quiet",
+        "reflective"
+      ],
+      "altText": "A blank notebook and pen beside a softly lit window.",
+      "focalPoint": {
+        "x": 52,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-voice-notes-studio",
+      "title": "Voice Notes Studio",
+      "category": "writing-communication",
+      "src": "/media/workspace/v1/ws-voice-notes-studio.webp",
+      "thumbnail": "/media/workspace/v1/ws-voice-notes-studio-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-voice-notes-studio-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-voice-notes-studio.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 119032,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "writing",
+        "communication",
+        "audio"
+      ],
+      "moods": [
+        "warm",
+        "expressive"
+      ],
+      "altText": "A simple microphone and notebook in a small home recording corner.",
+      "focalPoint": {
+        "x": 52,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-editorial-paper",
+      "title": "Editorial Paper",
+      "category": "writing-communication",
+      "src": "/media/workspace/v1/ws-editorial-paper.webp",
+      "thumbnail": "/media/workspace/v1/ws-editorial-paper-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-editorial-paper-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-editorial-paper.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 113802,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "writing",
+        "editing",
+        "publishing"
+      ],
+      "moods": [
+        "minimal",
+        "calm"
+      ],
+      "altText": "Layered handmade paper and a pencil on a calm writing table.",
+      "focalPoint": {
+        "x": 50,
+        "y": 52
+      }
+    },
+    {
+      "id": "ws-rainy-window-writing",
+      "title": "Rainy Window",
+      "category": "writing-communication",
+      "src": "/media/workspace/v1/ws-rainy-window-writing.webp",
+      "thumbnail": "/media/workspace/v1/ws-rainy-window-writing-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-rainy-window-writing-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-rainy-window-writing.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 174942,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "writing",
+        "journaling",
+        "communication"
+      ],
+      "moods": [
+        "rainy",
+        "cozy"
+      ],
+      "altText": "A quiet writing corner beside a rain-streaked window.",
+      "focalPoint": {
+        "x": 52,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-letterpress-corner",
+      "title": "Letterpress Corner",
+      "category": "writing-communication",
+      "src": "/media/workspace/v1/ws-letterpress-corner.webp",
+      "thumbnail": "/media/workspace/v1/ws-letterpress-corner-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-letterpress-corner-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-letterpress-corner.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 186676,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "writing",
+        "publishing",
+        "craft"
+      ],
+      "moods": [
+        "tactile",
+        "classic"
+      ],
+      "altText": "A small letterpress studio with paper and type blocks.",
+      "focalPoint": {
+        "x": 50,
+        "y": 54
+      }
+    },
+    {
+      "id": "ws-reading-and-editing",
+      "title": "Reading and Editing",
+      "category": "writing-communication",
+      "src": "/media/workspace/v1/ws-reading-and-editing.webp",
+      "thumbnail": "/media/workspace/v1/ws-reading-and-editing-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-reading-and-editing-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-reading-and-editing.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 175728,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "writing",
+        "reading",
+        "editing"
+      ],
+      "moods": [
+        "thoughtful",
+        "quiet"
+      ],
+      "altText": "A book and red pencil on a calm editor's desk.",
+      "focalPoint": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-architectural-model",
+      "title": "Architectural Model",
+      "category": "design-creative",
+      "src": "/media/workspace/v1/ws-architectural-model.webp",
+      "thumbnail": "/media/workspace/v1/ws-architectural-model-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-architectural-model-960.webp",
+          "width": 960,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-architectural-model.webp",
+          "width": 1672,
+          "height": 940
+        }
+      ],
+      "width": 1672,
+      "height": 940,
+      "kind": "image",
+      "bytes": 191168,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "design",
+        "architecture",
+        "creative",
+        "planning"
+      ],
+      "moods": [
+        "crafted",
+        "warm"
+      ],
+      "altText": "A detailed architectural model on a sunlit studio table.",
+      "focalPoint": {
+        "x": 56,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-ceramic-studio",
+      "title": "Ceramic Studio",
+      "category": "design-creative",
+      "src": "/media/workspace/v1/ws-ceramic-studio.webp",
+      "thumbnail": "/media/workspace/v1/ws-ceramic-studio-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-ceramic-studio-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-ceramic-studio.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 161252,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "design",
+        "ceramics",
+        "creative",
+        "craft"
+      ],
+      "moods": [
+        "tactile",
+        "quiet"
+      ],
+      "altText": "Handmade clay forms on a potter's worktable.",
+      "focalPoint": {
+        "x": 60,
+        "y": 56
+      }
+    },
+    {
+      "id": "ws-color-study-table",
+      "title": "Color Study Table",
+      "category": "design-creative",
+      "src": "/media/workspace/v1/ws-color-study-table.webp",
+      "thumbnail": "/media/workspace/v1/ws-color-study-table-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-color-study-table-960.webp",
+          "width": 960,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-color-study-table.webp",
+          "width": 1672,
+          "height": 940
+        }
+      ],
+      "width": 1672,
+      "height": 940,
+      "kind": "image",
+      "bytes": 193482,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "design",
+        "color",
+        "creative",
+        "interior"
+      ],
+      "moods": [
+        "warm",
+        "inspiring"
+      ],
+      "altText": "Natural color swatches and textured materials on a design table.",
+      "focalPoint": {
+        "x": 58,
+        "y": 52
+      }
+    },
+    {
+      "id": "ws-ink-paper-studio",
+      "title": "Ink and Paper Studio",
+      "category": "design-creative",
+      "src": "/media/workspace/v1/ws-ink-paper-studio.webp",
+      "thumbnail": "/media/workspace/v1/ws-ink-paper-studio-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-ink-paper-studio-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-ink-paper-studio.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 323472,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "design",
+        "illustration",
+        "creative",
+        "drawing"
+      ],
+      "moods": [
+        "expressive",
+        "quiet"
+      ],
+      "altText": "Abstract ink studies and brushes on textured paper.",
+      "focalPoint": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-sculpture-studio",
+      "title": "Sculpture Studio",
+      "category": "design-creative",
+      "src": "/media/workspace/v1/ws-sculpture-studio.webp",
+      "thumbnail": "/media/workspace/v1/ws-sculpture-studio-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-sculpture-studio-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-sculpture-studio.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 267612,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "design",
+        "sculpture",
+        "creative",
+        "art"
+      ],
+      "moods": [
+        "sunlit",
+        "crafted"
+      ],
+      "altText": "A small abstract clay sculpture in a bright artist studio.",
+      "focalPoint": {
+        "x": 58,
+        "y": 52
+      }
+    },
+    {
+      "id": "ws-textile-workroom",
+      "title": "Textile Workroom",
+      "category": "design-creative",
+      "src": "/media/workspace/v1/ws-textile-workroom.webp",
+      "thumbnail": "/media/workspace/v1/ws-textile-workroom-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-textile-workroom-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-textile-workroom.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 375868,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "design",
+        "textile",
+        "creative",
+        "craft"
+      ],
+      "moods": [
+        "tactile",
+        "colorful"
+      ],
+      "altText": "Folded fabric swatches and thread in a textile studio.",
+      "focalPoint": {
+        "x": 55,
+        "y": 54
+      }
+    },
+    {
+      "id": "ws-morning-priorities",
+      "title": "Morning Priorities",
+      "category": "planning-reflection",
+      "src": "/media/workspace/v1/ws-morning-priorities.webp",
+      "thumbnail": "/media/workspace/v1/ws-morning-priorities-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-morning-priorities-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-morning-priorities.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 172948,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "planning",
+        "priorities",
+        "reflection",
+        "daily"
+      ],
+      "moods": [
+        "fresh",
+        "warm"
+      ],
+      "altText": "A blank planner, small timer and cup on a sunlit table.",
+      "focalPoint": {
+        "x": 50,
+        "y": 55
+      }
+    },
+    {
+      "id": "ws-weekly-overview",
+      "title": "Weekly Overview",
+      "category": "planning-reflection",
+      "src": "/media/workspace/v1/ws-weekly-overview.webp",
+      "thumbnail": "/media/workspace/v1/ws-weekly-overview-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-weekly-overview-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-weekly-overview.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 162106,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "planning",
+        "weekly",
+        "organization",
+        "calendar"
+      ],
+      "moods": [
+        "organized",
+        "calm"
+      ],
+      "altText": "Minimal blank weekly planning cards and a desk calendar.",
+      "focalPoint": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-reflective-evening",
+      "title": "Reflective Evening",
+      "category": "planning-reflection",
+      "src": "/media/workspace/v1/ws-reflective-evening.webp",
+      "thumbnail": "/media/workspace/v1/ws-reflective-evening-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-reflective-evening-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-reflective-evening.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 204342,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "planning",
+        "reflection",
+        "review",
+        "daily"
+      ],
+      "moods": [
+        "reflective",
+        "evening"
+      ],
+      "altText": "A closed journal and pen in warm evening light.",
+      "focalPoint": {
+        "x": 50,
+        "y": 53
+      }
+    },
+    {
+      "id": "ws-project-milestone-map",
+      "title": "Project Milestone Map",
+      "category": "planning-reflection",
+      "src": "/media/workspace/v1/ws-project-milestone-map.webp",
+      "thumbnail": "/media/workspace/v1/ws-project-milestone-map-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-project-milestone-map-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-project-milestone-map.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 147060,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "planning",
+        "project",
+        "milestones",
+        "roadmap"
+      ],
+      "moods": [
+        "precise",
+        "thoughtful"
+      ],
+      "altText": "A simple thread connecting small brass pins across blank paper.",
+      "focalPoint": {
+        "x": 54,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-weekly-rhythm",
+      "title": "Weekly Rhythm",
+      "category": "planning-reflection",
+      "src": "/media/workspace/v1/ws-weekly-rhythm.webp",
+      "thumbnail": "/media/workspace/v1/ws-weekly-rhythm-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-weekly-rhythm-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-weekly-rhythm.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 210924,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "planning",
+        "weekly",
+        "calendar",
+        "routine"
+      ],
+      "moods": [
+        "airy",
+        "quiet"
+      ],
+      "altText": "A blank desk calendar and water glass by a bright window.",
+      "focalPoint": {
+        "x": 52,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-clear-priorities",
+      "title": "Clear Priorities",
+      "category": "planning-reflection",
+      "src": "/media/workspace/v1/ws-clear-priorities.webp",
+      "thumbnail": "/media/workspace/v1/ws-clear-priorities-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-clear-priorities-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-clear-priorities.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 218946,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "planning",
+        "priorities",
+        "reflection",
+        "focus"
+      ],
+      "moods": [
+        "grounded",
+        "simple"
+      ],
+      "altText": "Three smooth stones and three blank cards on a garden-facing desk.",
+      "focalPoint": {
+        "x": 50,
+        "y": 55
+      }
+    },
+    {
+      "id": "ws-home-admin",
+      "title": "Home Admin",
+      "category": "personal-life-admin",
+      "src": "/media/workspace/v1/ws-home-admin.webp",
+      "thumbnail": "/media/workspace/v1/ws-home-admin-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-home-admin-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-home-admin.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 266784,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "personal",
+        "home",
+        "life-admin",
+        "organization"
+      ],
+      "moods": [
+        "welcoming",
+        "warm"
+      ],
+      "altText": "Keys, blank envelopes and a linen tote on an entryway console.",
+      "focalPoint": {
+        "x": 50,
+        "y": 52
+      }
+    },
+    {
+      "id": "ws-travel-preparation",
+      "title": "Travel Preparation",
+      "category": "personal-life-admin",
+      "src": "/media/workspace/v1/ws-travel-preparation.webp",
+      "thumbnail": "/media/workspace/v1/ws-travel-preparation-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-travel-preparation-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-travel-preparation.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 227222,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "personal",
+        "travel",
+        "life-admin",
+        "planning"
+      ],
+      "moods": [
+        "anticipatory",
+        "bright"
+      ],
+      "altText": "An unmarked map, camera and travel bag near a bright window.",
+      "focalPoint": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-kitchen-routine",
+      "title": "Kitchen Routine",
+      "category": "personal-life-admin",
+      "src": "/media/workspace/v1/ws-kitchen-routine.webp",
+      "thumbnail": "/media/workspace/v1/ws-kitchen-routine-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-kitchen-routine-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-kitchen-routine.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 246338,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "personal",
+        "home",
+        "meal-planning",
+        "routine"
+      ],
+      "moods": [
+        "fresh",
+        "nourishing"
+      ],
+      "altText": "Fresh vegetables, herbs and a blank recipe book on a kitchen counter.",
+      "focalPoint": {
+        "x": 50,
+        "y": 54
+      }
+    },
+    {
+      "id": "ws-home-reset",
+      "title": "Home Reset",
+      "category": "personal-life-admin",
+      "src": "/media/workspace/v1/ws-home-reset.webp",
+      "thumbnail": "/media/workspace/v1/ws-home-reset-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-home-reset-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-home-reset.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 262520,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "personal",
+        "home",
+        "organization",
+        "routine"
+      ],
+      "moods": [
+        "orderly",
+        "soft"
+      ],
+      "altText": "Folded linen towels and woven baskets in a calm home interior.",
+      "focalPoint": {
+        "x": 58,
+        "y": 50
+      }
+    },
+    {
+      "id": "ws-steady-finances",
+      "title": "Steady Finances",
+      "category": "personal-life-admin",
+      "src": "/media/workspace/v1/ws-steady-finances.webp",
+      "thumbnail": "/media/workspace/v1/ws-steady-finances-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-steady-finances-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-steady-finances.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 138584,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "personal",
+        "finance",
+        "life-admin",
+        "planning"
+      ],
+      "moods": [
+        "grounded",
+        "orderly"
+      ],
+      "altText": "Unmarked envelopes, coins and a calculator on a wooden table.",
+      "focalPoint": {
+        "x": 50,
+        "y": 52
+      }
+    },
+    {
+      "id": "ws-gentle-wellbeing",
+      "title": "Gentle Wellbeing",
+      "category": "personal-life-admin",
+      "src": "/media/workspace/v1/ws-gentle-wellbeing.webp",
+      "thumbnail": "/media/workspace/v1/ws-gentle-wellbeing-thumb.webp",
+      "variants": [
+        {
+          "src": "/media/workspace/v1/ws-gentle-wellbeing-960.webp",
+          "width": 959,
+          "height": 540
+        },
+        {
+          "src": "/media/workspace/v1/ws-gentle-wellbeing.webp",
+          "width": 1672,
+          "height": 941
+        }
+      ],
+      "width": 1672,
+      "height": 941,
+      "kind": "image",
+      "bytes": 219270,
+      "license": "Original AI-generated artwork; FlowTask project use",
+      "creator": "FlowTask / OpenAI image generation",
+      "verifiedAt": "2026-10-18",
+      "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+      "contexts": [
+        "personal",
+        "wellbeing",
+        "routine",
+        "health"
+      ],
+      "moods": [
+        "restful",
+        "fresh"
+      ],
+      "altText": "A rolled yoga mat, folded blanket and glass of water by a window.",
+      "focalPoint": {
+        "x": 50,
+        "y": 54
+      }
+    }
+  ]
+}

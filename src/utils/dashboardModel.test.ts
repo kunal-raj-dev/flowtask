@@ -41,4 +41,15 @@ describe('dashboard document boundaries', () => {
     expect(normalizeWidgetConfig('focusLaunchpad',{maxRecipes:500})).toEqual({maxRecipes:6});
     expect(normalizeWidgetConfig('projects',{projectIds:'not an array'})).toEqual({});
   });
+  it('preserves local image IDs and normalizes optional crop points through backup round trips', () => {
+    const dashboard = createStarterDashboards(1)[0];
+    dashboard.coverImage = 'local:personal-cover';
+    dashboard.coverFocalPoint = { x: 84, y: 21 };
+    dashboard.widgets.push({ id: 'quiet-scene-local', type: 'quietScene', config: { sceneId: 'local:personal-cover', focalPoint: { x: 110, y: -4 } } });
+    dashboard.layouts.lg.push({ i: 'quiet-scene-local', x: 0, y: 40, w: 12, h: 4 });
+    const restored = importDashboard(exportDashboard(dashboard));
+    expect(restored.coverImage).toBe('local:personal-cover');
+    expect(restored.coverFocalPoint).toEqual({ x: 84, y: 21 });
+    expect(restored.widgets.find(w => w.id === 'quiet-scene-local')?.config).toMatchObject({ sceneId: 'local:personal-cover', focalPoint: { x: 100, y: 0 } });
+  });
 });

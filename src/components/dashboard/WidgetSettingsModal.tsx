@@ -3,12 +3,14 @@ import type { DashboardWidget } from '../../types/dashboard';
 import { useTaskContext } from '../../context/TaskContext';
 import { WIDGET_REGISTRY } from '../../services/widgetRegistry';
 import { normalizeWidgetConfig } from '../../utils/dashboardModel';
-import { useBuiltInScenes } from '../../hooks/useBuiltInScenes';
 import { Dialog } from '../ui/Dialog';
+import { useMediaCatalog } from '../../hooks/useStudio';
+import { WorkspaceVisualPicker } from '../workspace/WorkspaceVisualPicker';
 interface Props { widget: DashboardWidget | null; isOpen: boolean; onClose: () => void; onSave: (id: string, title: string, config: Record<string, unknown>) => void; }
 function Content({ widget, onClose, onSave }: Props & { widget: DashboardWidget }) {
-  const { projects = [], smartViews = [] } = useTaskContext(), scenes = useBuiltInScenes();
-  const [title, setTitle] = useState(widget.title || ''), [config, setConfig] = useState(widget.config);
+  const { projects = [], smartViews = [] } = useTaskContext(), media = useMediaCatalog();
+  const [title, setTitle] = useState(widget.title || ''), [config, setConfig] = useState(widget.config), [visualPickerOpen,setVisualPickerOpen]=useState(false);
+  const selectedScene=media.visuals.find(scene=>scene.id===config.sceneId);
   const def = WIDGET_REGISTRY[widget.type];
   const set = (key: string, value: unknown) => setConfig(c => ({ ...c, [key]: value }));
   const toggle = (key: string, label: string) => <label className="desk-setting-check"><input type="checkbox" checked={config[key] !== false} onChange={e => set(key,e.target.checked)}/>{label}</label>;
@@ -27,7 +29,7 @@ function Content({ widget, onClose, onSave }: Props & { widget: DashboardWidget 
       {widget.type === 'focusLaunchpad' && <label>Recipes to show<select value={String(config.maxRecipes || 3)} onChange={e => set('maxRecipes',Number(e.target.value))}>{[1,2,3,4,5,6].map(n => <option key={n}>{n}</option>)}</select></label>}
       {widget.type === 'quickNotes' && <label>Note sources<select value={String(config.mode || 'both')} onChange={e => set('mode',e.target.value)}><option value="both">Scratchpad and task notes</option><option value="scratchpad">Scratchpad only</option><option value="task">Selected task notes</option></select></label>}
       {widget.type === 'projects' && <fieldset><legend>Projects to show</legend><p className="desk-muted">Leave all unchecked to show every active project.</p>{projects.filter(p => p.id !== 'inbox' && !p.isArchived).map(p => <label className="desk-setting-check" key={p.id}><input type="checkbox" checked={Array.isArray(config.projectIds) && config.projectIds.includes(p.id)} onChange={e => { const ids = Array.isArray(config.projectIds) ? config.projectIds as string[] : []; set('projectIds',e.target.checked ? [...ids,p.id] : ids.filter(id => id !== p.id)); }}/>{p.name}</label>)}</fieldset>}
-      {widget.type === 'quietScene' && <><label>Scene<select value={String(config.sceneId || 'misty-pines')} onChange={e => set('sceneId',e.target.value)}>{scenes.length ? scenes.map(scene => <option key={scene.id} value={scene.id}>{scene.title}</option>) : <option value="misty-pines">Misty Pines</option>}</select></label>{toggle('showClock','Show the clock')}<label>Clock format<select value={String(config.clockFormat || '12h')} onChange={e => set('clockFormat',e.target.value)}><option value="12h">12 hour</option><option value="24h">24 hour</option></select></label></>}
+      {widget.type === 'quietScene' && <><div className="desk-widget-scene-field"><span>Scene</span>{selectedScene&&<img src={selectedScene.thumbnail||selectedScene.src} alt="" width={160} height={90}/>}<button type="button" className="desk-button" onClick={()=>setVisualPickerOpen(true)}>{selectedScene?`Change image · ${selectedScene.title}`:config.sceneId?'Choose replacement':'Choose an image'}</button>{Boolean(config.sceneId&&!selectedScene&&!media.loading)&&<small role="status">This saved personal scene is unavailable on this device.</small>}</div>{toggle('showClock','Show the clock')}<label>Clock format<select value={String(config.clockFormat || '12h')} onChange={e => set('clockFormat',e.target.value)}><option value="12h">12 hour</option><option value="24h">24 hour</option></select></label>{visualPickerOpen&&<WorkspaceVisualPicker isOpen={visualPickerOpen} onClose={()=>setVisualPickerOpen(false)} assets={media.visuals} loading={media.loading} catalogError={media.error} value={String(config.sceneId||'')} focalPoint={config.focalPoint as {x:number;y:number}|undefined} context={{kind:'planning'}} onSelect={(sceneId,focalPoint)=>setConfig(current=>({...current,sceneId,focalPoint}))}/>}</>}
     </div>
   </Dialog>;
 }
