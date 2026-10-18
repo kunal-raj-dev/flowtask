@@ -5,7 +5,7 @@ test('production PWA restores tasks, timer and the selected starter media while 
   await page.addInitScript(()=>{localStorage.setItem('flowtask_onboarding_completed','true');
     const OriginalAudio=window.Audio;const tracked:HTMLAudioElement[]=[];(window as any).__testMedia=tracked;
     window.Audio=function(src?:string){const audio=new OriginalAudio(src);tracked.push(audio);return audio;} as typeof Audio;
-  });await page.goto('/');await page.locator('main#main-content').waitFor();
+  });await page.goto('/app');await page.locator('main#main-content').waitFor();
   await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.reload();await page.locator('main#main-content').waitFor();
   await page.getByRole('button',{name:'Focus',exact:true}).click();let s=page.getByRole('dialog',{name:'Focus Studio',exact:true});await s.waitFor();
   await s.getByRole('button',{name:'Timer',exact:true}).click();await s.getByRole('button',{name:'Download starter pack',exact:true}).click();await expect(s.getByText('Your starter pack is available offline.')).toBeVisible({timeout:45000});

@@ -4,7 +4,7 @@ import { THEMES, THEME_IDS } from '../src/utils/themeRegistry';
 
 async function open(page: Page) {
   await page.addInitScript(() => localStorage.setItem('flowtask_onboarding_completed', 'true'));
-  await page.goto('/');
+  await page.goto('/app');
   await page.locator('main#main-content').waitFor();
   await page.keyboard.press('Control+,');
   await page.getByRole('button', { name: 'Appearance', exact: true }).click();
@@ -123,12 +123,16 @@ test('changing appearance preserves an active task-linked Studio session and med
     const d = new Date(); const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     localStorage.setItem('flowtask_tasks_v1',JSON.stringify([{id:'appearance-focus-task',title:'Keep the same session',nextAction:'Check appearance safely',status:'todo',priority:'p1',projectId:'inbox',subtasks:[],createdAt:Date.now(),plannedDate:today,topThreeDate:today,isPinnedToday:true,estimatedMinutes:25}]));
   });
-  await page.goto('/'); await page.locator('main#main-content').waitFor();
+  await page.goto('/app'); await page.locator('main#main-content').waitFor();
   await page.getByRole('button',{name:'Focus',exact:true}).click();
   const studio = page.getByRole('dialog',{name:'Focus Studio',exact:true});
+  await studio.getByRole('button',{name:'Scenes',exact:true}).click();
+  await studio.getByRole('button',{name:'Use Misty Pines background',exact:true}).click();
+  await studio.getByRole('button',{name:'Close customization panel',exact:true}).click();
   const scene = await studio.locator('.studio-backdrop img').getAttribute('src');
   await studio.getByRole('button',{name:'Start focus',exact:true}).click();
   await studio.getByRole('button',{name:'Back to planner',exact:true}).click();
+  await expect(studio).not.toBeVisible();
   await page.keyboard.press('Control+,'); await page.getByRole('button',{name:'Appearance',exact:true}).click();
   await page.getByRole('button',{name:'Apply Northern Aurora theme',exact:true}).click();
   await page.keyboard.press('Escape');
@@ -157,7 +161,7 @@ test('workspace views keep readable surfaces and no overflow across representati
 test('the appearance picker opens on its first visit offline after app installation', async ({page,context}) => {
   test.skip(process.env.FLOWTASK_PRODUCTION !== 'true', 'Requires a production service worker');
   await page.addInitScript(() => localStorage.setItem('flowtask_onboarding_completed','true'));
-  await page.goto('/'); await page.locator('main#main-content').waitFor();
+  await page.goto('/app'); await page.locator('main#main-content').waitFor();
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await context.setOffline(true); await page.reload(); await page.locator('main#main-content').waitFor();
@@ -174,7 +178,7 @@ test('workspace ownership handoff retains appearance and keyboard theme selectio
   const theme = page.getByRole('button',{name:'Apply Catppuccin Mocha theme',exact:true});
   await theme.focus(); await page.keyboard.press('Enter');
   await expect(page.locator('html')).toHaveAttribute('data-theme','mocha');
-  const second = await context.newPage(); await second.goto('/');
+  const second = await context.newPage(); await second.goto('/app');
   await expect(second.getByRole('status')).toContainText('open in another tab');
   await page.close();
   await expect(second.locator('main#main-content')).toBeVisible();

@@ -104,7 +104,7 @@ test.describe('Mobile Responsive Views Deep Audit', () => {
       localStorage.setItem('flowtask_sidebar_more_collapsed', 'false');
     });
 
-    await page.goto('/');
+    await page.goto('/app');
     await page.waitForSelector('main#main-content', { state: 'visible' });
     await page.waitForTimeout(300);
   };

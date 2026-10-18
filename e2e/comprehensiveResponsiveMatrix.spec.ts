@@ -137,7 +137,7 @@ test.describe('Exhaustive Multi-Device Responsive Audit', () => {
   for (const vp of VIEWPORTS) {
     test(`Audit ${vp.name} (${vp.width}x${vp.height}) across all views & overlays`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto('/');
+      await page.goto('/app');
       await seedWorkspace(page);
       await page.goto('/?view=today');
       await page.waitForSelector('main#main-content', { state: 'visible' });

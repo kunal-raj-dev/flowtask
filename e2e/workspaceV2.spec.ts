@@ -124,7 +124,8 @@ test('Study deep link survives refresh',async({page})=>{
 test('workspace settings pin a project and view display options survive navigation',async({page})=>{
   await seed(page); await page.getByRole('button',{name:'Preferences and Settings',exact:true}).first().click();
   await page.getByRole('button',{name:'Workspace',exact:true}).click();
-  await page.getByRole('checkbox',{name:'Work',exact:true}).check();
+  const pin = page.getByTestId('workspace-settings-pane').getByRole('button',{name:'Work',exact:true});
+  await pin.click(); await expect(pin).toHaveAttribute('aria-pressed','true');
   await page.getByRole('button',{name:'Close settings',exact:true}).click();
   await expect(page.getByText('Pinned',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Work 4',exact:true}).last().click();

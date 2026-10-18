@@ -8,81 +8,9 @@ import {
   Layers3,
 } from "lucide-react";
 import { BrandLogo } from "../ui/BrandLogo";
-import { formatLocalDate } from '../../utils/nlpParser';
 import "../../styles/welcome.css";
 
 export function WelcomePage() {
-  const handleLaunchGuestWorkspace = (e: React.MouseEvent) => {
-    e.preventDefault();
-    try {
-      const existing = localStorage.getItem('flowtask_tasks_v1');
-      if (!existing || existing === '[]') {
-        const today = formatLocalDate(new Date());
-        const sampleTasks = [
-          {
-            id: `task-${Date.now()}-mit`,
-            title: 'Welcome to FlowTask: Try Top 3 MIT planning',
-            description: 'Focus on your three most meaningful tasks each day.',
-            status: 'todo',
-            priority: 'p1',
-            projectId: 'inbox',
-            plannedDate: today,
-            topThreeDate: today,
-            isPinnedToday: true,
-            timeSpentMinutes: 0,
-            subtasks: [],
-            recurrence: 'none',
-            tags: ['welcome'],
-            contextTags: [],
-            revision: 1,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          },
-          {
-            id: `task-${Date.now()}-focus`,
-            title: 'Launch a 25-minute deep focus session',
-            description: 'Click the timer button or press P on a highlighted task to enter Focus Studio.',
-            status: 'todo',
-            priority: 'p2',
-            projectId: 'inbox',
-            plannedDate: today,
-            estimatedMinutes: 25,
-            timeSpentMinutes: 0,
-            subtasks: [],
-            recurrence: 'none',
-            tags: ['focus'],
-            contextTags: [],
-            revision: 1,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          },
-          {
-            id: `task-${Date.now()}-shortcut`,
-            title: 'Press ? for keyboard shortcuts (try C & F in Focus Studio)',
-            description: 'FlowTask is designed for keyboard speed without touching your mouse.',
-            status: 'todo',
-            priority: 'p3',
-            projectId: 'inbox',
-            plannedDate: today,
-            timeSpentMinutes: 0,
-            subtasks: [],
-            recurrence: 'none',
-            tags: ['shortcuts'],
-            contextTags: [],
-            revision: 1,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          },
-        ];
-        localStorage.setItem('flowtask_tasks_v1', JSON.stringify(sampleTasks));
-      }
-      localStorage.setItem('flowtask_onboarding_completed', 'true');
-    } catch {
-      // Ignore storage write error in private modes
-    }
-    window.location.href = '/';
-  };
-
   return (
     <div className="welcome-page">
       <header className="welcome-nav">
@@ -92,7 +20,7 @@ export function WelcomePage() {
         <nav>
           <a href="#studio">The Studio</a>
           <a href="#privacy">Your data</a>
-          <a className="welcome-link" href="/">
+          <a className="welcome-link" href="/app">
             Open FlowTask <ArrowUpRight size={16} />
           </a>
         </nav>
@@ -113,8 +41,8 @@ export function WelcomePage() {
               space that feels like yours.
             </p>
             <div className="welcome-cta">
-              <a href="/" onClick={handleLaunchGuestWorkspace} className="welcome-guest-btn">
-                Launch Guest Workspace <ArrowRight size={18} />
+              <a href="/app" className="welcome-guest-btn">
+                Continue to workspace <ArrowRight size={18} />
               </a>
               <span>Free to start. No account needed.</span>
             </div>
@@ -190,7 +118,7 @@ export function WelcomePage() {
               Mix rain with a fireplace. Choose silence. Save your scene, sound
               and timer as a recipe, then start again in two actions.
             </p>
-            <a href="/">
+            <a href="/app">
               Make yourself at home <ArrowUpRight size={17} />
             </a>
           </div>
@@ -250,15 +178,17 @@ export function WelcomePage() {
         <section className="welcome-end">
           <span>ONE SMALL NEXT STEP.</span>
           <h2>Your day, with a little more room.</h2>
-          <a href="/">
+          <a href="/app">
             Open FlowTask <ArrowRight size={18} />
           </a>
         </section>
       </main>
       <footer>
-        <BrandLogo size={28} showWordmark />
+        <a href="/" aria-label="FlowTask home">
+          <BrandLogo size={28} showWordmark />
+        </a>
         <a href="#feedback">Beta feedback ↗</a>
-        <a href="/">Back to your day ↗</a>
+        <a href="/app">Back to your day ↗</a>
       </footer>
     </div>
   );

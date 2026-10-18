@@ -22,7 +22,7 @@ test.describe('Detailed Multi-Device View & Interaction Inspection', () => {
   for (const dev of DEVICES) {
     test(`Comprehensive audit on ${dev.name} (${dev.width}x${dev.height})`, async ({ page }) => {
       await page.setViewportSize({ width: dev.width, height: dev.height });
-      await page.goto('/');
+      await page.goto('/app');
 
       // Seed mock tasks & projects and close onboarding if open
       await page.evaluate(() => {

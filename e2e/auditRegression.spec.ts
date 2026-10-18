@@ -6,7 +6,7 @@ async function openWorkspace(page: Page) {
   await page.addInitScript(() =>
     localStorage.setItem("flowtask_onboarding_completed", "true"),
   );
-  await page.goto("/");
+  await page.goto("/app");
   await page.getByRole("heading", { name: "Today.", exact: true }).waitFor();
 }
 async function savedWorkspace(page: Page) {
@@ -36,7 +36,7 @@ async function savedWorkspace(page: Page) {
 test("first-run setup captures a developer priority and opens a task-linked Studio", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/app");
   const setup = page.getByRole("dialog", {
     name: "Welcome Setup Ritual",
     exact: true,
@@ -354,7 +354,7 @@ test("an uncached offline section keeps navigation and tasks available", async (
     .toBe(1);
 });
 
-test("guest launch uses the local calendar date before UTC midnight", async ({
+test("landing-to-onboarding uses the local calendar date before UTC midnight", async ({
   browser,
 }) => {
   const context = await browser.newContext({ timezoneId: "Asia/Kolkata" });
@@ -362,9 +362,15 @@ test("guest launch uses the local calendar date before UTC midnight", async ({
   await page.clock.install({ time: new Date("2026-10-16T20:00:00Z") });
   await page.goto("/welcome");
   await page
-    .getByRole("link", { name: "Launch Guest Workspace", exact: true })
+    .getByRole("link", { name: "Continue to workspace", exact: true })
     .click();
-  await page.getByRole("heading", { name: "Today.", exact: true }).waitFor();
+  const setup = page.getByRole('dialog', { name: 'Welcome Setup Ritual', exact: true });
+  await setup.getByRole('button', { name: 'Set Up My Daily Capacity', exact: true }).click();
+  await setup.getByRole('button', { name: 'Continue to Top 3 Focus', exact: true }).click();
+  await setup.getByPlaceholder('Most important deliverable or deep focus task...').fill('Plan using my local date');
+  await setup.getByRole('button', { name: /Continue|Review|Lock/i }).last().click();
+  await setup.getByRole('button', { name: 'Enter Flow State & Launch Today', exact: true }).click();
+  await expect.poll(async () => (await savedWorkspace(page)).tasks.length).toBe(1);
   expect(
     (await savedWorkspace(page)).tasks.every(
       (task: any) => task.plannedDate === "2026-10-17",

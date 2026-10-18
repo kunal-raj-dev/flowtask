@@ -26,11 +26,11 @@ export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const refresh = () => setNow(new Date());
-    const timer = setInterval(refresh, 30_000);
+    const timer = setInterval(refresh, prefs.mode === 'schedule' ? 1000 : 30_000);
     window.addEventListener('focus', refresh);
     document.addEventListener('visibilitychange', refresh);
     return () => { clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
-  }, []);
+  }, [prefs.mode]);
   const update = (value: Partial<AppearancePreferences>) => {
     setWorkspacePreference('appearance', { ...prefs, ...value });
     setUndo(null); setMessage(''); onSaveToast?.();

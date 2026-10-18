@@ -119,7 +119,7 @@ test.describe('Responsive Deep Inspection & Diagnostics', () => {
         localStorage.setItem('flowtask_sidebar_more_collapsed', 'false');
       });
 
-      await page.goto('/');
+      await page.goto('/app');
 
       // Wait for app to be ready
       await page.waitForSelector('main#main-content', { state: 'visible' });

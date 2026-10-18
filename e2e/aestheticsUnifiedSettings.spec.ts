@@ -8,7 +8,7 @@ test.describe('Aesthetics & Audio Unified Drawer Suite', () => {
     });
   });
   test('Palette button in sidebar opens Settings Drawer pre-navigated to Aesthetics tab', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/app');
     await page.locator('main#main-content').waitFor({state:'visible'});
 
     // Click palette button in sidebar
@@ -61,7 +61,7 @@ test.describe('Aesthetics & Audio Unified Drawer Suite', () => {
 
   test('Mobile viewport (390x844) renders Aesthetics & Audio without clipping or horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await page.goto('/app');
     await page.locator('main#main-content').waitFor({state:'visible'});
 
     // Open Settings via keyboard or menu

@@ -65,7 +65,7 @@ for (const width of [1440, 390])
         } as PerformanceObserverInit);
       }
     });
-    await page.goto("/");
+    await page.goto("/app");
     await page.getByRole("heading", { name: "Today.", exact: true }).waitFor();
     await page
       .getByRole("textbox", { name: "Add a task to this list" })

@@ -1,3 +1,4 @@
+import { resolveStartView } from '../../utils/entryRoute';
 import { useTaskContext } from '../../context/TaskContext';
 import type { WorkspacePreferences } from '../../types/dashboard';
 import { Layout, Eye, Bookmark, Sparkles, Compass, Check } from 'lucide-react';
@@ -71,6 +72,7 @@ export function WorkspaceSettings({ onClose, onSaveToast }: WorkspaceSettingsPro
             </p>
           </div>
           <select
+            aria-label="Default Start View"
             value={ctx.settings.defaultLandingView || 'today'}
             onChange={(e) => {
               ctx.updateSettings({ defaultLandingView: e.target.value as any });
@@ -100,6 +102,7 @@ export function WorkspaceSettings({ onClose, onSaveToast }: WorkspaceSettingsPro
               </p>
             </div>
             <select
+              aria-label="Default Workspace Dashboard"
               value={prefs.defaultDashboardId || ctx.dashboards[0]?.id || ''}
               onChange={(e) => update({ defaultDashboardId: e.target.value })}
               className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none cursor-pointer"
@@ -122,6 +125,7 @@ export function WorkspaceSettings({ onClose, onSaveToast }: WorkspaceSettingsPro
             <button
               type="button"
               role="switch"
+              aria-label="Display dashboard header covers"
               aria-checked={prefs.showCovers !== false}
               onClick={() => update({ showCovers: prefs.showCovers === false })}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
@@ -193,7 +197,7 @@ export function WorkspaceSettings({ onClose, onSaveToast }: WorkspaceSettingsPro
         <button
           type="button"
           onClick={() => {
-            ctx.setActiveView((ctx.settings.defaultLandingView as any) || 'today');
+            ctx.setActiveView(resolveStartView(ctx.settings.defaultLandingView));
             onClose();
           }}
           className="w-full py-2.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"

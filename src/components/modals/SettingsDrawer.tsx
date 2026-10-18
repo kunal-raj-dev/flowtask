@@ -374,7 +374,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
 
           <div className="flex items-center gap-2">
             {saveToast && (
-              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-2.5 py-1 rounded-lg border border-emerald-500/30 flex items-center gap-1.5 animate-fade-in">
+              <span className="text-xs font-semibold text-[var(--pastel-sage)] bg-[var(--bg-surface-l2)] px-2.5 py-1 rounded-lg border border-[var(--border-strong)] flex items-center gap-1.5 animate-fade-in">
                 <CheckCircle2 size={12} />
                 <span>Saved!</span>
               </span>
@@ -826,6 +826,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     </p>
                   </div>
                   <select
+                    aria-label="Auto-Archive Completed Tasks"
                     value={settings.autoArchiveCompleted || 'never'}
                     onChange={(e) => {
                       updateSettings({ autoArchiveCompleted: e.target.value as AutoArchiveCompleted });
@@ -896,6 +897,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                 <button
                   type="button"
                   role="switch"
+                  aria-label="Smart Natural Language Parsing"
                   aria-checked={settings.enableSmartSyntaxParsing !== false}
                   onClick={() => {
                     updateSettings({ enableSmartSyntaxParsing: settings.enableSmartSyntaxParsing === false });
@@ -926,6 +928,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                 <button
                   type="button"
                   role="switch"
+                  aria-label="Keyboard Halo Dock"
                   aria-checked={settings.keyboardHaloEnabled !== false}
                   onClick={() => {
                     updateSettings({ keyboardHaloEnabled: settings.keyboardHaloEnabled === false });
@@ -1001,8 +1004,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   <span
                     className={`text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full font-bold ${
                       calendarIcsUrl
-                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                        : 'bg-stone-500/15 text-stone-500'
+                        ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20'
+                        : 'bg-[var(--bg-surface-l2)] text-stone-700 dark:text-stone-300 border border-[var(--border-hairline)]'
                     }`}
                   >
                     {calendarIcsUrl ? `${calendarEvents.length} events loaded` : 'No Feed Connected'}
@@ -1095,7 +1098,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       <HardDrive size={15} className="text-amber-500" />
                       <span>Device Storage Footprint</span>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold">
                       {storageStats.persisted ? 'Protected Quota' : 'Standard Quota'}
                     </span>
                   </div>
@@ -1255,10 +1258,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   <span
                     className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full font-bold ${
                       syncStatus === 'synced'
-                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                        ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
                         : syncStatus === 'syncing'
-                        ? 'bg-amber-500/15 text-amber-600 animate-pulse'
-                        : 'bg-stone-500/15 text-stone-500'
+                        ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 animate-pulse'
+                        : 'bg-[var(--bg-surface-l2)] text-stone-700 dark:text-stone-300 border border-[var(--border-hairline)]'
                     }`}
                   >
                     {syncStatus}

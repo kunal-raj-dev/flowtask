@@ -62,7 +62,7 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
       localStorage.setItem('flowtask_sidebar_more_collapsed', 'false');
     });
 
-    await page.goto('/');
+    await page.goto('/app');
     await page.waitForSelector('main#main-content', { state: 'visible' });
     await page.waitForTimeout(300);
   };

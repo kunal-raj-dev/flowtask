@@ -358,4 +358,15 @@ describe('SettingsDrawer Component', () => {
     // Should have switched to Focus tab
     expect(screen.getByText(/Your focus rhythm/i)).toBeDefined();
   });
+  it('names the archive and workflow switches and connects them to saved settings', () => {
+    render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Auto-Archive Completed Tasks' }), { target: { value: '7_days' } });
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ autoArchiveCompleted: '7_days' });
+    fireEvent.click(screen.getByRole('switch', { name: 'Smart Natural Language Parsing' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ enableSmartSyntaxParsing: false });
+    fireEvent.click(screen.getByRole('switch', { name: 'Keyboard Halo Dock' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ keyboardHaloEnabled: false });
+  });
+
 });

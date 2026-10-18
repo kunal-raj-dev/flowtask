@@ -2,10 +2,11 @@ import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './styles/appearance.css'
+import { isLandingLocation } from './utils/entryRoute';
 import { FeatureBoundary } from './components/ui/FeatureBoundary';
 const App = lazy(() => import('./App.tsx'));
 const WelcomePage = lazy(() => import('./components/views/WelcomePage').then(m => ({default:m.WelcomePage})));
-const welcome = window.location.pathname.replace(/\/$/, '') === '/welcome';
+const welcome = isLandingLocation(window.location);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -2,7 +2,7 @@
 
 Version: `2.0.0-beta.1` · 16 October 2026
 
-The existing React/TypeScript/Vite/Zustand/IndexedDB/Firebase application now includes a full-window Focus Studio, a Ribbon F identity and a local-first media library. The application stays at `/`; the public introduction is `/welcome`.
+The existing React/TypeScript/Vite/Zustand/IndexedDB/Firebase application now includes a full-window Focus Studio, a Ribbon F identity and a local-first media library. The landing-first public introduction is at `/` (and `/welcome`); the workspace planner lives at `/app`. Existing view and snapshot deep links remain fully supported.
 
 ## Verification result
 

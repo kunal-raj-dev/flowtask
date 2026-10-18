@@ -1,6 +1,6 @@
 # FlowTask ⚡
 
-**FlowTask 2.0 beta:** personalized Focus Studio, 48 original backgrounds, layered audio, saved recipes and durable focus history. Start at `/welcome` or open the planner at `/`. See [implementation, setup and release gates](docs/FLOWTASK_2_BETA.md).
+**FlowTask 2.0 beta:** personalized Focus Studio, 48 original backgrounds, layered audio, saved recipes and durable focus history. Start at `/` (also `/welcome`), then choose **Continue to workspace**. The planner lives at `/app`; existing view and snapshot links still work. New users complete a real setup; returning users keep their saved workspace. See [implementation, setup and release gates](docs/FLOWTASK_2_BETA.md).
 
 > **Simple to Use, Deeply Effective, Psychology-Informed Task Planner**  
 > *Crafted with the visual elegance of Things 3, the velocity of Linear, and the ambient warmth of Amie.*

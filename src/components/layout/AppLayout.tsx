@@ -1,3 +1,4 @@
+import { canonicalWorkspaceUrl, resolveStartView } from '../../utils/entryRoute';
 import { isTodayTask } from '../../utils/taskSelectors';
 import { RecoveryView } from '../views/RecoveryView';
 import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
@@ -63,15 +64,14 @@ export const AppLayout: React.FC = () => {
   const { user, isAnonymous } = useAuth();
   const { openModal, closeModal, isModalOpen, hasAnyModalOpen } = useModal();
 
-  // Auto-invoke guided onboarding ritual on first visit for new users (BUG-08)
+  let needsOnboarding = false;
+  try {
+    const legacyCompleted = localStorage.getItem('flowtask_onboarding_completed') === 'true';
+    needsOnboarding = !settings?.onboardingCompleted && !legacyCompleted && tasks.length === 0;
+  } catch { /* Preserve the existing no-storage fallback. */ }
   useEffect(() => {
-    try {
-      const legacyCompleted = typeof localStorage !== 'undefined' && localStorage.getItem('flowtask_onboarding_completed') === 'true';
-      if (!settings?.onboardingCompleted && !legacyCompleted && tasks.length === 0 && syncStatus !== 'syncing') {
-        openModal('onboarding');
-      }
-    } catch {}
-  }, [settings?.onboardingCompleted, tasks.length, syncStatus, openModal]);
+    if (needsOnboarding && syncStatus !== 'syncing') openModal('onboarding');
+  }, [needsOnboarding, syncStatus, openModal]);
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -83,7 +83,34 @@ export const AppLayout: React.FC = () => {
     }
     return null;
   });
+  const dismissSnapshot = () => {
+    setPendingSnapshot(null);
+    const url = canonicalWorkspaceUrl(window.location.href);
+    url.hash = '';
+    window.history.replaceState(window.history.state, '', url);
+  };
   const mainScrollRef = useRef<HTMLDivElement>(null);
+  const startViewApplied = useRef(false);
+  useEffect(() => {
+    if (startViewApplied.current) return;
+    startViewApplied.current = true;
+    // Saved preferences must never replace an explicit view or a shared snapshot destination.
+    if (new URLSearchParams(window.location.search).has('view') || window.location.hash.startsWith('#snapshot=')) return;
+    const view = resolveStartView(settings.defaultLandingView);
+    if (view !== activeView) setActiveView(view);
+  }, [settings.defaultLandingView, activeView, setActiveView]);
+  const pendingQuickAdd = useRef(new URLSearchParams(window.location.search).get('action') === 'quickadd');
+  useEffect(() => {
+    if (!pendingQuickAdd.current || needsOnboarding || syncStatus === 'syncing' || hasAnyModalOpen || isQuickAddOpen || isAuthModalOpen || isSmartFilterModalOpen || isEveningShutdownOpen || isWeeklyReviewOpen || selectedTaskId || pendingSnapshot) return;
+    pendingQuickAdd.current = false;
+    const url = canonicalWorkspaceUrl(window.location.href);
+    if (url.searchParams.get('action') === 'quickadd') {
+      url.searchParams.delete('action');
+      window.history.replaceState(window.history.state, '', url);
+    }
+    setIsQuickAddOpen(true);
+  }, [needsOnboarding, syncStatus, hasAnyModalOpen, isQuickAddOpen, isAuthModalOpen, isSmartFilterModalOpen, isEveningShutdownOpen, isWeeklyReviewOpen, selectedTaskId, pendingSnapshot, setIsQuickAddOpen]);
+
 
   // Reset viewport scroll to top on activeView transition
   useEffect(() => {
@@ -765,10 +792,7 @@ export const AppLayout: React.FC = () => {
                     });
                     audioEngine.playCompletionChime();
                     confetti({ particleCount: 45, spread: 60, origin: { y: 0.6 } });
-                    setPendingSnapshot(null);
-                    if (typeof window !== 'undefined' && window.history) {
-                      window.history.replaceState(null, '', window.location.pathname);
-                    }
+                    dismissSnapshot();
                   }}
                   className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
                 >
@@ -777,10 +801,7 @@ export const AppLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setPendingSnapshot(null);
-                    if (typeof window !== 'undefined' && window.history) {
-                      window.history.replaceState(null, '', window.location.pathname);
-                    }
+                    dismissSnapshot();
                   }}
                   className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06]"
                 >
