@@ -246,7 +246,7 @@ describe('SettingsDrawer Component', () => {
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /^Data$/i }));
     });
-    expect(screen.getByText(/Local-First Data Sovereignity/i)).toBeDefined();
+    expect(screen.getByText(/Your data and backups/i)).toBeDefined();
 
     // Switch to Account & Sync
     act(() => {

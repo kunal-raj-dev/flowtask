@@ -21,6 +21,7 @@ import { QuickNotesWidget } from "./widgets/QuickNotesWidget";
 import { StudyContinuationWidget } from "./widgets/StudyContinuationWidget";
 import { Dialog } from "../ui/Dialog";
 import { formatSecondsToHumanReadable } from "../../utils/focusTimeFormat";
+import { findEstimateSuggestion } from "../../utils/planningSuggestions";
 
 function DailyProgress({ completed }: { completed: number }) {
   const focused = useTotalFocusedTodaySeconds();
@@ -74,7 +75,7 @@ export function DailyDesk({
   onStartSprint,
   onPlanMyDay,
 }: Props) {
-  const { tasks, calendarEvents = [], settings } = useTaskContext();
+  const { tasks, calendarEvents = [], settings, setIsEveningShutdownOpen, updateTask, showToast, undoLastAction } = useTaskContext();
   const today = useTodayStr();
   const summary = calculateDayPlanSummary({
     date: today,
@@ -83,6 +84,7 @@ export function DailyDesk({
     calendarEvents,
     settings,
   });
+  const focusedSeconds = useTotalFocusedTodaySeconds();
   const candidates = tasks.filter((t) => isTodayTask(t, today));
   const priorities = candidates.filter((t) => isFocusTask(t, today));
   const [chosen, setChosen] = useState(""),
@@ -99,6 +101,8 @@ export function DailyDesk({
   }, []);
   const task =
     candidates.find((t) => t.id === chosen) || priorities[0] || candidates[0];
+  const suggestion = findEstimateSuggestion(candidates);
+  const [dismissedSuggestion, setDismissedSuggestion] = useState<string | null>(null);
   const hours = (minutes: number) => `${Math.round(minutes / 6) / 10}h`;
   const propsFor = (type: string): WidgetComponentProps => ({
     widget: dashboard.widgets.find((w) => w.type === type)!,
@@ -154,26 +158,28 @@ export function DailyDesk({
           </p>
         </div>
         <div className="daily-summary-actions">
-          {narrow && (
-            <button
-              className="desk-button"
-              onClick={() => setContextOpen(true)}
-            >
-              <CalendarDays size={15} />
-              Day context
-            </button>
-          )}
-          <button className="desk-button" onClick={onPlanMyDay}>
-            Plan my day
-            <ArrowRight size={15} />
-          </button>
+          {narrow && <button className="desk-button" onClick={() => setContextOpen(true)}><CalendarDays size={15} />Day context</button>}
         </div>
       </div>
+      <nav className="daily-flow-path" aria-label="Plan, focus and reflect">
+        <button type="button" aria-label="Plan my day" onClick={onPlanMyDay}><span className="daily-flow-number">01</span><span><strong>Plan</strong><small>{candidates.length} tasks · {priorities.length}/3 priorities</small></span><ArrowRight size={15}/></button>
+        <span className="daily-flow-connector" aria-hidden="true" />
+        <button type="button" disabled={!task} onClick={() => task && (task.sessionMetadata?.isSession && onStartSprint ? onStartSprint(task.id) : onStartFocus?.(task.id))}><span className="daily-flow-number">02</span><span><strong>Focus</strong><small>{task ? task.title : 'Choose your next task'}</small></span><ArrowRight size={15}/></button>
+        <span className="daily-flow-connector" aria-hidden="true" />
+        <button type="button" onClick={() => setIsEveningShutdownOpen(true)}><span className="daily-flow-number">03</span><span><strong>Reflect</strong><small>{summary.completedTaskCount} done · {formatSecondsToHumanReadable(focusedSeconds)} focused</small></span><ArrowRight size={15}/></button>
+      </nav>
       {summary.overbooked && (
         <p className="daily-overload" role="status">
           Overbooked by {summary.overbookedMinutes} minutes. Move a task or
           adjust your plan.
         </p>
+      )}
+      {suggestion && dismissedSuggestion !== suggestion.taskId && (
+        <aside className="daily-planning-suggestion" aria-label="Planning suggestion">
+          <div><strong>Review this estimate</strong><p>{tasks.find((item) => item.id === suggestion.taskId)?.title} is estimated at {suggestion.currentMinutes} min and has {suggestion.observedMinutes} min of work time recorded. Consider planning closer to {suggestion.suggestedMinutes} min.</p></div>
+          <button type="button" onClick={() => { updateTask(suggestion.taskId, { estimatedMinutes: suggestion.suggestedMinutes }); showToast("Estimate updated from recorded focus time.", "Undo", undoLastAction); }}>Use {suggestion.suggestedMinutes} min</button>
+          <button type="button" aria-label="Dismiss planning suggestion" onClick={() => setDismissedSuggestion(suggestion.taskId)}>Dismiss</button>
+        </aside>
       )}
       <div className="daily-columns">
         <div className="daily-main">

@@ -14,12 +14,23 @@ function validateDate(value: unknown, label: string) {
 export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): { tasks: Task[]; projects: Project[] } {
   if (!Array.isArray(rawTasks) || !Array.isArray(rawProjects)) fail('Backup must contain tasks and projects arrays.');
   if (rawTasks.length > 100000) fail('This backup exceeds 100,000 tasks. Split it into smaller imports.');
+  if (rawProjects.length > 10000) fail('This backup exceeds 10,000 projects. Split it into smaller imports.');
   const projectIds = new Set<string>();
   const projects: Project[] = rawProjects.map((p, i) => {
     if (!object(p) || !idValid(p.id) || typeof p.name !== 'string' || !p.name.trim()) fail(`Project ${i + 1}: valid ID and name required.`);
     if (projectIds.has(p.id)) fail(`Duplicate project ID: ${p.id}`);
     projectIds.add(p.id);
-    return { ...p, name: p.name.trim(), color: typeof p.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(p.color) ? p.color : '#64748B' } as unknown as Project;
+    if (p.milestones !== undefined && (!Array.isArray(p.milestones) || p.milestones.length > 100)) fail(`Project ${p.name}: milestones must be a list of at most 100 items.`);
+    const milestoneIds = new Set<string>();
+    const milestones = (p.milestones || []).map((item, index) => {
+      if (!object(item) || !idValid(item.id) || milestoneIds.has(item.id) || typeof item.title !== 'string' || !item.title.trim() || item.title.length > 500 || !Number.isInteger(item.order) || (item.order as number) < 0) fail(`Project ${p.name}: invalid milestone ${index + 1}.`);
+      milestoneIds.add(item.id);
+      validateDate(item.dueDate, `Project ${p.name} milestone date`);
+      if (item.completedAt !== undefined && (typeof item.completedAt !== 'number' || !Number.isFinite(item.completedAt) || item.completedAt < 0)) fail(`Project ${p.name}: invalid milestone completion time.`);
+      if (item.skippedAt !== undefined && (typeof item.skippedAt !== 'number' || !Number.isFinite(item.skippedAt) || item.skippedAt < 0)) fail(`Project ${p.name}: invalid milestone skip time.`);
+      return { id: item.id, title: item.title.trim(), order: item.order as number, ...(typeof item.dueDate === 'string' && item.dueDate ? { dueDate: item.dueDate } : {}), ...(typeof item.completedAt === 'number' ? { completedAt: item.completedAt } : {}), ...(typeof item.skippedAt === 'number' ? { skippedAt: item.skippedAt } : {}) };
+    });
+    return { ...p, name: p.name.trim(), color: typeof p.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(p.color) ? p.color : '#64748B', ...(p.milestones !== undefined ? { milestones } : {}) } as unknown as Project;
   });
   if (!projectIds.has('inbox')) { projects.unshift({ id: 'inbox', name: 'Inbox', color: '#64748B' }); projectIds.add('inbox'); }
   const taskIds = new Set<string>();
@@ -74,6 +85,7 @@ export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): 
       if (!object(rule) || !Number.isInteger(rule.interval) || (rule.interval as number) < 1 || !['days', 'weeks', 'months'].includes(String(rule.unit))) fail(`${label}: invalid custom recurrence.`);
     }
     for (const key of ['tags', 'contextTags', 'blockedBy']) if (t[key] !== undefined && (!Array.isArray(t[key]) || !(t[key] as unknown[]).every(x => typeof x === 'string'))) fail(`${label}: invalid ${key}.`);
+    if (t.milestoneId !== undefined && (typeof t.milestoneId !== 'string' || !idValid(t.milestoneId))) fail(`${label}: invalid milestone reference.`);
     const subIds = new Set<string>();
     const subs = t.subtasks === undefined ? [] : t.subtasks;
     if (!Array.isArray(subs)) fail(`${label}: subtasks must be an array.`);
@@ -100,5 +112,7 @@ export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): 
     if (!taskIds.has(blocker)) fail(`Task "${task.title}" references a missing dependency.`);
     if (wouldCreateCycle(task.id, blocker, tasks)) fail(`Task "${task.title}" has a circular dependency.`);
   }
+  const milestonesByProject = new Map(projects.map(project => [project.id, new Set((project.milestones || []).map(milestone => milestone.id))]));
+  for (const task of tasks) if (task.milestoneId && !milestonesByProject.get(task.projectId)?.has(task.milestoneId)) fail(`Task "${task.title}" references a missing project milestone.`);
   return { tasks, projects };
 }

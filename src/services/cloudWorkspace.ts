@@ -39,6 +39,7 @@ const OPTIONAL_TASK_FIELDS: (keyof Task)[] = [
   'timeSpentMinutes',
   'scheduleLocked',
   'nextAction',
+  'milestoneId',
 ];
 
 /**

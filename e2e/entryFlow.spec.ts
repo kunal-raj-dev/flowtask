@@ -35,6 +35,18 @@ test('root landing continues to real setup, creates a task and starts Focus Stud
   await expect(studio.getByRole('button',{name:'Pause',exact:true})).toBeVisible();
   expect(errors).toEqual([]);
 });
+test('landing first screen keeps the primary action visible without mobile overflow', async ({page}) => {
+  for (const width of [360, 390]) {
+    await page.setViewportSize({ width, height: 740 });
+    await page.goto('/');
+    const cta = page.getByRole('link', { name: 'Continue to workspace', exact: true });
+    await expect(cta).toBeVisible();
+    const box = await cta.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y + box!.height).toBeLessThanOrEqual(740);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+});
 test('returning through landing preserves tasks, theme, desk and active session', async ({page}) => {
   await page.goto('/'); await page.getByRole('link',{name:'Continue to workspace',exact:true}).click();
   await finishSetup(page, 'Continue my existing work');

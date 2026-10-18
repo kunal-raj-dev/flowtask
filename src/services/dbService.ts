@@ -7,10 +7,7 @@ import { createStarterDashboards } from './starterDashboards';
 import { validateDashboards } from '../utils/dashboardModel';
 export type { WorkspaceRecord } from '../types/workspace';
 
-/**
- * Proactively requests browser storage persistence to safeguard IndexedDB
- * against automatic disk quota eviction.
- */
+/** Requests persistent storage only after an informed user action. */
 export async function requestPersistentStorage(): Promise<boolean> {
   if (
     typeof navigator === 'undefined' ||
@@ -45,9 +42,6 @@ export async function requestPersistentStorage(): Promise<boolean> {
 let database: Promise<IDBPDatabase> | undefined;
 export function getDatabase() {
   if (!database) {
-    if (typeof indexedDB !== 'undefined') {
-      void requestPersistentStorage();
-    }
     database = openDB('flowtask_storage_v2', 2, { upgrade(db) {
       for (const name of ['workspaces', 'snapshots', 'legacy_backups', 'outbox', 'media']) {
         if (!db.objectStoreNames.contains(name)) {
@@ -61,7 +55,7 @@ export function getDatabase() {
 }
 export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
   return {
-    schemaVersion: 6,
+    schemaVersion: 7,
     workspaceId,
     tasks: [],
     projects: DEFAULT_PROJECTS.filter(p => p.id !== 'ideas'),
@@ -90,7 +84,7 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
     ...data,
     dashboards,
     workspaceId: id,
-    schemaVersion: 6,
+    schemaVersion: 7,
     preferences: {
       ...raw.preferences,
       ...(dashboardRecovery ? { _dashboardRecovery: true } : {}),
@@ -125,6 +119,9 @@ export const dbService = {
         }
         if ((record.schemaVersion || 0) < 6 && !await db.get('legacy_backups', `v5:${id}`)) {
           await db.put('legacy_backups', { id: `v5:${id}`, workspaceId: id, savedAt: Date.now(), record });
+        }
+        if ((record.schemaVersion || 0) < 7 && !await db.get('legacy_backups', `v6:${id}`)) {
+          await db.put('legacy_backups', { id: `v6:${id}`, workspaceId: id, savedAt: Date.now(), record });
         }
         return normalize(record, id);
       }

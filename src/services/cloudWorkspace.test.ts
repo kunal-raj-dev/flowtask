@@ -86,6 +86,7 @@ describe('cloudWorkspace firestore utilities', () => {
         tags: undefined,
         contextTags: undefined,
         blockedBy: undefined,
+        milestoneId: undefined,
       };
 
       const prepared = prepareTaskForFirestore(task);
@@ -97,6 +98,7 @@ describe('cloudWorkspace firestore utilities', () => {
       expect(prepared.tags).toBe('__DELETE_FIELD_SENTINEL__');
       expect(prepared.contextTags).toBe('__DELETE_FIELD_SENTINEL__');
       expect(prepared.blockedBy).toBe('__DELETE_FIELD_SENTINEL__');
+      expect(prepared.milestoneId).toBe('__DELETE_FIELD_SENTINEL__');
       expect(prepared.completedAt).toBe('__DELETE_FIELD_SENTINEL__');
       expect(prepared.deletedAt).toBe('__DELETE_FIELD_SENTINEL__');
       expect(prepared.archivedAt).toBe('__DELETE_FIELD_SENTINEL__');

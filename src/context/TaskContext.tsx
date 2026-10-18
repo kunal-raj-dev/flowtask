@@ -651,7 +651,11 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   }
   const forceSyncToCloud = async () => { if (!connected) { setIsAuthModalOpen(true); return; } await store.retry(); };
   const downloadWorkspaceBackup = () => {
-    downloadJson(createWorkspaceBackup(current()), `flowtask-${workspaceId}-${todayStr}.json`);
+    const exportedAt = Date.now();
+    const before = current();
+    const withExportDate = { ...before, preferences: { ...before.preferences, _lastBackupAt: exportedAt } };
+    downloadJson(createWorkspaceBackup(withExportDate), `flowtask-${workspaceId}-${todayStr}.json`);
+    store.run('Record backup export', r => ({ ...r, preferences: { ...r.preferences, _lastBackupAt: exportedAt } }), false);
   };
   const resolveSyncConflict = async (choice: 'local' | 'remote') => { try { await store.resolveConflict(choice); } catch (error) { showToast((error as Error).message); } };
   const importLocalWorkspace = async () => {

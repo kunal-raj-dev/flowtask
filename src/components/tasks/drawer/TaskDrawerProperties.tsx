@@ -85,7 +85,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           name="taskProject"
           aria-label="Assign to project"
           value={task.projectId}
-          onChange={(e) => updateTask(task.id, { projectId: e.target.value })}
+          onChange={(e) => updateTask(task.id, { projectId: e.target.value, milestoneId: undefined })}
           className="w-full bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg px-2.5 py-1.5 outline-none card-surface cursor-pointer"
         >
           {projects.map((p) => (
@@ -94,6 +94,24 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="space-y-1.5 min-w-0">
+        <label htmlFor="task-milestone-select" className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
+          Project milestone
+        </label>
+        <select
+          id="task-milestone-select"
+          aria-label="Assign to project milestone"
+          value={task.milestoneId || ''}
+          disabled={!(projects.find(project => project.id === task.projectId)?.milestones?.length)}
+          onChange={event => updateTask(task.id, { milestoneId: event.target.value || undefined })}
+          className="w-full bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg px-2.5 py-1.5 outline-none card-surface cursor-pointer disabled:opacity-60"
+        >
+          <option value="">No milestone</option>
+          {(projects.find(project => project.id === task.projectId)?.milestones || []).map(milestone => <option key={milestone.id} value={milestone.id}>{milestone.title}</option>)}
+        </select>
+        {!(projects.find(project => project.id === task.projectId)?.milestones?.length) && <p className="text-[10px] text-[var(--text-muted)]">Add a milestone to this project to link the task.</p>}
       </div>
 
       {/* Priority Select */}

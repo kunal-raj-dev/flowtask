@@ -26,8 +26,9 @@ test.describe('Aesthetics & Audio Unified Drawer Suite', () => {
     await expect(page.getByText('Interface sounds')).not.toBeVisible();
     await expect(page.getByText('Optional atmosphere')).toBeVisible();
 
-    // Verify all 8 themes are available and clicking one changes theme directly
+    // Verify the full theme library is available and clicking one changes the workspace directly
     await page.getByRole('button', { name: 'All', exact: true }).click();
+    await expect(page.locator('[data-theme-card]')).toHaveCount(18);
     const tokyoThemeBtn = page.getByRole('button', { name: /Tokyo Night/i });
     await expect(tokyoThemeBtn).toBeVisible();
     await tokyoThemeBtn.click();

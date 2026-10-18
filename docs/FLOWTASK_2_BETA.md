@@ -1,6 +1,6 @@
 # FlowTask 2.0 beta implementation
 
-Version: `2.0.0-beta.1` · 16 October 2026
+Version: `2.0.0-beta.1` · 16 October 2026 (V3 workspace updates in progress)
 
 The existing React/TypeScript/Vite/Zustand/IndexedDB/Firebase application now includes a full-window Focus Studio, a Ribbon F identity and a local-first media library. The landing-first public introduction is at `/` (and `/welcome`); the workspace planner lives at `/app`. Existing view and snapshot deep links remain fully supported.
 
@@ -29,10 +29,10 @@ Selected Studio and welcome-page accessibility scans include contrast and report
 - Six starter recipes; custom recipes, duplication, updates, favorites and validated JSON sharing. Today has recipe launch shortcuts. Shared recipes exclude personal media and task content.
 - 48 original generated stills, eight collections with six each, plus six silent atmospheric motion scenes. WebP delivery includes native masters, 960px variants and thumbnails. Personal image imports have focal position, brightness, blur and readability controls. Motion respects reduced-motion/data-saving choices.
 - Twelve recorded ambient layers, three offline noise generators, eighteen instrumental tracks across six genres, per-channel/master gains, four-layer limit, music sequencing, mute/solo and fades. Volume changes preserve sources; pausing preserves music position. Binaural audio is explicitly experimental.
-- Twelve planner themes, compact density, accent, system appearance, contrast/reduced-motion controls and opt-in typing sounds. The logo kit includes SVG masters, wordmarks, monochrome, PWA/maskable icons and social art.
+- Eighteen planner themes, compact density, accent, system appearance, contrast/reduced-motion controls and opt-in typing sounds. The logo kit includes SVG masters, wordmarks, monochrome, PWA/maskable icons and social art.
 - Guided daily capacity planning; optional keyboard inbox triage; auto-slot preview, undo and locked blocks; seven-day workload; project outcomes/date/cover/recipe/WIP; exam/DSA templates and study continuation; task next actions/history; focus/break/project review breakdown.
 - Searchable settings groups, student/developer onboarding, complete workspace export/restore, local feedback reports, opt-in device-local diagnostics, privacy information and credits.
-- Schema v4 and repeat-safe v3 migration with a preserved backup. IndexedDB v2 adds personal media. Finished logs, recipes and safe preferences sync as individual revision-aware records through the existing durable outbox. Large imports are split into bounded cloud transactions while retaining one local undo.
+- The current workspace schema is v7, with repeat-safe migrations that preserve a pre-migration backup. IndexedDB v2 adds personal media. Finished logs, recipes and safe preferences sync as individual revision-aware records through the existing durable outbox. Large imports are split into bounded cloud transactions while retaining one local undo. V3 adds optional project milestones and task links; old projects remain valid without milestones.
 - Explicit collection Firestore rules, a restricted private ICS worker, safer recurrence/local-day handling, an authenticated re-authentication-gated deletion endpoint and session-safe PWA updates.
 
 ## Ownership and media delivery
@@ -81,7 +81,7 @@ Deploy the explicit Firestore rules together with the client. Enable a TTL polic
 
 Deploy `workers/calendar-proxy.js` with exact `ALLOWED_ORIGINS` and an explicit `CALENDAR_HOSTS` allowlist. Set `VITE_CALENDAR_PROXY_URL` to this private worker. URLs travel in POST bodies; redirects, non-HTTPS targets, credentials, arbitrary hosts and oversized feeds are rejected. The public CORS proxy fallback was removed.
 
-Set absolute deployed URLs for `og:image`/`twitter:image` and verify social cards on the final domain. No production deployment, credentials, domain changes or account deletion were performed by this implementation.
+Set absolute deployed URLs for `og:image`/`twitter:image` and verify social cards on the final domain. The live V2 production build was verified against the local release commit during the prior release. V3 workspace changes in the current checkout have not been deployed; verify the published build identity before claiming they are available on the public site.
 
 ## Release gates still requiring people or production access
 

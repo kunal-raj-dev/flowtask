@@ -48,6 +48,7 @@ export interface SessionMetadata {
 }
 
 export interface Task {
+  milestoneId?: string;
   scheduleLocked?: boolean;
   nextAction?: string;
   recurrenceSourceId?: string;
@@ -89,6 +90,7 @@ export interface Task {
 }
 
 export interface Project {
+  milestones?: ProjectMilestone[];
   outcome?: string;
   targetDate?: string;
   coverAssetId?: string;
@@ -103,6 +105,15 @@ export interface Project {
   archivedAt?: number;
   createdAt?: number;
   updatedAt?: number;
+}
+
+export interface ProjectMilestone {
+  id: string;
+  title: string;
+  order: number;
+  dueDate?: string;
+  completedAt?: number;
+  skippedAt?: number;
 }
 
 export type ViewId =

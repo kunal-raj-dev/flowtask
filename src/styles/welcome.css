@@ -622,7 +622,7 @@
 }
 @media (max-width: 767px) {
   .welcome-nav {
-    padding: 20px;
+    padding: 14px 17px;
     gap: 12px;
   }
   .welcome-nav nav {
@@ -636,24 +636,40 @@
     font-size: 10px;
   }
   .welcome-hero {
-    padding: 43px 18px 0;
+    padding: 24px 18px 0;
   }
   .welcome-copy h1 {
-    font-size: 54px;
+    font-size: clamp(39px, 11vw, 47px);
+    line-height: 1.02;
+    margin: 14px 0 11px;
   }
   .welcome-copy > p {
     font-size: 12px;
+    line-height: 1.6;
   }
   .welcome-desktop-break {
     display: none;
   }
   .welcome-proof {
-    gap: 12px;
+    gap: 8px 12px;
     flex-wrap: wrap;
+    font-size: 9px;
+    margin-top: 13px;
+  }
+  .welcome-cta {
+    gap: 8px;
+    margin-top: 17px;
+  }
+  .welcome-guest-btn {
+    min-height: 46px;
+    padding: 12px 17px;
+    font-size: 12px;
+  }
+  .welcome-cta > span {
     font-size: 9px;
   }
   .welcome-showcase {
-    margin-top: 33px;
+    margin-top: 25px;
     border-radius: 11px;
   }
   .welcome-showcase-bar {
@@ -763,6 +779,12 @@
   .welcome-page footer > span:not(.welcome-build) {
     display: none;
   }
+}
+@media (max-width: 380px) {
+  .welcome-nav { padding-inline: 14px; }
+  .welcome-hero { padding-inline: 15px; }
+  .welcome-copy h1 { font-size: 39px; }
+  .welcome-proof { font-size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .welcome-page * {

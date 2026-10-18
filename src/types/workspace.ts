@@ -19,7 +19,7 @@ export interface PendingOperation {
   createdAt: number;
 }
 export interface WorkspaceRecord {
-  schemaVersion: 3 | 4 | 5 | 6;
+  schemaVersion: 3 | 4 | 5 | 6 | 7;
   workspaceId: string;
   tasks: Task[];
   projects: Project[];

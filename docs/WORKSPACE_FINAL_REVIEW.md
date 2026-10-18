@@ -54,7 +54,7 @@ Final machine-readable results are kept under the ignored `test-results` directo
 - First-run developer setup, task capture and task-linked Studio entry; guest launch/local-date handling.
 - Dashboard edit isolation, accessible move controls, undo, mobile preview/save, draft recovery, dashboard switching, delete/undo, cover/export/import and pinned destinations.
 - Notes on immediate navigation, inspector title save, durable OS pause/stop, PiP control lifecycle, missing offline chunks and offline starter-pack playback.
-- Populated and empty sections, all twelve planner themes and every settings group in light/dark. The audited scans retain serious/critical checks, including color contrast.
+- Populated and empty sections, all eighteen planner themes and every settings group in light/dark. The audited scans retain serious/critical checks, including color contrast.
 - Layout checks at 360, 390, 768, 1280, 1440 and 1920 pixels, plus an 844×390 landscape viewport and a 720-pixel zoom-equivalent layout. This is not a physical-device/browser-zoom certification.
 - 1,000-task virtualization and keyboard navigation; twelve-widget layout. Rendering remains bounded rather than mounting the entire task collection.
 

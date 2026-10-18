@@ -103,4 +103,18 @@ describe('validateWorkspaceData (BUG-01 & BUG-02)', () => {
 
     expect(() => validateWorkspaceData(rawTasks, defaultProjects)).toThrow(/invalid creation timestamp/);
   });
+
+  it('preserves valid project milestones and task links', () => {
+    const project = { ...defaultProjects[1], milestones: [{ id: 'm1', title: 'Exam revision', order: 0, dueDate: '2026-11-01' }] };
+    const task = { id: 'task-milestone', title: 'Revise chapter one', status: 'todo', priority: 'p2', projectId: 'work', milestoneId: 'm1', createdAt: 1700000000000 };
+    const result = validateWorkspaceData([task], [defaultProjects[0], project]);
+    expect(result.projects[1].milestones?.[0]).toMatchObject({ id: 'm1', title: 'Exam revision', order: 0, dueDate: '2026-11-01' });
+    expect(result.tasks[0].milestoneId).toBe('m1');
+  });
+
+  it('rejects duplicate milestone IDs and orphaned task milestone references', () => {
+    const task = { id: 'task-milestone', title: 'Revise chapter one', status: 'todo', priority: 'p2', projectId: 'work', milestoneId: 'missing', createdAt: 1700000000000 };
+    expect(() => validateWorkspaceData([], [{ ...defaultProjects[0], milestones: [{ id: 'm1', title: 'First', order: 0 }, { id: 'm1', title: 'Duplicate', order: 1 }] }])).toThrow(/invalid milestone/);
+    expect(() => validateWorkspaceData([task], defaultProjects)).toThrow(/missing project milestone/);
+  });
 });

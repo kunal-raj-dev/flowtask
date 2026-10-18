@@ -37,6 +37,7 @@ import {
   type DefaultTaskPriority,
 } from '../../types/settings';
 import { exportToCSV, downloadCsv } from '../../utils/fileExporter';
+import { requestPersistentStorage } from '../../services/dbService';
 
 export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account' | 'focus' | 'sound' | 'workspace' | 'about';
 
@@ -85,6 +86,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     setIsAuthModalOpen,
     forceSyncToCloud,
     downloadWorkspaceBackup,
+    workspacePreferences,
   } = useTaskContext();
 
   const todayStr = useTodayStr();
@@ -93,6 +95,29 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   const [isRefreshingCalendar, setIsRefreshingCalendar] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
   const [icsFileUploadMsg, setIcsFileUploadMsg] = useState('');
+  const [storageRequestBusy, setStorageRequestBusy] = useState(false);
+  const [storageMessage, setStorageMessage] = useState('');
+  const lastBackupAt = typeof workspacePreferences?._lastBackupAt === 'number' ? workspacePreferences._lastBackupAt : null;
+
+  const requestStorageProtection = async () => {
+    setStorageRequestBusy(true);
+    setStorageMessage('');
+    try {
+      const granted = await requestPersistentStorage();
+      const [estimate, persisted] = await Promise.all([
+        navigator.storage?.estimate?.() || Promise.resolve({ usage: 0, quota: 0 }),
+        navigator.storage?.persisted?.() || Promise.resolve(granted),
+      ]);
+      const usageMB = Math.round(((estimate.usage || 0) / (1024 * 1024)) * 10) / 10;
+      const quotaMB = Math.round(((estimate.quota || 0) / (1024 * 1024)) * 10) / 10;
+      setStorageStats({ usageMB, quotaMB, percent: quotaMB > 0 ? Math.min(100, Math.round((usageMB / quotaMB) * 100)) : 0, persisted: Boolean(persisted) });
+      setStorageMessage(persisted ? 'This browser granted storage protection. Keep regular backups for recovery.' : 'This browser did not grant storage protection. Download a backup to keep a separate copy.');
+    } catch {
+      setStorageMessage('Storage protection is unavailable in this browser. Download a backup to keep a separate copy.');
+    } finally {
+      setStorageRequestBusy(false);
+    }
+  };
 
   // Storage Stats State
   const [storageStats, setStorageStats] = useState<{
@@ -1105,7 +1130,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
                       <HardDrive size={15} className="text-amber-500" />
-                      <span>Device Storage Footprint</span>
+                      <span>Estimated browser storage</span>
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold">
                       {storageStats.persisted ? 'Protected Quota' : 'Standard Quota'}
@@ -1125,19 +1150,22 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     </div>
                   </div>
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    IndexedDB database: <code>flowtask_storage_v2</code> · {tasks.length} tasks · {projects.length} projects.
+                    Browser estimate across this site · {tasks.length} tasks · {projects.length} projects. Quota protection reduces eviction risk; it is not a backup.
                   </p>
+                  {!storageStats.persisted && <button type="button" className="desk-button" disabled={storageRequestBusy} onClick={() => void requestStorageProtection()}>{storageRequestBusy ? 'Requesting…' : 'Request storage protection'}</button>}
+                  {storageMessage && <p className="text-[11px] text-[var(--text-secondary)]" role="status">{storageMessage}</p>}
                 </div>
               )}
+              {!storageStats && <p className="p-3 rounded-xl border border-[var(--border-hairline)] text-[11px] text-[var(--text-secondary)]" role="status">This browser does not provide a storage estimate. Keep a downloaded JSON backup in a separate location.</p>}
 
               {/* Data Portability Card */}
               <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
                 <div>
                   <h4 className="text-xs font-bold text-[var(--text-primary)]">
-                    Local-First Data Sovereignity
+                    Your data and backups
                   </h4>
                   <p className="text-[11px] text-[var(--text-secondary)]">
-                    Your tasks belong to you. Export or restore at any time.
+                    Your workspace is stored on this device. Optional account sync can copy supported workspace data across devices.
                   </p>
                 </div>
 
@@ -1154,7 +1182,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                         <span>Download JSON Backup</span>
                       </div>
                       <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                        Instant complete workspace snapshot
+                        Workspace data and settings · personal media files stay on this device
                       </p>
                     </div>
                   </button>
@@ -1175,6 +1203,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     </div>
                   </button>
                 </div>
+                <p className="text-[10px] text-[var(--text-muted)]" role="status">
+                  {lastBackupAt ? `Last JSON export recorded ${new Date(lastBackupAt).toLocaleString()}.` : 'No JSON export has been recorded on this device yet.'} A downloaded backup is separate from browser storage and should be kept somewhere safe.
+                </p>
 
                 {/* Modal hub links for deeper operations */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
