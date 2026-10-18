@@ -151,6 +151,7 @@ export function FocusStudio({
     [category, setCategory] = useState("all");
   const [clear, setClear] = useState(false),
     [motionPaused, setMotionPaused] = useState(false);
+  const [loadedSceneId, setLoadedSceneId] = useState<string | null>(null);
   const [selectedTaskState, setSelectedTask] = useState<string | undefined>(
     taskId || session?.taskId || undefined,
   );
@@ -565,6 +566,7 @@ export function FocusStudio({
         {canAnimate ? (
           <video
             key={scene.id}
+            className={loadedSceneId === scene.id ? "is-ready" : undefined}
             ref={videoRef}
             src={scene.src}
             poster={scene.poster || scene.thumbnail}
@@ -572,6 +574,7 @@ export function FocusStudio({
             muted
             loop
             playsInline
+            onCanPlay={() => setLoadedSceneId(scene.id)}
             style={{
               objectPosition: `${p.focalX}% ${p.focalY}%`,
               filter: `brightness(${p.brightness}) blur(${p.blur}px)`,
@@ -581,6 +584,7 @@ export function FocusStudio({
           scene && (
             <img
               key={scene.id}
+              className={loadedSceneId === scene.id ? "is-ready" : undefined}
               src={scene.poster || scene.src}
               srcSet={
                 scene.kind !== "video"
@@ -591,7 +595,10 @@ export function FocusStudio({
               }
               sizes="100vw"
               alt=""
-              onLoad={() => setMessage(value => value === 'This background is unavailable. Your focus session is unaffected.' ? '' : value)}
+              onLoad={() => {
+                setLoadedSceneId(scene.id);
+                setMessage(value => value === 'This background is unavailable. Your focus session is unaffected.' ? '' : value);
+              }}
               style={{
                 objectPosition: `${p.focalX}% ${p.focalY}%`,
                 filter: `brightness(${p.brightness}) blur(${p.blur}px)`,
@@ -741,7 +748,7 @@ export function FocusStudio({
             ) : (
               <Play size={20} fill="currentColor" />
             )}
-            <span>{running ? "Pause" : active ? "Resume" : "Start focus"}</span>
+            <span>{running ? "Pause" : active ? "Resume" : currentPhase === "focus" ? "Start focus" : "Start break"}</span>
           </button>
           <button
             className="studio-round"

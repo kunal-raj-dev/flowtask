@@ -137,6 +137,26 @@ export function DailyDesk({
       </p>
     </>
   );
+  const prioritiesSection = (
+    <section className="daily-priorities" aria-label="Top 3 Priorities">
+      <div className="daily-section-heading">
+        <h2>Your Top 3</h2>
+        <span>{priorities.length}/3 · Keep it intentional</span>
+      </div>
+      <Top3Widget {...propsFor("top3")} />
+    </section>
+  );
+  const tasksSection = (
+    <section className="daily-tasks" aria-label="Today's Tasks">
+      <div className="daily-section-heading">
+        <h2>Today's tasks</h2>
+        <span>
+          {candidates.filter((t) => !isFocusTask(t, today)).length} to do
+        </span>
+      </div>
+      <TaskListWidget {...propsFor("taskList")} />
+    </section>
+  );
   return (
     <div className="daily-desk">
       <div className="daily-planning-summary">
@@ -161,13 +181,22 @@ export function DailyDesk({
           {narrow && <button className="desk-button" onClick={() => setContextOpen(true)}><CalendarDays size={15} />Day context</button>}
         </div>
       </div>
-      <nav className="daily-flow-path" aria-label="Plan, focus and reflect">
-        <button type="button" aria-label="Plan my day" onClick={onPlanMyDay}><span className="daily-flow-number">01</span><span><strong>Plan</strong><small>{candidates.length} tasks · {priorities.length}/3 priorities</small></span><ArrowRight size={15}/></button>
+      <section className="daily-flow-path" aria-label="Daily flow">
+        <button type="button" className="daily-flow-action" aria-label="Plan my day" onClick={onPlanMyDay}>
+          <span className="daily-flow-number">01</span>
+          <span><strong>Plan</strong><small>{candidates.length} tasks · {priorities.length}/3 priorities</small></span>
+        </button>
         <span className="daily-flow-connector" aria-hidden="true" />
-        <button type="button" disabled={!task} onClick={() => task && (task.sessionMetadata?.isSession && onStartSprint ? onStartSprint(task.id) : onStartFocus?.(task.id))}><span className="daily-flow-number">02</span><span><strong>Focus</strong><small>{task ? task.title : 'Choose your next task'}</small></span><ArrowRight size={15}/></button>
+        <div className="daily-flow-current" aria-current="step">
+          <span className="daily-flow-number">02</span>
+          <span><strong>Focus</strong><small>{task ? "Next action below" : "Choose a task below"}</small></span>
+        </div>
         <span className="daily-flow-connector" aria-hidden="true" />
-        <button type="button" onClick={() => setIsEveningShutdownOpen(true)}><span className="daily-flow-number">03</span><span><strong>Reflect</strong><small>{summary.completedTaskCount} done · {formatSecondsToHumanReadable(focusedSeconds)} focused</small></span><ArrowRight size={15}/></button>
-      </nav>
+        <button type="button" className="daily-flow-action" onClick={() => setIsEveningShutdownOpen(true)}>
+          <span className="daily-flow-number">03</span>
+          <span><strong>Reflect</strong><small>{summary.completedTaskCount} done · {formatSecondsToHumanReadable(focusedSeconds)} focused</small></span>
+        </button>
+      </section>
       {summary.overbooked && (
         <p className="daily-overload" role="status">
           Overbooked by {summary.overbookedMinutes} minutes. Move a task or
@@ -182,8 +211,8 @@ export function DailyDesk({
         </aside>
       )}
       <div className="daily-columns">
-        <div className="daily-main">
-          <section className="daily-next">
+        <div className="daily-main" data-empty={candidates.length === 0}>
+          {candidates.length > 0 && <section className="daily-next">
             <span className="daily-summary-label">UP NEXT · YOUR CHOICE</span>
             <div className="daily-next-heading">
               <h2>{task?.title || "Make room for one good next step."}</h2>
@@ -237,23 +266,18 @@ export function DailyDesk({
                 </button>
               )}
             </div>
-          </section>
-          <section className="daily-priorities" aria-label="Top 3 Priorities">
-            <div className="daily-section-heading">
-              <h2>Your Top 3</h2>
-              <span>{priorities.length}/3 · Keep it intentional</span>
-            </div>
-            <Top3Widget {...propsFor("top3")} />
-          </section>
-          <section className="daily-tasks" aria-label="Today's Tasks">
-            <div className="daily-section-heading">
-              <h2>Today's tasks</h2>
-              <span>
-                {candidates.filter((t) => !isFocusTask(t, today)).length} to do
-              </span>
-            </div>
-            <TaskListWidget {...propsFor("taskList")} />
-          </section>
+          </section>}
+          {candidates.length === 0 ? (
+            <>
+              {tasksSection}
+              {prioritiesSection}
+            </>
+          ) : (
+            <>
+              {prioritiesSection}
+              {tasksSection}
+            </>
+          )}
         </div>
         {!narrow && (
           <aside className="daily-context" aria-label="Day context">
