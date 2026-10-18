@@ -24,7 +24,7 @@ test('task-linked session survives minimize, pause and reload without duplicate 
 });
 test('backgrounds, four-layer limit, recipes and accessible desktop Studio',async({page})=>{
   await seed(page);await open(page);const s=page.getByRole('dialog',{name:'Focus Studio',exact:true});
-  await s.getByRole('button',{name:'Scenes',exact:true}).click();await expect(s.getByRole('button',{name:/^Use .+ background$/})).toHaveCount(54);
+  await s.getByRole('button',{name:'Room',exact:true}).click();await expect(s.getByRole('button',{name:/^Use .+ background$/})).toHaveCount(54);
   await s.getByRole('button',{name:'Use Rainy Desk background',exact:true}).click();await s.getByRole('button',{name:'Close customization panel'}).click();
   await s.getByRole('button',{name:'Sound',exact:true}).click();for(const name of ['Brown noise','Gentle rain','Distant thunder','Forest air']) await s.getByRole('button',{name,exact:true}).click();
   await s.getByRole('button',{name:'Morning birds',exact:true}).click();await expect(s.getByText(/up to four ambient layers/)).toBeVisible();await s.getByRole('button',{name:'Dismiss message',exact:true}).click();
@@ -40,7 +40,7 @@ test('mobile Studio keeps controls accessible and captures a thought as a task',
   await s.getByRole('button',{name:'Close customization panel'}).click();await page.screenshot({path:path.join('screenshots','flowtask-v2-mobile.png'),fullPage:true});
 });
 test('welcome page and every new theme can be reached',async({page})=>{
-  await page.goto('/welcome');await expect(page.getByRole('heading',{name:/A little less rush/})).toBeVisible();
+  await page.goto('/welcome');await expect(page.getByRole('heading',{name:/Plan your day/})).toBeVisible();
   await page.screenshot({path:path.join('screenshots','flowtask-v2-welcome.png'),fullPage:true});
   const scan=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze();expect(scan.violations.filter(v=>['critical','serious'].includes(v.impact||''))).toEqual([]);
   await seed(page);await page.keyboard.press('Control+,');await page.getByRole('button',{name:'Appearance',exact:true}).click();
@@ -49,7 +49,7 @@ test('welcome page and every new theme can be reached',async({page})=>{
 });
 test('break completion after sleep logs exactly once and never adds task work',async({page})=>{
   await seed(page);await open(page);const s=page.getByRole('dialog',{name:'Focus Studio',exact:true});
-  await s.getByRole('button',{name:'Short break',exact:true}).click();await s.getByRole('button',{name:'Timer',exact:true}).click();await s.getByRole('spinbutton',{name:'Short break minutes',exact:true}).fill('1');await s.getByRole('button',{name:'Close customization panel'}).click();
+  await s.getByRole('button',{name:'Short break',exact:true}).click();await s.getByRole('button',{name:'Session',exact:true}).click();await s.getByRole('spinbutton',{name:'Short break minutes',exact:true}).fill('1');await s.getByRole('button',{name:'Close customization panel'}).click();
   await page.clock.install();await s.getByRole('button',{name:'Start focus',exact:true}).click();await page.clock.fastForward(65000);
   await expect(s.getByRole('heading',{name:'That was time well spent.'})).toBeVisible();await page.clock.fastForward(5000);
   await expect.poll(async()=>page.evaluate(async()=>{const db=await new Promise<IDBDatabase>(resolve=>{const r=indexedDB.open('flowtask_storage_v2');r.onsuccess=()=>resolve(r.result);});return new Promise(resolve=>{const r=db.transaction('workspaces').objectStore('workspaces').get('local');r.onsuccess=()=>{db.close();resolve(r.result?.preferences.focusLogs?.length || 0);};});})).toBe(1);
@@ -61,12 +61,12 @@ test('a second tab waits for the workspace owner and cannot duplicate playback',
   const second=await context.newPage();await second.goto('/app');await expect(second.getByRole('status')).toContainText('open in another tab');await page.close();
   await expect(second.locator('main#main-content')).toBeVisible();await expect(second.getByRole('button',{name:'Pause Focus Session',exact:true})).toBeVisible();
 });
-test('a saved recipe can be edited and started from Today in two actions',async({page})=>{
+test('a saved recipe can be edited and started from the lobby in two actions',async({page})=>{
   await seed(page);await open(page);const s=page.getByRole('dialog',{name:'Focus Studio',exact:true});
-  await s.getByRole('button',{name:'Recipes',exact:true}).click();await s.getByRole('textbox',{name:'Recipe name',exact:true}).fill('Sunday session');await s.getByRole('button',{name:'Save current setup',exact:true}).click();
-  await s.getByRole('button',{name:'Close customization panel'}).click();await s.getByRole('button',{name:'Timer',exact:true}).click();await s.getByRole('spinbutton',{name:'Focus minutes',exact:true}).fill('50');await s.getByRole('button',{name:'Close customization panel'}).click();
-  await s.getByRole('button',{name:'Recipes',exact:true}).click();await s.getByRole('button',{name:'Update selected recipe',exact:true}).click();await s.getByRole('button',{name:'Back to planner'}).click();
+  await s.getByRole('button',{name:'Your recipes',exact:true}).click();await s.getByRole('textbox',{name:'Recipe name',exact:true}).fill('Sunday session');await s.getByRole('button',{name:'Save current setup',exact:true}).click();
+  await s.getByRole('button',{name:'Close customization panel'}).click();await s.getByRole('button',{name:'Session',exact:true}).click();await s.getByRole('spinbutton',{name:'Focus minutes',exact:true}).fill('50');await s.getByRole('button',{name:'Close customization panel'}).click();
+  await s.getByRole('button',{name:'Your recipes',exact:true}).click();await s.getByRole('button',{name:'Update selected recipe',exact:true}).click();await s.getByRole('button',{name:'Back to planner'}).click();
   await expect(s).not.toBeVisible();
-  await page.getByRole('region',{name:'Focus Launchpad',exact:true}).getByRole('button',{name:/^Sunday session /}).click();await s.getByRole('button',{name:'Start focus',exact:true}).click();
+  await open(page);await s.getByRole('button',{name:/^Sunday session /}).click();await s.getByRole('button',{name:'Start focus',exact:true}).click();
   await expect(s.getByRole('button',{name:'Pause',exact:true})).toBeVisible();await expect(s.locator('.studio-session-label')).toContainText('50 minutes');await expect(s.getByRole('heading',{name:'Explain binary search'})).toBeVisible();
 });

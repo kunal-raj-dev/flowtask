@@ -1,4 +1,5 @@
 import { FocusSettings } from '../settings/FocusSettings';
+import { BUILD_ID, BUILD_LABEL } from '../../utils/buildInfo';
 import { WorkspaceSettings } from '../settings/WorkspaceSettings';
 import { PrivacyControls } from '../settings/PrivacyControls';
 import React, { useState, useEffect, useMemo } from 'react';
@@ -37,7 +38,7 @@ import {
 } from '../../types/settings';
 import { exportToCSV, downloadCsv } from '../../utils/fileExporter';
 
-export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account' | 'focus' | 'sound' | 'workspace';
+export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account' | 'focus' | 'sound' | 'workspace' | 'about';
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -126,6 +127,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     { id: 'calendar', name: 'Calendar', terms: 'ics feed import sync google outlook apple events', icon: Calendar },
     { id: 'data', name: 'Data', terms: 'backup export restore json csv storage quota local reset', icon: HardDrive },
     { id: 'account', name: 'Account', terms: 'privacy sync delete diagnostics firebase cloud profile identity', icon: ShieldCheck },
+    { id: 'about', name: 'About', terms: 'version build release update welcome home', icon: Sparkles },
   ];
 
   // Deep searchable settings index
@@ -489,6 +491,13 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
 
           {/* TAB: FOCUS & TIMERS */}
           {activeTab === 'focus' && <FocusSettings />}
+          {activeTab === 'about' && <section className="appearance-current" data-build={BUILD_ID}>
+            <span className="appearance-eyebrow">FLOWTASK · FREE PUBLIC BETA</span>
+            <h2 className="text-2xl mt-3">Plan your day. Enter your flow.</h2>
+            <p className="mt-4 text-sm text-[var(--text-secondary)]">A local-first planner and your personal Focus Studio.</p>
+            <p className="mt-4 text-xs" title={BUILD_ID}>Build {BUILD_LABEL}</p>
+            <a href="/" className="desk-button mt-5">Visit welcome page</a>
+          </section>}
 
           {/* TAB: SOUND & ATMOSPHERE */}
           {activeTab === 'sound' && (

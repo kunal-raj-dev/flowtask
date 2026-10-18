@@ -109,7 +109,7 @@ export const DEFAULT_TIMER: TimerConfiguration = {
 };
 export const DEFAULT_STUDIO: StudioPreferences = {
   recipeId: "library-reading",
-  sceneId: "",
+  sceneId: "old-library",
   breakSceneId: "",
   layers: [],
   musicId: null,

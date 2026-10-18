@@ -1,10 +1,20 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execFileSync } from 'node:child_process';
+
+const buildId = process.env.VERCEL_GIT_COMMIT_SHA || (() => {
+  try { return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); }
+  catch { return 'development'; }
+})();
 
 export default defineConfig({
+  define: { __FLOWTASK_BUILD__: JSON.stringify(buildId) },
   plugins: [
     react(),
+    { name: 'flowtask-build-identity', generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'build-info.json', source: JSON.stringify({ commit: buildId }) });
+    } },
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,

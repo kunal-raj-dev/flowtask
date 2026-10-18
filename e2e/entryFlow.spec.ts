@@ -23,7 +23,7 @@ async function finishSetup(page: Page, title: string) {
 test('root landing continues to real setup, creates a task and starts Focus Studio', async ({page}) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
-  await expect(page.getByRole('heading',{name:/A little less rush/})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/Plan your day/})).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('flowtask_onboarding_completed'))).toBeNull();
   expect(await page.evaluate(() => localStorage.getItem('flowtask_tasks_v1'))).toBeNull();
   await page.getByRole('link',{name:'Continue to workspace',exact:true}).click();
@@ -48,7 +48,7 @@ test('returning through landing preserves tasks, theme, desk and active session'
   await expect.poll(async () => (await workspaceSnapshot(page)).theme).toBe('aurora');
   const before = await workspaceSnapshot(page);
   const titleBefore = await page.getByRole('heading',{name:'Today.',exact:true}).textContent();
-  await page.goto('/'); await expect(page.getByRole('heading',{name:/A little less rush/})).toBeVisible();
+  await page.goto('/'); await expect(page.getByRole('heading',{name:/Plan your day/})).toBeVisible();
   await page.getByRole('link',{name:'Continue to workspace',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'Welcome Setup Ritual',exact:true})).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('data-theme','aurora');
@@ -91,8 +91,8 @@ test('landing alias, refresh and Back retain the marketing-to-workspace boundary
   await page.addInitScript(() => localStorage.setItem('flowtask_onboarding_completed','true'));
   await page.goto('/welcome'); await page.getByRole('link',{name:'Continue to workspace',exact:true}).click();
   await page.locator('main#main-content').waitFor(); await page.reload(); await page.locator('main#main-content').waitFor();
-  await page.goBack(); await expect(page.getByRole('heading',{name:/A little less rush/})).toBeVisible();
-  await page.goto('/index.html'); await expect(page.getByRole('heading',{name:/A little less rush/})).toBeVisible();
+  await page.goBack(); await expect(page.getByRole('heading',{name:/Plan your day/})).toBeVisible();
+  await page.goto('/index.html'); await expect(page.getByRole('heading',{name:/Plan your day/})).toBeVisible();
 });
 for (const width of [390,768,1440]) test(`landing and Continue are accessible at ${width}px`, async ({page}) => {
   await page.setViewportSize({width,height:1000}); await page.goto('/');
@@ -112,7 +112,7 @@ test('installed landing and the saved workspace remain usable offline', async ({
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await context.setOffline(true); await page.goto('/');
-  await expect(page.getByRole('heading',{name:/A little less rush/})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/Plan your day/})).toBeVisible();
   await page.getByRole('link',{name:'Continue to workspace',exact:true}).click();
   await page.locator('main#main-content').waitFor();
   await expect(page.getByRole('button',{name:'My offline entry task',exact:true})).toBeVisible();

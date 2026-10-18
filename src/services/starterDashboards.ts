@@ -1,11 +1,11 @@
 import type { WorkspaceDashboard } from '../types/dashboard';
 
-export const STARTER_DAILY_DESK_ID = 'starter-daily-desk';
+export const STARTER_DAILY_DESK_ID = 'starter-daily-desk-v2';
 export const STARTER_STUDY_DESK_ID = 'starter-study-desk';
 export const STARTER_DEVELOPER_DESK_ID = 'starter-developer-desk';
 export const STARTER_MINIMAL_DESK_ID = 'starter-minimal-desk';
 
-export function createStarterDashboards(now = Date.now()): WorkspaceDashboard[] {
+function createLegacyStarters(now = Date.now()): WorkspaceDashboard[] {
   return [
     {
       id: STARTER_DAILY_DESK_ID,
@@ -373,6 +373,25 @@ export function createStarterDashboards(now = Date.now()): WorkspaceDashboard[] 
   ];
 }
 
+/** Versioned starter; persisted dashboards are never replaced. */
+export function createStarterDashboards(now = Date.now()): WorkspaceDashboard[] {
+  const desks = createLegacyStarters(now);
+  const daily = desks[0];
+  daily.widgets = daily.widgets.filter(w => !['capacityProgress', 'focusLaunchpad'].includes(w.type));
+  daily.revision = 2;
+  daily.layouts = {
+    lg: [
+      {i:'w-top3-daily',x:0,y:0,w:8,h:4},
+      {i:'w-tasks-daily',x:0,y:4,w:8,h:7},
+      {i:'w-study-daily',x:8,y:9,w:4,h:4},
+      {i:'w-agenda-daily',x:8,y:0,w:4,h:5},
+      {i:'w-notes-daily',x:8,y:5,w:4,h:4},
+    ],
+    md: daily.widgets.map((w,i) => ({i:w.id,x:0,y:i*5,w:6,h:5})),
+    sm: daily.widgets.map((w,i) => ({i:w.id,x:0,y:i*5,w:1,h:5})),
+  };
+  return desks;
+}
 export const STARTER_DASHBOARDS: WorkspaceDashboard[] = createStarterDashboards(0);
 
 export function getStarterDashboard(id: string): WorkspaceDashboard | undefined {

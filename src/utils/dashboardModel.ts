@@ -79,6 +79,7 @@ export function normalizeDashboard(raw: unknown): WorkspaceDashboard {
   const layouts: ResponsiveLayouts = { lg: normalizeDashboardLayout(widgets, raw.layouts.lg, 'lg') };
   for (const bp of ['md', 'sm'] as const) layouts[bp] = normalizeDashboardLayout(widgets, raw.layouts[bp], bp);
   return { id: raw.id, name: raw.name.trim(), order: integer(raw.order, 0, 0, 100), isDefault: raw.isDefault === true,
+    ...(identifier(raw.icon) ? { icon: raw.icon } : {}),
     widgets, layouts, revision: integer(raw.revision, 0, 0, Number.MAX_SAFE_INTEGER),
     createdAt: typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : Date.now(),
     updatedAt: typeof raw.updatedAt === 'number' && Number.isFinite(raw.updatedAt) ? raw.updatedAt : Date.now(),

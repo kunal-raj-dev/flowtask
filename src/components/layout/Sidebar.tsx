@@ -34,6 +34,7 @@ import {
   ChevronRight,
   BookOpen,
   Cloud,
+  Headphones as HeadphonesIcon,
 } from 'lucide-react';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
 import { Badge, BrandLogo } from '../ui';
@@ -482,7 +483,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       aria-label={isMobileDrawer ? 'Mobile navigation drawer' : 'Desktop navigation'}
-      className="w-64 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/80 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col select-none transition-colors duration-200"
+      className="flow-sidebar w-64 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/80 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col select-none transition-colors duration-200"
     >
       {/* Workspace Brand Header */}
       <div className="p-3 border-b border-[var(--border-hairline)] flex items-center justify-between gap-1.5">
@@ -530,15 +531,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Workspace
           </div>
           {primaryNavItems.map(renderNavItem)}
+          <button className="sidebar-studio-entry" onClick={()=>{onOpenPomodoro();onItemClick?.();}}><HeadphonesIcon/><span>Focus Studio<small>A place for your best work</small></span><ChevronRight size={14}/></button>
         </div>
 
         {/* Dedicated Tools Group */}
-        <div className="space-y-0.5">
-          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            Tools
-          </div>
-          {toolsNavItems.map(renderNavItem)}
-        </div>
+        <details className="sidebar-tools" open={['study','review'].includes(activeView) || undefined}><summary>Study & reflection</summary>{toolsNavItems.map(renderNavItem)}</details>
 
         {/* Perspectives Section */}
         {pinnedItems.length > 0 && <div className="space-y-0.5"><div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">Pinned</div>{pinnedItems.map(renderNavItem)}</div>}
@@ -720,6 +717,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer: Quick Notes, Settings, and Account/Sync */}
       <div className="p-2.5 border-t border-[var(--border-hairline)] space-y-1.5 text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {onOpenAesthetics && <button className="sidebar-utility" aria-label="Customize appearance" onClick={()=>{onOpenAesthetics();onItemClick?.();}}><Palette size={14}/>Appearance</button>}
+        <a className="sidebar-utility" href="/">Visit welcome page<ChevronRight size={13}/></a>
         {onOpenScratchpad && (
           <button
             type="button"

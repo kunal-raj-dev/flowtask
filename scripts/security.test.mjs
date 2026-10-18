@@ -1,7 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createDeleteAccountHandler } from '../api/account/delete.mjs';
 import worker from '../workers/calendar-proxy.js';
+test('Vercel uses its native Node runtime and a supported Node engine',()=>{
+  const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+  const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
+  assert.equal(config.functions['api/account/delete.mjs'].runtime,undefined);
+  assert.equal(pkg.engines.node,'22.x');
+});
 
 function harness(overrides={}) {
   const events=[]; const auth={verifyIdToken:async()=>({uid:'owner',auth_time:1000,exp:4600}),deleteUser:async()=>events.push('auth-deleted')};

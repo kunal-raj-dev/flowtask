@@ -12,7 +12,6 @@ import {
   Pause,
   Image,
   Headphones,
-  Sparkles,
   FileText,
   Timer,
   X,
@@ -52,6 +51,7 @@ import { BrandLogo } from "../ui/BrandLogo";
 import { pictureInPictureService } from "../../services/pictureInPictureService";
 import { transitionView } from "../../utils/viewTransitions";
 import { FocusAudioPanel } from "./FocusAudioPanel";
+import { FEATURED_ROOMS, roomImage } from '../../services/featuredRooms';
 import type {
   FocusRecipe,
   TimerConfiguration,
@@ -202,6 +202,7 @@ export function FocusStudio({
       : minutes * 60;
   const running = active?.state === "running";
   const showSummary = last && last.finishedAt > summaryDismissed && !active;
+  const lobby = !active && !showSummary;
   const today = useTodayStr();
   const availableTasks = useMemo(
     () =>
@@ -244,11 +245,12 @@ export function FocusStudio({
   // Focus Studio keyboard shortcuts: C (Clear Mode) and F (Fullscreen) (Requirement R5)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       const target = e.target as HTMLElement | null;
       if (
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
-        target?.isContentEditable
+        target?.isContentEditable || target?.tagName === 'SELECT'
       ) {
         return;
       }
@@ -260,7 +262,7 @@ export function FocusStudio({
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
         if (!document.fullscreenElement) {
-          void (root.current?.requestFullscreen?.() ?? document.documentElement.requestFullscreen());
+          void root.current?.requestFullscreen?.().catch(() => setMessage('Fullscreen is unavailable. Studio still fills your browser.'));
         } else {
           void document.exitFullscreen?.();
         }
@@ -366,16 +368,13 @@ export function FocusStudio({
   };
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
       const target = event.target as HTMLElement;
       if (target.closest("input,textarea,select,button,[contenteditable=true]"))
         return;
       if (event.code === "Space") {
         event.preventDefault();
         void toggle();
-      }
-      if (event.key.toLowerCase() === "f") {
-        setClear((v) => !v);
-        setPanel(null);
       }
     };
     window.addEventListener("keydown", key);
@@ -547,7 +546,9 @@ export function FocusStudio({
   return (
     <div
       ref={root}
-      className={`focus-studio ${clear ? "is-clear" : ""}`}
+      className={`focus-studio ${clear ? "is-clear" : ""} ${lobby ? 'is-lobby' : 'is-session'}`}
+      data-session-state={active?.state || (showSummary ? 'finished' : 'ready')}
+      data-phase={currentPhase}
       role="dialog"
       aria-modal="true"
       aria-label="Focus Studio"
@@ -563,6 +564,7 @@ export function FocusStudio({
       <div className="studio-backdrop" aria-hidden="true">
         {canAnimate ? (
           <video
+            key={scene.id}
             ref={videoRef}
             src={scene.src}
             poster={scene.poster || scene.thumbnail}
@@ -578,6 +580,7 @@ export function FocusStudio({
         ) : (
           scene && (
             <img
+              key={scene.id}
               src={scene.poster || scene.src}
               srcSet={
                 scene.kind !== "video"
@@ -588,6 +591,7 @@ export function FocusStudio({
               }
               sizes="100vw"
               alt=""
+              onLoad={() => setMessage(value => value === 'This background is unavailable. Your focus session is unaffected.' ? '' : value)}
               style={{
                 objectPosition: `${p.focalX}% ${p.focalY}%`,
                 filter: `brightness(${p.brightness}) blur(${p.blur}px)`,
@@ -625,7 +629,7 @@ export function FocusStudio({
           <button
             onClick={() => {
               if (!document.fullscreenElement) {
-                void (root.current?.requestFullscreen?.() ?? document.documentElement.requestFullscreen());
+                void root.current?.requestFullscreen?.().catch(() => setMessage('Fullscreen is unavailable. Studio still fills your browser.'));
               } else {
                 void document.exitFullscreen?.();
               }
@@ -641,13 +645,16 @@ export function FocusStudio({
           >
             <PictureInPicture2 size={18} />
           </button>
-          <button onClick={() => void transitionView(() => onClose())} className="studio-exit">
+          <button aria-label="Back to planner" onClick={() => void transitionView(() => onClose())} className="studio-exit">
             <ArrowLeft size={16} />
             <span>Back to planner</span>
           </button>
         </div>
       </header>
       <main className={`studio-stage ${panel ? "has-panel" : ""}`}>
+        {lobby && <div className="studio-lobby-intro"><p className="studio-eyebrow">YOUR FOCUS STUDIO</p><h2>Find a little room for your best work.</h2><p>Choose your intention. Settle into a space. Begin.</p></div>}
+        <div className={lobby ? 'studio-lobby' : 'studio-session'}>
+        <section className="studio-session-core" aria-label={lobby ? 'Prepare your session' : 'Current session'}>
         <div className="studio-mode-switch" aria-label="Session phase">
           {(["focus", "short_break", "long_break"] as Phase[]).map((mode) => (
             <button
@@ -677,6 +684,7 @@ export function FocusStudio({
             ? "A LITTLE BREATHING ROOM"
             : running
               ? "RIGHT HERE. ONE THING AT A TIME."
+              : active?.state === 'paused' ? 'PAUSED · RETURN WHEN YOU ARE READY'
               : "MAKE ROOM FOR WHAT MATTERS"}
         </p>
         <h1>
@@ -691,6 +699,7 @@ export function FocusStudio({
             Next step · {task?.nextAction || p.nextAction}
           </p>
         )}
+        {lobby && <div className="studio-lobby-config"><label>Focus task<select aria-label="Focus task" value={selectedTask} onChange={e=>setSelectedTask(e.target.value)}><option value="">Open focus · no task</option>{availableTasks.map(t=><option value={t.id} key={t.id}>{t.title}</option>)}</select></label><label>Rhythm<select aria-label="Focus rhythm" value={timer.mode === 'pomodoro' && timer.focusMinutes === 25 && timer.shortBreakMinutes === 5 ? '25' : timer.mode === 'pomodoro' && timer.focusMinutes === 50 && timer.shortBreakMinutes === 10 ? '50' : timer.mode === 'stopwatch' ? 'open' : 'custom'} onChange={e=>{const v=e.target.value;if(v==='custom')setPanel('timer');else updateTimer(v==='open'?{mode:'stopwatch'}:{mode:'pomodoro',focusMinutes:Number(v),shortBreakMinutes:v==='50'?10:5});}}><option value="25">25 / 5 · A gentle start</option><option value="50">50 / 10 · Go deeper</option><option value="open">Open-ended · Your pace</option><option value="custom">Custom rhythm…</option></select></label></div>}
         <div
           className={`studio-clock ${p.timerStyle === "ring" ? "with-ring" : ""}`}
           role="timer"
@@ -751,11 +760,22 @@ export function FocusStudio({
           {task ? "Change task" : "Choose a task to focus on"}
           <ArrowRight size={14} />
         </button>
+        <div className="studio-context-actions"><button onClick={()=>setPanel(panel==='notes'?null:'notes')}><FileText size={14}/>Notes</button><button onClick={()=>setPanel(panel==='queue'?null:'queue')}><ListTodo size={14}/>Queue{queue.length ? ` · ${queue.length}` : ''}</button></div>
         {currentPhase !== "focus" && p.breakPrompts && (
           <p className="studio-break-prompt">
             <Coffee size={16} /> Look away, stretch a little, or get some water.
           </p>
         )}
+        </section>
+        {lobby && <aside className="studio-lobby-library" aria-label="Choose your focus environment">
+          <div className="studio-lobby-section-heading"><h3>A change of scene</h3><button onClick={()=>setPanel('scenes')}>Browse rooms<ArrowRight size={13}/></button></div>
+          <div className="studio-lobby-rooms">{FEATURED_ROOMS.map(r=><button key={r.id} aria-label={`Choose ${r.title} room`} aria-pressed={p.sceneId===r.id} onClick={()=>update({sceneId:r.id})}><img src={roomImage(r.id,true)} alt="" loading="lazy"/><span>{r.title}<small>{r.category}</small></span>{p.sceneId===r.id&&<Check size={14}/>}</button>)}</div>
+          <div className="studio-lobby-section-heading"><h3>Start with a ritual</h3><button onClick={()=>setPanel('recipes')}>Your recipes<ArrowRight size={13}/></button></div>
+          <div className="studio-lobby-recipes">{recipes.filter(r=>r.builtIn).map(r=>{const cover=resolveAsset(r.sceneId,media.scenes);return <button key={r.id} aria-pressed={p.recipeId===r.id} onClick={()=>selectRecipe(r)}>{cover&&<img src={cover.thumbnail||cover.poster||cover.src} alt="" loading="lazy"/>}<span>{r.name}<small>{r.timer.mode==='stopwatch'?'Open-ended':`${r.timer.focusMinutes}/${r.timer.shortBreakMinutes}`} · {r.layers.length||r.musicId?'Sound recipe':'Silence'}</small></span>{p.recipeId===r.id&&<Check size={13}/>}</button>;})}</div>
+          {recipes.some(r=>!r.builtIn||r.favorite)&&<><div className="studio-lobby-section-heading studio-saved-heading"><h3>Saved for your flow</h3></div><div className="studio-lobby-recipes">{recipes.filter(r=>!r.builtIn||r.favorite).map(r=><button key={r.id} aria-pressed={p.recipeId===r.id} onClick={()=>selectRecipe(r)}><span>{r.name}<small>{r.timer.mode==='stopwatch'?'Open-ended':`${r.timer.focusMinutes}/${r.timer.shortBreakMinutes}`}</small></span></button>)}</div></>}
+          <p className="studio-lobby-note"><Headphones size={13}/>Sound starts only when you start your session.</p>
+        </aside>}
+        </div>
       </main>
       <div className="studio-bottom">
         <div className="studio-scene-caption">
@@ -790,11 +810,9 @@ export function FocusStudio({
         <nav className="studio-dock" aria-label="Focus customization">
           {(
             [
-              { id: "scenes", icon: Image, name: "Scenes" },
+              { id: "scenes", icon: Image, name: "Room" },
               { id: "sound", icon: Headphones, name: "Sound" },
-              { id: "recipes", icon: Sparkles, name: "Recipes" },
-              { id: "notes", icon: FileText, name: "Notes" },
-              { id: "timer", icon: Timer, name: "Timer" },
+              { id: "timer", icon: Timer, name: "Session" },
             ] as const
           ).map((item) => (
             <button
@@ -839,6 +857,7 @@ export function FocusStudio({
             </button>
           </header>
           <div className="studio-panel-body">
+            {['timer','recipes','queue'].includes(panel) && <nav className="studio-session-tabs" aria-label="Session tools">{(['timer','recipes','queue'] as const).map(tab=><button key={tab} aria-pressed={panel===tab} onClick={()=>setPanel(tab)}>{tab==='timer'?'Timer':tab==='recipes'?'Recipes':'Task queue'}</button>)}</nav>}
             {panel === "scenes" && (
               <>
                 <div className="studio-chips">

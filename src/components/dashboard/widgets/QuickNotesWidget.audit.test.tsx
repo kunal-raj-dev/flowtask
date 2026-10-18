@@ -116,3 +116,19 @@ it("explains task-only mode when no task is selected instead of editing another 
   ).toBeTruthy();
   expect(screen.queryByRole("textbox")).toBeNull();
 });
+
+it('flushes before an animated context drawer closes, without waiting for unmount',()=>{
+  render(<QuickNotesWidget widget={widget}/>);
+  const input=screen.getByRole('textbox',{name:'Workspace scratchpad'});
+  fireEvent.change(input,{target:{value:'A thought before leaving'}});
+  fireEvent.blur(input);
+  expect(scope.current.setWorkspacePreference).toHaveBeenCalledExactlyOnceWith('scratchpad','A thought before leaving');
+  act(()=>vi.advanceTimersByTime(500));
+  expect(scope.current.setWorkspacePreference).toHaveBeenCalledTimes(1);
+});
+it('flushes pending notes on document navigation without replaying them twice',()=>{
+  render(<QuickNotesWidget widget={widget}/>);
+  fireEvent.change(screen.getByRole('textbox',{name:'Workspace scratchpad'}),{target:{value:'Remember on refresh'}});
+  act(()=>window.dispatchEvent(new Event('pagehide')));
+  expect(scope.current.setWorkspacePreference).toHaveBeenCalledExactlyOnceWith('scratchpad','Remember on refresh');
+});

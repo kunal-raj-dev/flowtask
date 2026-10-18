@@ -1,195 +1,356 @@
-import { FeedbackForm } from "../settings/FeedbackForm";
+import { useState } from "react";
 import {
   ArrowUpRight,
   ArrowRight,
   Check,
   Headphones,
-  Clock3,
-  Layers3,
+  Play,
+  Sun,
+  Inbox,
+  CalendarDays,
+  Folder,
+  LockKeyhole,
+  Code2,
+  BookOpen,
+  Circle,
+  Star,
 } from "lucide-react";
 import { BrandLogo } from "../ui/BrandLogo";
+import { FeedbackForm } from "../settings/FeedbackForm";
+import { LandingUpdateNotice } from "../workflow/UpdateBanner";
+import { FEATURED_ROOMS, roomImage } from "../../services/featuredRooms";
+import { BUILD_ID, BUILD_LABEL } from "../../utils/buildInfo";
 import "../../styles/welcome.css";
 
 export function WelcomePage() {
+  const [preview, setPreview] = useState<"plan" | "focus">("plan");
+  const [room, setRoom] = useState<string>(FEATURED_ROOMS[0].id);
+  const selectedRoom = FEATURED_ROOMS.find((r) => r.id === room)!;
   return (
-    <div className="welcome-page">
+    <div className="welcome-page" data-build={BUILD_ID}>
+      <a className="welcome-skip" href="#welcome-main">
+        Skip to content
+      </a>
       <header className="welcome-nav">
         <a href="/" aria-label="FlowTask home">
           <BrandLogo size={34} showWordmark />
         </a>
-        <nav>
-          <a href="#studio">The Studio</a>
-          <a href="#privacy">Your data</a>
+        <nav aria-label="Welcome navigation">
+          <a href="#product">Product</a>
+          <a href="#rooms">Focus Rooms</a>
+          <a href="#privacy">Privacy</a>
           <a className="welcome-link" href="/app">
             Open FlowTask <ArrowUpRight size={16} />
           </a>
         </nav>
       </header>
-      <main>
+      <main id="welcome-main">
         <section className="welcome-hero">
           <div className="welcome-copy">
             <span className="welcome-eyebrow">
-              <i />
-              FLOWTASK 2.0 · FREE PUBLIC BETA
+              <span className="welcome-dot" /> LESS NOISE. MORE INTENTION.
             </span>
             <h1>
-              A little less rush.
-              <br />A lot more <em>flow.</em>
+              Plan your day.
+              <br />
+              Enter your <em>flow.</em>
             </h1>
             <p>
-              Plan a day that fits. Pick the next small thing. Settle into a
-              space that feels like yours.
+              A clear plan. A quiet place. One meaningful thing at a time.
+              <br className="welcome-desktop-break" /> Meet the workspace that
+              makes room for your best work.
             </p>
             <div className="welcome-cta">
               <a href="/app" className="welcome-guest-btn">
                 Continue to workspace <ArrowRight size={18} />
               </a>
-              <span>Free to start. No account needed.</span>
+              <span>Free public beta · No account needed</span>
             </div>
             <div className="welcome-proof">
               <span>
-                <Check size={15} />
-                Made for students & developers
+                <Check size={14} /> Built for students & developers
               </span>
               <span>
-                <Check size={15} />
-                Works offline
+                <Check size={14} /> Local-first planning
               </span>
             </div>
           </div>
-          <div
-            className="welcome-room"
-            role="img"
-            aria-label="A warm study room with an example focus timer"
-          >
-            <div className="welcome-room-top">
-              <span>RAINY WRITING</span>
-              <span>YOUR FOCUS STUDIO</span>
+          <div className="welcome-showcase" id="product">
+            <div className="welcome-showcase-bar">
+              <span>
+                <span className="welcome-dot" /> A LITTLE ROOM FOR YOUR DAY
+              </span>
+              <div role="group" aria-label="Product preview">
+                <button
+                  aria-pressed={preview === "plan"}
+                  onClick={() => setPreview("plan")}
+                >
+                  Plan
+                </button>
+                <button
+                  aria-pressed={preview === "focus"}
+                  onClick={() => setPreview("focus")}
+                >
+                  Focus
+                </button>
+              </div>
             </div>
-            <div className="welcome-room-center">
-              <span>One paragraph at a time.</span>
-              <strong>25:00</strong>
-              <small>Take your time. You’re here.</small>
-            </div>
-            <div className="welcome-room-bottom">
-              <Headphones size={16} />
-              <span>Gentle rain · Soft piano</span>
-              <i>01 / 03</i>
+            {preview === "plan" ? (
+              <div
+                className="welcome-plan-preview"
+                aria-label="Example Daily Desk preview"
+              >
+                <aside className="welcome-preview-sidebar" aria-hidden="true">
+                  <BrandLogo size={22} />
+                  <span className="selected">
+                    <Sun size={14} />
+                    Today
+                  </span>
+                  <span>
+                    <Inbox size={14} />
+                    Inbox
+                  </span>
+                  <span>
+                    <CalendarDays size={14} />
+                    Plan
+                  </span>
+                  <span>
+                    <Folder size={14} />
+                    Projects
+                  </span>
+                  <span className="welcome-preview-studio">
+                    <Headphones size={14} />
+                    Focus Studio
+                  </span>
+                </aside>
+                <div className="welcome-preview-day">
+                  <div className="welcome-preview-title">
+                    <div>
+                      <small>YOUR DAILY DESK</small>
+                      <h2>A day with intention.</h2>
+                    </div>
+                    <span>2h planned · 4h free</span>
+                  </div>
+                  <div className="welcome-preview-next">
+                    <span className="welcome-eyebrow">
+                      UP NEXT · YOUR CHOICE
+                    </span>
+                    <h3>Make something meaningful.</h3>
+                    <p>Start with the smallest useful step.</p>
+                    <button onClick={() => setPreview("focus")}>
+                      <Play size={12} fill="currentColor" />
+                      Preview Focus
+                    </button>
+                  </div>
+                  <div className="welcome-preview-tasks">
+                    <span className="welcome-eyebrow">YOUR TOP 3</span>
+                    {[
+                      "Understand one difficult concept",
+                      "Build the first working version",
+                      "Make time for a little reading",
+                    ].map((title, i) => (
+                      <div key={title}>
+                        <Circle size={15} />
+                        <span>{title}</span>
+                        <small>{[50, 40, 30][i]}m</small>
+                        <Star size={12} />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="welcome-preview-capture">
+                    ＋ What needs your attention today?
+                  </div>
+                </div>
+                <aside className="welcome-preview-agenda">
+                  <span className="welcome-eyebrow">YOUR AFTERNOON</span>
+                  <div>
+                    <small>14:00</small>
+                    <p>
+                      Deep work<em>Room to make progress</em>
+                    </p>
+                  </div>
+                  <div>
+                    <small>15:00</small>
+                    <p>
+                      A proper break<em>Step away. Come back fresh.</em>
+                    </p>
+                  </div>
+                  <img
+                    src={roomImage("alpine-mirror", true)}
+                    alt=""
+                    loading="lazy"
+                  />
+                  <p>Leave a little breathing room.</p>
+                </aside>
+              </div>
+            ) : (
+              <div
+                className="welcome-focus-preview"
+                style={{
+                  backgroundImage: `linear-gradient(180deg,#111b2190,#111b2170),url("${roomImage(room)}")`,
+                }}
+                aria-label={`${selectedRoom.title} Focus preview`}
+              >
+                <span className="welcome-eyebrow">ONE THING AT A TIME</span>
+                <h2>Make something meaningful.</h2>
+                <strong>25:00</strong>
+                <p>Your task. Your space. Your pace.</p>
+                <a href="/app">
+                  <Play size={14} fill="currentColor" />
+                  Open your Studio
+                </a>
+                <small>
+                  <Headphones size={13} /> {selectedRoom.title} · Preview is
+                  silent
+                </small>
+              </div>
+            )}
+            <div className="welcome-preview-caption">
+              <span>PLAN A LITTLE. FOCUS DEEPLY.</span>
+              <span>
+                Illustrative preview · Your workspace starts with your own
+                tasks.
+              </span>
             </div>
           </div>
         </section>
-        <section className="welcome-path">
-          <span>A DAY WITH ROOM TO BREATHE</span>
-          <div>
-            <article>
-              <small>01</small>
-              <h2>Make room.</h2>
-              <p>
-                Choose your Top 3 and plan around the time you actually have.
-              </p>
-            </article>
-            <article>
-              <small>02</small>
+        <section className="welcome-path" aria-label="How FlowTask works">
+          <article>
+            <small>01 / MAKE ROOM</small>
+            <h2>A realistic day.</h2>
+            <p>
+              Pick your Top 3. See what fits. Leave space for life between the
+              tasks.
+            </p>
+          </article>
+          <article>
+            <small>02 / SETTLE IN</small>
+            <h2>Your kind of quiet.</h2>
+            <p>
+              Choose a room, a rhythm and a soundscape. Silence is always an
+              option.
+            </p>
+          </article>
+          <article>
+            <small>03 / GO A LITTLE DEEPER</small>
+            <h2>One next step.</h2>
+            <p>
+              Keep your task, timer and next action together. Pick up where you
+              left off.
+            </p>
+          </article>
+        </section>
+        <section id="rooms" className="welcome-rooms">
+          <div className="welcome-section-heading">
+            <div>
+              <span className="welcome-eyebrow">A CHANGE OF SCENE</span>
               <h2>Find your somewhere.</h2>
-              <p>
-                A quiet library, a mountain morning, or your own favorite view.
-              </p>
-            </article>
-            <article>
-              <small>03</small>
-              <h2>Do one thing.</h2>
-              <p>
-                Your task, next action and timer together. The rest can wait.
-              </p>
-            </article>
+            </div>
+            <p>
+              A rainy afternoon. A mountain morning.
+              <br />A place that helps the rest fall quiet.
+            </p>
+          </div>
+          <div className="welcome-room-grid">
+            {FEATURED_ROOMS.map((r) => (
+              <button
+                key={r.id}
+                aria-label={`Preview ${r.title}`}
+                aria-pressed={preview === "focus" && room === r.id}
+                onClick={() => {
+                  setRoom(r.id);
+                  setPreview("focus");
+                  document
+                    .getElementById("product")
+                    ?.scrollIntoView({ block: "center", behavior: "instant" });
+                }}
+              >
+                <img src={roomImage(r.id)} alt="" loading="lazy" />
+                <span>
+                  <small>{r.category}</small>
+                  <strong>
+                    {r.title}
+                    <ArrowUpRight size={19} />
+                  </strong>
+                  <em>{r.mood}</em>
+                </span>
+              </button>
+            ))}
           </div>
         </section>
-        <section id="studio" className="welcome-studio">
+        <section className="welcome-for">
           <div>
-            <span className="welcome-eyebrow">
-              YOUR ENVIRONMENT. YOUR RHYTHM.
-            </span>
+            <BookOpen size={25} />
+            <span className="welcome-eyebrow">FOR STUDENTS</span>
             <h2>
-              Somewhere you’ll
+              Less overwhelm.
               <br />
-              want to come back to.
+              More understanding.
             </h2>
             <p>
-              Mix rain with a fireplace. Choose silence. Save your scene, sound
-              and timer as a recipe, then start again in two actions.
+              Turn a syllabus into manageable study sessions. Keep your next
+              problem, reference and focus timer within reach.
             </p>
-            <a href="/app">
-              Make yourself at home <ArrowUpRight size={17} />
-            </a>
           </div>
-          <div className="welcome-features">
-            <article>
-              <Layers3 />
-              <h3>48 original places</h3>
-              <p>
-                Eight collections, personal uploads and optional motion scenes.
-              </p>
-            </article>
-            <article>
-              <Headphones />
-              <h3>Your kind of quiet</h3>
-              <p>
-                Twelve ambient layers, offline noise and eighteen instrumental
-                tracks.
-              </p>
-            </article>
-            <article>
-              <Clock3 />
-              <h3>A rhythm that fits</h3>
-              <p>Pomodoro, countdown, open-ended work and study sprints.</p>
-            </article>
+          <div>
+            <Code2 size={25} />
+            <span className="welcome-eyebrow">FOR DEVELOPERS</span>
+            <h2>
+              From a long backlog
+              <br />
+              to one good next step.
+            </h2>
+            <p>
+              Plan realistic blocks, keep projects moving and save the context
+              you need to return to deep work.
+            </p>
           </div>
         </section>
         <section id="privacy" className="welcome-privacy">
-          <span className="welcome-eyebrow">
-            A CALMER RELATIONSHIP WITH YOUR TO-DO LIST
-          </span>
+          <LockKeyhole size={26} />
+          <span className="welcome-eyebrow">YOUR SPACE, ON YOUR TERMS</span>
           <h2>Your work belongs to you.</h2>
           <p>
-            Your core workspace stays on your device. An optional account syncs
-            tasks, projects, finished focus history, recipes and safe
-            preferences. Personal media, scratchpad contents and private
-            calendar feed URLs stay local.
+            Start without an account. Core planning stays on your device, with
+            optional cloud sync and exportable backups. Personal media and
+            scratchpad contents stay local.
           </p>
-          <p>
-            Usage diagnostics are off by default and, when enabled, store only
-            device-local event counts. Backups include your workspace data;
-            personal media can be exported separately. You can delete your cloud
-            account in Settings after signing in again.
+          <p className="welcome-small">
+            Offline planning is available after the app loads. Download a media
+            pack for offline scenes and sound. Browser storage can be cleared;
+            keep a backup of important work.
           </p>
           <div>
             <a href="/media/audio/CREDITS.md">Audio credits ↗</a>
             <a href="/media/CREDITS.md">Artwork credits ↗</a>
           </div>
-          <p className="welcome-small">
-            The selected offline pack supports offline media. Your browser may
-            clear device storage; keep a workspace backup. A configured Firebase
-            account enables cloud sync.
-          </p>
-        </section>
-        <section id="feedback" className="welcome-privacy">
-          <FeedbackForm />
         </section>
         <section className="welcome-end">
-          <span>ONE SMALL NEXT STEP.</span>
-          <h2>Your day, with a little more room.</h2>
+          <span className="welcome-eyebrow">YOUR NEXT SMALL STEP</span>
+          <h2>
+            A little less rush.
+            <br />A lot more room.
+          </h2>
           <a href="/app">
             Open FlowTask <ArrowRight size={18} />
           </a>
         </section>
+        <details id="feedback" className="welcome-feedback">
+          <summary>Help shape the beta</summary>
+          <FeedbackForm />
+        </details>
       </main>
       <footer>
         <a href="/" aria-label="FlowTask home">
-          <BrandLogo size={28} showWordmark />
+          <BrandLogo size={27} showWordmark />
         </a>
-        <a href="#feedback">Beta feedback ↗</a>
-        <a href="/app">Back to your day ↗</a>
+        <span>Plan your day. Enter your flow.</span>
+        <a href="#feedback">Feedback ↗</a>
+        <span className="welcome-build" title={BUILD_ID}>
+          Build {BUILD_LABEL}
+        </span>
       </footer>
+      <LandingUpdateNotice />
     </div>
   );
 }

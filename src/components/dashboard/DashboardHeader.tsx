@@ -18,6 +18,7 @@ interface DashboardHeaderProps {
   hasDraft: boolean; onResumeDraft: () => void; onDiscardDraft: () => void;
   onExport?: () => void; onImport?: () => void;
   onCoverChange?: (id: string) => void;
+  guided?: boolean;
 }
 export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
   const { activeDashboard, dashboards, isEditing } = props;
@@ -37,7 +38,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
         <div className="desk-title-line"><h1>Today<span className="desk-title-dot">.</span></h1><button className="desk-switcher" onClick={() => setOpen(true)} aria-label="Switch dashboard" aria-haspopup="dialog" disabled={isEditing}><Compass size={15}/><span>{activeDashboard.name}</span><ChevronDown size={14}/></button></div>
         <p className="desk-page-description">Your priorities, with room to breathe.</p>
       </div>
-      <div className="desk-header-actions"><button className="desk-button" onClick={props.onToggleEdit} disabled={isEditing}><SlidersHorizontal size={15}/><span>{isEditing ? 'Editing workspace' : 'Edit workspace'}</span></button><button className="desk-button primary" onClick={props.onPlanMyDay} disabled={isEditing}>Plan my day<ArrowRight size={16}/></button></div>
+      <div className="desk-header-actions"><button className="desk-button" onClick={props.onToggleEdit} disabled={isEditing}><SlidersHorizontal size={15}/><span>{isEditing ? 'Editing workspace' : 'Edit workspace'}</span></button>{!props.guided && <button className="desk-button primary" onClick={props.onPlanMyDay} disabled={isEditing}>Plan my day<ArrowRight size={16}/></button>}</div>
     </header>
     {props.hasDraft && !isEditing && <div className="desk-notice"><span>Your unfinished layout is ready whenever you are.</span><button onClick={props.onDiscardDraft}>Discard</button><button onClick={props.onResumeDraft}>Resume Editing</button></div>}
     <Dialog isOpen={open} onClose={() => { setOpen(false); setRenaming(null); }} title="Your desks" description="A different arrangement for every kind of day." size="lg">

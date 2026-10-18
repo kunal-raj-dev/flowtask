@@ -7,6 +7,10 @@ import { GridLayoutAdapter } from './GridLayoutAdapter';
 import { DashboardHeader } from './DashboardHeader';
 import { WidgetCatalogModal } from './WidgetCatalogModal';
 import { WidgetSettingsModal } from './WidgetSettingsModal';
+import { DailyDesk, isGuidedDailyDesk } from './DailyDesk';
+import { useTaskContext } from '../../context/TaskContext';
+import type { WorkspacePreferences } from '../../types/dashboard';
+import { normalizePresentation } from '../../utils/workspacePresentation';
 import { Monitor, Tablet, Smartphone, Plus, Undo2, Redo2, Save, X, LayoutGrid } from 'lucide-react';
 
 interface DashboardEditorProps {
@@ -25,6 +29,9 @@ function read(key: string) { try { return localStorage.getItem(key); } catch { r
 function write(key: string, value: string | null) { try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); return true; } catch { return false; } }
 
 export const DashboardEditor: React.FC<DashboardEditorProps> = ({ dashboards, workspaceId = 'local', activeDashboardId, onActiveDashboardChange, onUpdateDashboards, onSelectTask, onStartFocus, onStartSprint, onPlanMyDay }) => {
+  const { workspacePreferences = {}, setWorkspacePreference } = useTaskContext();
+  const workspace = (workspacePreferences.workspace || {}) as WorkspacePreferences;
+  const presentation = normalizePresentation(workspace.presentation);
   const saved = dashboards.length ? dashboards : STARTER_DASHBOARDS;
   const [selectedDashboardId, setSelectedDashboardId] = useState<string | null>(null);
   const currentId = (activeDashboardId && saved.some(d => d.id === activeDashboardId))
@@ -140,9 +147,24 @@ export const DashboardEditor: React.FC<DashboardEditorProps> = ({ dashboards, wo
     });
   };
   const configWidget = working.widgets.find(w => w.id === widgetId) || null;
+  const guided = isGuidedDailyDesk(dashboard);
+  const setPresentation = (patch: Record<string, unknown>) => setWorkspacePreference?.('workspace', { ...workspace, presentation: { version: 1, ...presentation, ...patch } });
+  const tryDaily = () => {
+    const starter = clone(STARTER_DASHBOARDS[0]);
+    if (saved.length >= 20) {
+      start();
+      setEditingWorking({...starter,id:dashboard.id,name:dashboard.name,createdAt:dashboard.createdAt,revision:dashboard.revision,order:dashboard.order});
+      setMessage('All 20 desks are in use. Preview this arrangement; Save replaces only this layout, Cancel keeps it. Your tasks stay intact.');
+      return;
+    }
+    const next = {...starter,id:crypto.randomUUID(),order:saved.length,isDefault:false,createdAt:Date.now(),updatedAt:Date.now()};
+    onUpdateDashboards([...saved,next],next.id); select(next.id);
+    setPresentation({dailyDeskId:next.id,offerDismissed:true});
+  };
 
-  return <div className="dashboard-workspace" data-layout-editing={isEditing || undefined}>
-    <DashboardHeader activeDashboard={isEditing ? working : dashboard} dashboards={saved} onSelectDashboard={select} onCreateDashboard={create}
+  return <div className="dashboard-workspace" data-layout-editing={isEditing || undefined} data-guided-desk={guided || undefined}>
+    {!guided && !isEditing && !presentation?.offerDismissed && <div className="desk-upgrade-offer"><span><strong>A clearer place to start.</strong> Try the new Daily Desk. Your existing layouts stay yours.</span><button className="desk-button" onClick={tryDaily}>Try the new Daily Desk</button><button className="desk-icon-button" aria-label="Dismiss Daily Desk offer" onClick={()=>setPresentation({offerDismissed:true})}><X size={16}/></button></div>}
+    <DashboardHeader guided={guided} activeDashboard={isEditing ? working : dashboard} dashboards={saved} onSelectDashboard={select} onCreateDashboard={create}
       onRenameDashboard={(id, name) => onUpdateDashboards(saved.map(d => d.id === id ? { ...d, name: name.trim().slice(0, 100), updatedAt: Date.now() } : d))}
       onDuplicateDashboard={duplicate} onDeleteDashboard={remove}
       onReorderDashboard={(id, direction) => { const next = [...saved].sort((a,b) => a.order - b.order), i = next.findIndex(d => d.id === id), j = i + direction; if (j < 0 || j >= next.length) return; [next[i], next[j]] = [next[j], next[i]]; onUpdateDashboards(next.map((d, order) => ({ ...d, order }))); }}
@@ -159,11 +181,12 @@ export const DashboardEditor: React.FC<DashboardEditorProps> = ({ dashboards, wo
     </div>}
     {isEditing && <p className="desk-editor-help">Make room for your way of working. Drag a handle, or use each widget’s move and size controls.</p>}
     {!(isEditing ? working : dashboard).widgets.length && <div className="desk-empty-canvas"><LayoutGrid size={32}/><h2>A little room to make it yours.</h2><p>Add your priorities, an agenda, a quiet scene, or a place to think.</p><button className="desk-button primary" onClick={() => { if (!isEditing) start(); setCatalogOpen(true); }}>Add your first widget</button></div>}
-    <GridLayoutAdapter dashboard={isEditing ? working : dashboard} isEditing={isEditing} previewBreakpoint={isEditing ? preview : 'lg'}
+    {!isEditing && guided ? <DailyDesk dashboard={dashboard} onSelectTask={onSelectTask} onStartFocus={onStartFocus} onStartSprint={onStartSprint} onPlanMyDay={onPlanMyDay}/> : <GridLayoutAdapter dashboard={isEditing ? working : dashboard} isEditing={isEditing} previewBreakpoint={isEditing ? preview : 'lg'}
       onLayoutChange={layouts => change(d => ({ ...d, layouts }))} onSelectTask={onSelectTask} onStartFocus={onStartFocus} onStartSprint={onStartSprint}
       onConfigureWidget={setWidgetId} onRemoveWidget={id => change(d => ({ ...d, widgets: d.widgets.filter(w => w.id !== id), layouts: { lg: d.layouts.lg.filter(i => i.i !== id), md: d.layouts.md?.filter(i => i.i !== id), sm: d.layouts.sm?.filter(i => i.i !== id) } }))}
       onMoveWidgetEarlier={id => change(d => reorderDashboardWidget(d, id, -1))} onMoveWidgetLater={id => change(d => reorderDashboardWidget(d, id, 1))}
       onResizeWidgetPreset={(id, w, h) => change(d => { const width = document.querySelector('[data-dashboard-grid]')?.clientWidth || 1200; const bp = preview === 'lg' ? width < 640 ? 'sm' : width < 960 ? 'md' : 'lg' : preview; return { ...d, layouts: { ...d.layouts, [bp]: normalizeDashboardLayout(d.widgets, (d.layouts[bp] || []).map(i => i.i === id ? { ...i, w, h } : i), bp) } }; })} />
+    }
     <WidgetCatalogModal isOpen={catalogOpen} onClose={() => setCatalogOpen(false)} onAddWidget={addWidget} currentWidgetCount={working.widgets.length} existingWidgetTypes={working.widgets.map(w => w.type)}/>
     <WidgetSettingsModal isOpen={!!configWidget} widget={configWidget} onClose={() => setWidgetId(null)} onSave={(id, title, config) => change(d => ({ ...d, widgets: d.widgets.map(w => w.id === id ? { ...w, title, config } : w) }))}/>
   </div>;

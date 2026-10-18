@@ -148,6 +148,7 @@ test("a complete day links capture, project, schedule, focus, review and a resto
   await studio
     .getByRole("button", { name: "Back to planner", exact: true })
     .click();
+  await page.locator('.sidebar-tools > summary').click();
   await page.getByRole("button", { name: "Review", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Review & Insights", exact: true }),
@@ -333,6 +334,7 @@ test("an uncached offline section keeps navigation and tasks available", async (
   await page.reload();
   await page.getByRole("heading", { name: "Today.", exact: true }).waitFor();
   await context.setOffline(true);
+  await page.locator('.sidebar-tools > summary').click();
   await page.getByRole("button", { name: "Study Hub", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Back to Today", exact: true }),

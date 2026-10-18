@@ -126,7 +126,7 @@ test('changing appearance preserves an active task-linked Studio session and med
   await page.goto('/app'); await page.locator('main#main-content').waitFor();
   await page.getByRole('button',{name:'Focus',exact:true}).click();
   const studio = page.getByRole('dialog',{name:'Focus Studio',exact:true});
-  await studio.getByRole('button',{name:'Scenes',exact:true}).click();
+  await studio.getByRole('button',{name:'Room',exact:true}).click();
   await studio.getByRole('button',{name:'Use Misty Pines background',exact:true}).click();
   await studio.getByRole('button',{name:'Close customization panel',exact:true}).click();
   const scene = await studio.locator('.studio-backdrop img').getAttribute('src');

@@ -1,4 +1,5 @@
 import { normalizeAppearance } from './appearance';
+import { normalizePresentation } from './workspacePresentation';
 import type { FocusLog } from "../types/task";
 import type { WorkspaceRecord } from "../types/workspace";
 import type { WorkspaceDashboard } from "../types/dashboard";
@@ -116,6 +117,11 @@ export function validateBackupExtras(raw: unknown): BackupExtras | undefined {
         throw new Error(`Invalid Studio ${field}.`);
   }
   if (preferences.appearance) preferences.appearance = normalizeAppearance(preferences.appearance);
+  if (object(preferences.workspace)) {
+    const { presentation, ...rest } = preferences.workspace;
+    const safe = normalizePresentation(presentation);
+    preferences.workspace = { ...rest, ...(safe ? { presentation: safe } : {}) };
+  }
   if (preferences.focusLogs !== undefined) {
     if (
       !Array.isArray(preferences.focusLogs) ||

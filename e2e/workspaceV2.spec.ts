@@ -87,7 +87,7 @@ test('dashboard selection survives reload and deletion has an undo',async({page}
 });
 
 test('quick notes flush on immediate navigation and stay shared with the notes panel',async({page})=>{
-  await seed(page); const note=page.getByRole('textbox',{name:'Workspace scratchpad',exact:true});
+  await seed(page); await page.locator('.daily-context-detail').filter({hasText:'Quick notes'}).locator('summary').click(); const note=page.getByRole('textbox',{name:'Workspace scratchpad',exact:true});
   await note.fill('Keep the resize handle accessible.\nReturn to this after lunch.');
   await page.getByRole('button',{name:'Inbox',exact:true}).click();
   await expect.poll(async()=> (await workspace(page)).preferences.scratchpad).toBe('Keep the resize handle accessible.\nReturn to this after lunch.');

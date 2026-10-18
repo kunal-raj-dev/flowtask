@@ -9,6 +9,7 @@ import type {
 import type { FocusLog } from "../types/task";
 import type { FocusRecipe } from "../types/studio";
 import { normalizeDashboard } from '../utils/dashboardModel';
+import { normalizePresentation } from '../utils/workspacePresentation';
 
 export const SYNC_COLLECTIONS: SyncCollection[] = [
   "tasks",
@@ -31,8 +32,9 @@ export const SYNC_PREFERENCE_KEYS = [
 export function safePreference(key: string, value: unknown): unknown {
   if (key === 'appearance') return normalizeAppearance(value);
   if (key === 'workspace' && value && typeof value === 'object') {
-    const { pinnedDestinations, viewDisplaySettings, defaultDashboardId, showCovers } = value as Record<string, unknown>;
-    return { ...(pinnedDestinations ? { pinnedDestinations } : {}), ...(viewDisplaySettings ? { viewDisplaySettings } : {}), ...(defaultDashboardId ? { defaultDashboardId } : {}), ...(typeof showCovers === 'boolean' ? { showCovers } : {}) };
+    const { pinnedDestinations, viewDisplaySettings, defaultDashboardId, showCovers, presentation } = value as Record<string, unknown>;
+    const safePresentation = normalizePresentation(presentation);
+    return { ...(pinnedDestinations ? { pinnedDestinations } : {}), ...(viewDisplaySettings ? { viewDisplaySettings } : {}), ...(defaultDashboardId ? { defaultDashboardId } : {}), ...(typeof showCovers === 'boolean' ? { showCovers } : {}), ...(safePresentation ? { presentation: safePresentation } : {}) };
   }
   if (key !== "studio" || !value || typeof value !== "object") return value;
   const {

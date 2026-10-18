@@ -2,6 +2,7 @@ import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './styles/appearance.css'
+import './styles/redesign.css'
 import { isLandingLocation } from './utils/entryRoute';
 import { FeatureBoundary } from './components/ui/FeatureBoundary';
 const App = lazy(() => import('./App.tsx'));

@@ -117,6 +117,7 @@ export interface ViewDisplaySettings {
 }
 
 export interface WorkspacePreferences {
+  presentation?: WorkspacePresentation;
   defaultDashboardId?: string;
   activeDashboardId?: string;
   pinnedDestinations?: string[];
@@ -125,6 +126,12 @@ export interface WorkspacePreferences {
   density?: 'comfortable' | 'compact';
   showCovers?: boolean;
   [key: string]: unknown;
+}
+
+export interface WorkspacePresentation {
+  version: 1;
+  offerDismissed?: boolean;
+  dailyDeskId?: string;
 }
 
 export interface DayPlanSummary {
