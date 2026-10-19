@@ -1,3 +1,4 @@
+import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/settings';
 import { commandService } from "./commandService";
 import { WorkspaceStore } from "./workspaceStore";
 import { useFocusStore } from "../store/useFocusStore";
@@ -249,6 +250,7 @@ export const createTaskTool: WebMcpToolDefinition<
       currentTasks,
       params.title.trim(),
       overrides,
+      { defaultPriority: (currentRecord.preferences.settings as UserWorkflowSettings | undefined)?.defaultTaskPriority || DEFAULT_WORKFLOW_SETTINGS.defaultTaskPriority, enableParsing: (currentRecord.preferences.settings as UserWorkflowSettings | undefined)?.enableSmartSyntaxParsing },
     );
 
     if (currentRecord.projects && currentRecord.projects.length > 0) {

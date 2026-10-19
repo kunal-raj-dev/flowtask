@@ -1,3 +1,4 @@
+import { DEFAULT_TIMER as importTimer } from '../../types/studio';
 import { resolveStartView } from '../../utils/entryRoute';
 import { useTaskContext } from '../../context/TaskContext';
 import type { WorkspacePreferences } from '../../types/dashboard';
@@ -50,15 +51,16 @@ export function WorkspaceSettings({ onClose, onSaveToast }: WorkspaceSettingsPro
         <div className="flex items-center gap-2.5 text-amber-600 dark:text-amber-400">
           <Compass size={18} />
           <h3 className="text-sm font-bold text-[var(--text-primary)]">
-            Workspace & Navigation Environment
+            Your workspace
           </h3>
         </div>
         <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-          Configure how FlowTask launches, organizes your navigation rail, and renders project canvases.
+          Choose where to begin and keep your favorite places close.
           Dashboard layouts and pinned destinations sync with your account across devices.
         </p>
       </div>
 
+      <section className="v2-settings-section"><h3>A starting point for your work</h3><p>Optional presets change your work budget and focus rhythm. Your tasks and layouts stay as they are.</p><div className="first-task-actions">{(['student', 'developer'] as const).map(audience => <button className="desk-button" key={audience} onClick={() => { ctx.setWorkspacePreference('profile', { ...(ctx.workspacePreferences.profile as object || {}), audience }); ctx.updateSettings({ targetWorkCapacityHours: audience === 'student' ? 4 : 6 }); const studio = ctx.workspacePreferences.studio as import('../../types/studio').StudioPreferences | undefined; ctx.setWorkspacePreference('studio', { ...studio, timer: { ...importTimer, ...(studio?.timer || {}), focusMinutes: audience === 'student' ? 25 : 50, shortBreakMinutes: audience === 'student' ? 5 : 10 } }); onSaveToast?.(); }}>{audience === 'student' ? 'Student · 25 / 5' : 'Developer · 50 / 10'}</button>)}</div></section>
       {/* Default Landing View */}
       <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
         <div className="flex items-center justify-between">

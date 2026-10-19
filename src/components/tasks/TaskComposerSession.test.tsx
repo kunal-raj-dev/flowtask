@@ -45,7 +45,7 @@ describe('TaskComposer Session Duration Generator', () => {
     render(<TaskComposer />);
 
     // Expand properties
-    const setPropsBtn = screen.getByRole('button', { name: /set properties/i });
+    const setPropsBtn = screen.getByRole('button', { name: /more details/i });
     fireEvent.click(setPropsBtn);
 
     // Find + Session chip
@@ -71,7 +71,7 @@ describe('TaskComposer Session Duration Generator', () => {
     fireEvent.change(input, { target: { value: 'Complete Graph Algorithms' } });
 
     // Expand properties & enable session
-    const setPropsBtn = screen.getByRole('button', { name: /set properties/i });
+    const setPropsBtn = screen.getByRole('button', { name: /more details/i });
     fireEvent.click(setPropsBtn);
     const sessionChip = screen.getByRole('button', { name: /\+ Session/i });
     fireEvent.click(sessionChip);
@@ -101,7 +101,7 @@ describe('TaskComposer Session Duration Generator', () => {
     render(<TaskComposer />);
 
     // Expand properties & enable session
-    fireEvent.click(screen.getByRole('button', { name: /set properties/i }));
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
     fireEvent.click(screen.getByRole('button', { name: /\+ Session/i }));
 
     // Click Afternoon preset

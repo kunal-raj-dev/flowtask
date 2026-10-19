@@ -1,3 +1,4 @@
+import { useMotionPreference } from '../../hooks/useMotionPreference';
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -20,6 +21,7 @@ export const FocusTimerRing: React.FC<FocusTimerRingProps> = ({
   children,
   className = '',
 }) => {
+  const reduced = useMotionPreference();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clampedPercent = Math.max(0, Math.min(100, progressPercent));
@@ -59,7 +61,7 @@ export const FocusTimerRing: React.FC<FocusTimerRingProps> = ({
           strokeDasharray={circumference}
           initial={false}
           animate={{ strokeDashoffset }}
-          transition={{
+          transition={reduced ? { duration: 0 } : {
             type: 'spring',
             stiffness: 120,
             damping: 20,

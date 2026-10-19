@@ -18,7 +18,7 @@ import {
   ChevronRight,
   ChevronDown,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 
 export const TemplatePickerModal: React.FC = () => {
   const {

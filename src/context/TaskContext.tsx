@@ -11,7 +11,7 @@ import { formatLocalDate } from '../utils/nlpParser';
 import { BUILT_IN_SMART_VIEWS } from '../utils/smartViewUtils';
 import { audioEngine, type SoundProfile } from '../utils/audioEngine';
 import { useAuth } from './AuthContext';
-import { fetchICSFeed } from '../services/calendarService';
+import { fetchICSFeed, parseICSFeed } from '../services/calendarService';
 import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser';
 import { commandService, type CommandResult } from '../services/commandService';
 import { WorkspaceStore } from '../services/workspaceStore';
@@ -150,6 +150,8 @@ interface TaskContextType {
 
   // Calendar ICS Overlay
   calendarEvents: CalendarEvent[];
+  importCalendarFile: (file: File) => Promise<number>;
+  removeImportedCalendar: () => void;
   calendarIcsUrl: string;
   setCalendarIcsUrl: (url: string) => void;
   refreshCalendarEvents: (date?: string) => Promise<void>;
@@ -342,7 +344,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const undoLastAction = () => { try { store.undo(); } catch (error) { showToast(String((error as Error).message)); } };
   const redoLastAction = () => { try { store.redo(); showToast('Action redone'); } catch (error) { showToast(String((error as Error).message)); } };
   const addTask = (input: string, overrides?: Partial<Task>): Task => {
-    const result = commandService.createTask(current().tasks, input, overrides, { defaultPlannedDate: activeView === 'today' ? todayStr : undefined, defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox' });
+    const result = commandService.createTask(current().tasks, input, overrides, { defaultPriority: settings.defaultTaskPriority, enableParsing: settings.enableSmartSyntaxParsing, defaultPlannedDate: activeView === 'today' ? todayStr : undefined, defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox' });
     if (!current().projects.some(p => p.id === result.createdTask.projectId)) result.createdTask.projectId = 'inbox';
     store.run(result.description, r => ({ ...r, tasks: result.updatedTasks }));
     return result.createdTask;
@@ -369,7 +371,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     return () => window.removeEventListener('message', handleExternalCaptureMessage);
   }, []);
   const addMultipleTasks = (lines: string[], overrides?: Partial<Task>) => {
-    store.run('Add multiple tasks', r => ({ ...r, tasks: lines.map(l => l.trim()).filter(Boolean).reduce((list, line) => commandService.createTask(list, line, { projectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox', ...overrides }, { defaultPlannedDate: activeView === 'today' ? todayStr : undefined }).updatedTasks, r.tasks) }));
+    store.run('Add multiple tasks', r => ({ ...r, tasks: lines.map(l => l.trim()).filter(Boolean).reduce((list, line) => commandService.createTask(list, line, overrides, { defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox', defaultPriority: settings.defaultTaskPriority, enableParsing: settings.enableSmartSyntaxParsing, defaultPlannedDate: activeView === 'today' ? todayStr : undefined }).updatedTasks, r.tasks) }));
   };
   const updateTask = (id: string, updates: Partial<Task>) => { execute(list => commandService.updateTask(list, id, updates)); };
   const deleteTask = (id: string) => { execute(list => commandService.deleteTask(list, id)); showToast('Task moved to Trash', 'Undo', undoLastAction); };
@@ -495,7 +497,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     subtaskTitle: string | null = null,
     pacingSec: number = 0
   ) {
-    if (current().preferences.focusSession) stopFocusSession();
+    if (current().preferences.focusSession) { showToast('Return to your current focus session, or finish it before starting another.'); return; }
     const taskObj = taskId ? current().tasks.find(t => t.id === taskId) : null;
     const session: FocusSession = {
       id: crypto.randomUUID(),
@@ -618,12 +620,37 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     setWorkspacePreference('interruptionStash', { taskId: id, taskTitle: override?.title || session?.taskTitle || 'Focus', elapsedSeconds: elapsed ?? useFocusStore.getState().focusElapsedSeconds, stashedAt: Date.now(), projectId: override?.projectId }); stopFocusSession();
   };
   const clearInterruptionStash = () => setWorkspacePreference('interruptionStash', null);
-  const restoreStashedFocus = () => { const stash = current().preferences.interruptionStash as InterruptionStash | null; if (stash) { startFocusSession('stopwatch', stash.taskId, stash.taskTitle); clearInterruptionStash(); } };
+  const restoreStashedFocus = () => {
+    const stash = current().preferences.interruptionStash as InterruptionStash | null;
+    if (!stash) return;
+    if (current().preferences.focusSession) { showToast('Finish the current session before restoring your saved focus. Your saved context is still here.'); return; }
+    startFocusSession('stopwatch', stash.taskId, stash.taskTitle);
+    clearInterruptionStash();
+  };
   const setCalendarIcsUrl = (url: string) => setWorkspacePreference('calendarUrl', url);
+  const calendarFile = preferences._calendarFile as { name: string; content: string } | undefined;
+  const calendarRequest = useRef(0);
+  useEffect(() => () => { calendarRequest.current++; }, [workspaceId]);
+  const importCalendarFile = async (file: File) => {
+    if (file.size > 2 * 1024 * 1024) throw new Error('Choose a calendar smaller than 2 MB.');
+    const content = await file.text();
+    if (!content.includes('BEGIN:VCALENDAR') || !content.includes('END:VCALENDAR')) throw new Error('Choose a valid .ics calendar file.');
+    const events = parseICSFeed(content, todayStr);
+    setWorkspacePreference('_calendarFile', { name: file.name, content });
+    return events.length;
+  };
+  const removeImportedCalendar = () => setWorkspacePreference('_calendarFile', undefined);
   const refreshCalendarEvents = useCallback(async (date = todayStr) => {
-    if (!calendarIcsUrl.trim()) { setCalendarEvents([]); return; }
-    try { setCalendarEvents(await fetchICSFeed(calendarIcsUrl, date)); } catch (error) { showToast(`Calendar could not refresh: ${(error as Error).message}`); }
-  }, [calendarIcsUrl, todayStr, showToast]);
+    const request = ++calendarRequest.current;
+    const imported = calendarFile ? parseICSFeed(calendarFile.content, date).map(event => ({ ...event, id: `file:${event.id}` })) : [];
+    if (!calendarIcsUrl.trim()) { setCalendarEvents(imported); return; }
+    try {
+      const feed = await fetchICSFeed(calendarIcsUrl, date);
+      if (request === calendarRequest.current) setCalendarEvents([...imported, ...feed.map(event => ({ ...event, id: `feed:${event.id}` }))]);
+    } catch (error) {
+      if (request === calendarRequest.current) { setCalendarEvents(imported); showToast(`Calendar could not refresh: ${(error as Error).message}`); }
+    }
+  }, [calendarIcsUrl, calendarFile, todayStr, showToast]);
   useEffect(() => { void refreshCalendarEvents(); }, [refreshCalendarEvents]);
   const addProject = (name: string, color: string, icon?: string) => { if (!name.trim()) return; store.run('Create project', r => ({ ...r, projects: [...r.projects, { id: crypto.randomUUID(), name: name.trim(), color, icon, createdAt: Date.now() }] })); };
   const updateProject = (id: string, updates: Partial<Project>) => store.run('Update project', r => ({ ...r, projects: r.projects.map(p => p.id === id ? { ...p, ...updates, id } : p) }));
@@ -673,7 +700,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   };
 
   const contextValue = useMemo<TaskContextType>(() => ({
-    workspaceId, workspacePreferences: preferences, setWorkspacePreference, downloadWorkspaceBackup, resolveSyncConflict, importLocalWorkspace,
+    workspaceId, workspacePreferences: preferences, setWorkspacePreference, downloadWorkspaceBackup, resolveSyncConflict, importLocalWorkspace, importCalendarFile, removeImportedCalendar,
     dashboards,
     updateDashboards,
     tasks,

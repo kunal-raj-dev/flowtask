@@ -50,7 +50,7 @@ export function useVirtualList<T>({
     while (current && current !== document.body && current !== document.documentElement) {
       const style = window.getComputedStyle(current);
       const overflowY = style.overflowY || style.overflow;
-      if (overflowY === 'auto' || overflowY === 'scroll') {
+      if ((overflowY === 'auto' || overflowY === 'scroll') && current.clientHeight <= window.innerHeight && current.scrollHeight > current.clientHeight) {
         return current;
       }
       current = current.parentElement;
@@ -92,7 +92,7 @@ export function useVirtualList<T>({
     } else {
       const parentEl = scrollParent as HTMLElement;
       scrollTop = parentEl.scrollTop;
-      viewportHeight = parentEl.clientHeight || viewportHeight;
+      viewportHeight = Math.min(parentEl.clientHeight || viewportHeight, viewportHeight);
       if (container) {
         const parentRect = parentEl.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
@@ -132,11 +132,14 @@ export function useVirtualList<T>({
 
     scrollParent.addEventListener('scroll', handleScrollOrResize, { passive: true });
     window.addEventListener('resize', handleScrollOrResize, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(handleScrollOrResize);
+    if (container) observer?.observe(container);
 
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       scrollParent.removeEventListener('scroll', handleScrollOrResize);
       window.removeEventListener('resize', handleScrollOrResize);
+      observer?.disconnect();
     };
   }, [isVirtual, calculateRange, getScrollParent, items.length]);
 

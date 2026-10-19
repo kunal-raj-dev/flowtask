@@ -276,7 +276,7 @@ describe('SettingsDrawer Component', () => {
     expect(mockClose).toHaveBeenCalledTimes(1);
 
     act(() => {
-      fireEvent.keyDown(window, { key: 'Escape' });
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     });
     expect(mockClose).toHaveBeenCalledTimes(2);
   });

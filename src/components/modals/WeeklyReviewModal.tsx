@@ -3,7 +3,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import { formatLocalDate } from '../../utils/nlpParser';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 import {
   Compass,
   CheckCircle2,

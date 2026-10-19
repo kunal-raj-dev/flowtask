@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import type { Task } from '../../types/task';
 import { useVirtualList } from '../../hooks/useVirtualList';
 
@@ -15,6 +15,7 @@ export const VirtualTaskList: React.FC<VirtualTaskListProps> = ({
   estimatedItemHeight = 72,
   className = 'space-y-2',
 }) => {
+  const pendingReveal = useRef<string | null>(null);
   const {
     containerRef,
     virtualItems,
@@ -33,11 +34,21 @@ export const VirtualTaskList: React.FC<VirtualTaskListProps> = ({
     const reveal = (event: Event) => {
       const id = (event as CustomEvent<string>).detail;
       const index = tasks.findIndex(task => task.id === id);
-      if (index >= 0) scrollToIndex(index);
+      if (index >= 0) { pendingReveal.current = id; scrollToIndex(index); }
     };
     window.addEventListener('flowtask:reveal-task', reveal);
     return () => window.removeEventListener('flowtask:reveal-task', reveal);
   }, [tasks, isVirtual, scrollToIndex]);
+
+  // A newly revealed row must be positioned after its DOM has mounted.
+  useLayoutEffect(() => {
+    if (!pendingReveal.current) return;
+    const row = [...(containerRef.current?.querySelectorAll<HTMLElement>('[data-task-id]') || [])].find(element => element.dataset.taskId === pendingReveal.current);
+    if (row) {
+      pendingReveal.current = null;
+      row.scrollIntoView?.({ block: 'nearest', behavior: 'auto' });
+    }
+  }, [virtualItems, containerRef]);
 
   if (!isVirtual) {
     return (

@@ -312,12 +312,12 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           <details className="desk-inspector-details"><summary>Tags and context</summary><TaskDrawerTags task={task} /></details>
 
           {/* Study Session Metadata Section */}
-          <TaskDrawerStudySection
+          <details className="desk-inspector-details" open={task.sessionMetadata?.isSession || undefined}><summary>Study tools</summary><TaskDrawerStudySection
             task={task}
             onClose={onClose}
             onStartFocus={onStartFocus}
             onStartSprint={onStartSprint}
-          />
+          /></details>
 
           {/* Activity & Audit Trail Section */}
           <details className="desk-inspector-details"><summary>Activity and history</summary><TaskDrawerAuditSection task={task} /></details>

@@ -96,7 +96,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
         </select>
       </div>
 
-      <div className="space-y-1.5 min-w-0">
+      {!!projects.find(project => project.id === task.projectId)?.milestones?.length && (<div className="space-y-1.5 min-w-0">
         <label htmlFor="task-milestone-select" className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
           Project milestone
         </label>
@@ -112,7 +112,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           {(projects.find(project => project.id === task.projectId)?.milestones || []).map(milestone => <option key={milestone.id} value={milestone.id}>{milestone.title}</option>)}
         </select>
         {!(projects.find(project => project.id === task.projectId)?.milestones?.length) && <p className="text-[10px] text-[var(--text-muted)]">Add a milestone to this project to link the task.</p>}
-      </div>
+      </div>)}
 
       {/* Priority Select */}
       <div className="space-y-1.5 min-w-0">
@@ -245,6 +245,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
         </div>
       </div>
 
+      <details className="desk-inspector-details sm:col-span-2"><summary>Time blocking and study session</summary>
       {/* Session Duration Generator & Timeline Schedule */}
       <div className="sm:col-span-2 pt-2.5 border-t border-[var(--border-hairline)] space-y-2">
         <div className="flex items-center justify-between">
@@ -398,6 +399,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           </div>
         )}
       </div>
+      </details>
     </div>
   );
 };

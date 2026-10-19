@@ -42,7 +42,8 @@ test('populated desktop desk supports capture, shared task actions, agenda and a
 
 test('layout editing isolates task actions, supports accessible moves, undo and save after mobile preview',async({page})=>{
   await page.setViewportSize({width:1440,height:1000}); await seed(page);
-  await page.getByRole('button',{name:'Edit workspace',exact:true}).click();
+  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await expect(page.locator('.widget-body').first()).toHaveAttribute('inert','');
   const before=(await workspace(page)).dashboards[0];
   await page.getByRole('button',{name:'Move Top 3 Priorities later',exact:true}).click();
@@ -62,7 +63,8 @@ test('layout editing isolates task actions, supports accessible moves, undo and 
 
 test('unfinished layout recovers after navigation without changing the saved dashboard',async({page})=>{
   await seed(page); const count=(await workspace(page)).dashboards[0].widgets.length;
-  await page.getByRole('button',{name:'Edit workspace',exact:true}).click();
+  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await page.getByRole('button',{name:'Remove Continue Study',exact:true}).click();
   await page.getByRole('button',{name:'Inbox',exact:true}).click();
   await page.getByRole('heading',{name:'Inbox',exact:true}).waitFor();
@@ -99,7 +101,7 @@ test('task-linked focus still runs after the workspace refresh',async({page})=>{
   await seed(page); await page.getByRole('region',{name:'Top 3 Priorities',exact:true}).getByRole('button',{name:'Focus on Build the dashboard editing flow',exact:true}).click();
   const studio=page.getByRole('dialog',{name:'Focus Studio',exact:true});
   await expect(studio.getByRole('heading',{name:'Build the dashboard editing flow',exact:true})).toBeVisible();
-  await studio.getByRole('button',{name:'Start focus',exact:true}).click();
+  await expect(studio.getByRole('button',{name:'Pause',exact:true})).toBeVisible();
   await studio.getByRole('button',{name:'Back to planner',exact:true}).click();
   await expect(page.getByRole('button',{name:'Pause Focus Session',exact:true})).toBeVisible();
 });
@@ -108,7 +110,8 @@ for(const width of [360,390,768]) test(`workspace at ${width}px remains readable
   await page.setViewportSize({width,height:900}); await seed(page);
   await expect(page.getByRole('heading',{name:'Today.',exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
-  await page.getByRole('button',{name:'Edit workspace',exact:true}).click();
+  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await page.getByRole('button',{name:'Move Top 3 Priorities later',exact:true}).click();
   await page.getByRole('button',{name:'Undo layout change',exact:true}).click();
   await page.getByRole('button',{name:'Cancel',exact:true}).click();
@@ -138,8 +141,13 @@ test('workspace settings pin a project and view display options survive navigati
 
 test('dashboard cover, validated export and import use portable built-in assets',async({page})=>{
   await seed(page); await page.getByRole('button',{name:'Switch dashboard',exact:true}).click();
-  const cover = page.getByRole('combobox',{name:'Cover for Daily Desk',exact:true});
-  await expect(cover.locator('option')).not.toHaveCount(1); await cover.selectOption('misty-pines');
+  await page.getByRole('button', { name: 'Choose an image', exact: true }).click();
+  const picker = page.getByRole('dialog', { name: 'Choose a workspace image' });
+  await picker.getByRole('tab', { name: 'All', exact: true }).click();
+  await picker.getByRole('textbox', { name: 'Search workspace images' }).fill('Misty Pines');
+  await picker.getByRole('button', { name: 'Select Misty Pines', exact: true }).click();
+  await picker.getByRole('button', { name: 'Use image', exact: true }).click();
+  await page.getByRole('button', { name: 'Switch dashboard', exact: true }).click();
   const downloadEvent=page.waitForEvent('download'); await page.getByRole('button',{name:'Export layout',exact:true}).click();
   const download=await downloadEvent; expect(download.suggestedFilename()).toMatch(/\.json$/);
   await page.getByRole('button',{name:'Close dialog',exact:true}).click();
@@ -159,8 +167,10 @@ test('large workspace keeps task rendering bounded and keyboard navigation reach
   await page.getByRole('heading',{name:'Today.',exact:true}).click();
   for(let i=0;i<45;i++) await page.keyboard.press('j');
   await expect(page.locator('[data-keyboard-focused="true"]')).toBeVisible();
-  await page.getByRole('button',{name:'Edit workspace',exact:true}).click();
-  for(const name of ['Projects','Recent Activity','Weekly Workload','Resources','Quiet Scene & Clock']) {
+  await expect(page.locator('[data-keyboard-focused="true"]')).toBeInViewport();
+  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
+  for(const name of ['Projects','Recent Activity','Weekly Workload','Resources','Quiet Scene & Clock','Focus Launchpad','Capacity & Progress']) {
     await page.getByRole('button',{name:'Add Widget',exact:true}).click();
     const card=page.getByRole('dialog',{name:'Add Widget to Workspace',exact:true}).locator('article').filter({has:page.getByRole('heading',{name,exact:true})});
     await card.getByRole('button',{name:'Add',exact:true}).click();

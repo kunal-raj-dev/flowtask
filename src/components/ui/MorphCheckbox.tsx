@@ -1,3 +1,4 @@
+import { useMotionPreference } from '../../hooks/useMotionPreference';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { SPRING_TACTILE } from '../../utils/springPhysics';
@@ -27,6 +28,7 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
   className = '',
   soundEnabled = true,
 }) => {
+  const reduced = useMotionPreference();
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (disabled || !onChange) return;
@@ -77,9 +79,9 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
       disabled={disabled}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      whileTap={{ scale: 0.86 }}
-      animate={{ scale: checked ? [1, 1.15, 1] : 1 }}
-      transition={SPRING_TACTILE}
+      whileTap={reduced ? undefined : { scale: 0.9 }}
+      animate={{ scale: !reduced && checked ? [1, 1.15, 1] : 1 }}
+      transition={reduced ? { duration: 0 } : SPRING_TACTILE}
       style={{
         width: `${size}px`,
         height: `${size}px`,
@@ -105,7 +107,7 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
             pathLength: checked ? 1 : 0,
             opacity: checked ? 1 : 0,
           }}
-          transition={{
+          transition={reduced ? { duration: 0 } : {
             type: 'spring',
             stiffness: 450,
             damping: 30,

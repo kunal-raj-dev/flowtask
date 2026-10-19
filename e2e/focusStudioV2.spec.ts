@@ -50,7 +50,7 @@ test('welcome page and every new theme can be reached',async({page})=>{
 test('break completion after sleep logs exactly once and never adds task work',async({page})=>{
   await seed(page);await open(page);const s=page.getByRole('dialog',{name:'Focus Studio',exact:true});
   await s.getByRole('button',{name:'Short break',exact:true}).click();await s.getByRole('button',{name:'Session',exact:true}).click();await s.getByRole('spinbutton',{name:'Short break minutes',exact:true}).fill('1');await s.getByRole('button',{name:'Close customization panel'}).click();
-  await page.clock.install();await s.getByRole('button',{name:'Start focus',exact:true}).click();await page.clock.fastForward(65000);
+  await page.clock.install();await s.getByRole('button',{name:'Start break',exact:true}).click();await page.clock.fastForward(65000);
   await expect(s.getByRole('heading',{name:'That was time well spent.'})).toBeVisible();await page.clock.fastForward(5000);
   await expect.poll(async()=>page.evaluate(async()=>{const db=await new Promise<IDBDatabase>(resolve=>{const r=indexedDB.open('flowtask_storage_v2');r.onsuccess=()=>resolve(r.result);});return new Promise(resolve=>{const r=db.transaction('workspaces').objectStore('workspaces').get('local');r.onsuccess=()=>{db.close();resolve(r.result?.preferences.focusLogs?.length || 0);};});})).toBe(1);
   const result=await page.evaluate(async()=>{const db=await new Promise<IDBDatabase>(resolve=>{const r=indexedDB.open('flowtask_storage_v2');r.onsuccess=()=>resolve(r.result);});return await new Promise<any>(resolve=>{const r=db.transaction('workspaces').objectStore('workspaces').get('local');r.onsuccess=()=>resolve(r.result);});});

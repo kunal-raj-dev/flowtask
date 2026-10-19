@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { parseTaskInput } from '../../utils/nlpParser';
 import { audioEngine } from '../../utils/audioEngine';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 import {
   X,
   Copy,

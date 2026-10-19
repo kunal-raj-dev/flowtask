@@ -13,6 +13,8 @@ export interface AutoSlotOptions {
   bufferMinutes?: number;
   alignToQuarterHour?: boolean;
   maxCapacityMinutes?: number;
+  earliestStartMinutes?: number;
+  defaultTaskMinutes?: number;
 }
 
 export interface SlottedTaskAssignment {
@@ -53,7 +55,8 @@ export function computeAutoSlotSchedule(
   const alignToQuarter = options.alignToQuarterHour ?? true;
   const maxCapacity = options.maxCapacityMinutes ?? (endHour - startHour) * 60;
 
-  const dayStartMin = startHour * 60;
+  const earliest = Math.max(startHour * 60, options.earliestStartMinutes ?? 0);
+  const dayStartMin = alignToQuarter ? Math.ceil(earliest / 15) * 15 : earliest;
   const dayEndMin = endHour * 60;
 
   // 1. Build occupied intervals
@@ -123,7 +126,7 @@ export function computeAutoSlotSchedule(
 
   // 3. Greedily find earliest free gap for each task
   for (const task of sortedTasks) {
-    const duration = task.estimatedMinutes || 30;
+    const duration = task.estimatedMinutes || options.defaultTaskMinutes || 30;
 
     // Check if adding this task would exceed max capacity
     if (totalSlottedMinutes + duration > maxCapacity) {
@@ -190,9 +193,9 @@ export function computeAutoSlotSchedule(
     }
   }
 
-  let message = `Successfully auto-slotted ${slotted.length} task${slotted.length === 1 ? '' : 's'}.`;
+  let message = `${slotted.length} task${slotted.length === 1 ? '' : 's'} ready to schedule.`;
   if (unslotted.length > 0) {
-    message += ` ${unslotted.length} could not fit in today's calendar window.`;
+    message += ` ${unslotted.length} could not fit in the remaining time or work budget. They will stay unscheduled.`;
   }
 
   return {

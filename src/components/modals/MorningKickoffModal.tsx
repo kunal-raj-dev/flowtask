@@ -5,7 +5,7 @@ import { formatLocalDate } from '../../utils/nlpParser';
 import { analyzeRolloverBatch } from '../../utils/rolloverEngine';
 import { computeAutoSlotSchedule } from '../../utils/autoSlotAlgorithm';
 import { audioEngine } from '../../utils/audioEngine';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 import {
   Sunrise,
   ArrowRight,

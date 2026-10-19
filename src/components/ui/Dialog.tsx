@@ -1,6 +1,8 @@
-import React, { useEffect, useId, useRef, useSyncExternalStore } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useMotionPreference } from '../../hooks/useMotionPreference';
+import React, { useId, useRef, useSyncExternalStore } from 'react';
 import { X } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { SPRING_TACTILE } from '../../utils/springPhysics';
 
@@ -39,36 +41,12 @@ export const Dialog: React.FC<DialogProps> = ({
   className = '',
 }) => {
   const rootRef = useRef<HTMLDivElement>(null);
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useMotionPreference();
   const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
-  const closeRef = useRef(onClose);
-  useEffect(() => {
-    closeRef.current = onClose;
-  }, [onClose]);
   const titleId = useId();
   const descId = useId();
 
-  useEffect(() => {
-    if (!isOpen || !isClient) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const root = rootRef.current;
-    const focusables = () => [...(root?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]') || [])].filter(el => el.getClientRects().length > 0);
-    const overflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
-    (focusables()[0] || root)?.focus();
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const dialogs = [...document.querySelectorAll('[aria-modal="true"]')];
-      if (dialogs.at(-1) !== root) return;
-      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); closeRef.current(); }
-      if (e.key === 'Tab') {
-        const items = focusables(), first = items[0], last = items.at(-1);
-        if (!first) { e.preventDefault(); root?.focus(); }
-        else if (e.shiftKey && (document.activeElement === first || document.activeElement === root)) { e.preventDefault(); last?.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => { document.removeEventListener('keydown', handleKeyDown, true); document.body.style.overflow = overflow; if (previous?.isConnected) previous.focus(); };
-  }, [isOpen, isClient]);
+  useFocusTrap(rootRef, onClose, isOpen && isClient);
 
   const content = (
     <AnimatePresence>

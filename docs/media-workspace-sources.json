@@ -21,7 +21,8 @@
     "path": "public/media/workspace/v1/ws-morning-library.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-archival-reading-room",
@@ -45,7 +46,8 @@
     "path": "public/media/workspace/v1/ws-archival-reading-room.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-botanical-research",
@@ -70,7 +72,8 @@
     "path": "public/media/workspace/v1/ws-botanical-research.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-quiet-campus-dawn",
@@ -95,7 +98,8 @@
     "path": "public/media/workspace/v1/ws-quiet-campus-dawn.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-quiet-study-stack",
@@ -119,7 +123,8 @@
     "path": "public/media/workspace/v1/ws-quiet-study-stack.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-field-notes-greenhouse",
@@ -144,7 +149,8 @@
     "path": "public/media/workspace/v1/ws-field-notes-greenhouse.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-warm-circuit-bench",
@@ -169,7 +175,8 @@
     "path": "public/media/workspace/v1/ws-warm-circuit-bench.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-quiet-code-studio",
@@ -194,7 +201,8 @@
     "path": "public/media/workspace/v1/ws-quiet-code-studio.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-modular-hardware",
@@ -219,7 +227,8 @@
     "path": "public/media/workspace/v1/ws-modular-hardware.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-architecture-paper",
@@ -244,7 +253,8 @@
     "path": "public/media/workspace/v1/ws-architecture-paper.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-quiet-server-gallery",
@@ -269,7 +279,8 @@
     "path": "public/media/workspace/v1/ws-quiet-server-gallery.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-prototype-workbench",
@@ -294,7 +305,8 @@
     "path": "public/media/workspace/v1/ws-prototype-workbench.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-draft-by-window",
@@ -318,7 +330,8 @@
     "path": "public/media/workspace/v1/ws-draft-by-window.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-voice-notes-studio",
@@ -342,7 +355,8 @@
     "path": "public/media/workspace/v1/ws-voice-notes-studio.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-editorial-paper",
@@ -366,7 +380,8 @@
     "path": "public/media/workspace/v1/ws-editorial-paper.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-rainy-window-writing",
@@ -390,7 +405,8 @@
     "path": "public/media/workspace/v1/ws-rainy-window-writing.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-letterpress-corner",
@@ -414,7 +430,8 @@
     "path": "public/media/workspace/v1/ws-letterpress-corner.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-reading-and-editing",
@@ -438,7 +455,8 @@
     "path": "public/media/workspace/v1/ws-reading-and-editing.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-architectural-model",
@@ -463,7 +481,8 @@
     "path": "public/media/workspace/v1/ws-architectural-model.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-ceramic-studio",
@@ -488,7 +507,8 @@
     "path": "public/media/workspace/v1/ws-ceramic-studio.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-color-study-table",
@@ -513,7 +533,8 @@
     "path": "public/media/workspace/v1/ws-color-study-table.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-ink-paper-studio",
@@ -538,7 +559,8 @@
     "path": "public/media/workspace/v1/ws-ink-paper-studio.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-sculpture-studio",
@@ -563,7 +585,8 @@
     "path": "public/media/workspace/v1/ws-sculpture-studio.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-textile-workroom",
@@ -588,7 +611,8 @@
     "path": "public/media/workspace/v1/ws-textile-workroom.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-morning-priorities",
@@ -613,7 +637,8 @@
     "path": "public/media/workspace/v1/ws-morning-priorities.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-weekly-overview",
@@ -638,7 +663,8 @@
     "path": "public/media/workspace/v1/ws-weekly-overview.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-reflective-evening",
@@ -663,7 +689,8 @@
     "path": "public/media/workspace/v1/ws-reflective-evening.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-project-milestone-map",
@@ -688,7 +715,8 @@
     "path": "public/media/workspace/v1/ws-project-milestone-map.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-weekly-rhythm",
@@ -713,7 +741,8 @@
     "path": "public/media/workspace/v1/ws-weekly-rhythm.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-clear-priorities",
@@ -738,7 +767,8 @@
     "path": "public/media/workspace/v1/ws-clear-priorities.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-home-admin",
@@ -763,7 +793,8 @@
     "path": "public/media/workspace/v1/ws-home-admin.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-travel-preparation",
@@ -788,7 +819,8 @@
     "path": "public/media/workspace/v1/ws-travel-preparation.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-kitchen-routine",
@@ -813,7 +845,8 @@
     "path": "public/media/workspace/v1/ws-kitchen-routine.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-home-reset",
@@ -838,7 +871,8 @@
     "path": "public/media/workspace/v1/ws-home-reset.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-steady-finances",
@@ -863,7 +897,8 @@
     "path": "public/media/workspace/v1/ws-steady-finances.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
   },
   {
     "id": "ws-gentle-wellbeing",
@@ -888,6 +923,1626 @@
     "path": "public/media/workspace/v1/ws-gentle-wellbeing.webp",
     "creator": "FlowTask / OpenAI image generation",
     "license": "Original AI-generated artwork; FlowTask project use",
-    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery."
+    "provenance": "Original FlowTask artwork generated specifically for this project with OpenAI image generation; not sourced from stock or copied product imagery.",
+    "visualStyle": "flowtask-original"
+  },
+  {
+    "id": "ws-nature-utah-dunes",
+    "title": "Dunes at Dusk",
+    "sourceTitle": "File:Utah Dunes Landscape - West Desert District.jpg",
+    "category": "planning-reflection",
+    "visualStyle": "nature",
+    "contexts": [
+      "nature",
+      "desert",
+      "landscape"
+    ],
+    "moods": [
+      "open",
+      "quiet"
+    ],
+    "altText": "Soft dunes and distant mountains in the Utah desert at dusk.",
+    "focalPoint": {
+      "x": 50,
+      "y": 52
+    },
+    "creator": "Bureau of Land Management - Utah/Bob Wick",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Utah_Dunes_Landscape_-_West_Desert_District.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Utah_Dunes_Landscape_-_West_Desert_District.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Utah_Dunes_Landscape_-_West_Desert_District.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "08786cf02088576bf95df9c7b941c8a358c6843e1702d3fe37c19597328ad589",
+    "sourceSha1": "74ab899dd443dd19c0ffb31dd618be3debf05694",
+    "sourceWidth": 4000,
+    "sourceHeight": 2628,
+    "downloadedWidth": 4000,
+    "downloadedHeight": 2628,
+    "sourceBytes": 5356067,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "nature-utah-dunes.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-nature-utah-dunes.webp",
+    "thumbnail": "public/media/workspace/v1/ws-nature-utah-dunes-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-nature-utah-dunes-960.webp",
+    "packagedBytes": 635762
+  },
+  {
+    "id": "ws-nature-red-mountain-lake",
+    "title": "Red Mountain Lake",
+    "sourceTitle": "File:Pitamakan Lake with Red Mountain (48920896467).jpg",
+    "category": "study-research",
+    "visualStyle": "nature",
+    "contexts": [
+      "nature",
+      "mountain",
+      "lake",
+      "study"
+    ],
+    "moods": [
+      "expansive",
+      "fresh"
+    ],
+    "altText": "A high alpine lake below a red mountain ridge.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "GlacierNPS",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pitamakan_Lake_with_Red_Mountain_(48920896467).jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Pitamakan_Lake_with_Red_Mountain_%2848920896467%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Pitamakan_Lake_with_Red_Mountain_%2848920896467%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "944046f74416e46ff4090e0363c8763fa18e076e43d629074ff4520467b3df58",
+    "sourceSha1": "7997413b00421400b211725945cc4ad950d31d22",
+    "sourceWidth": 6240,
+    "sourceHeight": 4160,
+    "downloadedWidth": 6240,
+    "downloadedHeight": 4160,
+    "sourceBytes": 22121581,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "nature-red-mountain-lake.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-nature-red-mountain-lake.webp",
+    "thumbnail": "public/media/workspace/v1/ws-nature-red-mountain-lake-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-nature-red-mountain-lake-960.webp",
+    "packagedBytes": 1110578
+  },
+  {
+    "id": "ws-nature-tateyama-snow",
+    "title": "Tateyama Snow Route",
+    "sourceTitle": "File:Tateyama Kurobe Alpine Route - AlpineRoute6309.jpg",
+    "category": "study-research",
+    "visualStyle": "nature",
+    "contexts": [
+      "nature",
+      "snow",
+      "mountain",
+      "research"
+    ],
+    "moods": [
+      "still",
+      "cool"
+    ],
+    "altText": "Snow-covered slopes along the Tateyama Alpine Route.",
+    "focalPoint": {
+      "x": 50,
+      "y": 52
+    },
+    "creator": "lumoplank",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tateyama_Kurobe_Alpine_Route_-_AlpineRoute6309.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/2/28/Tateyama_Kurobe_Alpine_Route_-_AlpineRoute6309.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/2/28/Tateyama_Kurobe_Alpine_Route_-_AlpineRoute6309.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "bc9bc019b910b644f6e07c99121d2abe63c5daf4bbfe18e5c29b9f6fb4b60c0b",
+    "sourceSha1": "fdb902a5390d820cde7b751a11d6b74ba8ab579f",
+    "sourceWidth": 5184,
+    "sourceHeight": 3225,
+    "downloadedWidth": 5184,
+    "downloadedHeight": 3225,
+    "sourceBytes": 9713829,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "nature-tateyama-snow.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-nature-tateyama-snow.webp",
+    "thumbnail": "public/media/workspace/v1/ws-nature-tateyama-snow-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-nature-tateyama-snow-960.webp",
+    "packagedBytes": 199514
+  },
+  {
+    "id": "ws-nature-taynish-forest",
+    "title": "Taynish Rainforest",
+    "sourceTitle": "File:Taynish atlantic oakwood, temperate rainforest, argyll, scotland 2.jpg",
+    "category": "study-research",
+    "visualStyle": "nature",
+    "contexts": [
+      "nature",
+      "forest",
+      "biology",
+      "research"
+    ],
+    "moods": [
+      "lush",
+      "quiet"
+    ],
+    "altText": "Dense green oak woodland in a temperate rainforest.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Rowyn flowerdew",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Taynish_atlantic_oakwood,_temperate_rainforest,_argyll,_scotland_2.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Taynish_atlantic_oakwood%2C_temperate_rainforest%2C_argyll%2C_scotland_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Taynish_atlantic_oakwood%2C_temperate_rainforest%2C_argyll%2C_scotland_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "b579d6a20b80f5d3e05e2dc14c86242a4e2287080c873f2c2d30102ef116d56d",
+    "sourceSha1": "e18b93bf7fc04d6db46d8f871eaa94adfcf40552",
+    "sourceWidth": 4080,
+    "sourceHeight": 2296,
+    "downloadedWidth": 4080,
+    "downloadedHeight": 2296,
+    "sourceBytes": 1408391,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "nature-taynish-forest.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-nature-taynish-forest.webp",
+    "thumbnail": "public/media/workspace/v1/ws-nature-taynish-forest-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-nature-taynish-forest-960.webp",
+    "packagedBytes": 1160354
+  },
+  {
+    "id": "ws-nature-koh-chang",
+    "title": "Koh Chang Rainforest",
+    "sourceTitle": "File:Tropical rainforest 2, Koh Chang, Thailand.jpg",
+    "category": "study-research",
+    "visualStyle": "nature",
+    "contexts": [
+      "nature",
+      "tropical",
+      "forest",
+      "biology"
+    ],
+    "moods": [
+      "vivid",
+      "immersive"
+    ],
+    "altText": "Layered tropical rainforest on Koh Chang, Thailand.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Vyacheslav Argenberg",
+    "attribution": "\u00a9  Vyacheslav Argenberg",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tropical_rainforest_2,_Koh_Chang,_Thailand.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Tropical_rainforest_2%2C_Koh_Chang%2C_Thailand.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Tropical_rainforest_2%2C_Koh_Chang%2C_Thailand.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "9c1d096f53c2777ed744a3b387e4ca98c965db9ded39d58a5f9734afff16ad9c",
+    "sourceSha1": "f451275429ff26e50915074d881c34526d67be08",
+    "sourceWidth": 4032,
+    "sourceHeight": 2688,
+    "downloadedWidth": 4032,
+    "downloadedHeight": 2688,
+    "sourceBytes": 8713685,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "nature-koh-chang.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-nature-koh-chang.webp",
+    "thumbnail": "public/media/workspace/v1/ws-nature-koh-chang-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-nature-koh-chang-960.webp",
+    "packagedBytes": 1180244
+  },
+  {
+    "id": "ws-nature-havelock-mangrove",
+    "title": "Havelock Mangrove Coast",
+    "sourceTitle": "File:Havelock Island, Mangrove tree on the beach, Andaman Islands.jpg",
+    "category": "personal-life-admin",
+    "visualStyle": "nature",
+    "contexts": [
+      "nature",
+      "coast",
+      "travel",
+      "island"
+    ],
+    "moods": [
+      "calm",
+      "bright"
+    ],
+    "altText": "A mangrove tree beside a quiet beach on Havelock Island.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Vyacheslav Argenberg",
+    "attribution": "\u00a9  Vyacheslav Argenberg",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Havelock_Island,_Mangrove_tree_on_the_beach,_Andaman_Islands.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/51/Havelock_Island%2C_Mangrove_tree_on_the_beach%2C_Andaman_Islands.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/51/Havelock_Island%2C_Mangrove_tree_on_the_beach%2C_Andaman_Islands.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "7f9293cfef0388857cbacf12aae4a28ce2ac5421d49cf44817bb6628e71aa64f",
+    "sourceSha1": "3a686b8da0e68e6e5c7f2d0bce906b4c6296ae9b",
+    "sourceWidth": 4032,
+    "sourceHeight": 2688,
+    "downloadedWidth": 4032,
+    "downloadedHeight": 2688,
+    "sourceBytes": 6521975,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "nature-havelock-mangrove.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-nature-havelock-mangrove.webp",
+    "thumbnail": "public/media/workspace/v1/ws-nature-havelock-mangrove-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-nature-havelock-mangrove-960.webp",
+    "packagedBytes": 625804
+  },
+  {
+    "id": "ws-architecture-ashford-brutalist",
+    "title": "Ashford Brutalist",
+    "sourceTitle": "File:Brutalist architecture, Ashford, Kent.jpg",
+    "category": "code-build",
+    "visualStyle": "architecture",
+    "contexts": [
+      "architecture",
+      "concrete",
+      "design",
+      "engineering"
+    ],
+    "moods": [
+      "graphic",
+      "cool"
+    ],
+    "altText": "A sculptural concrete building in Ashford, Kent.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "JOHN K  THORNE",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Brutalist_architecture,_Ashford,_Kent.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Brutalist_architecture%2C_Ashford%2C_Kent.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Brutalist_architecture%2C_Ashford%2C_Kent.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "2917fe23ae11c65b1fa9b0f25fe9abdfe54470efedd34c2c3fd49ef8747ef746",
+    "sourceSha1": "b63ee73a895efcccabd90432b134b060a66f6fba",
+    "sourceWidth": 6000,
+    "sourceHeight": 4000,
+    "downloadedWidth": 6000,
+    "downloadedHeight": 4000,
+    "sourceBytes": 10624313,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "architecture-ashford-brutalist.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-architecture-ashford-brutalist.webp",
+    "thumbnail": "public/media/workspace/v1/ws-architecture-ashford-brutalist-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-architecture-ashford-brutalist-960.webp",
+    "packagedBytes": 1447876
+  },
+  {
+    "id": "ws-architecture-nemo-museum",
+    "title": "NEMO by the Water",
+    "sourceTitle": "File:2006.10 - Amsterdam photo of modern architecture - the NEMO museum with its ship-architecture form under a high Dutch sky in Amsterdam; Dutch city + geotag, Fons Heijnsbroek, The Netherlands (27366204860).jpg",
+    "category": "design-creative",
+    "visualStyle": "architecture",
+    "contexts": [
+      "architecture",
+      "museum",
+      "design",
+      "creative"
+    ],
+    "moods": [
+      "bold",
+      "aquatic"
+    ],
+    "altText": "The green, ship-shaped NEMO museum beside the Amsterdam waterfront.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Fons Heijnsbroek  from Amsterdam, Netherlands",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2006.10_-_Amsterdam_photo_of_modern_architecture_-_the_NEMO_museum_with_its_ship-architecture_form_under_a_high_Dutch_sky_in_Amsterdam;_Dutch_city_%2B_geotag,_Fons_Heijnsbroek,_The_Netherlands_(27366204860).jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/2/29/2006.10_-_Amsterdam_photo_of_modern_architecture_-_the_NEMO_museum_with_its_ship-architecture_form_under_a_high_Dutch_sky_in_Amsterdam%3B_Dutch_city_%2B_geotag%2C_Fons_Heijnsbroek%2C_The_Netherlands_%2827366204860%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/2/29/2006.10_-_Amsterdam_photo_of_modern_architecture_-_the_NEMO_museum_with_its_ship-architecture_form_under_a_high_Dutch_sky_in_Amsterdam%3B_Dutch_city_%2B_geotag%2C_Fons_Heijnsbroek%2C_The_Netherlands_%2827366204860%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "4e212bef90351a0dbc80c7d8cac0a252733bb7c5fe70c431b23b237b7db03485",
+    "sourceSha1": "524f1f024fb083c15dfc8868f3117581c6d26ab8",
+    "sourceWidth": 3307,
+    "sourceHeight": 2480,
+    "downloadedWidth": 3307,
+    "downloadedHeight": 2480,
+    "sourceBytes": 5318961,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "architecture-nemo-museum.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-architecture-nemo-museum.webp",
+    "thumbnail": "public/media/workspace/v1/ws-architecture-nemo-museum-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-architecture-nemo-museum-960.webp",
+    "packagedBytes": 506440
+  },
+  {
+    "id": "ws-architecture-paris-curved-glass",
+    "title": "Paris Curved Glass",
+    "sourceTitle": "File:Curved architecture of a reflective building with multiple glass windows in Paris.jpg",
+    "category": "design-creative",
+    "visualStyle": "architecture",
+    "contexts": [
+      "architecture",
+      "glass",
+      "design",
+      "geometry"
+    ],
+    "moods": [
+      "reflective",
+      "modern"
+    ],
+    "altText": "A curved glass facade reflecting the surrounding city in Paris.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Etienne Boulanger  etiennezou",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Curved_architecture_of_a_reflective_building_with_multiple_glass_windows_in_Paris.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5d/Curved_architecture_of_a_reflective_building_with_multiple_glass_windows_in_Paris.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5d/Curved_architecture_of_a_reflective_building_with_multiple_glass_windows_in_Paris.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "308e0a94de24496c80690c0a9afb4e7dfe38d499eb8834218c353dc68d39fa78",
+    "sourceSha1": "5930548ab3e4d44134e9066f26ef5993e3c1cb61",
+    "sourceWidth": 5815,
+    "sourceHeight": 3882,
+    "downloadedWidth": 5815,
+    "downloadedHeight": 3882,
+    "sourceBytes": 2630537,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "architecture-paris-curved-glass.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-architecture-paris-curved-glass.webp",
+    "thumbnail": "public/media/workspace/v1/ws-architecture-paris-curved-glass-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-architecture-paris-curved-glass-960.webp",
+    "packagedBytes": 812498
+  },
+  {
+    "id": "ws-architecture-prague-station",
+    "title": "Prague Station Ceiling",
+    "sourceTitle": "File:Prague Main Railway Station Ceiling Lights.jpg",
+    "category": "planning-reflection",
+    "visualStyle": "architecture",
+    "contexts": [
+      "architecture",
+      "station",
+      "travel",
+      "transit"
+    ],
+    "moods": [
+      "airy",
+      "geometric"
+    ],
+    "altText": "The sweeping illuminated ceiling of Prague Main Railway Station.",
+    "focalPoint": {
+      "x": 50,
+      "y": 48
+    },
+    "creator": "AVDLCZ",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Prague_Main_Railway_Station_Ceiling_Lights.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/7/70/Prague_Main_Railway_Station_Ceiling_Lights.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/7/70/Prague_Main_Railway_Station_Ceiling_Lights.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "1b23a2a5d07306dab9fb7c87bb24718db3fcf47e635ceff40963a226d287de6d",
+    "sourceSha1": "12c2f090fbea67925468a8996a26e6e80d526548",
+    "sourceWidth": 6795,
+    "sourceHeight": 4530,
+    "downloadedWidth": 6795,
+    "downloadedHeight": 4530,
+    "sourceBytes": 6575701,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "architecture-prague-station.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-architecture-prague-station.webp",
+    "thumbnail": "public/media/workspace/v1/ws-architecture-prague-station-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-architecture-prague-station-960.webp",
+    "packagedBytes": 221490
+  },
+  {
+    "id": "ws-architecture-budapest-bridge",
+    "title": "Budapest Chain Bridge",
+    "sourceTitle": "File:Budapest Night Chain bridge 5.jpg",
+    "category": "personal-life-admin",
+    "visualStyle": "architecture",
+    "contexts": [
+      "architecture",
+      "bridge",
+      "travel",
+      "city"
+    ],
+    "moods": [
+      "night",
+      "luminous"
+    ],
+    "altText": "The Chain Bridge crossing the Danube at night in Budapest.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Karelj",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Budapest_Night_Chain_bridge_5.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/1/10/Budapest_Night_Chain_bridge_5.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/1/10/Budapest_Night_Chain_bridge_5.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "2aeec2d22b1cb1595a7c86838722ce20c70622bdb5eb0efc12a1617cd377cd96",
+    "sourceSha1": "e67605b77377958e19ca5089b07225943fee06c3",
+    "sourceWidth": 2400,
+    "sourceHeight": 1600,
+    "downloadedWidth": 2400,
+    "downloadedHeight": 1600,
+    "sourceBytes": 2472511,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "architecture-budapest-bridge.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-architecture-budapest-bridge.webp",
+    "thumbnail": "public/media/workspace/v1/ws-architecture-budapest-bridge-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-architecture-budapest-bridge-960.webp",
+    "packagedBytes": 458592
+  },
+  {
+    "id": "ws-architecture-quebec-price",
+    "title": "Quebec Price Building",
+    "sourceTitle": "File:Price Building illuminated at night in Quebec City.jpg",
+    "category": "planning-reflection",
+    "visualStyle": "architecture",
+    "contexts": [
+      "architecture",
+      "city",
+      "night",
+      "design"
+    ],
+    "moods": [
+      "night",
+      "striking"
+    ],
+    "altText": "The illuminated Price Building rises over Quebec City at night.",
+    "focalPoint": {
+      "x": 50,
+      "y": 48
+    },
+    "creator": "Wilfredor",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Price_Building_illuminated_at_night_in_Quebec_City.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Price_Building_illuminated_at_night_in_Quebec_City.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Price_Building_illuminated_at_night_in_Quebec_City.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "a0dd01dc5dc480417c4c4072de9e979ea748f310fc46f3d8232fe4737665ca74",
+    "sourceSha1": "806daa0796b8e1901acf5837aa1c26d99194be81",
+    "sourceWidth": 4524,
+    "sourceHeight": 2940,
+    "downloadedWidth": 4524,
+    "downloadedHeight": 2940,
+    "sourceBytes": 8723340,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "architecture-quebec-price.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-architecture-quebec-price.webp",
+    "thumbnail": "public/media/workspace/v1/ws-architecture-quebec-price-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-architecture-quebec-price-960.webp",
+    "packagedBytes": 624424
+  },
+  {
+    "id": "ws-space-carina-nebula",
+    "title": "Carina Nebula",
+    "sourceTitle": "File:ESO - The Carina Nebula (by).jpg",
+    "category": "study-research",
+    "visualStyle": "space",
+    "contexts": [
+      "space",
+      "astronomy",
+      "nebula",
+      "science"
+    ],
+    "moods": [
+      "cosmic",
+      "warm"
+    ],
+    "altText": "A richly colored view of the Carina Nebula.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "ESO /IDA/Danish 1.5 m/R.Gendler, J-E. Ovaldsen, C. Th\u00f6ne, and C. Feron.",
+    "attribution": "ESO",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:ESO_-_The_Carina_Nebula_(by).jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/4/45/ESO_-_The_Carina_Nebula_%28by%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/4/45/ESO_-_The_Carina_Nebula_%28by%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "28deb4c3fcd1da9efa72e7044b02317e091f70e7d8dc01133fd741fe8a3153ab",
+    "sourceSha1": "2b14ee62291b7c8da36a9bf3b6043de0a1edbb03",
+    "sourceWidth": 5828,
+    "sourceHeight": 3524,
+    "downloadedWidth": 5828,
+    "downloadedHeight": 3524,
+    "sourceBytes": 12246989,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "space-carina-nebula.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-space-carina-nebula.webp",
+    "thumbnail": "public/media/workspace/v1/ws-space-carina-nebula-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-space-carina-nebula-960.webp",
+    "packagedBytes": 840630
+  },
+  {
+    "id": "ws-space-andromeda",
+    "title": "Andromeda Galaxy",
+    "sourceTitle": "File:Andromeda Galaxy 2025.png",
+    "category": "study-research",
+    "visualStyle": "space",
+    "contexts": [
+      "space",
+      "astronomy",
+      "galaxy",
+      "science"
+    ],
+    "moods": [
+      "vast",
+      "cool"
+    ],
+    "altText": "A wide view of the Andromeda Galaxy against deep space.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Brody Wesner",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Andromeda_Galaxy_2025.png",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/Andromeda_Galaxy_2025.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/Andromeda_Galaxy_2025.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "ec7edb662808e45e8012b3fe77944c94ddaaafff1f9647c7d6be7cddb8d6c413",
+    "sourceSha1": "bd287fa92bbe6dd997a234a03bff03fc7047a40c",
+    "sourceWidth": 5827,
+    "sourceHeight": 3803,
+    "downloadedWidth": 5827,
+    "downloadedHeight": 3803,
+    "sourceBytes": 26870309,
+    "sourceMime": "image/png",
+    "sourceFile": "space-andromeda.png",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-space-andromeda.webp",
+    "thumbnail": "public/media/workspace/v1/ws-space-andromeda-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-space-andromeda-960.webp",
+    "packagedBytes": 595760
+  },
+  {
+    "id": "ws-space-cygnus-loop",
+    "title": "Cygnus Loop",
+    "sourceTitle": "File:Ultraviolet image of the Cygnus Loop Nebula crop.jpg",
+    "category": "study-research",
+    "visualStyle": "space",
+    "contexts": [
+      "space",
+      "astronomy",
+      "nebula",
+      "science"
+    ],
+    "moods": [
+      "electric",
+      "dark"
+    ],
+    "altText": "Blue ultraviolet filaments from the Cygnus Loop Nebula.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "NASA/JPL-Caltech",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ultraviolet_image_of_the_Cygnus_Loop_Nebula_crop.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Ultraviolet_image_of_the_Cygnus_Loop_Nebula_crop.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Ultraviolet_image_of_the_Cygnus_Loop_Nebula_crop.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "af0200d033881f50e4a7612e6f49614d7db6217fbb928797bfc9d14fe77021d8",
+    "sourceSha1": "a637a6b2cce5a2b1f20941dce6d030eceba8d32e",
+    "sourceWidth": 6000,
+    "sourceHeight": 5208,
+    "downloadedWidth": 6000,
+    "downloadedHeight": 5208,
+    "sourceBytes": 12651471,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "space-cygnus-loop.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-space-cygnus-loop.webp",
+    "thumbnail": "public/media/workspace/v1/ws-space-cygnus-loop-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-space-cygnus-loop-960.webp",
+    "packagedBytes": 1672726
+  },
+  {
+    "id": "ws-space-california-nebula",
+    "title": "California Nebula",
+    "sourceTitle": "File:California nebula NGC1499.jpg",
+    "category": "study-research",
+    "visualStyle": "space",
+    "contexts": [
+      "space",
+      "astronomy",
+      "nebula",
+      "science"
+    ],
+    "moods": [
+      "glowing",
+      "colorful"
+    ],
+    "altText": "Colorful gas clouds form the California Nebula.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Ram samudrala",
+    "attribution": "",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:California_nebula_NGC1499.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f2/California_nebula_NGC1499.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f2/California_nebula_NGC1499.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "c3efef7f8e21ab79cc410ac7ae3bf2493b9c2d3e8d844194dbc9ae238ad67fd2",
+    "sourceSha1": "0a8a28ac648646479d2a5e9e943193e75bb921ed",
+    "sourceWidth": 4631,
+    "sourceHeight": 3482,
+    "downloadedWidth": 4631,
+    "downloadedHeight": 3482,
+    "sourceBytes": 12662424,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "space-california-nebula.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-space-california-nebula.webp",
+    "thumbnail": "public/media/workspace/v1/ws-space-california-nebula-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-space-california-nebula-960.webp",
+    "packagedBytes": 652424
+  },
+  {
+    "id": "ws-space-lunar-horizon",
+    "title": "Lunar Horizon",
+    "sourceTitle": "File:Lunar Landscape Scene (Poly Haven).png",
+    "category": "design-creative",
+    "visualStyle": "space",
+    "contexts": [
+      "space",
+      "moon",
+      "landscape",
+      "design"
+    ],
+    "moods": [
+      "minimal",
+      "quiet"
+    ],
+    "altText": "A still lunar horizon beneath a dark star field.",
+    "focalPoint": {
+      "x": 50,
+      "y": 55
+    },
+    "creator": "Dario Barresi (Processing) \n Greg Zaal (Photography) \n Jenelle van Heerden (Photography) \n Rico Cilliers (Photography)",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lunar_Landscape_Scene_(Poly_Haven).png",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Lunar_Landscape_Scene_%28Poly_Haven%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6f/Lunar_Landscape_Scene_%28Poly_Haven%29.png/3840px-Lunar_Landscape_Scene_%28Poly_Haven%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sourceSha256": "d0b801d5e7874679efd91d7c617dd50ef90851e2f321cc0a3bfcae5d9f5cb7ee",
+    "sourceSha1": "e40c546ec27230c895172950632115e5a3b4d55d",
+    "sourceWidth": 10008,
+    "sourceHeight": 5629,
+    "downloadedWidth": 2560,
+    "downloadedHeight": 1440,
+    "sourceBytes": 192038140,
+    "sourceMime": "image/png",
+    "sourceFile": "space-lunar-horizon-2560.png",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-space-lunar-horizon.webp",
+    "thumbnail": "public/media/workspace/v1/ws-space-lunar-horizon-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-space-lunar-horizon-960.webp",
+    "packagedBytes": 504458
+  },
+  {
+    "id": "ws-space-mars",
+    "title": "Mars: Near and Far",
+    "sourceTitle": "File:Mars near and far (potw2228a).jpg",
+    "category": "study-research",
+    "visualStyle": "space",
+    "contexts": [
+      "space",
+      "mars",
+      "astronomy",
+      "science"
+    ],
+    "moods": [
+      "planetary",
+      "curious"
+    ],
+    "altText": "Mars seen as a small planet against a wide star field.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Farid Char/ESO",
+    "attribution": "ESO",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mars_near_and_far_(potw2228a).jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/09/Mars_near_and_far_%28potw2228a%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/09/Mars_near_and_far_%28potw2228a%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "497d6584b625a537d2f0377234cffc4a98be2efa2617a8e30ea39c2751aa83a1",
+    "sourceSha1": "11b7399793263e854a09afa275b57448e4c43a95",
+    "sourceWidth": 5325,
+    "sourceHeight": 3316,
+    "downloadedWidth": 5325,
+    "downloadedHeight": 3316,
+    "sourceBytes": 4728273,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "space-mars.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-space-mars.webp",
+    "thumbnail": "public/media/workspace/v1/ws-space-mars-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-space-mars-960.webp",
+    "packagedBytes": 635334
+  },
+  {
+    "id": "ws-illustration-berry-plate",
+    "title": "Berry Botanical Plate",
+    "sourceTitle": "File:Vintage illustrations by Miss May Rivers digitally enhanced by rawpixel 116.jpg",
+    "category": "study-research",
+    "visualStyle": "illustration",
+    "contexts": [
+      "illustration",
+      "botanical",
+      "biology",
+      "plant"
+    ],
+    "moods": [
+      "vintage",
+      "colorful"
+    ],
+    "altText": "A vintage botanical illustration of berry plants and fruit.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "May Rivers",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vintage_illustrations_by_Miss_May_Rivers_digitally_enhanced_by_rawpixel_116.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Vintage_illustrations_by_Miss_May_Rivers_digitally_enhanced_by_rawpixel_116.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Vintage_illustrations_by_Miss_May_Rivers_digitally_enhanced_by_rawpixel_116.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "3d9e9f832cda5f8084e3d9a480cbff6b708c3efcb741f54c5f35c81b96df4931",
+    "sourceSha1": "89f0f90d0a5d9a51c18a124be061ca8ce1e338b9",
+    "sourceWidth": 3000,
+    "sourceHeight": 2400,
+    "downloadedWidth": 3000,
+    "downloadedHeight": 2400,
+    "sourceBytes": 7310175,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "illustration-berry-plate.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-illustration-berry-plate.webp",
+    "thumbnail": "public/media/workspace/v1/ws-illustration-berry-plate-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-illustration-berry-plate-960.webp",
+    "packagedBytes": 1195272
+  },
+  {
+    "id": "ws-illustration-starry-night",
+    "title": "Starry Night",
+    "sourceTitle": "File:Van Gogh - Starry Night - Google Art Project.jpg",
+    "category": "design-creative",
+    "visualStyle": "illustration",
+    "contexts": [
+      "painting",
+      "art",
+      "illustration",
+      "night"
+    ],
+    "moods": [
+      "expressive",
+      "classic"
+    ],
+    "altText": "An expressive night sky painted above a quiet village.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Vincent van Gogh",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/3840px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sourceSha256": "bbd4df2538ef9e7e34ea9f415ec4f60c4007a841cb757f7d1f94da42910e0103",
+    "sourceSha1": "b3e5f8291b4137ff50ba876c84a1f7248186104a",
+    "sourceWidth": 44567,
+    "sourceHeight": 35291,
+    "downloadedWidth": 2560,
+    "downloadedHeight": 2027,
+    "sourceBytes": 696195208,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "illustration-starry-night-2560.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-illustration-starry-night.webp",
+    "thumbnail": "public/media/workspace/v1/ws-illustration-starry-night-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-illustration-starry-night-960.webp",
+    "packagedBytes": 2430816
+  },
+  {
+    "id": "ws-illustration-figures-landscape",
+    "title": "Figures in the Landscape",
+    "sourceTitle": "File:Figures in the landscape, 1926, Hermann Scherer.jpg",
+    "category": "design-creative",
+    "visualStyle": "illustration",
+    "contexts": [
+      "print",
+      "art",
+      "illustration",
+      "landscape"
+    ],
+    "moods": [
+      "graphic",
+      "expressive"
+    ],
+    "altText": "An expressionist black-and-white landscape print.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Paradise Chronicle",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Figures_in_the_landscape,_1926,_Hermann_Scherer.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/00/Figures_in_the_landscape%2C_1926%2C_Hermann_Scherer.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/00/Figures_in_the_landscape%2C_1926%2C_Hermann_Scherer.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "d3d6731855844ac1665417c8c503a9c3050f4ac1a8eebde43867b4b6ddb8a56d",
+    "sourceSha1": "f6aaad759dfdceb827b7595b123e64803e11f1ae",
+    "sourceWidth": 2090,
+    "sourceHeight": 1670,
+    "downloadedWidth": 2090,
+    "downloadedHeight": 1670,
+    "sourceBytes": 1369738,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "illustration-figures-landscape.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-illustration-figures-landscape.webp",
+    "thumbnail": "public/media/workspace/v1/ws-illustration-figures-landscape-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-illustration-figures-landscape-960.webp",
+    "packagedBytes": 710734
+  },
+  {
+    "id": "ws-illustration-waterfall-engraving",
+    "title": "Waterfall Engraving",
+    "sourceTitle": "File:Hendrick Goltzius, Dutch (active Haarlem) - Landscape with a Waterfall - Google Art Project.jpg",
+    "category": "writing-communication",
+    "visualStyle": "illustration",
+    "contexts": [
+      "print",
+      "engraving",
+      "art",
+      "landscape"
+    ],
+    "moods": [
+      "historic",
+      "detailed"
+    ],
+    "altText": "A fine-line historical engraving of a waterfall landscape.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Hendrik Goltzius",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hendrick_Goltzius,_Dutch_(active_Haarlem)_-_Landscape_with_a_Waterfall_-_Google_Art_Project.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/9/90/Hendrick_Goltzius%2C_Dutch_%28active_Haarlem%29_-_Landscape_with_a_Waterfall_-_Google_Art_Project.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/9/90/Hendrick_Goltzius%2C_Dutch_%28active_Haarlem%29_-_Landscape_with_a_Waterfall_-_Google_Art_Project.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "70ced4753f8ab91a4e03e77a7929a92c1826f17432b4607ce36ec4182b741ad6",
+    "sourceSha1": "38e14d257729910ea7a20f95ed60748289a12b77",
+    "sourceWidth": 3585,
+    "sourceHeight": 2774,
+    "downloadedWidth": 3585,
+    "downloadedHeight": 2774,
+    "sourceBytes": 4007092,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "illustration-waterfall-engraving.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-illustration-waterfall-engraving.webp",
+    "thumbnail": "public/media/workspace/v1/ws-illustration-waterfall-engraving-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-illustration-waterfall-engraving-960.webp",
+    "packagedBytes": 1540888
+  },
+  {
+    "id": "ws-illustration-nansen-woodcut",
+    "title": "Northern Woodcut",
+    "sourceTitle": "File:Nansen - Nord i T\u00e5keheimen, woodcut 3.png",
+    "category": "study-research",
+    "visualStyle": "illustration",
+    "contexts": [
+      "woodcut",
+      "art",
+      "mountain",
+      "history"
+    ],
+    "moods": [
+      "nordic",
+      "graphic"
+    ],
+    "altText": "A dramatic northern landscape rendered as a woodcut.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Fridtjof Nansen",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nansen_-_Nord_i_T%C3%A5keheimen,_woodcut_3.png",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/8/81/Nansen_-_Nord_i_T%C3%A5keheimen%2C_woodcut_3.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/8/81/Nansen_-_Nord_i_T%C3%A5keheimen%2C_woodcut_3.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "0a04c8bee768374b3fb9414cbb13d9b805dfc7b3f1b548eea5cf3f33fba01890",
+    "sourceSha1": "e913fb958648264d4cc53f4e01c7b27130c90a33",
+    "sourceWidth": 3076,
+    "sourceHeight": 1620,
+    "downloadedWidth": 3076,
+    "downloadedHeight": 1620,
+    "sourceBytes": 1154524,
+    "sourceMime": "image/png",
+    "sourceFile": "illustration-nansen-woodcut.png",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-illustration-nansen-woodcut.webp",
+    "thumbnail": "public/media/workspace/v1/ws-illustration-nansen-woodcut-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-illustration-nansen-woodcut-960.webp",
+    "packagedBytes": 713710
+  },
+  {
+    "id": "ws-illustration-great-wave",
+    "title": "The Great Wave",
+    "sourceTitle": "File:The Great Wave off Kanagawa.jpg",
+    "category": "design-creative",
+    "visualStyle": "illustration",
+    "contexts": [
+      "woodblock",
+      "art",
+      "ocean",
+      "illustration"
+    ],
+    "moods": [
+      "classic",
+      "dynamic"
+    ],
+    "altText": "A Japanese woodblock print of a great wave and distant mountain.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "After   Katsushika Hokusai",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Great_Wave_off_Kanagawa.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0a/The_Great_Wave_off_Kanagawa.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0a/The_Great_Wave_off_Kanagawa.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "44a8486abdf0330a3fe6b586e407506e738fe075fe0b5dfc43961e358fda7206",
+    "sourceSha1": "47d3425548c5ff962cb225af1149cdedd2721f55",
+    "sourceWidth": 4335,
+    "sourceHeight": 2990,
+    "downloadedWidth": 4335,
+    "downloadedHeight": 2990,
+    "sourceBytes": 2684586,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "illustration-great-wave.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-illustration-great-wave.webp",
+    "thumbnail": "public/media/workspace/v1/ws-illustration-great-wave-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-illustration-great-wave-960.webp",
+    "packagedBytes": 1314832
+  },
+  {
+    "id": "ws-abstract-sophie-circles",
+    "title": "Sophie Taeuber Circles",
+    "sourceTitle": "File:Animated circle figure (1934)- Sophie Taeuber-Arp.jpg",
+    "category": "design-creative",
+    "visualStyle": "abstract",
+    "contexts": [
+      "abstract",
+      "geometry",
+      "color",
+      "design"
+    ],
+    "moods": [
+      "playful",
+      "modernist"
+    ],
+    "altText": "A balanced abstract composition of colored circles.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Paradise Chronicle",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Animated_circle_figure_(1934)-_Sophie_Taeuber-Arp.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Animated_circle_figure_%281934%29-_Sophie_Taeuber-Arp.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Animated_circle_figure_%281934%29-_Sophie_Taeuber-Arp.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "190ecabac1fe6e480747a57334cb424604065a7febf9c85eff3638445e78f822",
+    "sourceSha1": "3e11f9497d876c0c988beb28902abb1fbcc03335",
+    "sourceWidth": 2367,
+    "sourceHeight": 1676,
+    "downloadedWidth": 2367,
+    "downloadedHeight": 1676,
+    "sourceBytes": 694772,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "abstract-sophie-circles.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-abstract-sophie-circles.webp",
+    "thumbnail": "public/media/workspace/v1/ws-abstract-sophie-circles-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-abstract-sophie-circles-960.webp",
+    "packagedBytes": 240558
+  },
+  {
+    "id": "ws-abstract-together-two",
+    "title": "Together No. 2",
+    "sourceTitle": "File:'Together 2. nr. 6.346' - an abstract gouache painting on paper, painted in 2001 by Dutch artist Fons Heijnsbroek.tif",
+    "category": "design-creative",
+    "visualStyle": "abstract",
+    "contexts": [
+      "abstract",
+      "painting",
+      "color",
+      "creative"
+    ],
+    "moods": [
+      "bold",
+      "layered"
+    ],
+    "altText": "An abstract gouache composition with strong color blocks.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Fons Heijnsbroek",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%27Together_2._nr._6.346%27_-_an_abstract_gouache_painting_on_paper,_painted_in_2001_by_Dutch_artist_Fons_Heijnsbroek.tif",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/%27Together_2._nr._6.346%27_-_an_abstract_gouache_painting_on_paper%2C_painted_in_2001_by_Dutch_artist_Fons_Heijnsbroek.tif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/%27Together_2._nr._6.346%27_-_an_abstract_gouache_painting_on_paper%2C_painted_in_2001_by_Dutch_artist_Fons_Heijnsbroek.tif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "079c58c94a2309bb91b13fc09063b078e02b71ec3e255b21c5da4c8636031d0c",
+    "sourceSha1": "62fd28743148c7f004f7d57816a2810638dda6c8",
+    "sourceWidth": 3543,
+    "sourceHeight": 2953,
+    "downloadedWidth": 3543,
+    "downloadedHeight": 2953,
+    "sourceBytes": 31413752,
+    "sourceMime": "image/tiff",
+    "sourceFile": "abstract-together-two.tif",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-abstract-together-two.webp",
+    "thumbnail": "public/media/workspace/v1/ws-abstract-together-two-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-abstract-together-two-960.webp",
+    "packagedBytes": 899390
+  },
+  {
+    "id": "ws-abstract-geometric-bird",
+    "title": "Geometric Bird Vessel",
+    "sourceTitle": "File:Greece, Geometric Period, 8th Century BC - Geometric Bird Askos - 1993.1 - Cleveland Museum of Art.tif",
+    "category": "design-creative",
+    "visualStyle": "abstract",
+    "contexts": [
+      "abstract",
+      "geometry",
+      "ceramic",
+      "pattern"
+    ],
+    "moods": [
+      "ancient",
+      "crafted"
+    ],
+    "altText": "An ancient ceramic vessel decorated with geometric bird motifs.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "https://clevelandart.org/art/1993.1",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Greece,_Geometric_Period,_8th_Century_BC_-_Geometric_Bird_Askos_-_1993.1_-_Cleveland_Museum_of_Art.tif",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/d/da/Greece%2C_Geometric_Period%2C_8th_Century_BC_-_Geometric_Bird_Askos_-_1993.1_-_Cleveland_Museum_of_Art.tif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/Greece%2C_Geometric_Period%2C_8th_Century_BC_-_Geometric_Bird_Askos_-_1993.1_-_Cleveland_Museum_of_Art.tif/lossy-page1-3840px-Greece%2C_Geometric_Period%2C_8th_Century_BC_-_Geometric_Bird_Askos_-_1993.1_-_Cleveland_Museum_of_Art.tif.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sourceSha256": "f575b7110bb83caade7ea2ff3c152a364be278202e2ce968dc074e4a55437bff",
+    "sourceSha1": "8170c39420672ed40e24ac47df0bae396e21aef1",
+    "sourceWidth": 5000,
+    "sourceHeight": 3745,
+    "downloadedWidth": 2560,
+    "downloadedHeight": 1917,
+    "sourceBytes": 56200512,
+    "sourceMime": "image/tiff",
+    "sourceFile": "abstract-geometric-bird-2560.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-abstract-geometric-bird.webp",
+    "thumbnail": "public/media/workspace/v1/ws-abstract-geometric-bird-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-abstract-geometric-bird-960.webp",
+    "packagedBytes": 430264
+  },
+  {
+    "id": "ws-abstract-color-tale",
+    "title": "Color Tale",
+    "sourceTitle": "File:'Color Tale' - abstract painting in green and yellow blur - watercolor on paper - modern abstract expressionism by Fons Heijnsbroek, 2008 - free download art image CC0, high resolutions TIFF.tif",
+    "category": "design-creative",
+    "visualStyle": "abstract",
+    "contexts": [
+      "abstract",
+      "watercolor",
+      "color",
+      "art"
+    ],
+    "moods": [
+      "fluid",
+      "fresh"
+    ],
+    "altText": "Loose green and yellow watercolor forms on paper.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Fons Heijnsbroek",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%27Color_Tale%27_-_abstract_painting_in_green_and_yellow_blur_-_watercolor_on_paper_-_modern_abstract_expressionism_by_Fons_Heijnsbroek,_2008_-_free_download_art_image_CC0,_high_resolutions_TIFF.tif",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/0/00/%27Color_Tale%27_-_abstract_painting_in_green_and_yellow_blur_-_watercolor_on_paper_-_modern_abstract_expressionism_by_Fons_Heijnsbroek%2C_2008_-_free_download_art_image_CC0%2C_high_resolutions_TIFF.tif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/%27Color_Tale%27_-_abstract_painting_in_green_and_yellow_blur_-_watercolor_on_paper_-_modern_abstract_expressionism_by_Fons_Heijnsbroek%2C_2008_-_free_download_art_image_CC0%2C_high_resolutions_TIFF.tif/lossy-page1-3840px-thumbnail.tif.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sourceSha256": "9f51c833f459bbab0a150648189b11b4d6bf5e8dde23b05fa2b5f68bf09aeb63",
+    "sourceSha1": "1afca3cbba2adadb23d771e334da32651a305bad",
+    "sourceWidth": 4279,
+    "sourceHeight": 3543,
+    "downloadedWidth": 2560,
+    "downloadedHeight": 2120,
+    "sourceBytes": 64686060,
+    "sourceMime": "image/tiff",
+    "sourceFile": "abstract-color-tale-2560.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-abstract-color-tale.webp",
+    "thumbnail": "public/media/workspace/v1/ws-abstract-color-tale-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-abstract-color-tale-960.webp",
+    "packagedBytes": 348418
+  },
+  {
+    "id": "ws-abstract-the-cage",
+    "title": "The Cage",
+    "sourceTitle": "File:'The Cage' - abstract watercolor painting in color and lines - by artist Fons Heijnsbroek, created in 2010. Free art image in high resolutions tiff.tif",
+    "category": "design-creative",
+    "visualStyle": "abstract",
+    "contexts": [
+      "abstract",
+      "watercolor",
+      "lines",
+      "art"
+    ],
+    "moods": [
+      "expressive",
+      "fluid"
+    ],
+    "altText": "An abstract watercolor with layered colored lines.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Fons Heijnsbroek",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%27The_Cage%27_-_abstract_watercolor_painting_in_color_and_lines_-_by_artist_Fons_Heijnsbroek,_created_in_2010._Free_art_image_in_high_resolutions_tiff.tif",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c2/%27The_Cage%27_-_abstract_watercolor_painting_in_color_and_lines_-_by_artist_Fons_Heijnsbroek%2C_created_in_2010._Free_art_image_in_high_resolutions_tiff.tif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/%27The_Cage%27_-_abstract_watercolor_painting_in_color_and_lines_-_by_artist_Fons_Heijnsbroek%2C_created_in_2010._Free_art_image_in_high_resolutions_tiff.tif/lossy-page1-3840px-%27The_Cage%27_-_abstract_watercolor_painting_in_color_and_lines_-_by_artist_Fons_Heijnsbroek%2C_created_in_2010._Free_art_image_in_high_resolutions_tiff.tif.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sourceSha256": "44ddabd0e13d2ebd0946aee5226ca530209adc14f9ab3c4fb4ce966229a2ca2f",
+    "sourceSha1": "dd2556f359c12845d4f69a42b6313ae4d5ef9a1c",
+    "sourceWidth": 4252,
+    "sourceHeight": 3189,
+    "downloadedWidth": 2560,
+    "downloadedHeight": 1920,
+    "sourceBytes": 57566696,
+    "sourceMime": "image/tiff",
+    "sourceFile": "abstract-the-cage-2560.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-abstract-the-cage.webp",
+    "thumbnail": "public/media/workspace/v1/ws-abstract-the-cage-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-abstract-the-cage-960.webp",
+    "packagedBytes": 292864
+  },
+  {
+    "id": "ws-abstract-kandinsky",
+    "title": "Kandinsky Improvisation",
+    "sourceTitle": "File:Vasily Kandinsky - Improvisation No. 30 (Cannons) - 1931.511 - Art Institute of Chicago.jpg",
+    "category": "design-creative",
+    "visualStyle": "abstract",
+    "contexts": [
+      "abstract",
+      "painting",
+      "color",
+      "art"
+    ],
+    "moods": [
+      "energetic",
+      "modernist"
+    ],
+    "altText": "A vivid early abstract painting by Wassily Kandinsky.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Wassily Kandinsky",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vasily_Kandinsky_-_Improvisation_No._30_(Cannons)_-_1931.511_-_Art_Institute_of_Chicago.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Vasily_Kandinsky_-_Improvisation_No._30_%28Cannons%29_-_1931.511_-_Art_Institute_of_Chicago.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Vasily_Kandinsky_-_Improvisation_No._30_%28Cannons%29_-_1931.511_-_Art_Institute_of_Chicago.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "563d7666479f7a1fad00480ffa40b3c8356ff73273db2e6b1cf421dd6082d5f9",
+    "sourceSha1": "0610690f27e8b732aa1121e9e7430cdd3938e7e7",
+    "sourceWidth": 3000,
+    "sourceHeight": 2997,
+    "downloadedWidth": 3000,
+    "downloadedHeight": 2997,
+    "sourceBytes": 3650691,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "abstract-kandinsky.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-abstract-kandinsky.webp",
+    "thumbnail": "public/media/workspace/v1/ws-abstract-kandinsky-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-abstract-kandinsky-960.webp",
+    "packagedBytes": 1816622
+  },
+  {
+    "id": "ws-macro-grape-crystal",
+    "title": "Grape Crystal Close-up",
+    "sourceTitle": "File:2016-03-29 19-10-45 cristaux-vin-134f.jpg",
+    "category": "study-research",
+    "visualStyle": "macro",
+    "contexts": [
+      "macro",
+      "mineral",
+      "crystal",
+      "science"
+    ],
+    "moods": [
+      "tactile",
+      "detailed"
+    ],
+    "altText": "Small pale crystals clustered across a dark mineral surface.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Thomas Bresson",
+    "attribution": "",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016-03-29_19-10-45_cristaux-vin-134f.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9a/2016-03-29_19-10-45_cristaux-vin-134f.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9a/2016-03-29_19-10-45_cristaux-vin-134f.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "6d112ae61d8665d5c58e0f94f7d09f2e51ec1c4dfd2ccd52481fa0cc28fe10d5",
+    "sourceSha1": "2400f4748397e349d6e4c72132da9637f8d1417b",
+    "sourceWidth": 4067,
+    "sourceHeight": 2243,
+    "downloadedWidth": 4067,
+    "downloadedHeight": 2243,
+    "sourceBytes": 9515322,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "macro-grape-crystal.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-macro-grape-crystal.webp",
+    "thumbnail": "public/media/workspace/v1/ws-macro-grape-crystal-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-macro-grape-crystal-960.webp",
+    "packagedBytes": 524140
+  },
+  {
+    "id": "ws-macro-indian-paintbrush",
+    "title": "Indian Paintbrush",
+    "sourceTitle": "File:Indian paintbrush castilleja coccinea flower close up macro flora photography.jpg",
+    "category": "study-research",
+    "visualStyle": "macro",
+    "contexts": [
+      "macro",
+      "flower",
+      "botany",
+      "biology"
+    ],
+    "moods": [
+      "vivid",
+      "natural"
+    ],
+    "altText": "A close view of bright red Indian paintbrush flowers.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Barnes Dr Thomas G, U.S. Fish and Wildlife Service",
+    "attribution": "",
+    "license": "Public domain",
+    "licenseUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Indian_paintbrush_castilleja_coccinea_flower_close_up_macro_flora_photography.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Indian_paintbrush_castilleja_coccinea_flower_close_up_macro_flora_photography.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Indian_paintbrush_castilleja_coccinea_flower_close_up_macro_flora_photography.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "e8466bf57eb5d348f51a4d195c1feb6cfa0f8b5f26f5500e87f1c085b8f4e05f",
+    "sourceSha1": "fb18863edf43ed22fb4cd9f7fca699ad454c772d",
+    "sourceWidth": 2232,
+    "sourceHeight": 1466,
+    "downloadedWidth": 2232,
+    "downloadedHeight": 1466,
+    "sourceBytes": 80977,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "macro-indian-paintbrush.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-macro-indian-paintbrush.webp",
+    "thumbnail": "public/media/workspace/v1/ws-macro-indian-paintbrush-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-macro-indian-paintbrush-960.webp",
+    "packagedBytes": 87036
+  },
+  {
+    "id": "ws-macro-white-bloom",
+    "title": "Soft White Bloom",
+    "sourceTitle": "File:Macro Flower 1.jpg",
+    "category": "design-creative",
+    "visualStyle": "macro",
+    "contexts": [
+      "macro",
+      "flower",
+      "texture",
+      "creative"
+    ],
+    "moods": [
+      "soft",
+      "delicate"
+    ],
+    "altText": "A delicate white flower seen at close range.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Olliebailie",
+    "attribution": "",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Macro_Flower_1.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Macro_Flower_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Macro_Flower_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "a7529e83a5de9eb0a04b14ac629195ef4ca2ea5523e33b99d0b2e8238e93c463",
+    "sourceSha1": "cf02c22e94a868d6b850ed8ee9f1a4458a61358d",
+    "sourceWidth": 6016,
+    "sourceHeight": 4016,
+    "downloadedWidth": 6016,
+    "downloadedHeight": 4016,
+    "sourceBytes": 7580703,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "macro-white-bloom.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-macro-white-bloom.webp",
+    "thumbnail": "public/media/workspace/v1/ws-macro-white-bloom-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-macro-white-bloom-960.webp",
+    "packagedBytes": 481302
+  },
+  {
+    "id": "ws-macro-green-butterfly",
+    "title": "Green Butterfly",
+    "sourceTitle": "File:Pale Green Butterfly Feeding on Lantana Flower \u2013 Garden Macro, India.jpg",
+    "category": "study-research",
+    "visualStyle": "macro",
+    "contexts": [
+      "macro",
+      "butterfly",
+      "flower",
+      "biology"
+    ],
+    "moods": [
+      "curious",
+      "bright"
+    ],
+    "altText": "A pale green butterfly feeding on a lantana flower.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Vishnumishra07",
+    "attribution": "",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pale_Green_Butterfly_Feeding_on_Lantana_Flower_%E2%80%93_Garden_Macro,_India.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Pale_Green_Butterfly_Feeding_on_Lantana_Flower_%E2%80%93_Garden_Macro%2C_India.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Pale_Green_Butterfly_Feeding_on_Lantana_Flower_%E2%80%93_Garden_Macro%2C_India.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "a8d83d89bec7748225b6edb55d0b44aca4ea64a67fcc52df2e9b3e2eee07298e",
+    "sourceSha1": "8b6991d4f21ffee62afef7c816a41dd2b979bd54",
+    "sourceWidth": 4339,
+    "sourceHeight": 2892,
+    "downloadedWidth": 4339,
+    "downloadedHeight": 2892,
+    "sourceBytes": 4322477,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "macro-green-butterfly.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-macro-green-butterfly.webp",
+    "thumbnail": "public/media/workspace/v1/ws-macro-green-butterfly-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-macro-green-butterfly-960.webp",
+    "packagedBytes": 406708
+  },
+  {
+    "id": "ws-macro-bioluminescent-beetle",
+    "title": "Bioluminescent Beetle",
+    "sourceTitle": "File:Close-up view of a bioluminescent beetle Elateroidea.jpg",
+    "category": "study-research",
+    "visualStyle": "macro",
+    "contexts": [
+      "macro",
+      "insect",
+      "biology",
+      "science"
+    ],
+    "moods": [
+      "luminous",
+      "night"
+    ],
+    "altText": "A close view of a beetle glowing in the dark.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Basile Morin",
+    "attribution": "",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Close-up_view_of_a_bioluminescent_beetle_Elateroidea.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Close-up_view_of_a_bioluminescent_beetle_Elateroidea.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Close-up_view_of_a_bioluminescent_beetle_Elateroidea.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "9973ef9787f8f35c7337921e3dcf3c054f661c6773e9cdc201de1ff35e95af53",
+    "sourceSha1": "e85037ba570987d072efbc27705b6d4c03095db3",
+    "sourceWidth": 3120,
+    "sourceHeight": 2080,
+    "downloadedWidth": 3120,
+    "downloadedHeight": 2080,
+    "sourceBytes": 1608665,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "macro-bioluminescent-beetle.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-macro-bioluminescent-beetle.webp",
+    "thumbnail": "public/media/workspace/v1/ws-macro-bioluminescent-beetle-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-macro-bioluminescent-beetle-960.webp",
+    "packagedBytes": 307540
+  },
+  {
+    "id": "ws-macro-leaf-moss",
+    "title": "Leaf on Moss",
+    "sourceTitle": "File:Macro view of a single green leaf fragment on a mossy rock.jpg",
+    "category": "personal-life-admin",
+    "visualStyle": "macro",
+    "contexts": [
+      "macro",
+      "leaf",
+      "moss",
+      "nature"
+    ],
+    "moods": [
+      "quiet",
+      "textural"
+    ],
+    "altText": "A small green leaf resting on a moss-covered rock.",
+    "focalPoint": {
+      "x": 50,
+      "y": 50
+    },
+    "creator": "Krishna k. sahh",
+    "attribution": "",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Macro_view_of_a_single_green_leaf_fragment_on_a_mossy_rock.jpg",
+    "sourceFileUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Macro_view_of_a_single_green_leaf_fragment_on_a_mossy_rock.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "downloadFileUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Macro_view_of_a_single_green_leaf_fragment_on_a_mossy_rock.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sourceSha256": "f835127f97c51f2b4ac436c90b7028b57278aa004c9aab9b933dab72770b0e6a",
+    "sourceSha1": "e8965716f9fe98807b16f368c3325977d73d8465",
+    "sourceWidth": 5536,
+    "sourceHeight": 4160,
+    "downloadedWidth": 5536,
+    "downloadedHeight": 4160,
+    "sourceBytes": 2328993,
+    "sourceMime": "image/jpeg",
+    "sourceFile": "macro-leaf-moss.jpg",
+    "verifiedAt": "2026-10-18",
+    "provenance": "Downloaded from the Wikimedia Commons file page; the file-level license was checked before download.",
+    "changesMade": "Downloaded from the source file page; large originals use its 2560-pixel Wikimedia rendition. Responsive WebP derivatives are generated for FlowTask.",
+    "path": "public/media/workspace/v1/ws-macro-leaf-moss.webp",
+    "thumbnail": "public/media/workspace/v1/ws-macro-leaf-moss-thumb.webp",
+    "responsive": "public/media/workspace/v1/ws-macro-leaf-moss-960.webp",
+    "packagedBytes": 244688
   }
 ]

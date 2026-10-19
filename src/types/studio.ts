@@ -21,10 +21,14 @@ export interface MediaAsset {
   height?: number;
   variants?: Array<{ src: string; width: number; height: number }>;
   genre?: string;
+    /** Workspace cover genre, independent from the task-use category. */
+    visualStyle?: string;
+    licenseUrl?: string;
   durationSeconds?: number;
   loop?: boolean;
   license: string;
   creator: string;
+    attribution?: string;
   sourceUrl?: string;
   verifiedAt?: string;
   contexts?: string[];

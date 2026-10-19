@@ -10,6 +10,7 @@ interface TimelineUnscheduledSidebarProps {
   totalHours: number;
   onSelectTask: (taskId: string) => void;
   onAutoSlotDay: () => void;
+  autoSlotDisabled?: boolean;
   onClearAllScheduledTimes: () => void;
   onScheduleUnscheduled: (task: Task, hour: number) => void;
 }
@@ -22,6 +23,7 @@ export const TimelineUnscheduledSidebar: React.FC<TimelineUnscheduledSidebarProp
   totalHours,
   onSelectTask,
   onAutoSlotDay,
+  autoSlotDisabled = false,
   onClearAllScheduledTimes,
   onScheduleUnscheduled,
 }) => {
@@ -39,6 +41,8 @@ export const TimelineUnscheduledSidebar: React.FC<TimelineUnscheduledSidebarProp
             <button
               type="button"
               onClick={onAutoSlotDay}
+              disabled={autoSlotDisabled}
+              aria-description={autoSlotDisabled ? 'Choose today or a future date to automatically schedule tasks.' : undefined}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold transition-all shadow-xs active:scale-95"
               title="Automatically distribute unscheduled tasks into free timeline gaps without conflicts"
             >

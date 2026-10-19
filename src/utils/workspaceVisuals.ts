@@ -12,6 +12,20 @@ export const WORKSPACE_VISUAL_CATEGORIES = [
   ["all", "All images"],
 ] as const;
 
+export const WORKSPACE_VISUAL_STYLES = [
+  ["all", "All styles"],
+  ["flowtask-original", "FlowTask original"],
+  ["nature", "Cinematic nature"],
+  ["architecture", "Architecture & city"],
+  ["space", "Space & science"],
+  ["illustration", "Illustration & editorial art"],
+  ["abstract", "Abstract & geometric"],
+  ["macro", "Macro & materials"],
+  ["personal", "Personal uploads"],
+] as const;
+
+export type WorkspaceVisualStyle = (typeof WORKSPACE_VISUAL_STYLES)[number][0];
+
 export type WorkspaceVisualCategory = (typeof WORKSPACE_VISUAL_CATEGORIES)[number][0];
 export interface WorkspaceVisualContext {
   kind: "dashboard" | "project" | "study" | "writing" | "planning" | "personal" | "code" | "design";
@@ -77,4 +91,23 @@ export function recommendWorkspaceVisuals(
 
 export function workspaceVisualCategoryLabel(category: string): string {
   return LABELS[category] || category;
+}
+
+export function workspaceVisualStyleLabel(style?: string): string {
+  return WORKSPACE_VISUAL_STYLES.find(([id]) => id === style)?.[1] || style || "Unspecified style";
+}
+
+/** Balance context relevance with variety; a new visitor need not learn the filters. */
+export function curateWorkspaceVisuals(assets: MediaAsset[], context: WorkspaceVisualContext): WorkspaceVisualRecommendation[] {
+  const ranked = recommendWorkspaceVisuals(assets, context);
+  const byId = new Map(ranked.map(item => [item.asset.id, item]));
+  const ordered = [...ranked, ...assets.filter(asset => !byId.has(asset.id)).map(asset => ({ asset, score: 0, reason: `Explore ${workspaceVisualStyleLabel(asset.visualStyle).toLowerCase()}` }))];
+  const styles = ['flowtask-original', 'nature', 'architecture', 'illustration', 'space', 'abstract', 'macro'];
+  const selected: WorkspaceVisualRecommendation[] = [];
+  for (let round = 0; round < 2; round++) for (const style of styles) {
+    const next = ordered.find(item => item.asset.visualStyle === style && !selected.some(chosen => chosen.asset.id === item.asset.id));
+    if (next && selected.length < 12) selected.push(next);
+  }
+  for (const item of ordered) if (selected.length < 12 && !selected.some(chosen => chosen.asset.id === item.asset.id)) selected.push(item);
+  return selected;
 }

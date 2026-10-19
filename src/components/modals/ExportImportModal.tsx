@@ -7,7 +7,7 @@ import { generateDailyStandup } from '../../utils/standupGenerator';
 import { generateSnapshotShareUrl } from '../../utils/snapshotShare';
 import { validateWorkspaceData } from '../../utils/workspaceValidation';
 import { audioEngine } from '../../utils/audioEngine';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 import {
   X,
   Download,

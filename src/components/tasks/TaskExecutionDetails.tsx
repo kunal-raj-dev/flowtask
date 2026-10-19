@@ -48,6 +48,7 @@ export function TaskExecutionDetails({ task }: { task: Task }) {
           placeholder="Make starting a little easier"
         />
       </label>
+      <details className="desk-inspector-details"><summary>Time blocking</summary>
       <label className="v2-check">
         <input
           type="checkbox"
@@ -58,6 +59,7 @@ export function TaskExecutionDetails({ task }: { task: Task }) {
         />
         Lock this task's scheduled time
       </label>
+      </details>
       {history.length > 0 && (
         <details className="desk-inspector-details">
           <summary>Time spent with this task</summary>

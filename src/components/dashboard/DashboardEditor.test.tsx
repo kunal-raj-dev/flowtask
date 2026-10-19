@@ -64,6 +64,7 @@ const localStorageMock = {
 };
 (globalThis as any).localStorage = localStorageMock;
 
+function enterEdit() { fireEvent.click(screen.getByRole('button', { name: 'Customize' })); fireEvent.click(screen.getByRole('button', { name: 'Edit workspace' })); }
 describe('DashboardEditor Component', () => {
   let sampleDashboards: WorkspaceDashboard[];
   let onUpdateDashboards: any;
@@ -90,7 +91,7 @@ describe('DashboardEditor Component', () => {
     expect(screen.getByText('Today')).toBeDefined();
     expect(screen.getByText('Daily Desk')).toBeDefined();
     expect(screen.getByRole('button', { name: /Plan my day/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Edit workspace/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Customize' })).toBeDefined();
   });
 
   it('invokes onPlanMyDay callback when clicking Plan my day', () => {
@@ -118,8 +119,7 @@ describe('DashboardEditor Component', () => {
       />
     );
 
-    const editBtn = screen.getByRole('button', { name: /Edit workspace/i });
-    fireEvent.click(editBtn);
+    enterEdit();
 
     expect(screen.getByRole('button', { name: /Save/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /Cancel/i })).toBeDefined();
@@ -139,7 +139,7 @@ describe('DashboardEditor Component', () => {
     );
 
     // Enter edit mode
-    fireEvent.click(screen.getByRole('button', { name: /Edit workspace/i }));
+    enterEdit();
 
     // Click Save
     const saveBtn = screen.getByRole('button', { name: /Save/i });
@@ -160,13 +160,13 @@ describe('DashboardEditor Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Edit workspace/i }));
+    enterEdit();
     expect(screen.getByRole('button', { name: /Cancel/i })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
 
     expect(onUpdateDashboards).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /Edit workspace/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Customize' })).toBeDefined();
   });
 
   it('opens widget catalog and allows adding a new widget to dashboard', async () => {
@@ -179,7 +179,7 @@ describe('DashboardEditor Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Edit workspace/i }));
+    enterEdit();
     fireEvent.click(screen.getByRole('button', { name: /Add Widget/i }));
 
     expect(screen.getByText('Add Widget to Workspace')).toBeDefined();
@@ -208,7 +208,7 @@ describe('DashboardEditor Component', () => {
     );
 
     // Enter edit mode
-    fireEvent.click(screen.getByRole('button', { name: /Edit workspace/i }));
+    enterEdit();
 
     // Verify localStorage draft was saved
     expect(localStorage.getItem(draftKey)).not.toBeNull();

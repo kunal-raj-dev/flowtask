@@ -7,6 +7,8 @@ import { TaskProvider } from './context/TaskContext';
 import { ModalProvider } from './context/ModalContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { MotionRuntime } from './components/settings/MotionRuntime';
+import './styles/release-polish.css';
 
 function App() {
   return (
@@ -14,7 +16,7 @@ function App() {
       <AuthProvider>
         <TaskProvider>
           <ModalProvider>
-            <FocusRuntime /><AppearanceRuntime /><DiagnosticsRuntime /><UpdateNotice /><AppLayout />
+            <MotionRuntime><FocusRuntime /><AppearanceRuntime /><DiagnosticsRuntime /><UpdateNotice /><AppLayout /></MotionRuntime>
           </ModalProvider>
         </TaskProvider>
       </AuthProvider>

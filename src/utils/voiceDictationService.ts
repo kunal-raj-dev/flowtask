@@ -1,6 +1,6 @@
 /**
  * Voice-to-Task Web Speech API dictation service.
- * 100% offline-capable, client-side, zero server requirements, zero API keys.
+ * Browser-managed speech recognition; availability and network requirements depend on the browser.
  */
 
 export interface VoiceDictationCallbacks {

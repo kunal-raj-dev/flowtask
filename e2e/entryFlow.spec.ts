@@ -12,13 +12,10 @@ async function workspaceSnapshot(page: Page) {
   });
 }
 async function finishSetup(page: Page, title: string) {
-  const setup = page.getByRole('dialog', {name:'Welcome Setup Ritual',exact:true});
-  await setup.getByRole('button',{name:'Developer',exact:true}).click();
-  await setup.getByRole('button',{name:'Set Up My Daily Capacity',exact:true}).click();
-  await setup.getByRole('button',{name:'Continue to Top 3 Focus',exact:true}).click();
-  await setup.getByPlaceholder('Most important deliverable or deep focus task...').fill(title);
-  await setup.getByRole('button',{name:/Continue|Review|Lock/i}).last().click();
-  await setup.getByRole('button',{name:'Enter Flow State & Launch Today',exact:true}).click();
+  const setup = page.getByRole('region', { name: 'Start with one task', exact: true });
+  await setup.getByRole('textbox', { name: 'Your first task' }).fill(title);
+  await setup.getByRole('button', { name: 'Add task', exact: true }).click();
+  await setup.getByRole('button', { name: 'Start 25-minute focus', exact: true }).click();
 }
 test('root landing continues to real setup, creates a task and starts Focus Studio', async ({page}) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
@@ -31,7 +28,7 @@ test('root landing continues to real setup, creates a task and starts Focus Stud
   await finishSetup(page, 'My first real focus task');
   const studio = page.getByRole('dialog',{name:'Focus Studio',exact:true});
   await expect(studio.getByRole('heading',{name:'My first real focus task',exact:true})).toBeVisible();
-  await studio.getByRole('button',{name:'Start focus',exact:true}).click();
+  await expect(studio.getByRole('button',{name:'Pause',exact:true})).toBeVisible();
   await expect(studio.getByRole('button',{name:'Pause',exact:true})).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -51,7 +48,7 @@ test('returning through landing preserves tasks, theme, desk and active session'
   await page.goto('/'); await page.getByRole('link',{name:'Continue to workspace',exact:true}).click();
   await finishSetup(page, 'Continue my existing work');
   let studio = page.getByRole('dialog',{name:'Focus Studio',exact:true});
-  await studio.getByRole('button',{name:'Start focus',exact:true}).click();
+  await expect(studio.getByRole('button',{name:'Pause',exact:true})).toBeVisible();
   await studio.getByRole('button',{name:'Back to planner',exact:true}).click();
   await expect(studio).not.toBeVisible();
   await page.keyboard.press('Control+,'); await page.getByRole('button',{name:'Appearance',exact:true}).click();
@@ -87,16 +84,16 @@ test('legacy views and Quick Add shortcuts bypass marketing and consume capture 
   await expect(page.getByRole('dialog',{name:/Quick Capture/})).toHaveCount(0);
   await page.goto('/app/?view=today'); await page.locator('main#main-content').waitFor();
 });
-test('Quick Add waits for onboarding and the automatically opened Focus Studio to close', async ({page}) => {
+test('Quick Add works immediately and does not force a setup dialog', async ({page}) => {
   await page.goto('/app?action=quickadd');
-  await expect(page.getByRole('dialog',{name:'Welcome Setup Ritual',exact:true})).toBeVisible();
-  await expect(page.getByRole('dialog',{name:/Quick Capture/})).toHaveCount(0);
+  await expect(page.getByRole('dialog',{name:/Quick Capture/})).toBeVisible();
+  await page.getByRole('button',{name:'Close Quick Add dialog'}).click();
   await finishSetup(page, 'Set up before capturing');
   const studio = page.getByRole('dialog',{name:'Focus Studio',exact:true});
   await expect(studio).toBeVisible();
   await expect(page.getByRole('dialog',{name:/Quick Capture/})).toHaveCount(0);
   await studio.getByRole('button',{name:'Back to planner',exact:true}).click();
-  await expect(page.getByRole('dialog',{name:/Quick Capture/})).toBeVisible();
+  await expect(page.getByRole('dialog',{name:/Quick Capture/})).toHaveCount(0);
   await expect(page).toHaveURL(/\/app$/);
 });
 test('landing alias, refresh and Back retain the marketing-to-workspace boundary', async ({page}) => {

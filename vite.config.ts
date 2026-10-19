@@ -1,3 +1,4 @@
+import { applySocialOrigin } from './src/utils/socialMetadata.ts';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -12,6 +13,10 @@ export default defineConfig({
   define: { __FLOWTASK_BUILD__: JSON.stringify(buildId) },
   plugins: [
     react(),
+    { name: 'flowtask-social-origin', transformIndexHtml(html) {
+      const configured = process.env.APP_ORIGIN || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '');
+      return applySocialOrigin(html, configured);
+    } },
     { name: 'flowtask-build-identity', generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'build-info.json', source: JSON.stringify({ commit: buildId }) });
     } },

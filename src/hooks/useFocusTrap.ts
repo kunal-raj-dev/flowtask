@@ -14,6 +14,17 @@ export function useFocusTrap(
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const backgrounds: Array<{ element: HTMLElement; inert: boolean }> = [];
+    let branch: HTMLElement | null = root.current;
+    while (branch?.parentElement && branch !== document.body) {
+      for (const sibling of branch.parentElement.children) {
+        if (sibling !== branch && sibling instanceof HTMLElement && sibling.getAttribute('aria-hidden') !== 'true') {
+          backgrounds.push({ element: sibling, inert: sibling.hasAttribute('inert') });
+          sibling.setAttribute('inert', '');
+        }
+      }
+      branch = branch.parentElement;
+    }
     const items = () =>
       [
         ...(root.current?.querySelectorAll<HTMLElement>(
@@ -57,8 +68,14 @@ export function useFocusTrap(
       }
     };
     document.addEventListener("keydown", handle, true);
+    const containFocus = (event: FocusEvent) => {
+      if ([...document.querySelectorAll('[aria-modal="true"]')].at(-1) === root.current && !root.current?.contains(event.target as Node)) (items()[0] || root.current)?.focus();
+    };
+    document.addEventListener('focusin', containFocus);
     return () => {
       document.removeEventListener("keydown", handle, true);
+      document.removeEventListener('focusin', containFocus);
+      backgrounds.forEach(({ element, inert }) => { element.toggleAttribute('inert', inert); });
       document.body.style.overflow = overflow;
       if (previous?.isConnected) previous.focus();
     };

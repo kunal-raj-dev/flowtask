@@ -125,10 +125,10 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
             type="button"
             onClick={handleStarterStep}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 shadow-xs transition-all active:scale-95"
-            title="Cognitive de-escalation: Generate a tailored 5-minute starter action to break inertia"
+            title="Suggest a small first step for this task"
           >
             <Zap size={11} className="text-amber-500 fill-current" />
-            <span>Break Inertia (5m)</span>
+            <span>Find a 5-minute start</span>
           </button>
 
           <button

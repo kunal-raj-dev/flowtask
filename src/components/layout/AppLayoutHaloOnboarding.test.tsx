@@ -130,7 +130,7 @@ describe('AppLayout Universal Halo & Onboarding (BUG-13 & BUG-08)', () => {
     expect(screen.queryByRole('button', { name: /dismiss keyboard halo dock/i })).toBeNull();
   });
 
-  it('automatically triggers guided onboarding ritual when user has no tasks and has not completed onboarding', () => {
+  it('keeps first-time navigation usable without automatically opening a setup dialog', () => {
     mockTasks = [];
     mockSettings = {
       onboardingCompleted: false,
@@ -138,6 +138,6 @@ describe('AppLayout Universal Halo & Onboarding (BUG-13 & BUG-08)', () => {
     };
     render(<AppLayout />);
 
-    expect(mockOpenModal).toHaveBeenCalledWith('onboarding');
+    expect(mockOpenModal).not.toHaveBeenCalledWith('onboarding');
   });
 });

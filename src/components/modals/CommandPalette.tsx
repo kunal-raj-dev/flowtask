@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { audioEngine } from '../../utils/audioEngine';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 import { parseSearchDSL } from '../../utils/searchDSL';
 import { searchTasksFuzzy, calculateFuzzyScore } from '../../utils/fuzzySearch';
 

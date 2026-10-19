@@ -8,6 +8,8 @@ import { useTodayStr } from '../../hooks/useCurrentDate';
 import { isFocusTask, isTodayTask } from '../../utils/taskSelectors';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
 import type { WorkspacePreferences } from '../../types/dashboard';
+import { OnboardingFlow } from '../modals/OnboardingFlow';
+import { BackupReminder } from '../workflow/BackupReminder';
 interface TodayViewProps {
   onSelectTask: (id: string) => void; onStartFocus: (id: string) => void;
   onOpenBrainDump?: () => void; onStartSprint?: (id: string) => void; onOpenStudySession?: () => void;
@@ -15,6 +17,11 @@ interface TodayViewProps {
 export const TodayView: React.FC<TodayViewProps> = ({ onSelectTask, onStartFocus, onStartSprint }) => {
   const { dashboards = [], updateDashboards, workspacePreferences = {}, workspaceId = 'local', setWorkspacePreference, tasks, smartViews = [], toggleTaskStatus, toggleTaskPinToday, updateTask, deleteTask, batchUpdateTasks, batchDeleteTasks } = useTaskContext();
   const [planning, setPlanning] = useState(false);
+  const { settings } = useTaskContext();
+  const [welcome, setWelcome] = useState(() => {
+    try { return !settings?.onboardingCompleted && localStorage.getItem('flowtask_onboarding_completed') !== 'true' && tasks.length === 0; }
+    catch { return !settings?.onboardingCompleted && tasks.length === 0; }
+  });
   const today = useTodayStr();
   const defaultDashboardId = (workspacePreferences.workspace as WorkspacePreferences | undefined)?.defaultDashboardId;
   const visibleTasks = useMemo(() => {
@@ -36,6 +43,8 @@ export const TodayView: React.FC<TodayViewProps> = ({ onSelectTask, onStartFocus
   }, [dashboards,workspacePreferences.activeDashboardId,defaultDashboardId,tasks,smartViews,today]);
   useKeyboardNavigation({ tasks: visibleTasks, onSelectTask, onToggleStatus: toggleTaskStatus, onTogglePinToday: toggleTaskPinToday, onUpdateTask: updateTask, onDeleteTask: deleteTask, onBatchUpdate: batchUpdateTasks, onBatchDelete: batchDeleteTasks, onBatchArchive: ids => batchUpdateTasks(ids, { archivedAt: Date.now() }), onStartFocus, enabled: true });
   return <div className="desk-today-page">
+    {welcome && <OnboardingFlow inline isOpen onClose={() => setWelcome(false)}/>}
+    <BackupReminder/>
     {!!workspacePreferences._dashboardRecovery && <p className="desk-notice" role="status">A saved layout needs repair. A recovery copy is preserved on this device; your tasks and notes are safe.</p>}
     {planning && <DailyPlanning showCard={false} isOpen={true} onOpenChange={setPlanning}/>}
     <DashboardEditor key={workspaceId} workspaceId={workspaceId} dashboards={dashboards.length ? dashboards : STARTER_DASHBOARDS}

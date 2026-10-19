@@ -54,6 +54,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
     addMultipleTasks,
     showToast,
     setIsTemplatePickerOpen,
+    settings,
   } = useTaskContext();
 
   const [input, setInput] = useState(initialDraft);
@@ -126,7 +127,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   }, [autoFocus, isMultiline]);
 
   // NLP Parse
-  const parsed = parseTaskInput(input);
+  const parsed = settings?.enableSmartSyntaxParsing === false ? { cleanTitle: input.trim() } : parseTaskInput(input);
 
   // Effective values: Explicit override > Parsed token > Context default
   const effectiveProjectId = explicitProjectId || parsed.projectTag || defaultProjectId;
@@ -137,7 +138,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   const resolvedDefaultPlannedDate = (parsed.dueDate && parsed.dueDate !== todayStr) ? undefined : defaultPlannedDate;
   const effectivePlannedDate = explicitPlannedDate !== null ? explicitPlannedDate : (parsed.plannedDate || resolvedDefaultPlannedDate);
   const effectiveDueDate = explicitDueDate !== null ? explicitDueDate : parsed.dueDate;
-  const effectivePriority = explicitPriority || parsed.priority || 'p4';
+  const effectivePriority = explicitPriority || parsed.priority || settings?.defaultTaskPriority || 'p3';
   const effectiveDuration = explicitDuration !== null ? explicitDuration : parsed.estimatedMinutes;
   const effectiveRecurrence = explicitRecurrence || parsed.recurrence || 'none';
 
@@ -378,7 +379,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   aria-expanded={showDetails}
                   onClick={() => setShowDetails(!showDetails)}
                 >
-                  <span>{showDetails ? '▾ Hide properties' : '▸ Set properties'}</span>
+                  <span>{showDetails ? '▾ Hide properties' : '▸ More details'}</span>
                   {!showDetails && hasAnyParsedTokens && (
                     <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30" title="Parsed parameters active">
                       Parsed

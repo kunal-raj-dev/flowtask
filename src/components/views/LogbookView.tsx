@@ -16,7 +16,7 @@ import { useTodayStr } from '../../hooks/useCurrentDate';
 import { generateWorklogMarkdown } from '../../utils/worklogExporter';
 import { downloadMarkdown } from '../../utils/fileExporter';
 import { audioEngine } from '../../utils/audioEngine';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 
 interface LogbookViewProps {
   onSelectTask: (taskId: string) => void;

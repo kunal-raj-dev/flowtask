@@ -26,13 +26,23 @@ async function workspace(page: Page) {
 
 test("workspace image picker applies explicit covers and preserves them after reload", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  const workspaceMediaRequests: string[] = [];
+  page.on("request", request => {
+    if (request.url().includes("/media/workspace/v1/")) workspaceMediaRequests.push(request.url());
+  });
   await seedWorkspace(page);
+  const fullSizeRequests = () => workspaceMediaRequests.filter(url => /\/ws-[^/?]+\.webp(?:[?#]|$)/.test(url) && !/-thumb\.webp(?:[?#]|$)/.test(url) && !/-960\.webp(?:[?#]|$)/.test(url));
+  expect(fullSizeRequests(), "workspace entry should not download the image library").toEqual([]);
 
   await page.getByRole("button", { name: "Switch dashboard" }).click();
   const desks = page.getByRole("dialog", { name: "Your desks" });
   await desks.getByRole("button", { name: "Choose an image", exact: true }).click();
   const picker = page.getByRole("dialog", { name: "Choose a workspace image" });
-  await picker.getByRole("tab", { name: "Study & Research" }).click();
+  await picker.getByRole("combobox", { name: "Filter by use case" }).selectOption("study-research");
+  await picker.getByRole("combobox", { name: "Filter by visual style" }).selectOption("nature");
+  await expect(picker.getByRole("button", { name: "Select Red Mountain Lake" })).toBeVisible();
+  await picker.getByRole("combobox", { name: "Filter by visual style" }).selectOption("all");
+  await expect(picker.getByRole("link", { name: "Credits & licenses" })).toHaveAttribute("href", "/media/workspace/CREDITS.md");
   await picker.getByRole("button", { name: "Select Morning Library" }).click();
   await expect(picker.getByLabel("Horizontal position")).toBeVisible();
   const pickerAudit = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
@@ -48,6 +58,8 @@ test("workspace image picker applies explicit covers and preserves them after re
   await page.setViewportSize({ width: 390, height: 844 });
   await picker.getByRole("button", { name: "Use image" }).click();
   await expect(page.locator(".desk-dashboard-cover")).toHaveAttribute("src", /ws-morning-library-960\.webp/);
+  expect(fullSizeRequests(), "only the selected image should load at full size for crop preview").toHaveLength(1);
+  expect(fullSizeRequests()[0]).toContain("ws-morning-library.webp");
   await expect.poll(async () => (await workspace(page)).dashboards[0].coverImage).toBe("ws-morning-library");
   await expect.poll(async () => (await workspace(page)).dashboards[0].coverFocalPoint).toEqual({ x: 50, y: 50 });
 
@@ -62,7 +74,7 @@ test("workspace image picker applies explicit covers and preserves them after re
   await page.getByText("Project details", { exact: true }).click();
   await page.getByRole("button", { name: "Choose image", exact: true }).click();
   const projectPicker = page.getByRole("dialog", { name: "Choose a workspace image" });
-  await projectPicker.getByRole("tab", { name: "Code & Build" }).click();
+  await projectPicker.getByRole("combobox", { name: "Filter by use case" }).selectOption("code-build");
   await projectPicker.getByRole("button", { name: "Select Quiet Code Studio" }).click();
   const projectPickerAudit = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   expect(projectPickerAudit.violations.filter(issue => issue.impact === "critical" || issue.impact === "serious").map(issue => issue.id)).toEqual([]);
@@ -72,7 +84,8 @@ test("workspace image picker applies explicit covers and preserves them after re
   await expect.poll(async () => (await workspace(page)).projects.find((project: any) => project.id === "work")?.coverFocalPoint).toEqual({ x: 52, y: 52 });
 
   await page.getByRole("button", { name: /^Today/ }).click();
-  await page.getByRole("button", { name: "Edit workspace", exact: true }).click();
+  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await page.getByRole("button", { name: "Add Widget", exact: true }).click();
   const widgetCard = page.getByRole("dialog", { name: "Add Widget to Workspace" }).locator("article").filter({ has: page.getByRole("heading", { name: "Quiet Scene & Clock", exact: true }) });
   await widgetCard.getByRole("button", { name: "Add", exact: true }).click();
@@ -85,7 +98,7 @@ test("workspace image picker applies explicit covers and preserves them after re
   const scenePickerAudit = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   const sceneContrastIssues = scenePickerAudit.violations.filter(issue => issue.impact === "critical" || issue.impact === "serious");
   expect(sceneContrastIssues.map(issue => issue.id), JSON.stringify(sceneContrastIssues.map(issue => ({ id: issue.id, nodes: issue.nodes.map(node => ({ target: node.target, summary: node.failureSummary })) })))).toEqual([]);
-  await scenePicker.getByRole("tab", { name: "Planning" }).click();
+  await scenePicker.getByRole("combobox", { name: "Filter by use case" }).selectOption("planning-reflection");
   await scenePicker.getByRole("button", { name: "Select Morning Priorities" }).click();
   await scenePicker.getByRole("button", { name: "Use image" }).click();
   await widgetSettings.getByRole("button", { name: "Apply Changes", exact: true }).click();

@@ -1,3 +1,4 @@
+import { useMotionPreference } from '../../hooks/useMotionPreference';
 import {
   useEffect,
   useMemo,
@@ -552,12 +553,7 @@ export function FocusStudio({
     ctx.setWorkspacePreference("focusLogs", logs);
     setMessage("Thanks. Your reflection is saved.");
   };
-  const reduced =
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-    Boolean(
-      (ctx.workspacePreferences.appearance as { reducedMotion?: boolean })
-        ?.reducedMotion,
-    );
+  const reduced = useMotionPreference();
   const dataSaving = Boolean(
     (navigator as Navigator & { connection?: { saveData?: boolean } })
       .connection?.saveData,

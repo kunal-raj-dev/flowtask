@@ -25,7 +25,7 @@ export const WorkspaceTaskRow: React.FC<WorkspaceTaskRowProps> = ({ task, onSele
   const done = task.status === 'done', pinned = isFocusTask(task, today), selected = selectedTaskIds.includes(task.id);
   const active = activeTimerTaskId === task.id, running = active && focusSession?.state === 'running';
   const elapsed = (context as unknown as { activeTimerSeconds?: number }).activeTimerSeconds ?? seconds;
-  const duration = task.estimatedMinutes || 0;
+  const duration = task.estimatedMinutes || context.settings?.defaultTaskDuration || 30;
   const durationLabel = duration >= 60 ? Math.floor(duration / 60) + 'h' + (duration % 60 ? ' ' + duration % 60 + 'm' : '') : duration + 'm';
   const project = projects.find(p => p.id === task.projectId);
   const commit = () => { const value = title.trim(); if (value && value !== task.title) updateTask(task.id, { title: value }); setTitle(value || task.title); setEditing(false); };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 import {
   Moon,
   Sparkles,

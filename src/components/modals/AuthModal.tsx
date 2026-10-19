@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { isFirebaseConfigured } from '../../lib/firebase';
 import {
   Cloud,
   CloudOff,
@@ -24,6 +26,8 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
+  const dialogRoot = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRoot, onClose, isOpen);
   const {
     user,
     isAnonymous,
@@ -41,7 +45,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Account and sync" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div ref={dialogRoot} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Account and sync" className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md transition-opacity"
@@ -59,10 +63,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
               <div>
                 <h3 className="text-base font-bold text-[var(--text-primary)]">
-                  Cloud Synchronization
+                  Account & Backups
                 </h3>
                 <p className="text-xs text-[var(--text-secondary)]">
-                  Real-time multi-device database & offline backup
+                  Saved on this device. Cloud sync is optional.
                 </p>
               </div>
             </div>
@@ -78,7 +82,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 max-h-[70dvh] overflow-y-auto">
+          {!isFirebaseConfigured && <section className="desk-notice" role="status"><div><strong>Your planner works without an account.</strong><p>Cloud sync is not configured for this installation. Your work is saved on this device; download a backup to keep a separate copy.</p><Button onClick={downloadWorkspaceBackup}>Download backup</Button></div></section>}
+
           {user && (
             <div className="p-4 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] space-y-3">
               <div className="flex items-start gap-2.5">
@@ -273,7 +279,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   </span>
                   <button
                     onClick={() => signOutUser()}
-                    disabled={loading}
+                    disabled={!isFirebaseConfigured || loading}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -292,7 +298,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       Local Device Workspace
                     </h4>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
-                      Your tasks and projects are stored securely on this device in high-speed IndexedDB.
+                      Your tasks and projects are saved in this browser. Download a backup to keep a separate copy.
                     </p>
                   </div>
                 </div>
@@ -300,7 +306,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300">
                   <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
                   <span>
-                    Sign in with your Google account to backup and sync your flow across multiple phones, laptops, and tablets.
+                    When available, signing in keeps your work in sync across your devices. Keep a downloaded backup for recovery.
                   </span>
                 </div>
 
@@ -309,7 +315,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     <button
                       type="button"
                       onClick={() => signInWithGoogle()}
-                      disabled={loading}
+                      disabled={!isFirebaseConfigured || loading}
                       className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg font-semibold text-xs text-stone-800 dark:text-white bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 shadow-xs hover:bg-stone-50 dark:hover:bg-stone-750 transition-all cursor-pointer card-surface active:scale-[0.99]"
                     >
                       {loading ? (
@@ -343,7 +349,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       <button
                         type="button"
                         onClick={() => signInWithGoogleRedirect()}
-                        disabled={loading}
+                        disabled={!isFirebaseConfigured || loading}
                         className="text-[11px] text-[var(--text-muted)] hover:text-amber-600 dark:hover:text-amber-400 underline transition-colors cursor-pointer"
                       >
                         Popup blocked or failing? Sign in with full-page redirect
@@ -352,7 +358,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   </div>
                 ) : (
                   <div className="p-3 rounded-lg bg-[var(--bg-surface-l2)] text-xs text-[var(--text-muted)] text-center border border-[var(--border-hairline)]">
-                    Firebase configuration detected in offline demo mode.
+                    Cloud sync is unavailable here. Keep using your device workspace.
                   </div>
                 )}
               </div>
@@ -363,10 +369,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] px-1">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              IndexedDB Multi-Tab Sync
+              Saved on this device
             </span>
             <span className="flex items-center gap-1">
-              Google Cloud Firestore <ExternalLink className="w-3 h-3" />
+              Optional account sync <ExternalLink className="w-3 h-3" />
             </span>
           </div>
         </div>

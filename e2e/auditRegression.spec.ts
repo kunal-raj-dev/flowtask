@@ -33,35 +33,14 @@ async function savedWorkspace(page: Page) {
   });
 }
 
-test("first-run setup captures a developer priority and opens a task-linked Studio", async ({
+test("first-run setup captures one real task and opens a task-linked Studio", async ({
   page,
 }) => {
   await page.goto("/app");
-  const setup = page.getByRole("dialog", {
-    name: "Welcome Setup Ritual",
-    exact: true,
-  });
-  await expect(setup).toBeVisible();
-  await setup.getByRole("button", { name: "Developer", exact: true }).click();
-  await setup
-    .getByRole("button", { name: "Set Up My Daily Capacity", exact: true })
-    .click();
-  await setup
-    .getByRole("button", { name: "Continue to Top 3 Focus", exact: true })
-    .click();
-  await setup
-    .getByPlaceholder("Most important deliverable or deep focus task...")
-    .fill("Build the first small example");
-  await setup
-    .getByRole("button", { name: /Continue|Review|Lock/i })
-    .last()
-    .click();
-  await setup
-    .getByRole("button", {
-      name: "Enter Flow State & Launch Today",
-      exact: true,
-    })
-    .click();
+  const setup = page.getByRole('region', { name: 'Start with one task', exact: true });
+  await setup.getByRole('textbox', { name: 'Your first task' }).fill('Build the first small example');
+  await setup.getByRole('button', { name: 'Add task', exact: true }).click();
+  await setup.getByRole('button', { name: 'Start 25-minute focus', exact: true }).click();
   const studio = page.getByRole("dialog", {
     name: "Focus Studio",
     exact: true,
@@ -72,15 +51,10 @@ test("first-run setup captures a developer priority and opens a task-linked Stud
       exact: true,
     }),
   ).toBeVisible();
-  await studio
-    .getByRole("button", { name: "Start focus", exact: true })
-    .click();
   await expect(
     studio.getByRole("button", { name: "Pause", exact: true }),
   ).toBeVisible();
-  expect((await savedWorkspace(page)).preferences.profile.audience).toBe(
-    "developer",
-  );
+  expect((await savedWorkspace(page)).preferences.settings.onboardingCompleted).toBe(true);
 });
 
 test("a complete day links capture, project, schedule, focus, review and a restorable backup", async ({
@@ -135,9 +109,7 @@ test("a complete day links capture, project, schedule, focus, review and a resto
     name: "Focus Studio",
     exact: true,
   });
-  await studio
-    .getByRole("button", { name: "Start focus", exact: true })
-    .click();
+  await expect(studio.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
   await page.waitForTimeout(1100);
   await studio.getByRole("button", { name: "Pause", exact: true }).click();
   await studio.getByRole("button", { name: "Resume", exact: true }).click();
@@ -366,12 +338,10 @@ test("landing-to-onboarding uses the local calendar date before UTC midnight", a
   await page
     .getByRole("link", { name: "Continue to workspace", exact: true })
     .click();
-  const setup = page.getByRole('dialog', { name: 'Welcome Setup Ritual', exact: true });
-  await setup.getByRole('button', { name: 'Set Up My Daily Capacity', exact: true }).click();
-  await setup.getByRole('button', { name: 'Continue to Top 3 Focus', exact: true }).click();
-  await setup.getByPlaceholder('Most important deliverable or deep focus task...').fill('Plan using my local date');
-  await setup.getByRole('button', { name: /Continue|Review|Lock/i }).last().click();
-  await setup.getByRole('button', { name: 'Enter Flow State & Launch Today', exact: true }).click();
+  const setup = page.getByRole('region', { name: 'Start with one task', exact: true });
+  await setup.getByRole('textbox', { name: 'Your first task' }).fill('Plan using my local date');
+  await setup.getByRole('button', { name: 'Add task', exact: true }).click();
+  await setup.getByRole('button', { name: 'Keep planning', exact: true }).click();
   await expect.poll(async () => (await savedWorkspace(page)).tasks.length).toBe(1);
   expect(
     (await savedWorkspace(page)).tasks.every(
@@ -396,7 +366,7 @@ test("workspace JSON export includes customized desks and excludes active runtim
   await page.getByRole("button", { name: /Download.*JSON/i }).click();
   const download = await downloadEvent;
   const backup = JSON.parse(await readFile((await download.path())!, "utf8"));
-  expect(backup.schemaVersion).toBe(5);
+  expect(backup.schemaVersion).toBe(6);
   expect(backup.dashboards).toHaveLength(4);
   expect(backup.preferences).not.toHaveProperty("focusSession");
 });
@@ -519,9 +489,8 @@ for (const size of [
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page
-      .getByRole("button", { name: "Edit workspace", exact: true })
-      .click();
+    await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
     await page
       .getByRole("button", { name: "Configure Top 3 Priorities", exact: true })
       .click();
@@ -546,9 +515,8 @@ test("reduced motion, high contrast and a 200 percent zoom-equivalent viewport k
   await page.evaluate(() => {
     document.documentElement.dataset.highContrast = "true";
   });
-  await page
-    .getByRole("button", { name: "Edit workspace", exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await page
     .getByRole("button", { name: "Move Top 3 Priorities later", exact: true })
     .click();

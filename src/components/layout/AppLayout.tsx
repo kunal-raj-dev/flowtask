@@ -32,7 +32,8 @@ import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
 import { useTactileAudioClicks } from '../../hooks/useTactileAudioClicks';
 import { useAuth } from '../../context/AuthContext';
-import confetti from 'canvas-confetti';
+import { useStudioPreferences } from '../../hooks/useStudio';
+import confetti from '../../utils/celebrate';
 
 export const AppLayout: React.FC = () => {
   const clickPreferences = useTaskContext().workspacePreferences?.appearance as { keyboardSounds?: boolean; mode?: 'manual' | 'system' | 'schedule' } | undefined;
@@ -57,21 +58,17 @@ export const AppLayout: React.FC = () => {
     syncStatus,
     setIsAuthModalOpen,
     settings,
+    focusSession, startFocusSession, updateFocusSession, resumeFocusSession,
   } = useTaskContext();
+  const { preferences: studioPreferences } = useStudioPreferences();
 
   const todayStr = useTodayStr();
 
   const { user, isAnonymous } = useAuth();
   const { openModal, closeModal, isModalOpen, hasAnyModalOpen } = useModal();
 
-  let needsOnboarding = false;
-  try {
-    const legacyCompleted = localStorage.getItem('flowtask_onboarding_completed') === 'true';
-    needsOnboarding = !settings?.onboardingCompleted && !legacyCompleted && tasks.length === 0;
-  } catch { /* Preserve the existing no-storage fallback. */ }
-  useEffect(() => {
-    if (needsOnboarding && syncStatus !== 'syncing') openModal('onboarding');
-  }, [needsOnboarding, syncStatus, openModal]);
+  // The introduction is inline; shortcuts never wait for setup.
+  const needsOnboarding = false;
 
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -260,8 +257,17 @@ export const AppLayout: React.FC = () => {
   };
 
   const handleStartFocus = useCallback((taskId: string) => {
+    if (focusSession) {
+      if (focusSession.taskId === taskId && focusSession.state === 'paused') resumeFocusSession();
+      openModal('pomodoro', { taskId: focusSession.taskId });
+      return;
+    }
+    const task = tasks.find(item => item.id === taskId);
+    const timer = studioPreferences.timer;
+    startFocusSession(timer.mode, taskId, task?.title, timer.mode === 'stopwatch' ? 0 : timer.focusMinutes * 60);
+    updateFocusSession({ timerConfiguration: timer, recipeId: studioPreferences.recipeId, nextAction: task?.nextAction });
     openModal('pomodoro', { taskId });
-  }, [openModal]);
+  }, [focusSession, resumeFocusSession, openModal, tasks, studioPreferences, startFocusSession, updateFocusSession]);
 
   const handleStartStudySprint = useCallback((taskId: string) => {
     openModal('studySprint', { taskId });
@@ -542,7 +548,7 @@ export const AppLayout: React.FC = () => {
               aria-label={
                 user && !isAnonymous
                   ? `User Account: ${user.displayName || user.email}, Cloud status: ${syncStatus}`
-                  : 'Sign in to enable cloud sync'
+                  : 'Saved on this device. Account and backup options'
               }
               className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-hairline)] hover:border-amber-500/30 transition-all shadow-2xs cursor-pointer group active:scale-95"
             >
@@ -591,7 +597,7 @@ export const AppLayout: React.FC = () => {
               <span className="text-[11px] font-medium truncate max-w-[110px] xl:max-w-[150px]">
                 {user && !isAnonymous
                   ? user.displayName || user.email?.split('@')[0]
-                  : 'Sync'}
+                  : 'Saved on device'}
               </span>
 
               {/* Status indicator dot or badge */}

@@ -6,7 +6,7 @@ import { audioEngine, type AmbientSoundType } from '../../utils/audioEngine';
 import { formatSecondsToHumanReadable, formatTimerClock } from '../../utils/focusTimeFormat';
 import { useFocusModalShortcuts } from './useFocusModalShortcuts';
 import { useFocusAmbientSound } from './useFocusAmbientSound';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/celebrate';
 import {
   X,
   Play,

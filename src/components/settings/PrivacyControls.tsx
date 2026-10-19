@@ -140,6 +140,11 @@ export function PrivacyControls() {
             <ExternalLink size={10} />
           </a>
           <span>·</span>
+          <a href="/media/workspace/CREDITS.md" target="_blank" rel="noreferrer" className="hover:text-[var(--text-primary)] underline flex items-center gap-1">
+            <span>Workspace image credits</span>
+            <ExternalLink size={10} />
+          </a>
+          <span>·</span>
           <a href="/welcome#privacy" target="_blank" rel="noreferrer" className="hover:text-[var(--text-primary)] underline flex items-center gap-1">
             <span>Privacy information</span>
             <ExternalLink size={10} />

@@ -23,9 +23,9 @@ export const commandService = {
     tasks: Task[],
     input: string,
     overrides?: Partial<Task>,
-    currentContext?: { defaultProjectId?: string; defaultPlannedDate?: string }
+    currentContext?: { defaultProjectId?: string; defaultPlannedDate?: string; defaultPriority?: Priority; enableParsing?: boolean }
   ): CommandResult & { createdTask: Task } {
-    const parsed = parseTaskInput(input);
+    const parsed = currentContext?.enableParsing === false ? { cleanTitle: input.trim() } : parseTaskInput(input);
     const now = Date.now();
     const id = `task-${now}-${Math.random().toString(36).substring(2, 7)}`;
 
@@ -45,7 +45,7 @@ export const commandService = {
       overrides?.dueDate !== undefined ? overrides.dueDate : parsed.dueDate;
 
     const priority: Priority =
-      overrides?.priority || parsed.priority || 'p4';
+      overrides?.priority || parsed.priority || currentContext?.defaultPriority || 'p4';
 
     const createdTask: Task = {
       id,

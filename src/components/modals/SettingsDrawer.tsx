@@ -1,8 +1,9 @@
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { FocusSettings } from '../settings/FocusSettings';
 import { BUILD_ID, BUILD_LABEL } from '../../utils/buildInfo';
 import { WorkspaceSettings } from '../settings/WorkspaceSettings';
 import { PrivacyControls } from '../settings/PrivacyControls';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X,
   Sliders,
@@ -67,6 +68,8 @@ interface SearchableSetting {
 }
 
 export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose, initialTab }) => {
+  const dialogRoot = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRoot, onClose, isOpen);
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'workflow');
   const { openModal } = useModal();
   const { user } = useAuth();
@@ -86,7 +89,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     setIsAuthModalOpen,
     forceSyncToCloud,
     downloadWorkspaceBackup,
-    workspacePreferences,
+    workspacePreferences = {},
+    importCalendarFile, removeImportedCalendar,
   } = useTaskContext();
 
   const todayStr = useTodayStr();
@@ -238,17 +242,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   }
 
   // Handle Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
   const handleApplyCalendarIcs = async () => {
     setCalendarIcsUrl(icsInput.trim());
     setIsRefreshingCalendar(true);
@@ -351,18 +344,13 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   const handleIcsFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content && content.includes('BEGIN:VCALENDAR')) {
-        const eventsCount = (content.match(/BEGIN:VEVENT/g) || []).length;
-        setIcsFileUploadMsg(`Parsed ${eventsCount} events from ${file.name}. Feed synced locally.`);
-        triggerSaveToast();
-      } else {
-        setIcsFileUploadMsg('Invalid .ics file format. Must be an iCalendar file.');
-      }
-    };
-    reader.readAsText(file);
+    setIcsFileUploadMsg('Importing calendar…');
+    void importCalendarFile(file).then(count => {
+      setIcsFileUploadMsg(`Imported ${file.name}. ${count} events today. Other dates appear when you browse the plan.`);
+      triggerSaveToast();
+    }).catch(error => setIcsFileUploadMsg(error instanceof Error ? error.message : 'The calendar could not be imported.'));
+    e.currentTarget.value = '';
+
   };
 
   if (!isOpen) return null;
@@ -381,6 +369,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
       {/* Slide-over Content Container */}
       <div
         className="relative z-10 w-full max-w-xl sm:max-w-2xl md:max-w-3xl bg-[var(--bg-surface-l1)] border-l border-[var(--border-hairline)] shadow-2xl flex flex-col h-full transform transition-transform duration-300 ease-out animate-slide-left"
+        ref={dialogRoot} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={activeTab === 'aesthetics' ? 'Appearance settings' : 'Application Settings'}
@@ -394,7 +383,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Preferences & Settings</h2>
               <p className="text-xs text-[var(--text-secondary)]">
-                Calibrate workflow rhythm, themes, audio and local storage
+                Choose how you plan, focus, and make this space yours
               </p>
             </div>
           </div>
@@ -544,7 +533,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       <Sparkles size={14} className="text-amber-500" />
                     </label>
                     <p className="text-xs text-[var(--text-secondary)]">
-                      Calibrate your daily workload budget. Perfect for regular workdays or intense study sprints.
+                      Choose a realistic amount of time for your tasks. Perfect for regular workdays or intense study sprints.
                     </p>
                   </div>
 
@@ -984,10 +973,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-4">
                 <div>
                   <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                    Rerun Guided Setup Ritual
+                    A fresh start
                   </h4>
                   <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
-                    Re-experience the Sunsama-style guided onboarding flow.
+                    Add one task and begin a quiet focus session.
                   </p>
                 </div>
                 <button
@@ -998,7 +987,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   }}
                   className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
                 >
-                  Launch Ritual
+                  Start with one task
                 </button>
               </div>
             </div>
@@ -1088,6 +1077,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   )}
                 </div>
 
+                <p className="desk-muted">Imported calendar files stay on this device and are excluded from backups and cloud sync. Importing another file replaces the previous file; a connected feed stays available.</p>
+                {!!workspacePreferences._calendarFile && <div className="desk-notice"><span>Imported: {(workspacePreferences._calendarFile as { name: string }).name}</span><button onClick={removeImportedCalendar}>Remove imported calendar</button></div>}
                 {/* Direct .ics File Import */}
                 <div className="pt-3 border-t border-[var(--border-hairline)] space-y-2">
                   <span className="text-xs font-semibold text-[var(--text-secondary)] block">
@@ -1098,6 +1089,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     <span>Choose .ics file from device…</span>
                     <input
                       type="file"
+                      aria-label="Import calendar file"
                       accept=".ics,text/calendar"
                       onChange={handleIcsFileUpload}
                       className="hidden"

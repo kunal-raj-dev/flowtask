@@ -144,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setPrevActiveView(activeView);
     if (['review', 'all', 'someday'].includes(activeView)) {
       setIsMoreCollapsed(false);
-    } else if (['timeline', 'kanban', 'matrix'].includes(activeView)) {
+    } else if (['kanban', 'matrix'].includes(activeView)) {
       setIsPerspectivesCollapsed(false);
     } else if (activeView.startsWith('smart:')) {
       setIsSmartViewsCollapsed(false);

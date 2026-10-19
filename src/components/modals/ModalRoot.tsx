@@ -22,7 +22,7 @@ const StudySessionModal = lazy(() => import('./StudySessionModal').then(m => ({ 
 const StudySprintRunnerModal = lazy(() => import('../focus/StudySprintRunnerModal').then(m => ({ default: m.StudySprintRunnerModal })));
 const PomodoroModal = lazy(() => import('../focus/FocusStudio').then(m => ({ default: m.FocusStudio })));
 const SettingsDrawer = lazy(() => import('./SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
-const OnboardingFlow = lazy(() => import('./OnboardingFlow').then(m => ({ default: m.OnboardingFlow })));
+import { OnboardingFlow } from './OnboardingFlow';
 
 import type { SettingsTab } from './SettingsDrawer';
 

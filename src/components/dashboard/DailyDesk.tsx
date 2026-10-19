@@ -1,3 +1,4 @@
+import { useStudioPreferences } from '../../hooks/useStudio';
 import { useEffect, useState } from "react";
 import { Play, ArrowRight, CalendarDays, Check } from "lucide-react";
 import { useTaskContext } from "../../context/TaskContext";
@@ -75,8 +76,9 @@ export function DailyDesk({
   onStartSprint,
   onPlanMyDay,
 }: Props) {
-  const { tasks, calendarEvents = [], settings, setIsEveningShutdownOpen, updateTask, showToast, undoLastAction } = useTaskContext();
+  const { tasks, focusSession, calendarEvents = [], settings, setIsEveningShutdownOpen, updateTask, showToast, undoLastAction } = useTaskContext();
   const today = useTodayStr();
+  const { preferences: studio } = useStudioPreferences();
   const summary = calculateDayPlanSummary({
     date: today,
     todayStr: today,
@@ -100,7 +102,7 @@ export function DailyDesk({
     return () => m.removeEventListener("change", change);
   }, []);
   const task =
-    candidates.find((t) => t.id === chosen) || priorities[0] || candidates[0];
+    tasks.find((t) => t.id === focusSession?.taskId) || candidates.find((t) => t.id === chosen) || priorities[0] || candidates[0];
   const suggestion = findEstimateSuggestion(candidates);
   const [dismissedSuggestion, setDismissedSuggestion] = useState<string | null>(null);
   const hours = (minutes: number) => `${Math.round(minutes / 6) / 10}h`;
@@ -154,11 +156,12 @@ export function DailyDesk({
           {candidates.filter((t) => !isFocusTask(t, today)).length} to do
         </span>
       </div>
-      <TaskListWidget {...propsFor("taskList")} />
+      <TaskListWidget {...propsFor("taskList")} hideCapture />
     </section>
   );
   return (
     <div className="daily-desk">
+      <section className="daily-capture" aria-label="Add a task"><TaskListWidget {...propsFor("taskList")} captureOnly /></section>
       <div className="daily-planning-summary">
         <div>
           <span className="daily-summary-label">A DAY THAT FITS</span>
@@ -251,10 +254,8 @@ export function DailyDesk({
                 }
               >
                 <Play size={14} fill="currentColor" />
-                Start focus
-                {task?.estimatedMinutes ? (
-                  <span>· {task.estimatedMinutes}m</span>
-                ) : null}
+                {focusSession ? focusSession.state === 'paused' ? 'Resume focus' : 'Return to focus' : task?.sessionMetadata?.isSession ? 'Start study sprint' : 'Start focus'}
+                {!focusSession && !task?.sessionMetadata?.isSession && studio.timer.mode !== 'stopwatch' && <span> · {studio.timer.focusMinutes}m</span>}
               </button>
               {task && (
                 <button
