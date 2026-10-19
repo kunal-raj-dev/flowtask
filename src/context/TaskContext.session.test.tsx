@@ -5,7 +5,14 @@ import { dbService, emptyWorkspace } from '../services/dbService';
 import { useFocusStore } from '../store/useFocusStore';
 vi.mock('./AuthContext', () => ({ useAuth: () => ({ user: null, loading: false }) }));
 beforeEach(() => {
-  localStorage.clear(); useFocusStore.getState().setFocusSession(null);
+  const data = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => data.set(key, value),
+    removeItem: (key: string) => data.delete(key),
+    clear: () => data.clear(),
+  });
+  useFocusStore.getState().setFocusSession(null);
   const record = emptyWorkspace('local');
   record.tasks = ['original', 'urgent'].map(id => ({ id, title: id, projectId: 'inbox', status: 'todo', priority: 'p3', subtasks: [], createdAt: 1 }));
   vi.spyOn(dbService, 'ensureLegacyMigrated').mockResolvedValue(record);

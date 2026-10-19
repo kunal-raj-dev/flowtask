@@ -14,7 +14,9 @@ export interface TodayPartitionedTasks {
  */
 export function partitionTodayTasks(tasks: Task[], todayStr: string): TodayPartitionedTasks {
   const topThreeTasks = tasks.filter(
-    (t) => t.isPinnedToday && (t.topThreeDate === todayStr || (!t.topThreeDate && t.plannedDate === todayStr))
+    (t) =>
+      t.isPinnedToday &&
+      (t.topThreeDate === todayStr || (!t.topThreeDate && (t.plannedDate === todayStr || (!t.plannedDate && t.dueDate === todayStr))))
   );
 
   const topThreeIds = new Set(topThreeTasks.map((t) => t.id));

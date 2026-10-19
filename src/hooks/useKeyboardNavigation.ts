@@ -259,7 +259,7 @@ export function useKeyboardNavigation({
           if (focusedTaskId && onUpdateTask) {
             e.preventDefault();
             const todayStr = formatLocalDate(new Date());
-            onUpdateTask(focusedTaskId, { plannedDate: todayStr });
+            onUpdateTask(focusedTaskId, { plannedDate: todayStr, isSomeday: false });
           }
           break;
         }
@@ -270,7 +270,7 @@ export function useKeyboardNavigation({
             e.preventDefault();
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            onUpdateTask(focusedTaskId, { plannedDate: formatLocalDate(tomorrow) });
+            onUpdateTask(focusedTaskId, { plannedDate: formatLocalDate(tomorrow), isSomeday: false, isPinnedToday: false });
           }
           break;
         }
@@ -279,7 +279,7 @@ export function useKeyboardNavigation({
         case 's': {
           if (focusedTaskId && onUpdateTask) {
             e.preventDefault();
-            onUpdateTask(focusedTaskId, { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
+            onUpdateTask(focusedTaskId, { isSomeday: true, plannedDate: undefined, dueDate: undefined, isPinnedToday: false });
           }
           break;
         }
@@ -304,9 +304,12 @@ export function useKeyboardNavigation({
           break;
         }
 
-        // Escape: blur highlight
+        // Escape: blur highlight and clear multi-selection
         case 'Escape': {
           setFocusedIndex(-1);
+          if (useUIStore.getState().selectedTaskIds.length > 0) {
+            useUIStore.getState().clearTaskSelection();
+          }
           break;
         }
 

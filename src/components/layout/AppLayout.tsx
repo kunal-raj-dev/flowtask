@@ -273,6 +273,18 @@ export const AppLayout: React.FC = () => {
     openModal('studySprint', { taskId });
   }, [openModal]);
 
+  const handleSelectTask = useCallback((id: string) => {
+    setSelectedTaskId(id);
+  }, [setSelectedTaskId]);
+
+  const handleOpenBrainDump = useCallback(() => {
+    openModal('brainDump');
+  }, [openModal]);
+
+  const handleOpenStudySession = useCallback(() => {
+    openModal('studySession');
+  }, [openModal]);
+
   const handleCloseDrawer = useCallback(() => {
     setSelectedTaskId(null);
   }, [setSelectedTaskId]);
@@ -282,11 +294,11 @@ export const AppLayout: React.FC = () => {
     if (activeView === 'today') {
       return (
         <TodayView
-          onSelectTask={(id) => setSelectedTaskId(id)}
+          onSelectTask={handleSelectTask}
           onStartFocus={handleStartFocus}
-          onOpenBrainDump={() => openModal('brainDump')}
+          onOpenBrainDump={handleOpenBrainDump}
           onStartSprint={handleStartStudySprint}
-          onOpenStudySession={() => openModal('studySession')}
+          onOpenStudySession={handleOpenStudySession}
         />
       );
     }
@@ -294,9 +306,9 @@ export const AppLayout: React.FC = () => {
       return (
         <TaskList
           filterInbox
-          onSelectTask={(id) => setSelectedTaskId(id)}
+          onSelectTask={handleSelectTask}
           onStartFocus={handleStartFocus}
-          onOpenBrainDump={() => openModal('brainDump')}
+          onOpenBrainDump={handleOpenBrainDump}
           onStartSprint={handleStartStudySprint}
         />
       );
@@ -304,9 +316,9 @@ export const AppLayout: React.FC = () => {
     if (activeView === 'upcoming') {
       return (
         <UpcomingView
-          onSelectTask={(id) => setSelectedTaskId(id)}
+          onSelectTask={handleSelectTask}
           onStartFocus={handleStartFocus}
-          onOpenBrainDump={() => openModal('brainDump')}
+          onOpenBrainDump={handleOpenBrainDump}
           onStartSprint={handleStartStudySprint}
         />
       );

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { Task, Priority } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
 import { useTodayStr, useTomorrowStr } from '../../hooks/useCurrentDate';
@@ -14,11 +15,12 @@ import {
   CheckCircle2,
   Circle,
   Copy,
+  CheckSquare,
 } from 'lucide-react';
 
 interface TaskContextMenuProps {
   task: Task;
-  position: { x: number; y: number };
+  position: { x: number; y: number; triggerTop?: number; triggerBottom?: number; alignRight?: boolean };
   onClose: () => void;
   onStartFocus?: (taskId: string) => void;
   onEditTitle?: () => void;
@@ -37,6 +39,8 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
     toggleTaskStatus,
     toggleTaskPinToday,
     duplicateTask,
+    toggleTaskSelection,
+    selectedTaskIds,
   } = useTaskContext();
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -54,7 +58,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
 
   // Click outside and Esc listener
   useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
+    const handleOutsideClick = (e: MouseEvent | PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose();
       }
@@ -73,39 +77,56 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       }
     };
 
-    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('pointerdown', handleOutsideClick);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('pointerdown', handleOutsideClick);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose]);
 
-  // Viewport bounds calculation
-  const menuWidth = 200;
-  const menuHeight = 280;
-  const posX = Math.min(position.x, window.innerWidth - menuWidth - 16);
-  const posY = Math.min(position.y, window.innerHeight - menuHeight - 16);
+  // Viewport bounds calculation: ensure menu doesn't overflow screen, clip items, or obstruct trigger button
+  const menuWidth = 208;
+  const estimatedMenuHeight = 440;
+
+  const rawX = position.alignRight ? position.x - menuWidth : position.x;
+  const posX = Math.min(Math.max(16, rawX), window.innerWidth - menuWidth - 16);
+
+  let posY = position.y;
+  if (position.triggerTop !== undefined && position.triggerBottom !== undefined) {
+    if (position.triggerBottom + estimatedMenuHeight + 8 <= window.innerHeight) {
+      posY = position.triggerBottom + 4;
+    } else if (position.triggerTop - estimatedMenuHeight - 8 >= 16) {
+      posY = position.triggerTop - estimatedMenuHeight - 4;
+    } else {
+      posY = Math.max(16, window.innerHeight - estimatedMenuHeight - 16);
+    }
+  } else {
+    posY = Math.min(position.y, Math.max(16, window.innerHeight - estimatedMenuHeight - 16));
+  }
 
   const handleAction = (action: () => void) => {
     action();
     onClose();
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       ref={menuRef}
       role="dialog"
       aria-label={`Actions for ${task.title}`}
       data-overlay-open="true"
       style={{ left: `${Math.max(16, posX)}px`, top: `${Math.max(16, posY)}px` }}
-      className="fixed z-50 w-52 bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] rounded-2xl shadow-modal p-1.5 text-xs text-[var(--text-primary)] card-surface animate-slide-down select-none"
+      className="fixed z-50 w-52 max-h-[calc(100vh-32px)] overflow-y-auto bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] rounded-2xl shadow-modal p-1.5 text-xs text-[var(--text-primary)] card-surface animate-slide-down select-none"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Complete toggle */}
       <button
+        type="button"
         onClick={() => handleAction(() => toggleTaskStatus(task.id))}
-        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         {isDone ? (
           <>
@@ -123,8 +144,9 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       {/* Rename title inline */}
       {onEditTitle && (
         <button
+          type="button"
           onClick={() => handleAction(onEditTitle)}
-          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
         >
           <span className="text-[var(--text-muted)] font-mono text-[11px]">T</span>
           <span>Rename Title</span>
@@ -133,8 +155,9 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
 
       {/* Duplicate task */}
       <button
+        type="button"
         onClick={() => handleAction(() => duplicateTask(task.id))}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         <span className="flex items-center gap-2.5">
           <Copy size={14} className="text-indigo-500" />
@@ -143,12 +166,34 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
         <kbd className="text-[9px] text-[var(--text-muted)] font-mono">Clone</kbd>
       </button>
 
+      {/* Select task for batch actions */}
+      <button
+        type="button"
+        onClick={() => handleAction(() => toggleTaskSelection(task.id))}
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
+      >
+        <span className="flex items-center gap-2.5">
+          <CheckSquare size={14} className="text-[var(--color-brand)]" />
+          <span>{selectedTaskIds.includes(task.id) ? 'Deselect Task' : 'Select for Batch'}</span>
+        </span>
+        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">Space</kbd>
+      </button>
+
       <div className="h-[1px] bg-[var(--border-hairline)] my-1" />
 
       {/* Date reschedule options */}
       <button
-        onClick={() => handleAction(() => updateTask(task.id, { plannedDate: todayStr }))}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+        type="button"
+        onClick={() =>
+          handleAction(() =>
+            updateTask(task.id, {
+              plannedDate: todayStr,
+              isSomeday: false,
+              dueDate: task.dueDate && task.dueDate < todayStr ? todayStr : task.dueDate,
+            })
+          )
+        }
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         <span className="flex items-center gap-2.5">
           <Sun size={14} className="text-amber-500" />
@@ -158,15 +203,17 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       </button>
 
       <button
+        type="button"
         onClick={() =>
           handleAction(() =>
             updateTask(task.id, {
               plannedDate: todayStr,
+              isSomeday: false,
               isEvening: !task.isEvening,
             })
           )
         }
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         <span className="flex items-center gap-2.5">
           <Moon size={14} className="text-indigo-500" />
@@ -176,8 +223,18 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       </button>
 
       <button
-        onClick={() => handleAction(() => updateTask(task.id, { plannedDate: tomorrowStr }))}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+        type="button"
+        onClick={() =>
+          handleAction(() =>
+            updateTask(task.id, {
+              plannedDate: tomorrowStr,
+              isSomeday: false,
+              isPinnedToday: false,
+              dueDate: task.dueDate && task.dueDate <= todayStr ? tomorrowStr : task.dueDate,
+            })
+          )
+        }
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         <span className="flex items-center gap-2.5">
           <Sunrise size={14} className="text-orange-500" />
@@ -187,12 +244,18 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       </button>
 
       <button
+        type="button"
         onClick={() =>
           handleAction(() =>
-            updateTask(task.id, { isSomeday: true, plannedDate: undefined, isPinnedToday: false })
+            updateTask(task.id, {
+              isSomeday: true,
+              plannedDate: undefined,
+              dueDate: undefined,
+              isPinnedToday: false,
+            })
           )
         }
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         <span className="flex items-center gap-2.5">
           <Lightbulb size={14} className="text-yellow-500" />
@@ -205,8 +268,9 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
 
       {/* Top 3 Focus */}
       <button
+        type="button"
         onClick={() => handleAction(() => toggleTaskPinToday(task.id))}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         <span className="flex items-center gap-2.5">
           <Star
@@ -221,8 +285,9 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       {/* Focus Timer */}
       {onStartFocus && !isDone && (
         <button
+          type="button"
           onClick={() => handleAction(() => onStartFocus(task.id))}
-          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
+          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
         >
           <Timer size={14} className="text-indigo-500" />
           <span>Start Focus Timer</span>
@@ -237,16 +302,18 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <Flag size={11} />
           Priority
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {(['p1', 'p2', 'p3', 'p4'] as Priority[]).map((p) => (
             <button
               key={p}
+              type="button"
               onClick={() => handleAction(() => updateTask(task.id, { priority: p }))}
               title={`Set Priority ${p.toUpperCase()}`}
-              className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold uppercase transition-all ${
+              aria-label={`Set Priority ${p.toUpperCase()}`}
+              className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase transition-all cursor-pointer active:scale-90 ${
                 task.priority === p
                   ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-xs'
-                  : 'text-[var(--text-muted)] hover:bg-stone-200/60 dark:hover:bg-white/[0.06]'
+                  : 'text-[var(--text-muted)] hover:bg-stone-200/60 dark:hover:bg-white/[0.06] hover:text-[var(--text-primary)]'
               }`}
             >
               {p.slice(1)}
@@ -259,8 +326,9 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
 
       {/* Delete */}
       <button
+        type="button"
         onClick={() => handleAction(() => deleteTask(task.id))}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors text-left"
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         <span className="flex items-center gap-2.5">
           <Trash2 size={14} />
@@ -268,6 +336,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
         </span>
         <kbd className="text-[9px] text-rose-400 font-mono">Del</kbd>
       </button>
-    </div>
+    </div>,
+    document.body
   );
 };

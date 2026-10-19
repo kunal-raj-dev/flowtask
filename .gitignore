@@ -40,3 +40,7 @@ test-results-*/
 
 # Agent traces & transcripts
 .agents/
+
+# Python cache
+__pycache__/
+*.pyc
