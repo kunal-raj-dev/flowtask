@@ -14,7 +14,8 @@ async function seedWorkspace(page: Page) {
   });
   await page.goto("/?view=today");
   await page.getByRole("heading", { name: "Today.", exact: true }).waitFor();
-  await expect(page.locator(".desk-dashboard-cover")).toHaveCount(0);
+  await expect(page.locator('[data-today-background] img')).toHaveCount(0);
+  await page.getByRole("button", { name: "Switch dashboard", exact: true }).click();
 }
 
 async function workspace(page: Page) {
@@ -57,7 +58,7 @@ test("workspace image picker applies explicit covers and preserves them after re
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await picker.getByRole("button", { name: "Use image" }).click();
-  await expect(page.locator(".desk-dashboard-cover")).toHaveAttribute("src", /ws-morning-library-960\.webp/);
+  await expect(page.locator('[data-today-background] img')).toHaveAttribute("src", /ws-morning-library-960\.webp/);
   expect(fullSizeRequests(), "only the selected image should load at full size for crop preview").toHaveLength(1);
   expect(fullSizeRequests()[0]).toContain("ws-morning-library.webp");
   await expect.poll(async () => (await workspace(page)).dashboards[0].coverImage).toBe("ws-morning-library");
@@ -65,7 +66,7 @@ test("workspace image picker applies explicit covers and preserves them after re
 
   await page.reload();
   await page.getByRole("heading", { name: "Today.", exact: true }).waitFor();
-  await expect(page.locator(".desk-dashboard-cover")).toHaveAttribute("src", /ws-morning-library-960\.webp/);
+  await expect(page.locator('[data-today-background] img')).toHaveAttribute("src", /ws-morning-library-960\.webp/);
 
   await page.goto("/?view=projects");
   const workCard = page.locator("[data-project-card]").filter({ hasText: "Work" }).first();
@@ -84,6 +85,7 @@ test("workspace image picker applies explicit covers and preserves them after re
   await expect.poll(async () => (await workspace(page)).projects.find((project: any) => project.id === "work")?.coverFocalPoint).toEqual({ x: 52, y: 52 });
 
   await page.getByRole("button", { name: /^Today/ }).click();
+  await page.getByRole("button", { name: "Switch dashboard", exact: true }).click();
   await page.getByRole('button', { name: 'Customize', exact: true }).click();
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await page.getByRole("button", { name: "Add Widget", exact: true }).click();

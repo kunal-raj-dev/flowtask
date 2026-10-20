@@ -8,6 +8,8 @@ The public landing page is `/` (also `/welcome`). Continue to the planner at `/a
 
 See [V2 beta implementation and verification](docs/FLOWTASK_2_BETA.md) and [V3 product notes](docs/FLOWTASK_V3.md) for current behavior, limitations, and release status.
 
+Today supports a full-area, theme-tinted background across both daily and modular views. The local Copilot offers editable task breakdowns, scheduling previews, task-linked focus and daily summaries. See [responsive workspace and Copilot behavior](docs/WORKSPACE_RESPONSIVE_COPILOT.md) for supported commands and verification details.
+
 ## Run locally
 
 Requires Node.js 22 and npm.

@@ -15,6 +15,10 @@ export interface AutoSlotOptions {
   maxCapacityMinutes?: number;
   earliestStartMinutes?: number;
   defaultTaskMinutes?: number;
+  referenceDate?: Date;
+  allTasks?: Task[];
+  date?: string;
+  bufferCalendarEvents?: boolean;
 }
 
 export interface SlottedTaskAssignment {
@@ -31,6 +35,7 @@ export interface AutoSlotResult {
   unslotted: Task[];
   totalSlottedMinutes: number;
   message: string;
+  reasons: Record<string, string>;
 }
 
 interface OccupiedInterval {
@@ -65,7 +70,7 @@ export function computeAutoSlotSchedule(
   // Add existing scheduled tasks (plus buffer to ensure resting time)
   existingScheduledTasks.forEach(({ startMin, duration }) => {
     occupied.push({
-      start: startMin,
+      start: startMin - bufferMinutes,
       end: startMin + duration + bufferMinutes,
     });
   });
@@ -78,8 +83,8 @@ export function computeAutoSlotSchedule(
     if (start !== null) {
       const duration = end !== null ? Math.max(15, end - start) : 30;
       occupied.push({
-        start,
-        end: start + duration,
+        start: start - (options.bufferCalendarEvents ? bufferMinutes : 0),
+        end: start + duration + (options.bufferCalendarEvents ? bufferMinutes : 0),
       });
     }
   });
@@ -109,28 +114,35 @@ export function computeAutoSlotSchedule(
     if (a.isPinnedToday && !b.isPinnedToday) return -1;
     if (!a.isPinnedToday && b.isPinnedToday) return 1;
 
-    const scoreA = calculateTaskPriorityScore(a, unscheduledTasks).compositeScore;
-    const scoreB = calculateTaskPriorityScore(b, unscheduledTasks).compositeScore;
+    const scoreA = calculateTaskPriorityScore(a, options.allTasks || unscheduledTasks, options.referenceDate).compositeScore;
+    const scoreB = calculateTaskPriorityScore(b, options.allTasks || unscheduledTasks, options.referenceDate).compositeScore;
     if (scoreB !== scoreA) {
       return scoreB - scoreA;
     }
 
     const gradeA = priorityGradeWeight[a.priority || 'p4'] || 1;
     const gradeB = priorityGradeWeight[b.priority || 'p4'] || 1;
-    return gradeB - gradeA;
+    return gradeB - gradeA || a.createdAt - b.createdAt || a.id.localeCompare(b.id);
   });
 
   const slotted: SlottedTaskAssignment[] = [];
   const unslotted: Task[] = [];
   let totalSlottedMinutes = 0;
+  const reasons: Record<string, string> = {};
 
   // 3. Greedily find earliest free gap for each task
   for (const task of sortedTasks) {
     const duration = task.estimatedMinutes || options.defaultTaskMinutes || 30;
+    const deadline = options.date && task.dueDate === options.date ? parseTimeToMinutes(task.dueTime) : null;
+    const taskEndMin = Math.min(dayEndMin, deadline ?? dayEndMin);
+    if (!Number.isFinite(duration) || duration <= 0) {
+      unslotted.push(task); reasons[task.id] = 'Enter a positive duration.'; continue;
+    }
 
     // Check if adding this task would exceed max capacity
     if (totalSlottedMinutes + duration > maxCapacity) {
       unslotted.push(task);
+      reasons[task.id] = 'Exceeds the remaining daily work budget.';
       continue;
     }
 
@@ -138,7 +150,7 @@ export function computeAutoSlotSchedule(
     let candidateStart = dayStartMin;
     let foundSlot: number | null = null;
 
-    while (candidateStart + duration <= dayEndMin) {
+    while (candidateStart + duration <= taskEndMin) {
       // Check collision with merged occupied intervals
       const candidateEnd = candidateStart + duration;
       const collision = mergedOccupied.find(
@@ -175,7 +187,7 @@ export function computeAutoSlotSchedule(
       // Add new occupied slot including buffer
       const newIntervalEnd = foundSlot + duration + bufferMinutes;
       mergedOccupied.push({
-        start: foundSlot,
+        start: foundSlot - bufferMinutes,
         end: newIntervalEnd,
       });
       // Keep sorted and merged
@@ -190,6 +202,7 @@ export function computeAutoSlotSchedule(
       }
     } else {
       unslotted.push(task);
+      reasons[task.id] = deadline !== null ? 'No whole block fits before its deadline and within working hours.' : 'No whole block fits in the remaining working hours.';
     }
   }
 
@@ -203,5 +216,6 @@ export function computeAutoSlotSchedule(
     unslotted,
     totalSlottedMinutes,
     message,
+    reasons,
   };
 }

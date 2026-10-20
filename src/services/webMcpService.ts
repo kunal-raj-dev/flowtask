@@ -47,6 +47,8 @@ export interface CreateTaskParams {
   projectId?: string;
   estimatedMinutes?: number;
   description?: string;
+  nextAction?: string;
+  subtasks?: Array<{ title: string; estimatedMinutes?: number }>;
 }
 
 export interface UpdateTaskParams {
@@ -194,6 +196,8 @@ export const createTaskSchema = {
       type: "string",
       description: "Detailed notes or checklist description",
     },
+    nextAction: { type: "string", description: "A small starter action for the task" },
+    subtasks: { type: "array", maxItems: 30, items: { type: "object", properties: { title: { type: "string" }, estimatedMinutes: { type: "number", exclusiveMinimum: 0 } }, required: ["title"] } },
   },
   required: ["title"],
 } as const;
@@ -445,6 +449,14 @@ export const createTaskTool: WebMcpToolDefinition<
     if (typeof params.estimatedMinutes === "number")
       overrides.estimatedMinutes = params.estimatedMinutes;
     if (params.description) overrides.description = params.description;
+    if (params.nextAction !== undefined) {
+      if (typeof params.nextAction !== 'string' || params.nextAction.length > 500) throw new Error('nextAction must be a string up to 500 characters.');
+      overrides.nextAction = params.nextAction.trim();
+    }
+    if (params.subtasks !== undefined) {
+      if (!Array.isArray(params.subtasks) || params.subtasks.length > 30 || params.subtasks.some(s => !s || typeof s.title !== 'string' || !s.title.trim() || s.title.length > 500 || (s.estimatedMinutes !== undefined && (!Number.isFinite(s.estimatedMinutes) || s.estimatedMinutes <= 0 || s.estimatedMinutes > 1440)))) throw new Error('Provide up to 30 subtasks with non-empty titles and positive durations up to 1440 minutes.');
+      overrides.subtasks = params.subtasks.map(s => ({ id: crypto.randomUUID(), title: s.title.trim(), completed: false, estimatedMinutes: s.estimatedMinutes }));
+    }
 
     const result = commandService.createTask(
       currentTasks,

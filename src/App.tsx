@@ -9,6 +9,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { MotionRuntime } from './components/settings/MotionRuntime';
 import './styles/release-polish.css';
+import './styles/workspace-responsive.css';
 
 function App() {
   return (

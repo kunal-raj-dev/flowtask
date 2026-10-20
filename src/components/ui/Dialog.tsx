@@ -79,7 +79,7 @@ export const Dialog: React.FC<DialogProps> = ({
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.99, y: 3 }}
             transition={reducedMotion ? { duration: 0 } : { ...SPRING_TACTILE, duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-cute-modal card-surface z-10 overflow-hidden ${sizeStyles[size]} ${className}`}
+            className={`flow-dialog-surface relative w-full rounded-2xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-cute-modal card-surface z-10 overflow-hidden ${sizeStyles[size]} ${className}`}
           >
             {/* Header */}
             {(title || description) && (
@@ -112,7 +112,7 @@ export const Dialog: React.FC<DialogProps> = ({
             )}
 
             {/* Content Body */}
-            <div className="p-4 sm:p-5 max-h-[75vh] overflow-y-auto">
+            <div className="flow-dialog-body p-4 sm:p-5 overflow-y-auto">
               {children}
             </div>
 

@@ -51,8 +51,8 @@ export const GridLayoutAdapter: React.FC<GridLayoutAdapterProps> = props => {
     if (!isEditing) return;
     props.onLayoutChange({ ...dashboard.layouts, [breakpoint]: normalizeDashboardLayout(frameWidgets, layout, breakpoint) });
   }, [isEditing, props, dashboard.layouts, breakpoint, frameWidgets]);
-  const dragConfig = useMemo(() => ({ enabled: isEditing, handle: '.widget-drag-handle', threshold: 4, allowMobileScroll: true }), [isEditing]);
-  const resizeConfig = useMemo(() => ({ enabled: isEditing, handles: ['se' as const] }), [isEditing]);
+  const dragConfig = useMemo(() => ({ enabled: isEditing && breakpoint !== 'sm', handle: '.widget-drag-handle', threshold: 4, allowMobileScroll: true }), [isEditing, breakpoint]);
+  const resizeConfig = useMemo(() => ({ enabled: isEditing && breakpoint !== 'sm', handles: ['se' as const] }), [isEditing, breakpoint]);
 
   return <div ref={containerRef} data-dashboard-grid className={isEditing ? 'desk-grid dashboard-editing' : 'desk-grid'} style={{ maxWidth: isEditing && previewBreakpoint === 'sm' ? 420 : isEditing && previewBreakpoint === 'md' ? 800 : undefined, marginInline: 'auto' }}>
     {mounted && <ResponsiveGridLayout width={effectiveWidth} breakpoints={GRID_BREAKPOINTS} cols={GRID_COLS}

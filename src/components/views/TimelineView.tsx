@@ -1,4 +1,3 @@
-import { Dialog } from '../ui/Dialog';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Task } from '../../types/task';
@@ -8,7 +7,7 @@ import {
   analyzeCognitiveTopology,
   TIMELINE_HOUR_HEIGHT_PX,
 } from '../../utils/timelineUtils';
-import { computeAutoSlotSchedule } from '../../utils/autoSlotAlgorithm';
+import { SchedulePlannerDialog } from '../workflow/SchedulePlannerDialog';
 import { calculateDayPlanSummary } from '../../utils/dayPlanSummary';
 import { formatLocalDate } from '../../utils/nlpParser';
 import {
@@ -49,7 +48,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     showToast,
   } = useTaskContext();
 
-  const [slotPreview, setSlotPreview] = useState<ReturnType<typeof computeAutoSlotSchedule> | null>(null);
+  const [slotPlannerOpen, setSlotPlannerOpen] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isRefreshingFeed, setIsRefreshingFeed] = useState(false);
 
@@ -159,24 +158,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
   const handleAutoSlotDay = useCallback(() => {
     if (effectiveDateStr < todayStr) { showToast('Choose today or a future date to automatically schedule tasks.'); return; }
-    if (unscheduledTasks.length === 0) return;
-    const now = new Date();
-    const result = computeAutoSlotSchedule(
-      unscheduledTasks.filter(t => !t.scheduleLocked),
-      scheduledTasks,
-      calendarEvents,
-      {
-        startHour: START_HOUR,
-        endHour: END_HOUR,
-        bufferMinutes: settings.autoSlotBufferMinutes,
-        maxCapacityMinutes: Math.max(0, Math.round(targetWorkCapacityHours * 60) - scheduledTasks.reduce((sum, item) => sum + item.duration, 0)),
-        defaultTaskMinutes: settings.defaultTaskDuration,
-        earliestStartMinutes: effectiveDateStr === todayStr ? Math.ceil((now.getHours() * 60 + now.getMinutes() + 1) / 15) * 15 : undefined,
-      }
-    );
-
-    setSlotPreview(result);
-  }, [unscheduledTasks, scheduledTasks, calendarEvents, START_HOUR, END_HOUR, settings.autoSlotBufferMinutes, settings.defaultTaskDuration, targetWorkCapacityHours, effectiveDateStr, todayStr, showToast]);
+    setSlotPlannerOpen(true);
+  }, [effectiveDateStr, todayStr, showToast]);
 
   const handleClearAllScheduledTimes = useCallback(() => {
     if (scheduledTasks.length === 0) return;
@@ -203,7 +186,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-4 space-y-6">
-      <Dialog isOpen={!!slotPreview} onClose={() => setSlotPreview(null)} title="A little room for your priorities" description={slotPreview?.message} footer={<div className="flex justify-between gap-3"><button onClick={() => setSlotPreview(null)}>Keep editing</button><button className="v2-action" onClick={() => { if (!slotPreview) return; applyTaskChanges(slotPreview.slotted.map(slot => ({ id: slot.taskId, updates: { scheduledStart: slot.scheduledStart, scheduledEnd: slot.dueTime, plannedDate: effectiveDateStr } })), 'Apply auto-slot plan'); setSlotPreview(null); showToast('Your schedule is ready.', 'Undo', undoLastAction); }}>Apply schedule</button></div>}><div className="v2-planning-list">{slotPreview?.slotted.map(slot => <p key={slot.taskId}><strong>{slot.scheduledStart}</strong> {tasks.find(t => t.id === slot.taskId)?.title}</p>)}<p className="v2-insight-note">Existing scheduled blocks stay in place. Deadlines are unchanged.</p></div></Dialog>
+      <SchedulePlannerDialog isOpen={slotPlannerOpen} onClose={() => setSlotPlannerOpen(false)} date={effectiveDateStr} />
       {/* Executive Workload Capacity Gauge Header */}
       <TimelineHeader
         scheduledCount={scheduledTasks.length}

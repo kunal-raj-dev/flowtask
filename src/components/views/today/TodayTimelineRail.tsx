@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import type { Task, CalendarEvent } from '../../../types/task';
 import { TimelineCurrentTimeRail } from '../TimelineCurrentTimeRail';
 import {
@@ -7,7 +7,7 @@ import {
   calculateBlockPosition,
   classifyTaskCognitiveIntensity,
 } from '../../../utils/timelineUtils';
-import { computeAutoSlotSchedule } from '../../../utils/autoSlotAlgorithm';
+import { SchedulePlannerDialog } from '../../workflow/SchedulePlannerDialog';
 import { useTaskContext } from '../../../context/TaskContext';
 import { useTodayStr } from '../../../hooks/useCurrentDate';
 import {
@@ -48,6 +48,7 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
   const { updateTask } = useTaskContext();
   const todayStr = useTodayStr();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [planning, setPlanning] = useState(false);
 
   if (!isOpen) {
     return (
@@ -127,41 +128,12 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
     }
   };
 
-  const handleAutoSlotDay = () => {
-    const unscheduled = tasks.filter(
-      (t) => !t.deletedAt && !t.archivedAt && t.status !== 'done' && !t.scheduledStart && !t.scheduleLocked
-    );
-    if (!unscheduled.length) return;
-
-    const scheduled = scheduledTasks.map((t) => ({
-      task: t,
-      startMin: parseTimeToMinutes(t.scheduledStart) || 0,
-      duration: t.estimatedMinutes || 30,
-    }));
-
-    const result = computeAutoSlotSchedule(unscheduled, scheduled, calendarEvents, {
-      startHour: 8,
-      endHour: 20,
-      bufferMinutes: 10,
-      maxCapacityMinutes: 360,
-      defaultTaskMinutes: 30,
-    });
-
-    if (result.slotted.length > 0) {
-      result.slotted.forEach((slot) => {
-        updateTask(slot.taskId, {
-          scheduledStart: slot.scheduledStart,
-          scheduledEnd: slot.dueTime,
-          plannedDate: todayStr,
-        });
-      });
-    }
-  };
-
   const hoursArray = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
 
   return (
-    <aside className="w-[340px] shrink-0 border-l border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/60 backdrop-blur-sm flex flex-col h-full overflow-hidden select-none">
+    <>
+    <SchedulePlannerDialog isOpen={planning} onClose={() => setPlanning(false)} date={todayStr} />
+    <aside aria-label="Today schedule" className="today-timeline-rail w-[300px] shrink-0 border-l border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/60 backdrop-blur-sm flex flex-col h-full overflow-hidden select-none">
       {/* Rail Header */}
       <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] shrink-0">
         <div className="flex items-center gap-2">
@@ -176,7 +148,7 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
           <button
             type="button"
             className="desk-button primary flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg"
-            onClick={handleAutoSlotDay}
+            onClick={() => setPlanning(true)}
             title="Auto-slot unscheduled tasks into open gaps"
             aria-label="Auto-Slot Day"
           >
@@ -326,5 +298,6 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
         })}
       </div>
     </aside>
+    </>
   );
 };

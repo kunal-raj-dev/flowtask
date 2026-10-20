@@ -36,7 +36,7 @@ export const ViewContainer: React.FC<ViewContainerProps> = ({
   return (
     <div
       ref={mainScrollRef}
-      className="desk-view-host flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-0"
+      className={`desk-view-host flex-1 min-h-0 min-w-0 ${activeView === 'today' || activeView === 'dashboard' ? 'desk-view-host-contained' : 'overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-0'}`}
     >
       {/* Incoming Shared Task Snapshot Banner */}
       {pendingSnapshot && (

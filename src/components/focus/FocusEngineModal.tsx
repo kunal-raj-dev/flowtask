@@ -748,7 +748,7 @@ export const FocusEngineModal: React.FC<FocusEngineModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Unified Focus Engine"
-      className="fixed inset-0 z-50 flex flex-col bg-[#090b10] text-stone-100 font-sans select-none overflow-hidden"
+      className="focus-engine fixed inset-0 z-50 flex flex-col bg-[#090b10] text-stone-100 font-sans select-none overflow-hidden"
     >
       {/* Aesthetic Scene Backdrop for Lo-Fi Studio */}
       {mode === 'studio' && (

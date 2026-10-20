@@ -51,6 +51,7 @@ export const commandService = {
       id,
       title: overrides?.title || parsed.cleanTitle || input.trim(),
       description: overrides?.description || undefined,
+      nextAction: overrides?.nextAction,
       status: 'todo',
       priority,
       projectId,

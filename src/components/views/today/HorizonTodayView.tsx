@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import { useTodayStr } from '../../../hooks/useCurrentDate';
 import { isFocusTask, isTodayTask, isSomedayTask, completedOn } from '../../../utils/taskSelectors';
@@ -14,6 +14,7 @@ import { WorkspaceTaskRow } from '../../tasks/WorkspaceTaskRow';
 import { VirtualTaskList } from '../../tasks/VirtualTaskList';
 import { TodayTimelineRail } from './TodayTimelineRail';
 import { DailyPlanning } from '../../workflow/DailyPlanning';
+import { Dialog } from '../../ui/Dialog';
 import {
   Sun,
   Coffee,
@@ -27,6 +28,7 @@ import {
   Archive,
   Target,
   SlidersHorizontal,
+  CalendarDays,
 } from 'lucide-react';
 import type { Task, Priority } from '../../../types/task';
 
@@ -35,6 +37,8 @@ interface HorizonTodayViewProps {
   onStartFocus?: (id: string) => void;
   onStartSprint?: (id: string) => void;
   onSwitchToDashboard?: () => void;
+  onCustomize?: () => void;
+  introduction?: React.ReactNode;
 }
 
 export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
@@ -42,6 +46,8 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   onStartFocus,
   onStartSprint,
   onSwitchToDashboard,
+  onCustomize,
+  introduction,
 }) => {
   const {
     tasks,
@@ -55,6 +61,19 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   const focusedSeconds = useTotalFocusedTodaySeconds();
   const [planning, setPlanning] = useState(false);
   const [railOpen, setRailOpen] = useState(true);
+  const [timelineDrawer, setTimelineDrawer] = useState(false);
+  const [wide, setWide] = useState(false);
+  const frameRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = frameRef.current;
+    if (!element) return;
+    const measure = () => setWide(element.clientWidth >= 960);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const [input, setInput] = useState('');
   const [completedOpen, setCompletedOpen] = useState(false);
   const [somedayOpen, setSomedayOpen] = useState(false);
@@ -168,9 +187,10 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   }).format(dateObj);
 
   return (
-    <div className="desk-today-page horizon-today-view flex flex-row flex-1 h-full overflow-hidden bg-[var(--bg-main)]">
+    <div ref={frameRef} className="horizon-today-view" data-wide={wide || undefined}>
       {/* Main Scrollable Content */}
-      <div className="flex-1 overflow-y-auto min-w-0 flex flex-col p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="today-main desk-page-frame">
+        {introduction}
         {/* Horizon Page Header */}
         <header className="desk-page-header shrink-0">
           <div>
@@ -201,12 +221,13 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
           </div>
 
           <div className="desk-header-actions flex items-center gap-2">
+            {!wide && <button type="button" className="desk-button" onClick={() => setTimelineDrawer(true)}><CalendarDays size={16} />Timeline</button>}
             {onSwitchToDashboard && (
               <button
                 type="button"
                 className="desk-button text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-secondary)] transition-colors"
-                onClick={onSwitchToDashboard}
-                title="Customize dashboard widgets"
+                onClick={onCustomize || onSwitchToDashboard}
+                title="Customize Today"
               >
                 <SlidersHorizontal size={14} />
                 <span>Customize</span>
@@ -232,6 +253,38 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
             onOpenChange={setPlanning}
           />
         )}
+
+        {/* Inline Task Capture */}
+        <section className="daily-capture" aria-label="Add a task">
+          <form className="desk-inline-capture relative" onSubmit={handleCaptureSubmit}>
+            <Plus size={16} className="text-[var(--text-muted)] shrink-0" />
+            <input
+              aria-label="Add a task to this list"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="What needs your attention today?"
+              className="w-full bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              aria-label="Add task"
+              className="px-2 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 disabled:opacity-40"
+            >
+              ↵
+            </button>
+            {input.trim() && (parsed.plannedDate || parsed.dueDate || parsed.projectTag || parsed.estimatedMinutes || parsed.priority) && (
+              <div className="desk-capture-preview flex items-center gap-2 mt-2 text-[10px] text-[var(--text-muted)] font-mono" aria-label="Recognized task details">
+                {parsed.plannedDate && <span>Planned · {parsed.plannedDate}</span>}
+                {parsed.dueDate && <span>Deadline · {parsed.dueDate}</span>}
+                {parsed.projectTag && <span>Project · {parsed.projectTag}</span>}
+                {parsed.estimatedMinutes && <span>{parsed.estimatedMinutes}m</span>}
+                {parsed.priority && <span>{parsed.priority.toUpperCase()}</span>}
+              </div>
+            )}
+          </form>
+        </section>
+
 
         {/* Daily Planning Budget Banner */}
         <section
@@ -320,39 +373,8 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
           </div>
         </section>
 
-        {/* Inline Task Capture */}
-        <section className="daily-capture" aria-label="Add a task">
-          <form className="desk-inline-capture relative" onSubmit={handleCaptureSubmit}>
-            <Plus size={16} className="text-[var(--text-muted)] shrink-0" />
-            <input
-              aria-label="Add a task to this list"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="What needs your attention today?"
-              className="w-full bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim()}
-              aria-label="Add task"
-              className="px-2 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 disabled:opacity-40"
-            >
-              ↵
-            </button>
-            {input.trim() && (parsed.plannedDate || parsed.dueDate || parsed.projectTag || parsed.estimatedMinutes || parsed.priority) && (
-              <div className="desk-capture-preview flex items-center gap-2 mt-2 text-[10px] text-[var(--text-muted)] font-mono" aria-label="Recognized task details">
-                {parsed.plannedDate && <span>Planned · {parsed.plannedDate}</span>}
-                {parsed.dueDate && <span>Deadline · {parsed.dueDate}</span>}
-                {parsed.projectTag && <span>Project · {parsed.projectTag}</span>}
-                {parsed.estimatedMinutes && <span>{parsed.estimatedMinutes}m</span>}
-                {parsed.priority && <span>{parsed.priority.toUpperCase()}</span>}
-              </div>
-            )}
-          </form>
-        </section>
-
         {/* Daytime Task Batches */}
-        <div className="space-y-6">
+        <div className="today-task-batches space-y-6">
           {/* 1. Morning Focus Batch */}
           {morningBatch.length > 0 && (
             <section className="morning-focus-batch space-y-2" aria-label="Morning Focus">
@@ -456,7 +478,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
       </div>
 
       {/* Embedded 24h Collapsible Timeline Rail */}
-      <TodayTimelineRail
+      {wide && <TodayTimelineRail
         isOpen={railOpen}
         onToggleCollapse={() => setRailOpen(!railOpen)}
         tasks={tasks}
@@ -464,7 +486,10 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
         onSelectTask={onSelectTask}
         onStartFocus={onStartFocus}
         onStartSprint={onStartSprint}
-      />
+      />}
+      <Dialog isOpen={timelineDrawer && !wide} onClose={() => setTimelineDrawer(false)} title="Today timeline" size="md" className="today-timeline-dialog">
+        <TodayTimelineRail isOpen onToggleCollapse={() => setTimelineDrawer(false)} tasks={tasks} calendarEvents={calendarEvents} onSelectTask={id => { setTimelineDrawer(false); onSelectTask?.(id); }} onStartFocus={id => { setTimelineDrawer(false); onStartFocus?.(id); }} onStartSprint={onStartSprint} />
+      </Dialog>
     </div>
   );
 };

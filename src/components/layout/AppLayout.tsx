@@ -4,7 +4,6 @@ import { RecoveryView } from '../views/RecoveryView';
 import React, { useState, useEffect, useRef, useMemo, useCallback, lazy } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TodayView } from '../views/TodayView';
-import { DashboardCanvasView } from '../views/DashboardCanvasView';
 const UpcomingView = lazy(() => import('../views/UpcomingView').then((m) => ({ default: m.UpcomingView })));
 const TimelineView = lazy(() => import('../views/TimelineView').then((m) => ({ default: m.TimelineView })));
 const EisenhowerView = lazy(() => import('../views/EisenhowerView').then((m) => ({ default: m.EisenhowerView })));
@@ -18,7 +17,7 @@ import { DesktopHeader } from './DesktopHeader';
 import { ViewContainer } from './ViewContainer';
 import { useModal } from '../../context/ModalContext';
 import { transitionView } from '../../utils/viewTransitions';
-import { Menu, Search, Settings, Cloud } from 'lucide-react';
+import { Menu, Search, Settings, Cloud, Sparkles } from 'lucide-react';
 import { parseSnapshotFromUrl, type SnapshotPayload } from '../../utils/snapshotShare';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { audioEngine } from '../../utils/audioEngine';
@@ -350,14 +349,7 @@ export const AppLayout: React.FC = () => {
       );
     }
     if ((activeView as string) === 'dashboard') {
-      return (
-        <DashboardCanvasView
-          onSelectTask={handleSelectTask}
-          onStartFocus={handleStartFocus}
-          onStartSprint={handleStartStudySprint}
-          onSwitchToHorizon={() => setActiveView('today')}
-        />
-      );
+      return <TodayView initialViewMode="dashboard" onSelectTask={handleSelectTask} onStartFocus={handleStartFocus} onStartSprint={handleStartStudySprint} />;
     }
     if (activeView === 'inbox') {
       return (
@@ -459,7 +451,7 @@ export const AppLayout: React.FC = () => {
 
   const mobileHeaderNode = (
     <header
-      className="lg:hidden flex items-center justify-between px-3.5 sm:px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20 transition-all shrink-0"
+      className="workspace-mobile-header lg:hidden flex items-center justify-between px-3.5 sm:px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20 transition-all shrink-0"
       style={{ borderBottomColor: `color-mix(in srgb, var(--color-brand) 12%, var(--border-hairline))` }}
     >
       <div className="flex items-center gap-2 min-w-0">
@@ -471,10 +463,10 @@ export const AppLayout: React.FC = () => {
           <Menu size={20} strokeWidth={1.75} />
         </button>
         <div className="flex items-center gap-1.5 truncate">
-          <span className="font-bold text-sm tracking-tight text-[var(--text-primary)] truncate">
+          <span className="mobile-view-title font-bold text-sm tracking-tight text-[var(--text-primary)] truncate">
             {getViewTitle()}
           </span>
-          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-stone-200/80 dark:bg-stone-800/80 text-stone-600 dark:text-stone-300 font-semibold border border-[var(--border-subtle)] shrink-0">
+          <span className="mobile-mode-badge text-[9px] px-1.5 py-0.2 rounded-full bg-stone-200/80 dark:bg-stone-800/80 text-stone-600 dark:text-stone-300 font-semibold border border-[var(--border-subtle)] shrink-0">
             Zen
           </span>
         </div>
@@ -531,6 +523,15 @@ export const AppLayout: React.FC = () => {
               />
             </div>
           )}
+        </button>
+
+        <button
+          onClick={() => openModal('copilotOmnibar')}
+          title="FlowTask Copilot"
+          aria-label="Open Copilot Omnibar"
+          className="p-2 text-[var(--color-brand)] rounded-xl hover:bg-[var(--bg-surface-hover)]"
+        >
+          <Sparkles size={18} />
         </button>
 
         <button

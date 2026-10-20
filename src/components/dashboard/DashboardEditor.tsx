@@ -11,6 +11,7 @@ import { DailyDesk, isGuidedDailyDesk } from './DailyDesk';
 import { useTaskContext } from '../../context/TaskContext';
 import type { WorkspacePreferences } from '../../types/dashboard';
 import { normalizePresentation } from '../../utils/workspacePresentation';
+import { resolveActiveDashboard } from '../../utils/activeDashboard';
 import { Monitor, Tablet, Smartphone, Plus, Undo2, Redo2, Save, X, LayoutGrid } from 'lucide-react';
 
 interface DashboardEditorProps {
@@ -38,8 +39,8 @@ export const DashboardEditor: React.FC<DashboardEditorProps> = ({ dashboards, wo
     ? activeDashboardId
     : (selectedDashboardId && saved.some(d => d.id === selectedDashboardId))
       ? selectedDashboardId
-      : (activeDashboardId || saved[0].id);
-  const savedDashboard = saved.find(d => d.id === currentId) || saved[0];
+      : activeDashboardId;
+  const savedDashboard = resolveActiveDashboard(saved, currentId, workspace);
   const mobileKey = 'flowtask-dashboard-mobile:' + workspaceId + ':' + savedDashboard.id;
   const dashboard = useMemo(() => {
     const result = clone(savedDashboard);

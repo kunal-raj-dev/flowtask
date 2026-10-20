@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { TodayTimelineRail } from './TodayTimelineRail';
 import type { Task } from '../../../types/task';
 
 const mockUpdateTask = vi.fn();
+const mockApplyChanges = vi.fn();
 
 const scheduledTask: Task = {
   id: 'sched-1',
@@ -34,7 +35,7 @@ const unscheduledTask: Task = {
 
 vi.mock('../../../context/TaskContext', () => ({
   useTaskContext: () => ({
-    updateTask: mockUpdateTask,
+    updateTask: mockUpdateTask, tasks: [scheduledTask, unscheduledTask], calendarEvents: [], settings: { timelineStartHour: 7, timelineEndHour: 22, defaultTaskDuration: 30 }, applyTaskChanges: mockApplyChanges, showToast: vi.fn(), undoLastAction: vi.fn(),
   }),
 }));
 
@@ -45,7 +46,11 @@ vi.mock('../../../hooks/useCurrentDate', () => ({
 describe('TodayTimelineRail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-07T08:00:00'));
   });
+
+  afterEach(() => vi.useRealTimers());
 
   it('renders collapsed state toggle when isOpen is false', () => {
     const onToggle = vi.fn();
@@ -120,7 +125,7 @@ describe('TodayTimelineRail', () => {
     }));
   });
 
-  it('executes auto-slot day algorithm when Auto-Slot Day button is clicked', () => {
+  it('previews auto-slot changes and applies one undoable transaction only after review', () => {
     render(
       <TodayTimelineRail
         isOpen={true}
@@ -132,11 +137,14 @@ describe('TodayTimelineRail', () => {
     const autoSlotBtn = screen.getByRole('button', { name: 'Auto-Slot Day' });
     fireEvent.click(autoSlotBtn);
 
-    expect(mockUpdateTask).toHaveBeenCalledWith(
-      'unsched-1',
-      expect.objectContaining({
-        plannedDate: '2026-10-07',
-      })
-    );
+    expect(mockUpdateTask).not.toHaveBeenCalled();
+    expect(mockApplyChanges).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Preview schedule' }));
+    expect(screen.getByRole('region', { name: 'Schedule preview' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply schedule' }));
+    expect(mockApplyChanges).toHaveBeenCalledTimes(1);
+    expect(mockApplyChanges).toHaveBeenCalledWith([
+      { id: 'unsched-1', updates: expect.objectContaining({ plannedDate: '2026-10-07', scheduledStart: '08:15' }) },
+    ], 'Apply schedule plan');
   });
 });

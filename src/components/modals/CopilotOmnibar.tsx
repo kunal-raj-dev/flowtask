@@ -1,404 +1,162 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Sparkles,
-  X,
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  Zap,
-  Play,
-  Layers,
-} from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Plus, Layers, CalendarDays, Play, BarChart3, Trash2 } from 'lucide-react';
+import { useTaskContext } from '../../context/TaskContext';
+import { useTodayStr } from '../../hooks/useCurrentDate';
+import { useModalStore } from '../../store/useModalStore';
 import { executeWebMcpTool } from '../../services/webMcpService';
 import { suggestSubtasks, generateStarterStep, type SuggestedSubtask } from '../../utils/aiCopilot';
-import { audioEngine } from '../../utils/audioEngine';
-import { SPRING_TACTILE } from '../../utils/springPhysics';
-import { useMotionPreference } from '../../hooks/useMotionPreference';
-import { useModalStore } from '../../store/useModalStore';
+import { parseCopilotCommand, type CopilotAction } from '../../utils/copilotCommands';
+import { parseTaskInput } from '../../utils/nlpParser';
+import { formatSecondsToHumanReadable } from '../../utils/focusTimeFormat';
+import type { Priority } from '../../types/task';
+import { Dialog } from '../ui/Dialog';
+import { SchedulePlannerDialog } from '../workflow/SchedulePlannerDialog';
+import { isPlanDate } from '../../services/schedulePlanner';
 
-export interface CopilotOmnibarProps {
-  isOpen: boolean;
-  onClose: () => void;
+export interface CopilotOmnibarProps { isOpen: boolean; onClose: () => void }
+const ACTIONS = [
+  ['add', 'Add task', Plus], ['breakdown', 'Break into steps', Layers],
+  ['schedule', 'Plan / schedule day', CalendarDays], ['focus', 'Start focus', Play],
+  ['summary', 'Daily summary', BarChart3],
+] as const;
+interface Summary { totalTasks: number; completedTasks: number; completionRate: number; topThreeCount: number; topThreeCompleted: number; totalPlannedMinutes: number; focusedSeconds: number }
+
+export function CopilotOmnibar(props: CopilotOmnibarProps) {
+  return props.isOpen ? <Copilot onClose={props.onClose} /> : null;
 }
 
-interface CopilotResult {
-  type: 'decomposition' | 'summary' | 'focus' | 'general';
-  title: string;
-  starterStep?: string;
-  subtasks?: SuggestedSubtask[];
-  summaryData?: {
-    totalTasks: number;
-    completedTasks: number;
-    completionRate: number;
-    topThreeCount: number;
-    topThreeCompleted: number;
-    totalPlannedMinutes: number;
-    focusedSeconds: number;
-  };
-  message?: string;
-}
-
-const QUICK_SUGGESTIONS = [
-  { label: 'Decompose feature', prompt: 'Implement user profile settings and dark mode' },
-  { label: 'Decompose bug fix', prompt: 'Fix memory leak in background focus timer' },
-  { label: 'Plan launch', prompt: 'Prepare marketing launch and product hunt campaign' },
-  { label: 'Daily summary', prompt: 'Show me my daily productivity summary' },
-  { label: 'Start focus', prompt: 'Start 25m Pomodoro on priority tasks' },
-];
-
-export const CopilotOmnibar: React.FC<CopilotOmnibarProps> = ({ isOpen, onClose }) => {
-  const reduced = useMotionPreference();
+function Copilot({ onClose }: { onClose: () => void }) {
+  const ctx = useTaskContext();
+  const today = useTodayStr();
+  const [action, setAction] = useState<CopilotAction | null>(null);
   const [query, setQuery] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [result, setResult] = useState<CopilotResult | null>(null);
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState(today);
+  const [deadline, setDeadline] = useState('');
+  const [priority, setPriority] = useState<Priority>(ctx.settings.defaultTaskPriority || 'p3');
+  const [projectId, setProjectId] = useState('inbox');
+  const [minutes, setMinutes] = useState(ctx.settings.defaultTaskDuration || 30);
+  const [targetId, setTargetId] = useState('');
+  const [steps, setSteps] = useState<SuggestedSubtask[]>([]);
+  const [starter, setStarter] = useState('');
+  const [ready, setReady] = useState(false);
   const [applied, setApplied] = useState(false);
-
-  const inputRef = useRef<HTMLInputElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Auto-focus input and restore previous focus on unmount
-  useEffect(() => {
-    if (isOpen) {
-      const prevActive = document.activeElement as HTMLElement | null;
-      inputRef.current?.focus();
-      return () => {
-        prevActive?.focus?.();
-      };
-    }
-  }, [isOpen]);
-
-  // Escape listener
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<string>();
+  const submitting = useRef(false);
+  const previewTarget = useRef('');
+  const activeTasks = ctx.tasks.filter(t => !t.deletedAt && !t.archivedAt && t.status !== 'done');
+  const target = activeTasks.find(t => t.id === targetId);
+  const resetReview = () => { setReady(false); setError(''); };
+  const choose = (next: CopilotAction) => {
+    if (busy) return;
+    setAction(next); setReady(false); setApplied(false); setError(''); submitting.current = false;
+    setSummary(null); setSteps([]); setStarter(''); setTargetId(''); setTitle(''); setDate(today); setDeadline('');
+    setMinutes(next === 'focus' ? 25 : ctx.settings.defaultTaskDuration || 30);
+    if (next === 'schedule') { setScheduleDate(undefined); setScheduleOpen(true); }
+    if (next === 'summary') void loadSummary();
+  };
+  const loadSummary = async () => {
+    setBusy(true); setError('');
+    try { setSummary(await executeWebMcpTool('getDailySummary', {}) as Summary); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Could not load your summary. Try again.'); }
+    finally { setBusy(false); }
+  };
+  const generate = (taskTitle = target?.title || title) => {
+    if (!taskTitle.trim()) { setError('Enter a task title or choose an existing task.'); return; }
+    setSteps(suggestSubtasks(taskTitle, target?.description));
+    setStarter(generateStarterStep(taskTitle, target?.description)); setReady(false); setError('');
+  };
+  const runCommand = () => {
+    if (busy) return;
+    const command = parseCopilotCommand(query);
+    setError('');
+    if (command.action === 'unknown') { setError(command.message); return; }
+    choose(command.action);
+    if (command.action === 'add') {
+      const parsed = parseTaskInput(command.title);
+      setTitle(parsed.cleanTitle); setDate(parsed.plannedDate || today); setDeadline(parsed.dueDate || '');
+      setPriority(parsed.priority || ctx.settings.defaultTaskPriority || 'p3');
+      setMinutes(parsed.estimatedMinutes || ctx.settings.defaultTaskDuration || 30);
+      const project = ctx.projects.find(p => p.id === parsed.projectTag || p.name.toLowerCase() === parsed.projectTag?.toLowerCase());
+      setProjectId(project?.id || 'inbox');
+    } else if (command.action === 'breakdown') {
+      setTitle(command.title); setSteps(suggestSubtasks(command.title)); setStarter(generateStarterStep(command.title));
+    } else if (command.action === 'schedule') {
+      setScheduleDate(command.date); setScheduleOpen(true);
+    } else if (command.action === 'focus') {
+      setMinutes(command.minutes);
+      if (command.taskTitle) {
+        const matches = activeTasks.filter(t => t.title.toLowerCase().includes(command.taskTitle!.toLowerCase()));
+        if (matches.length === 1) setTargetId(matches[0].id);
+        else setError(matches.length ? 'Several tasks match. Choose the task to focus on.' : 'No matching task. Choose a task below.');
       }
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen, onClose]);
-
-  const handleRunPrompt = async (text: string) => {
-    const clean = text.trim();
-    if (!clean) return;
-
-    setIsProcessing(true);
-    setApplied(false);
-    audioEngine.playClickSound();
-
-    try {
-      const lower = clean.toLowerCase();
-
-      // Check intent: Summary
-      if (lower.includes('summary') || lower.includes('stats') || lower.includes('progress')) {
-        const summary = (await executeWebMcpTool('getDailySummary', {})) as {
-          totalTasks: number;
-          completedTasks: number;
-          completionRate: number;
-          topThreeCount: number;
-          topThreeCompleted: number;
-          totalPlannedMinutes: number;
-          focusedSeconds: number;
-        };
-
-        setResult({
-          type: 'summary',
-          title: 'Daily Productivity Summary',
-          summaryData: summary,
-          message: `You have completed ${summary.completedTasks}/${summary.totalTasks} tasks today (${summary.completionRate}% completion rate).`,
-        });
-      }
-      // Check intent: Focus
-      else if (lower.includes('focus') || lower.includes('pomodoro') || lower.includes('sprint')) {
-        const durationMatch = clean.match(/(\d+)\s*(?:m|min|minutes)/i);
-        const minutes = durationMatch ? parseInt(durationMatch[1], 10) : 25;
-
-        setResult({
-          type: 'focus',
-          title: `Start Focus Session (${minutes}m)`,
-          message: `Ready to initiate a dedicated ${minutes}-minute deep work block with binaural beats and minimalist timer.`,
-        });
-      }
-      // Default: Decompose task with offline heuristics
-      else {
-        const subtasks = suggestSubtasks(clean);
-        const starterStep = generateStarterStep(clean);
-
-        setResult({
-          type: 'decomposition',
-          title: clean,
-          subtasks,
-          starterStep,
-          message: `Decomposed into ${subtasks.length} actionable execution steps with anti-procrastination starter.`,
-        });
-      }
-    } catch {
-      setResult({
-        type: 'general',
-        title: 'Action Error',
-        message: 'Could not process the command. Please check workspace state and try again.',
-      });
-    } finally {
-      setIsProcessing(false);
     }
   };
-
-  const handleApplyToWorkspace = async () => {
-    if (!result || applied) return;
-
-    audioEngine.playPopSound();
+  const effectiveTitle = target?.title || title;
+  const duration = action === 'breakdown' ? steps.reduce((sum, s) => sum + (s.estimatedMinutes || 0), 0) : minutes;
+  const valid = !!effectiveTitle.trim() && effectiveTitle.length <= 500 && Number.isFinite(duration) && duration > 0 && duration <= 1440
+    && (action !== 'breakdown' || steps.length > 0 && steps.every(s => s.title.trim() && s.title.length <= 500 && Number.isFinite(s.estimatedMinutes) && s.estimatedMinutes! > 0 && s.estimatedMinutes! <= 1440))
+    && (!!targetId || isPlanDate(date) && (!deadline || isPlanDate(deadline)));
+  const apply = () => {
+    if (submitting.current || applied || !ready || !valid) return;
+    submitting.current = true;
     try {
-      if (result.type === 'decomposition' && result.subtasks) {
-        await executeWebMcpTool('createTask', {
-          title: result.title,
-          description: result.starterStep ? `${result.starterStep}\n\n` : '',
-          estimatedMinutes: result.subtasks.reduce((sum, s) => sum + (s.estimatedMinutes || 20), 0),
-        });
-        setApplied(true);
-      } else if (result.type === 'focus') {
-        const durationMatch = query.match(/(\d+)\s*(?:m|min|minutes)/i);
-        const minutes = durationMatch ? parseInt(durationMatch[1], 10) : 25;
-        await executeWebMcpTool('startFocusSession', {
-          taskTitle: query.replace(/start focus|pomodoro/gi, '').trim() || 'Deep Work Session',
-          targetDurationMinutes: minutes,
-        });
-        setApplied(true);
-        useModalStore.getState().openModal('focusEngine');
-        onClose();
+      if (targetId && (!target || JSON.stringify(target) !== previewTarget.current)) {
+        setError('This task changed since your preview. Review it again before applying.'); setReady(false); submitting.current = false; return;
       }
-    } catch {
-      // Handled cleanly
-    }
+      const subtasks = steps.map(step => ({ id: crypto.randomUUID(), title: step.title.trim(), completed: false, estimatedMinutes: step.estimatedMinutes }));
+      if (target && action === 'breakdown') {
+        ctx.applyTaskChanges([{ id: target.id, updates: { subtasks: [...target.subtasks, ...subtasks], nextAction: starter.trim(), estimatedMinutes: (target.estimatedMinutes || 0) + duration } }], 'Add task breakdown');
+      } else {
+        ctx.addTask(effectiveTitle.trim(), { title: effectiveTitle.trim(), plannedDate: date, dueDate: deadline || undefined, projectId, priority, estimatedMinutes: duration, subtasks, nextAction: starter.trim() || undefined });
+      }
+      setApplied(true); ctx.showToast(target ? 'Steps added to your task.' : 'Task added to your workspace.', 'Undo', ctx.undoLastAction);
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not save this task. Please try again.'); submitting.current = false; }
   };
-
-  if (!isOpen) return null;
-
-  return (
-    <AnimatePresence>
-      <div
-        key="copilot-backdrop"
-        className="fixed inset-0 z-[9990] bg-black/40 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div key="copilot-wrapper" className="fixed inset-0 z-[9991] flex items-start justify-center pt-20 px-4 pointer-events-none">
-        <motion.div
-          ref={modalRef}
-          role="dialog"
-          aria-label="FlowTask Copilot"
-          aria-modal="true"
-          initial={reduced ? undefined : { opacity: 0, scale: 0.96, y: -8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={reduced ? undefined : { opacity: 0, scale: 0.96, y: -8 }}
-          transition={reduced ? { duration: 0 } : SPRING_TACTILE}
-          className="w-full max-w-2xl rounded-2xl bg-surface border border-border shadow-cute-modal p-4 pointer-events-auto flex flex-col gap-4 overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-border/40 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                <Sparkles size={18} />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  FlowTask Copilot
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 font-normal">
-                    WebMCP 2.0 • Offline AI
-                  </span>
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Decompose complex tasks, schedule timeline blocks, or review productivity metrics
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label="Close Copilot"
-              className="p-1 rounded-lg hover:bg-surface-hover text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Prompt input */}
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-surface-l1 border border-border focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/10 transition-all">
-            <Sparkles size={16} className="text-amber-500 flex-shrink-0" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleRunPrompt((e.target as HTMLInputElement).value || query);
-                }
-              }}
-              placeholder="Ask Copilot: decompose a goal, schedule tasks, summarize today..."
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
-            <button
-              onClick={() => handleRunPrompt(query)}
-              disabled={!query.trim() || isProcessing}
-              className="px-3 py-1 text-xs font-semibold rounded-lg bg-amber-500 text-amber-950 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
-            >
-              {isProcessing ? 'Thinking...' : 'Execute'}
-              <ArrowRight size={13} />
-            </button>
-          </div>
-
-          {/* Quick suggestions */}
-          {!result && (
-            <div className="flex flex-wrap gap-1.5 items-center">
-              <span className="text-[11px] text-muted-foreground font-medium mr-1">Suggestions:</span>
-              {QUICK_SUGGESTIONS.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => {
-                    setQuery(item.prompt);
-                    handleRunPrompt(item.prompt);
-                  }}
-                  className="px-2.5 py-1 text-xs rounded-lg bg-surface-l1 hover:bg-surface-hover border border-border/60 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Result view */}
-          {result && (
-            <div className="flex flex-col gap-3 rounded-xl bg-surface-l1 border border-border/60 p-3.5 max-h-80 overflow-y-auto">
-              <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Zap size={14} className="text-amber-500" />
-                  {result.title}
-                </span>
-                {result.type === 'decomposition' && (
-                  <button
-                    onClick={handleApplyToWorkspace}
-                    disabled={applied}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                      applied
-                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        : 'bg-amber-500 text-amber-950 hover:bg-amber-400'
-                    }`}
-                  >
-                    {applied ? (
-                      <>
-                        <CheckCircle2 size={13} />
-                        Added to Workspace
-                      </>
-                    ) : (
-                      <>
-                        <Layers size={13} />
-                        Add Task with Subtasks
-                      </>
-                    )}
-                  </button>
-                )}
-                {result.type === 'focus' && (
-                  <button
-                    onClick={handleApplyToWorkspace}
-                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 text-amber-950 hover:bg-amber-400 transition-all flex items-center gap-1.5"
-                  >
-                    <Play size={13} />
-                    Launch Focus Studio
-                  </button>
-                )}
-              </div>
-
-              {result.starterStep && (
-                <div className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400 font-medium">
-                  {result.starterStep}
-                </div>
-              )}
-
-              {result.subtasks && result.subtasks.length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Execution Steps ({result.subtasks.length})
-                  </span>
-                  {result.subtasks.map((step, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-2 rounded-lg bg-surface border border-border/40 text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-4 h-4 rounded-full bg-muted/60 text-[10px] font-mono flex items-center justify-center text-muted-foreground font-semibold">
-                          {idx + 1}
-                        </span>
-                        <span className="text-foreground">{step.title}</span>
-                      </div>
-                      {step.estimatedMinutes && (
-                        <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
-                          <Clock size={11} />
-                          {step.estimatedMinutes}m
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {result.summaryData && (
-                <div className="grid grid-cols-3 gap-2.5">
-                  <div className="p-3 rounded-xl bg-surface border border-border/40 text-center">
-                    <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
-                      Completion Rate
-                    </span>
-                    <span className="text-xl font-bold text-foreground">
-                      {result.summaryData.completionRate}%
-                    </span>
-                    <span className="text-[10px] text-muted-foreground block">
-                      {result.summaryData.completedTasks} / {result.summaryData.totalTasks} tasks
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-surface border border-border/40 text-center">
-                    <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
-                      Top 3 Focus
-                    </span>
-                    <span className="text-xl font-bold text-amber-500">
-                      {result.summaryData.topThreeCompleted} / {result.summaryData.topThreeCount}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground block">Priority executed</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-surface border border-border/40 text-center">
-                    <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
-                      Focus Time
-                    </span>
-                    <span className="text-xl font-bold text-sky-500">
-                      {Math.round(result.summaryData.focusedSeconds / 60)}m
-                    </span>
-                    <span className="text-[10px] text-muted-foreground block">Deep work logged</span>
-                  </div>
-                </div>
-              )}
-
-              {result.message && (
-                <p className="text-xs text-muted-foreground">{result.message}</p>
-              )}
-            </div>
-          )}
-
-          {/* Footer hotkey tips */}
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/40 pt-2.5">
-            <div className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 rounded bg-muted/60 text-[10px] font-mono">Cmd+J</kbd>
-              <span>Toggle Copilot</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 rounded bg-muted/60 text-[10px] font-mono">Esc</kbd>
-              <span>Dismiss</span>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>
-  );
-};
+  const startFocus = () => {
+    if (submitting.current) return;
+    if (!ctx.focusSession && (!target || !Number.isFinite(minutes) || minutes < 1 || minutes > 240)) { setError('Choose a task and a duration from 1 to 240 minutes.'); return; }
+    submitting.current = true;
+    try {
+      if (ctx.focusSession?.state === 'paused') ctx.resumeFocusSession();
+      else if (!ctx.focusSession) ctx.startFocusSession('pomodoro', target!.id, target!.title, minutes * 60);
+      onClose(); useModalStore.getState().openModal('pomodoro');
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not start focus. Try again.'); submitting.current = false; }
+  };
+  return <>
+    <Dialog isOpen onClose={onClose} title="FlowTask Copilot" description="Your local planning assistant. Review every change before applying it." size="lg" className="copilot-dialog" footer={action === 'add' || action === 'breakdown' ? <>
+      {applied ? <span role="status">{targetId ? 'Steps saved to your task.' : 'Added to workspace.'}</span> : <>
+        <button className="desk-button" disabled={!valid} onClick={() => { previewTarget.current = target ? JSON.stringify(target) : ''; setReady(true); setError(''); }}>Preview task</button>
+        <button className="desk-button primary" disabled={!ready || !valid} onClick={apply}>{action === 'breakdown' ? targetId ? 'Add steps to task' : 'Add task with subtasks' : 'Add task to workspace'}</button>
+      </>}
+    </> : action === 'focus' ? <button className="desk-button primary" onClick={startFocus}>{ctx.focusSession ? ctx.focusSession.state === 'paused' ? 'Resume focus' : 'Return to focus' : 'Start focus session'}</button> : undefined}>
+      <div className="copilot-actions" aria-label="Copilot actions">{ACTIONS.map(([id, label, Icon]) => <button key={id} className="desk-button" aria-pressed={action === id} disabled={busy} onClick={() => choose(id)}><Icon size={16} />{label}</button>)}</div>
+      <form className="copilot-command" onSubmit={e => { e.preventDefault(); runCommand(); }}>
+        <input aria-label="Copilot command" placeholder="Try: add Read chapter 3, plan my day…" value={query} onChange={e => setQuery(e.target.value)} />
+        <button className="desk-button" disabled={!query.trim() || busy}>Use command</button>
+      </form>
+      <details className="copilot-help"><summary>Supported commands</summary><p>add Read chapter 3 · decompose Prepare presentation · plan my day · schedule tasks for 2026-10-25 · focus 25m on Read chapter · daily summary</p><p>Breakdowns use local templates. Review their wording and estimates for your task.</p></details>
+      {error && <p role="alert" className="desk-notice">{error}</p>}
+      {(action === 'add' || action === 'breakdown') && <fieldset className="copilot-fields" disabled={applied}>
+        {action === 'breakdown' && <label>Task to break down<select aria-label="Task to break down" value={targetId} onChange={e => { const task = activeTasks.find(t => t.id === e.target.value); setTargetId(e.target.value); setSteps([]); setStarter(''); if (task) setTitle(task.title); resetReview(); }}><option value="">Create a new task</option>{activeTasks.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}</select></label>}
+        {!targetId && <label>Task title<input aria-label="Copilot task title" maxLength={500} value={title} onChange={e => { setTitle(e.target.value); resetReview(); }} /></label>}
+        {!targetId && <div className="copilot-form-row"><label>Planned date<input type="date" value={date} onChange={e => { setDate(e.target.value); resetReview(); }} /></label><label>Deadline (optional)<input type="date" value={deadline} onChange={e => { setDeadline(e.target.value); resetReview(); }} /></label><label>Project<select value={projectId} onChange={e => { setProjectId(e.target.value); resetReview(); }}>{ctx.projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>Priority<select value={priority} onChange={e => { setPriority(e.target.value as Priority); resetReview(); }}>{(['p1', 'p2', 'p3', 'p4'] as const).map(p => <option key={p} value={p}>{p.toUpperCase()}</option>)}</select></label>{action === 'add' && <label>Estimated minutes<input type="number" min={1} max={1440} value={Number.isNaN(minutes) ? '' : minutes} onChange={e => { setMinutes(e.target.valueAsNumber); resetReview(); }} /></label>}</div>}
+        {action === 'breakdown' && <>
+          <button className="desk-button" type="button" onClick={() => generate()}>Suggest steps</button>
+          {steps.map((step, index) => <div key={index} className="copilot-subtask"><label>Step {index + 1}<input aria-label={`Step ${index + 1} title`} maxLength={500} value={step.title} onChange={e => { setSteps(steps.map((s, i) => i === index ? { ...s, title: e.target.value } : s)); resetReview(); }} /></label><label>Minutes<input aria-label={`Step ${index + 1} minutes`} type="number" min={1} max={1440} value={Number.isNaN(step.estimatedMinutes) ? '' : step.estimatedMinutes ?? ''} onChange={e => { setSteps(steps.map((s, i) => i === index ? { ...s, estimatedMinutes: e.target.valueAsNumber } : s)); resetReview(); }} /></label><button type="button" className="desk-icon-button" aria-label={`Remove step ${index + 1}`} onClick={() => { setSteps(steps.filter((_, i) => i !== index)); resetReview(); }}><Trash2 size={16} /></button></div>)}
+          <button className="desk-button" disabled={steps.length >= 30} onClick={() => { setSteps([...steps, { title: '', estimatedMinutes: 15 }]); resetReview(); }}>Add a step</button>
+          <label>Starter action<textarea aria-label="Starter action" value={starter} maxLength={500} onChange={e => { setStarter(e.target.value); resetReview(); }} /></label>
+        </>}
+      </fieldset>}
+      {ready && !applied && <section className="copilot-result" aria-label="Task preview"><strong>{effectiveTitle}</strong><p className="copilot-help">{target ? `Add ${steps.length} steps to the existing task; its current steps stay in place. Additional estimate: ${duration} min.` : `${duration} min · ${date}${deadline ? ` · Deadline ${deadline}` : ''} · ${steps.length} subtasks. Creates one task.`}</p><p className="copilot-help">{starter}</p></section>}
+      {action === 'focus' && <div className="copilot-fields">{ctx.focusSession ? <p className="copilot-help">Your existing session on “{ctx.focusSession.taskTitle || 'Focus'}” is ready to {ctx.focusSession.state === 'paused' ? 'resume' : 'open'}.</p> : <><label>Focus task<select aria-label="Focus task" value={targetId} onChange={e => { setTargetId(e.target.value); setError(''); }}><option value="">Choose a task</option>{activeTasks.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}</select></label><label>Focus minutes<input type="number" min={1} max={240} value={Number.isNaN(minutes) ? '' : minutes} onChange={e => setMinutes(e.target.valueAsNumber)} /></label></>}</div>}
+      {action === 'summary' && <section className="copilot-result"><h3>Daily productivity summary</h3>{busy ? <p role="status">Loading summary…</p> : summary ? <div className="copilot-summary"><p><strong>{summary.completedTasks} / {summary.totalTasks}</strong>Tasks completed</p><p><strong>{summary.completionRate}%</strong>Completion</p><p><strong>{summary.topThreeCompleted} / {summary.topThreeCount}</strong>Top 3 completed</p><p><strong>{formatSecondsToHumanReadable(summary.focusedSeconds)}</strong>Focused</p></div> : <button className="desk-button" onClick={() => void loadSummary()}>Retry summary</button>}</section>}
+      {action === 'schedule' && <button className="desk-button" onClick={() => setScheduleOpen(true)}>Review schedule plan</button>}
+    </Dialog>
+    <SchedulePlannerDialog isOpen={scheduleOpen} onClose={() => setScheduleOpen(false)} date={scheduleDate} />
+  </>;
+}

@@ -8,6 +8,7 @@ import { isFocusTask, isTodayTask } from '../../utils/taskSelectors';
 import { OnboardingFlow } from '../modals/OnboardingFlow';
 import { BackupReminder } from '../workflow/BackupReminder';
 import celebrate from '../../utils/celebrate';
+import { TodayAppearance } from '../workspace/TodayAppearance';
 
 interface TodayViewProps {
   onSelectTask: (id: string) => void;
@@ -15,12 +16,14 @@ interface TodayViewProps {
   onOpenBrainDump?: () => void;
   onStartSprint?: (id: string) => void;
   onOpenStudySession?: () => void;
+  initialViewMode?: 'horizon' | 'dashboard';
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
   onSelectTask,
   onStartFocus,
   onStartSprint,
+  initialViewMode = 'horizon',
 }) => {
   const {
     workspacePreferences = {},
@@ -34,7 +37,8 @@ export const TodayView: React.FC<TodayViewProps> = ({
     settings,
   } = useTaskContext();
 
-  const [viewMode, setViewMode] = useState<'horizon' | 'dashboard'>('horizon');
+  const [viewMode, setViewMode] = useState<'horizon' | 'dashboard'>(initialViewMode);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   const [welcome, setWelcome] = useState(() => {
     try {
       return (
@@ -88,8 +92,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
     enabled: true,
   });
 
-  return (
-    <div className="desk-today-page h-full flex flex-col flex-1 overflow-hidden">
+  const introduction = <>
       {welcome && <OnboardingFlow inline isOpen onClose={() => setWelcome(false)} />}
       <BackupReminder />
       {!!workspacePreferences._dashboardRecovery && (
@@ -97,22 +100,32 @@ export const TodayView: React.FC<TodayViewProps> = ({
           A saved layout needs repair. A recovery copy is preserved on this device; your tasks and notes are safe.
         </p>
       )}
+  </>;
+
+  return (
+    <div className="today-surface">
+      <TodayAppearance customizeOpen={customizeOpen} onClose={() => setCustomizeOpen(false)} onEditWidgets={() => setViewMode('dashboard')} />
+      <div className="today-content">
 
       {viewMode === 'horizon' ? (
         <HorizonTodayView
+          introduction={introduction}
           onSelectTask={onSelectTask}
           onStartFocus={onStartFocus}
           onStartSprint={onStartSprint}
           onSwitchToDashboard={() => setViewMode('dashboard')}
+          onCustomize={() => setCustomizeOpen(true)}
         />
       ) : (
         <DashboardCanvasView
+          introduction={introduction}
           onSelectTask={onSelectTask}
           onStartFocus={onStartFocus}
           onStartSprint={onStartSprint}
           onSwitchToHorizon={() => setViewMode('horizon')}
         />
       )}
+      </div>
     </div>
   );
 };

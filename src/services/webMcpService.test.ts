@@ -337,4 +337,19 @@ describe('webMcpService (Client-Side WebMCP Tools)', () => {
       expect(useFocusStore.getState().focusSession).toBeNull();
     });
   });
+  it('persists optional subtasks and starter action in one undoable creation', async () => {
+    const result = await createTaskTool.execute({ title: 'Prepare the release', nextAction: 'Open the checklist', subtasks: [{ title: 'Review changes', estimatedMinutes: 20 }, { title: 'Verify build', estimatedMinutes: 10 }] });
+    expect(result.task.nextAction).toBe('Open the checklist');
+    expect(result.task.subtasks).toHaveLength(2);
+    expect(result.task.subtasks[0]).toMatchObject({ id: expect.any(String), title: 'Review changes', completed: false, estimatedMinutes: 20 });
+    expect(store.getSnapshot().record.tasks[0].subtasks).toHaveLength(2);
+    store.undo(); expect(store.getSnapshot().record.tasks).toHaveLength(0);
+    store.redo(); expect(store.getSnapshot().record.tasks[0].nextAction).toBe('Open the checklist');
+  });
+  it('rejects malformed subtasks without partially creating a task', async () => {
+    await expect(createTaskTool.execute({ title: 'Invalid', subtasks: [{ title: ' ', estimatedMinutes: 10 }] })).rejects.toThrow(/subtasks/);
+    await expect(createTaskTool.execute({ title: 'Invalid', subtasks: [{ title: 'Step', estimatedMinutes: -1 }] })).rejects.toThrow(/subtasks/);
+    expect(store.getSnapshot().record.tasks).toHaveLength(0);
+  });
+
 });
