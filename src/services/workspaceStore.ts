@@ -153,8 +153,15 @@ export class WorkspaceStore {
       if (!this.disposed && generation === this.generation) this.publish({ sync: 'synced', error: null });
     } catch (error) {
       if (!this.disposed && generation === this.generation) {
+        console.error('[FlowTask Cloud Sync]:', error);
         const conflict = error instanceof Error && error.name === 'SyncConflict';
-        this.publish({ sync: conflict ? 'conflict' : 'offline', error: conflict ? 'An account record changed on another device. Your local changes are preserved. Review the conflict in Account & sync.' : null });
+        const errDetail = error instanceof Error ? error.message : String(error);
+        this.publish({
+          sync: conflict ? 'conflict' : 'offline',
+          error: conflict
+            ? 'An account record changed on another device. Your local changes are preserved. Review the conflict in Account & sync.'
+            : `Cloud sync paused: ${errDetail}. Changes are saved on this device and queued for retry.`,
+        });
       }
     } finally { this.flushing = false; }
   }

@@ -152,8 +152,26 @@ export function createCloudAdapter(uid: string): CloudAdapter {
           }
         });
         operation.changes.forEach((change, i) => {
-          if (change.after) transaction.set(refs[i], sanitizeForFirestore(change.after));
-          else transaction.delete(refs[i]);
+          if (change.after) {
+            let payload: Record<string, unknown>;
+            if (change.collection === 'tasks') {
+              const task = change.after as Task;
+              payload = sanitizeForFirestore({
+                ...task,
+                subtasks: Array.isArray(task.subtasks) ? task.subtasks : [],
+                status: ['todo', 'in_progress', 'done'].includes(task.status) ? task.status : 'todo',
+                priority: ['p1', 'p2', 'p3', 'p4'].includes(task.priority) ? task.priority : 'p2',
+                projectId: typeof task.projectId === 'string' && task.projectId ? task.projectId : 'inbox',
+                revision: typeof task.revision === 'number' && task.revision >= 1 ? task.revision : 1,
+                updatedAt: typeof task.updatedAt === 'number' ? task.updatedAt : Date.now(),
+              });
+            } else {
+              payload = sanitizeForFirestore(change.after);
+            }
+            transaction.set(refs[i], payload);
+          } else {
+            transaction.delete(refs[i]);
+          }
         });
         transaction.set(receipt, {
           createdAt: operation.createdAt,

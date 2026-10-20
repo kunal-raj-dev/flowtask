@@ -354,6 +354,33 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     return () => { cancelled = true; stop?.(); store.disconnect(); window.removeEventListener('online', retry); };
   }, [connected, snapshot.ready, store, workspaceId, showToast]);
 
+  // Seamless auto-migration: automatically merge local workspace tasks into cloud account on initial sign-in
+  useEffect(() => {
+    if (!connected || !snapshot.ready || workspaceId === 'local') return;
+    const migrationKey = `flowtask_auto_migrated_v1_${workspaceId}`;
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(migrationKey)) return;
+
+    void (async () => {
+      try {
+        const { dbService } = await import('../services/dbService');
+        const local = await dbService.loadWorkspace('local');
+        if (local && (local.tasks?.length > 0 || local.projects?.length > 0)) {
+          const currentTasks = store.getSnapshot().record.tasks || [];
+          const newTasks = (local.tasks || []).filter((lt: Task) => !currentTasks.some((ct: Task) => ct.id === lt.id));
+          if (newTasks.length > 0) {
+            await useTaskStore.getState().importTasks(local.tasks, local.projects);
+            showToast(`Merged ${newTasks.length} local tasks into your Google cloud workspace`);
+          }
+        }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(migrationKey, 'true');
+        }
+      } catch (err) {
+        console.warn('[FlowTask] Auto-migration warning:', err);
+      }
+    })();
+  }, [connected, snapshot.ready, workspaceId, store, showToast]);
+
   const setWorkspacePreference = (key: string, value: unknown) => {
     useTaskStore.getState().setWorkspacePreference(key, value);
   };

@@ -688,8 +688,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const { store } = get();
     if (!store || !store.connected) {
       useModalStore.getState().setIsAuthModalOpen(true);
+      useUIStore.getState().showToast('Sign in with Google to enable Cloud Sync across devices');
       return;
     }
+    useUIStore.getState().showToast('Syncing changes with cloud...');
     await store.retry();
   },
 

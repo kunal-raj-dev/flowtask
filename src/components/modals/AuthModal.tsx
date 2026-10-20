@@ -202,7 +202,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 )}
                 {syncStatus === 'local' && (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-500/15 text-stone-700 dark:text-stone-400 border border-stone-500/30">
-                    Local Storage
+                    Saved on Device (Local)
                   </span>
                 )}
               </div>
@@ -227,14 +227,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <span>
                 {lastSyncedAt
                   ? `Last verified: ${lastSyncedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+                  : user
+                  ? 'Automatic cloud sync active'
                   : 'Automatic IndexedDB caching active'}
               </span>
               <button
-                onClick={() => forceSyncToCloud()}
+                type="button"
+                onClick={() => {
+                  if (!user) {
+                    void signInWithGoogle();
+                  } else {
+                    void forceSyncToCloud();
+                  }
+                }}
                 className="font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 inline-flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <RefreshCw className="w-3 h-3" />
-                Sync Now
+                {user ? 'Sync Now' : 'Sign in to sync'}
               </button>
             </div>
           </div>
