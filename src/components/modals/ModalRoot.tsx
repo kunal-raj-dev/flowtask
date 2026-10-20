@@ -1,7 +1,6 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
 import { useTaskContext } from '../../context/TaskContext';
-import { useUIStore } from '../../store/useUIStore';
 import { ModalSkeleton } from '../ui';
 import { FeatureBoundary } from '../ui/FeatureBoundary';
 
@@ -19,9 +18,9 @@ const SmartFilterModal = lazy(() => import('./SmartFilterModal').then(m => ({ de
 const TemplatePickerModal = lazy(() => import('./TemplatePickerModal').then(m => ({ default: m.TemplatePickerModal })));
 const WeeklyReviewModal = lazy(() => import('./WeeklyReviewModal').then(m => ({ default: m.WeeklyReviewModal })));
 const StudySessionModal = lazy(() => import('./StudySessionModal').then(m => ({ default: m.StudySessionModal })));
-const StudySprintRunnerModal = lazy(() => import('../focus/StudySprintRunnerModal').then(m => ({ default: m.StudySprintRunnerModal })));
-const PomodoroModal = lazy(() => import('../focus/FocusStudio').then(m => ({ default: m.FocusStudio })));
+const FocusEngineModal = lazy(() => import('../focus/FocusEngineModal').then(m => ({ default: m.FocusEngineModal })));
 const SettingsDrawer = lazy(() => import('./SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
+const CopilotOmnibar = lazy(() => import('./CopilotOmnibar').then(m => ({ default: m.CopilotOmnibar })));
 import { OnboardingFlow } from './OnboardingFlow';
 
 import type { SettingsTab } from './SettingsDrawer';
@@ -32,25 +31,8 @@ interface ModalRootProps {
 }
 
 export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudySprint }) => {
-  const { isModalOpen, closeModal, openModal, getModalProps, activeModals } = useModal();
-  const {
-    isAuthModalOpen,
-    setIsAuthModalOpen,
-    isSmartFilterModalOpen,
-    setIsSmartFilterModalOpen,
-    isEveningShutdownOpen,
-    setIsEveningShutdownOpen,
-    isWeeklyReviewOpen,
-    isInterruptionModalOpen,
-    isTemplatePickerOpen,
-    setIsInterruptionModalOpen,
-    setIsTemplatePickerOpen,
-    setIsWeeklyReviewOpen,
-    setSelectedTaskId,
-  } = useTaskContext();
-
-  const isMorningKickoffOpen = useUIStore((s) => s.isMorningKickoffOpen);
-  const setIsMorningKickoffOpen = useUIStore((s) => s.setIsMorningKickoffOpen);
+  const { isModalOpen, closeModal, openModal, getModalProps, activeModals, closeAllModals } = useModal();
+  const { setSelectedTaskId } = useTaskContext();
 
   const handleSelectTask = onSelectTask || ((id: string) => setSelectedTaskId(id));
 
@@ -61,7 +43,7 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
 
       if (activeModals.length > 0) {
         const topModal = activeModals[activeModals.length - 1];
-        if (topModal === 'pomodoro' || topModal === 'studySprint') {
+        if (topModal === 'pomodoro' || topModal === 'studySprint' || topModal === 'focusEngine') {
           // If in Zen fullscreen mode, let focus modal handle exiting fullscreen first
           if (document.fullscreenElement || document.querySelector('[aria-label="Zen Focus Mode"]')) {
             return;
@@ -69,213 +51,181 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
         }
         e.preventDefault();
         closeModal(topModal);
-        if (topModal === 'auth') setIsAuthModalOpen(false);
-        if (topModal === 'eveningShutdown') setIsEveningShutdownOpen(false);
-        if (topModal === 'morningKickoff') setIsMorningKickoffOpen(false);
-        if (topModal === 'weeklyReview') setIsWeeklyReviewOpen(false);
-        if (topModal === 'smartFilter') setIsSmartFilterModalOpen(false);
-        return;
-      }
-
-      // Fallback for standalone TaskContext modals
-      if (isAuthModalOpen) {
-        e.preventDefault();
-        setIsAuthModalOpen(false);
-        closeModal('auth');
-      } else if (isEveningShutdownOpen) {
-        e.preventDefault();
-        setIsEveningShutdownOpen(false);
-        closeModal('eveningShutdown');
-      } else if (isMorningKickoffOpen) {
-        e.preventDefault();
-        setIsMorningKickoffOpen(false);
-        closeModal('morningKickoff');
-      } else if (isWeeklyReviewOpen) {
-        e.preventDefault();
-        setIsWeeklyReviewOpen(false);
-        closeModal('weeklyReview');
-      } else if (isSmartFilterModalOpen) {
-        e.preventDefault();
-        setIsSmartFilterModalOpen(false);
-        closeModal('smartFilter');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    activeModals,
-    closeModal,
-    isAuthModalOpen,
-    setIsAuthModalOpen,
-    isEveningShutdownOpen,
-    setIsEveningShutdownOpen,
-    isWeeklyReviewOpen,
-    setIsWeeklyReviewOpen,
-    isSmartFilterModalOpen,
-    setIsSmartFilterModalOpen,
-    isMorningKickoffOpen,
-    setIsMorningKickoffOpen,
-  ]);
+  }, [activeModals, closeModal]);
 
   return (
-    <FeatureBoundary resetKey={JSON.stringify([activeModals, isAuthModalOpen, isEveningShutdownOpen, isWeeklyReviewOpen, isSmartFilterModalOpen, isInterruptionModalOpen, isTemplatePickerOpen])} title="This panel" modal onBack={() => {
-      activeModals.forEach(closeModal);
-      setIsAuthModalOpen(false); setIsEveningShutdownOpen(false); setIsWeeklyReviewOpen(false); setIsSmartFilterModalOpen(false); setIsInterruptionModalOpen(false); setIsTemplatePickerOpen(false);
-    }}>
-    <Suspense fallback={activeModals.length || isAuthModalOpen || isEveningShutdownOpen || isWeeklyReviewOpen || isSmartFilterModalOpen || isInterruptionModalOpen || isTemplatePickerOpen ? <ModalSkeleton /> : null}>
-      {/* Centralized Settings Slide-Over Panel */}
-      {isModalOpen('settings') && (
-        <SettingsDrawer
-          isOpen={true}
-          onClose={() => closeModal('settings')}
-          initialTab={getModalProps<{ initialTab?: SettingsTab }>('settings')?.initialTab}
-        />
-      )}
+    <FeatureBoundary
+      resetKey={JSON.stringify(activeModals)}
+      title="This panel"
+      modal
+      onBack={closeAllModals}
+    >
+      <Suspense fallback={activeModals.length > 0 ? <ModalSkeleton /> : null}>
+        {/* Centralized Settings Slide-Over Panel */}
+        {isModalOpen('settings') && (
+          <SettingsDrawer
+            isOpen={true}
+            onClose={() => closeModal('settings')}
+            initialTab={getModalProps<{ initialTab?: SettingsTab }>('settings')?.initialTab}
+          />
+        )}
 
-      {/* Guided Onboarding Flow */}
-      {isModalOpen('onboarding') && (
-        <OnboardingFlow
-          isOpen={true}
-          onClose={() => closeModal('onboarding')}
-        />
-      )}
+        {/* Guided Onboarding Flow */}
+        {isModalOpen('onboarding') && (
+          <OnboardingFlow
+            isOpen={true}
+            onClose={() => closeModal('onboarding')}
+          />
+        )}
 
-      {/* Command Palette */}
-      {isModalOpen('commandPalette') && (
-        <CommandPalette
-          isOpen={true}
-          onClose={() => closeModal('commandPalette')}
-          onSelectTask={handleSelectTask}
-          onOpenPomodoro={() => openModal('pomodoro')}
-          onOpenBrainDump={() => openModal('brainDump')}
-          onOpenExportImport={() => openModal('exportImport')}
-          onOpenAesthetics={() => openModal('settings', { initialTab: 'aesthetics' })}
-          onOpenScratchpad={() => openModal('scratchpad')}
-          onOpenStudySession={() => openModal('studySession')}
-        />
-      )}
+        {/* Command Palette */}
+        {isModalOpen('commandPalette') && (
+          <CommandPalette
+            isOpen={true}
+            onClose={() => closeModal('commandPalette')}
+            onSelectTask={handleSelectTask}
+            onOpenPomodoro={() => openModal('pomodoro')}
+            onOpenBrainDump={() => openModal('brainDump')}
+            onOpenExportImport={() => openModal('exportImport')}
+            onOpenAesthetics={() => openModal('settings', { initialTab: 'aesthetics' })}
+            onOpenScratchpad={() => openModal('scratchpad')}
+            onOpenStudySession={() => openModal('studySession')}
+          />
+        )}
 
-      {/* Keyboard Shortcuts Cheatsheet */}
-      {isModalOpen('shortcuts') && (
-        <ShortcutsModal onClose={() => closeModal('shortcuts')} />
-      )}
+        {/* Keyboard Shortcuts Cheatsheet */}
+        {isModalOpen('shortcuts') && (
+          <ShortcutsModal onClose={() => closeModal('shortcuts')} />
+        )}
 
-      {/* Brain Dump Rapid Ingestion */}
-      {isModalOpen('brainDump') && (
-        <BrainDumpModal onClose={() => closeModal('brainDump')} />
-      )}
+        {/* Brain Dump Rapid Ingestion */}
+        {isModalOpen('brainDump') && (
+          <BrainDumpModal onClose={() => closeModal('brainDump')} />
+        )}
 
-      {/* Data Export / Import Modal */}
-      {isModalOpen('exportImport') && (
-        <ExportImportModal onClose={() => closeModal('exportImport')} />
-      )}
+        {/* Data Export / Import Modal */}
+        {isModalOpen('exportImport') && (
+          <ExportImportModal onClose={() => closeModal('exportImport')} />
+        )}
 
-      {/* Aesthetics & Themes Customization via SettingsDrawer */}
-      {isModalOpen('aesthetics') && (
-        <SettingsDrawer
-          isOpen={true}
-          onClose={() => closeModal('aesthetics')}
-          initialTab="aesthetics"
-        />
-      )}
+        {/* Aesthetics & Themes Customization via SettingsDrawer */}
+        {isModalOpen('aesthetics') && (
+          <SettingsDrawer
+            isOpen={true}
+            onClose={() => closeModal('aesthetics')}
+            initialTab="aesthetics"
+          />
+        )}
 
-      {/* Authentication & Cloud Sync Modal */}
-      {(isAuthModalOpen || isModalOpen('auth')) && (
-        <AuthModal
-          isOpen={true}
-          onClose={() => {
-            setIsAuthModalOpen(false);
-            closeModal('auth');
-          }}
-        />
-      )}
+        {/* Authentication & Cloud Sync Modal */}
+        {isModalOpen('auth') && (
+          <AuthModal
+            isOpen={true}
+            onClose={() => closeModal('auth')}
+          />
+        )}
 
-      {/* Evening Shutdown Ritual */}
-      {(isEveningShutdownOpen || isModalOpen('eveningShutdown')) && (
-        <EveningShutdownModal
-          onClose={() => {
-            setIsEveningShutdownOpen(false);
-            closeModal('eveningShutdown');
-          }}
-        />
-      )}
+        {/* Evening Shutdown Ritual */}
+        {isModalOpen('eveningShutdown') && (
+          <EveningShutdownModal
+            onClose={() => closeModal('eveningShutdown')}
+          />
+        )}
 
-      {/* Morning Kickoff Ritual */}
-      {(isMorningKickoffOpen || isModalOpen('morningKickoff')) && (
-        <MorningKickoffModal
-          onClose={() => {
-            setIsMorningKickoffOpen(false);
-            closeModal('morningKickoff');
-          }}
-        />
-      )}
+        {/* Morning Kickoff Ritual */}
+        {isModalOpen('morningKickoff') && (
+          <MorningKickoffModal
+            onClose={() => closeModal('morningKickoff')}
+          />
+        )}
 
-      {/* Pomodoro Focus Modal */}
-      {isModalOpen('pomodoro') && (
-        <PomodoroModal
-          taskId={getModalProps<{ taskId?: string | null }>('pomodoro')?.taskId || null}
-          initialPhase={getModalProps<{ initialPhase?: 'focus' | 'short_break' | 'long_break' }>('pomodoro')?.initialPhase}
-          initialPanel={getModalProps<{ initialPanel?: 'sound' | 'timer' }>('pomodoro')?.initialPanel}
-          onClose={() => closeModal('pomodoro')}
-        />
-      )}
+        {/* Pomodoro Focus Modal via FocusEngineModal */}
+        {isModalOpen('pomodoro') && (
+          <FocusEngineModal
+            isOpen={true}
+            taskId={getModalProps<{ taskId?: string | null }>('pomodoro')?.taskId || null}
+            initialMode={getModalProps<{ initialMode?: 'zen' | 'studio' | 'sprint' }>('pomodoro')?.initialMode || 'zen'}
+            initialPhase={getModalProps<{ initialPhase?: string }>('pomodoro')?.initialPhase}
+            initialPanel={getModalProps<{ initialPanel?: string }>('pomodoro')?.initialPanel}
+            onClose={() => closeModal('pomodoro')}
+          />
+        )}
 
-      {/* Study Session Modal */}
-      {isModalOpen('studySession') && (
-        <StudySessionModal
-          isOpen={true}
-          onClose={() => closeModal('studySession')}
-          onStartSprint={onStartStudySprint}
-        />
-      )}
+        {/* Study Session Modal */}
+        {isModalOpen('studySession') && (
+          <StudySessionModal
+            isOpen={true}
+            onClose={() => closeModal('studySession')}
+            onStartSprint={onStartStudySprint}
+          />
+        )}
 
-      {/* Study Sprint Runner */}
-      {isModalOpen('studySprint') && (
-        <StudySprintRunnerModal
-          isOpen={true}
-          taskId={getModalProps<{ taskId?: string | null }>('studySprint')?.taskId || null}
-          onClose={() => closeModal('studySprint')}
-        />
-      )}
+        {/* Study Sprint Runner via FocusEngineModal */}
+        {isModalOpen('studySprint') && (
+          <FocusEngineModal
+            isOpen={true}
+            taskId={getModalProps<{ taskId?: string | null }>('studySprint')?.taskId || null}
+            initialMode={getModalProps<{ initialMode?: 'zen' | 'studio' | 'sprint' }>('studySprint')?.initialMode || 'sprint'}
+            onClose={() => closeModal('studySprint')}
+          />
+        )}
 
-      {/* Sticky Scratchpad */}
-      {isModalOpen('scratchpad') && (
-        <ScratchpadModal
-          isOpen={true}
-          onClose={() => closeModal('scratchpad')}
-        />
-      )}
+        {/* Unified Focus Engine Modal */}
+        {isModalOpen('focusEngine') && (
+          <FocusEngineModal
+            isOpen={true}
+            taskId={getModalProps<{ taskId?: string | null }>('focusEngine')?.taskId || null}
+            initialMode={getModalProps<{ initialMode?: 'zen' | 'studio' | 'sprint' }>('focusEngine')?.initialMode || 'zen'}
+            initialPhase={getModalProps<{ initialPhase?: string }>('focusEngine')?.initialPhase}
+            initialPanel={getModalProps<{ initialPanel?: string }>('focusEngine')?.initialPanel}
+            onClose={() => closeModal('focusEngine')}
+          />
+        )}
 
-      {/* Smart Filter View Creator */}
-      {(isSmartFilterModalOpen || isModalOpen('smartFilter')) && (
-        <SmartFilterModal
-          isOpen={true}
-          onClose={() => {
-            setIsSmartFilterModalOpen(false);
-            closeModal('smartFilter');
-          }}
-        />
-      )}
+        {/* Sticky Scratchpad */}
+        {isModalOpen('scratchpad') && (
+          <ScratchpadModal
+            isOpen={true}
+            onClose={() => closeModal('scratchpad')}
+          />
+        )}
 
-      {/* Weekly Review & Retrospective */}
-      {(isWeeklyReviewOpen || isModalOpen('weeklyReview')) && (
-        <WeeklyReviewModal
-          isOpen={true}
-          onClose={() => {
-            setIsWeeklyReviewOpen(false);
-            closeModal('weeklyReview');
-          }}
-          onOpenTask={handleSelectTask}
-        />
-      )}
+        {/* Smart Filter View Creator */}
+        {isModalOpen('smartFilter') && (
+          <SmartFilterModal
+            isOpen={true}
+            onClose={() => closeModal('smartFilter')}
+          />
+        )}
 
-      {/* Interruption Stash & Scratchpad Modal */}
-      {isInterruptionModalOpen && <InterruptionModal />}
+        {/* Weekly Review & Retrospective */}
+        {isModalOpen('weeklyReview') && (
+          <WeeklyReviewModal
+            isOpen={true}
+            onClose={() => closeModal('weeklyReview')}
+            onOpenTask={handleSelectTask}
+          />
+        )}
 
-      {/* Template Picker */}
-      {isTemplatePickerOpen && <TemplatePickerModal />}
-    </Suspense>
+        {/* Interruption Stash & Scratchpad Modal */}
+        {isModalOpen('interruption') && <InterruptionModal />}
+
+        {/* Template Picker */}
+        {isModalOpen('templatePicker') && <TemplatePickerModal />}
+
+        {/* FlowTask Copilot Omnibar */}
+        {isModalOpen('copilotOmnibar') && (
+          <CopilotOmnibar
+            isOpen={true}
+            onClose={() => closeModal('copilotOmnibar')}
+          />
+        )}
+      </Suspense>
     </FeatureBoundary>
   );
 };

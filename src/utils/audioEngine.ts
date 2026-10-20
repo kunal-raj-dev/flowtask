@@ -27,6 +27,7 @@ class AudioEngine {
   private ambientOscillators: OscillatorNode[] = [];
   private lastMajorSoundTime: number = 0;
   private lastClickTime: number = 0;
+  private lastCompletionChimeTime: number = 0;
 
   public notifyMajorSound() {
     this.lastMajorSoundTime = Date.now();
@@ -150,6 +151,9 @@ class AudioEngine {
   public playCompletionChime(profileOverride?: SoundProfile, forcePlay: boolean = false) {
     const profile = profileOverride || this.soundProfile;
     if ((!this.isSoundEnabled && !forcePlay) || profile === 'mute') return;
+    const nowMs = Date.now();
+    if (!forcePlay && nowMs - this.lastCompletionChimeTime < 50) return;
+    this.lastCompletionChimeTime = nowMs;
     this.notifyMajorSound();
     const ctx = this.getContext();
     if (!ctx) return;

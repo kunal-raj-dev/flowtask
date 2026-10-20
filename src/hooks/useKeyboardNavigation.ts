@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Task, Priority } from '../types/task';
 import { formatLocalDate } from '../utils/nlpParser';
 import { useUIStore } from '../store/useUIStore';
+import { useModalStore } from '../store/useModalStore';
 
 interface UseKeyboardNavigationProps {
   tasks: Task[];
@@ -70,15 +71,34 @@ export function useKeyboardNavigation({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Allow keyboard navigation if right slide-over TaskDrawer is open, but block on full modal dialogs
+      // Allow keyboard navigation if right slide-over TaskDrawer is open, but block on full modal dialogs or active popovers
+      if (useUIStore.getState().activePopover) return;
+      const modalStore = useModalStore.getState();
+      if (
+        modalStore.hasAnyModalOpen ||
+        modalStore.activeModals.length > 0 ||
+        modalStore.isAuthModalOpen ||
+        modalStore.isQuickAddOpen ||
+        modalStore.isTemplatePickerOpen ||
+        modalStore.isWeeklyReviewOpen ||
+        modalStore.isSmartFilterModalOpen ||
+        modalStore.isInterruptionModalOpen ||
+        modalStore.isEveningShutdownOpen ||
+        modalStore.isMorningKickoffOpen
+      ) {
+        return;
+      }
       if (document.querySelector('[aria-modal="true"]:not([data-task-drawer="true"]), [data-overlay-open="true"], [data-layout-editing="true"]')) return;
-      if (!enabled || tasks.length === 0) return;
+      if (!enabled) return;
 
-      // Ignore when user is actively typing in form inputs, textareas, or contenteditables
+      // Ignore when user is actively typing in form inputs, textareas, contenteditables, or ARIA textboxes
       const activeEl = document.activeElement;
       const tag = (activeEl?.tagName || '').toLowerCase();
-      const isEditable = activeEl?.getAttribute('contenteditable') === 'true';
-      if (tag === 'input' || tag === 'textarea' || tag === 'select' || isEditable) {
+      const isEditable =
+        (activeEl as HTMLElement)?.isContentEditable ||
+        activeEl?.getAttribute('contenteditable') === 'true';
+      const role = activeEl?.getAttribute('role');
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || isEditable || role === 'textbox' || role === 'searchbox') {
         return;
       }
 
@@ -91,6 +111,16 @@ export function useKeyboardNavigation({
       if (e.ctrlKey || e.metaKey || e.altKey) {
         return;
       }
+
+      // Quick capture anywhere in list views (c / C)
+      if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        useModalStore.getState().openModal('quickAdd');
+        useUIStore.getState().setIsQuickAddOpen(true);
+        return;
+      }
+
+      if (tasks.length === 0) return;
 
       const selectedTaskIds = useUIStore.getState().selectedTaskIds;
       if (selectedTaskIds.length > 0) {
@@ -208,8 +238,7 @@ export function useKeyboardNavigation({
         }
 
         // Toggle Complete
-        case ' ':
-        case 'x': {
+        case ' ': {
           if (focusedTaskId) {
             e.preventDefault();
             onToggleStatus(focusedTaskId);
@@ -217,17 +246,61 @@ export function useKeyboardNavigation({
           break;
         }
 
-        // Open details
-        case 'Enter': {
+        // Toggle Multi-select Selection ('x')
+        case 'x':
+        case 'X': {
           if (focusedTaskId) {
             e.preventDefault();
-            onSelectTask(focusedTaskId);
+            useUIStore.getState().toggleTaskSelection(focusedTaskId);
           }
           break;
         }
 
-        // Toggle Top 3 Focus (Rule of 3)
-        case 'f':
+        // Open Priority Picker Popover ('p')
+        case 'p':
+        case 'P': {
+          if (focusedTaskId) {
+            e.preventDefault();
+            useUIStore.getState().setActivePopover({ type: 'priority', taskId: focusedTaskId });
+          }
+          break;
+        }
+
+        // Open Date Picker Popover ('d')
+        case 'd':
+        case 'D': {
+          if (focusedTaskId) {
+            e.preventDefault();
+            useUIStore.getState().setActivePopover({ type: 'date', taskId: focusedTaskId });
+          }
+          break;
+        }
+
+        // Open details and dispatch inline edit event
+        case 'Enter': {
+          if (focusedTaskId) {
+            e.preventDefault();
+            onSelectTask(focusedTaskId);
+            window.dispatchEvent(new CustomEvent('flowtask:edit-task', { detail: focusedTaskId }));
+          }
+          break;
+        }
+
+        // Reschedule to Today & Pin to Top 3 ('t')
+        case 't':
+        case 'T': {
+          if (focusedTaskId) {
+            e.preventDefault();
+            if (onTogglePinToday) {
+              onTogglePinToday(focusedTaskId);
+            }
+            if (onUpdateTask) {
+              const todayStr = formatLocalDate(new Date());
+              onUpdateTask(focusedTaskId, { plannedDate: todayStr, isSomeday: false });
+            }
+          }
+          break;
+        }
         case '*': {
           if (focusedTaskId && onTogglePinToday) {
             e.preventDefault();
@@ -236,7 +309,7 @@ export function useKeyboardNavigation({
           break;
         }
 
-        // Priority shortcuts (1 = P1 Urgent, 2 = P2 High, 3 = P3 Medium, 4 = P4 Low)
+        // Direct Priority shortcuts (1 = P1 Urgent, 2 = P2 High, 3 = P3 Medium, 4 = P4 Low)
         case '1':
         case '2':
         case '3':
@@ -254,18 +327,9 @@ export function useKeyboardNavigation({
           break;
         }
 
-        // Reschedule to Today ('t')
-        case 't': {
-          if (focusedTaskId && onUpdateTask) {
-            e.preventDefault();
-            const todayStr = formatLocalDate(new Date());
-            onUpdateTask(focusedTaskId, { plannedDate: todayStr, isSomeday: false });
-          }
-          break;
-        }
-
         // Reschedule to Tomorrow ('m')
-        case 'm': {
+        case 'm':
+        case 'M': {
           if (focusedTaskId && onUpdateTask) {
             e.preventDefault();
             const tomorrow = new Date();
@@ -276,7 +340,8 @@ export function useKeyboardNavigation({
         }
 
         // Move to Someday ('s')
-        case 's': {
+        case 's':
+        case 'S': {
           if (focusedTaskId && onUpdateTask) {
             e.preventDefault();
             onUpdateTask(focusedTaskId, { isSomeday: true, plannedDate: undefined, dueDate: undefined, isPinnedToday: false });
@@ -284,9 +349,24 @@ export function useKeyboardNavigation({
           break;
         }
 
-        // Start Focus Mode / Pomodoro ('p')
-        case 'p':
-        case 'P': {
+        // Archive focused task ('e')
+        case 'e':
+        case 'E': {
+          if (focusedTaskId) {
+            e.preventDefault();
+            if (onUpdateTask) {
+              onUpdateTask(focusedTaskId, { archivedAt: Date.now() });
+            }
+            if (onBatchArchive) {
+              onBatchArchive([focusedTaskId]);
+            }
+          }
+          break;
+        }
+
+        // Start Focus Mode / Pomodoro ('f')
+        case 'f':
+        case 'F': {
           if (focusedTaskId && onStartFocus) {
             e.preventDefault();
             onStartFocus(focusedTaskId);

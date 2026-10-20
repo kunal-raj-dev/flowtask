@@ -2,28 +2,23 @@ import { normalizeAppearance } from '../utils/appearance';
 import { THEMES, type AppTheme } from '../utils/themeRegistry';
 import { writeFocusCheckpoint } from '../services/focusCheckpoint';
 import { nextStudioPhase, pausedSeconds } from '../services/studioSessionEngine';
-import { createWorkspaceBackup, validateBackupExtras, mergeBackupExtras, type BackupExtras } from '../utils/workspaceBackup';
+import { type BackupExtras } from '../utils/workspaceBackup';
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import type { Task, SubTask, Project, ViewId, Priority, CalendarEvent, InterruptionStash, SmartFilterView, SmartFilterPredicate, FocusSession, FocusSessionMode, FocusLog } from '../types/task';
 import type { WorkspaceDashboard } from '../types/dashboard';
 import { getTodayStr } from '../hooks/useCurrentDate';
 import { formatLocalDate } from '../utils/nlpParser';
 import { BUILT_IN_SMART_VIEWS } from '../utils/smartViewUtils';
-import { audioEngine, type SoundProfile } from '../utils/audioEngine';
+import { type SoundProfile } from '../utils/audioEngine';
 import { useAuth } from './AuthContext';
-import { fetchICSFeed, parseICSFeed } from '../services/calendarService';
-import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser';
-import { commandService, type CommandResult } from '../services/commandService';
-import { WorkspaceStore } from '../services/workspaceStore';
+import { type ParsedSession } from '../utils/sessionParser';
+import { WorkspaceStore, WorkspaceStoreContext } from '../services/workspaceStore';
 import { registerWebMcpTools } from '../services/webMcpService';
 import { focusSessionService } from '../services/focusSessionService';
 import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/settings';
-import { isActiveTask, isFocusTask } from '../utils/taskSelectors';
-import { dbService } from '../services/dbService';
-import { downloadJson } from '../utils/fileExporter';
-import { validateWorkspaceData } from '../utils/workspaceValidation';
+import { isActiveTask } from '../utils/taskSelectors';
 
-import { useUIStore, useFocusStore } from '../store';
+import { useUIStore, useFocusStore, useTaskStore, useModalStore } from '../store';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local' | 'conflict' | 'error';
 export type { AppTheme } from '../utils/themeRegistry';
@@ -39,7 +34,15 @@ export {
   useIsTaskTimerActive,
 } from '../store';
 
-interface TaskContextType {
+export {
+  WorkspaceStoreContext,
+  useWorkspaceSelector,
+  useWorkspaceTasks,
+  useWorkspaceProjects,
+  useActiveTask,
+} from '../services/workspaceStore';
+
+export interface TaskContextType {
   workspaceId: string;
   workspacePreferences: Record<string, unknown>;
   setWorkspacePreference: (key: string, value: unknown) => void;
@@ -219,13 +222,27 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   if (loading) return <div role="status" className="p-10">Opening your workspace…</div>;
   return <WorkspaceProvider key={user?.uid || 'local'} workspaceId={user?.uid || 'local'} connected={!!user}>{children}</WorkspaceProvider>;
 };
+
 const WorkspaceProvider = ({ children, workspaceId, connected }: { children: ReactNode; workspaceId: string; connected: boolean }) => {
   const [store] = useState(() => new WorkspaceStore(workspaceId, connected));
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+
+  // Bind store to useTaskStore
+  useEffect(() => {
+    useTaskStore.getState().setWorkspaceStore(store);
+  }, [store]);
+
+  useEffect(() => {
+    if (snapshot.ready) {
+      useTaskStore.getState().syncFromSnapshot(snapshot);
+    }
+  }, [snapshot]);
+
   useEffect(() => {
     if (!snapshot.ready) return;
     return registerWebMcpTools({ store });
   }, [store, snapshot.ready]);
+
   const { tasks, projects, preferences, customViews: customSmartViews, dashboards = [] } = snapshot.record;
   const current = () => store.getSnapshot().record;
   const syncStatus = snapshot.sync;
@@ -233,60 +250,64 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     () => (syncStatus === 'synced' ? new Date(snapshot.record.updatedAt) : null),
     [syncStatus, snapshot.record.updatedAt]
   );
-  const uiState = useUIStore();
-  const {
-    activeView,
-    viewLayout,
-    selectedTaskId,
-    searchQuery,
-    priorityFilter,
-    quickWinsOnly,
-    theme,
-    soundEnabled,
-    soundProfile,
-    toast,
-    isAuthModalOpen,
-    isQuickAddOpen,
-    quickAddDraft,
-    isTemplatePickerOpen,
-    isWeeklyReviewOpen,
-    isSmartFilterModalOpen,
-    isInterruptionModalOpen,
-    isEveningShutdownOpen,
-    isShutdownDismissed,
-    isTriageDismissed,
-    selectedTaskIds,
-    setActiveView,
-    setViewLayout,
-    setSelectedTaskId,
-    setSearchQuery,
-    setPriorityFilter,
-    setQuickWinsOnly,
-    toggleSound,
-    setSoundProfile,
-    showToast,
-    clearToast,
-    setIsAuthModalOpen,
-    setIsQuickAddOpen,
-    setQuickAddDraft,
-    setIsTemplatePickerOpen,
-    setIsWeeklyReviewOpen,
-    setIsSmartFilterModalOpen,
-    setIsInterruptionModalOpen,
-    setIsEveningShutdownOpen,
-    dismissShutdown,
-    setIsTriageDismissed,
-    toggleTaskSelection,
-    selectTask,
-    deselectTask,
-    selectAllTasks,
-    clearTaskSelection,
-  } = uiState;
+
+  // Granular UI store hooks
+  const activeView = useUIStore((s) => s.activeView);
+  const viewLayout = useUIStore((s) => s.viewLayout);
+  const selectedTaskId = useUIStore((s) => s.selectedTaskId);
+  const searchQuery = useUIStore((s) => s.searchQuery);
+  const priorityFilter = useUIStore((s) => s.priorityFilter);
+  const quickWinsOnly = useUIStore((s) => s.quickWinsOnly);
+  const theme = useUIStore((s) => s.theme);
+  const soundEnabled = useUIStore((s) => s.soundEnabled);
+  const soundProfile = useUIStore((s) => s.soundProfile);
+  const toast = useUIStore((s) => s.toast);
+  const selectedTaskIds = useUIStore((s) => s.selectedTaskIds);
+
+  const setActiveView = useUIStore((s) => s.setActiveView);
+  const setViewLayout = useUIStore((s) => s.setViewLayout);
+  const setSelectedTaskId = useUIStore((s) => s.setSelectedTaskId);
+  const setSearchQuery = useUIStore((s) => s.setSearchQuery);
+  const setPriorityFilter = useUIStore((s) => s.setPriorityFilter);
+  const setQuickWinsOnly = useUIStore((s) => s.setQuickWinsOnly);
+  const toggleSound = useUIStore((s) => s.toggleSound);
+  const setSoundProfile = useUIStore((s) => s.setSoundProfile);
+  const showToast = useUIStore((s) => s.showToast);
+  const clearToast = useUIStore((s) => s.clearToast);
+  const toggleTaskSelection = useUIStore((s) => s.toggleTaskSelection);
+  const selectTask = useUIStore((s) => s.selectTask);
+  const deselectTask = useUIStore((s) => s.deselectTask);
+  const selectAllTasks = useUIStore((s) => s.selectAllTasks);
+  const clearTaskSelection = useUIStore((s) => s.clearTaskSelection);
+
+  // Granular Modal store hooks
+  const isAuthModalOpen = useModalStore((s) => s.isAuthModalOpen);
+  const isQuickAddOpen = useModalStore((s) => s.isQuickAddOpen);
+  const quickAddDraft = useModalStore((s) => s.quickAddDraft);
+  const isTemplatePickerOpen = useModalStore((s) => s.isTemplatePickerOpen);
+  const isWeeklyReviewOpen = useModalStore((s) => s.isWeeklyReviewOpen);
+  const isSmartFilterModalOpen = useModalStore((s) => s.isSmartFilterModalOpen);
+  const isInterruptionModalOpen = useModalStore((s) => s.isInterruptionModalOpen);
+  const isEveningShutdownOpen = useModalStore((s) => s.isEveningShutdownOpen);
+  const isShutdownDismissed = useModalStore((s) => s.isShutdownDismissed);
+  const isTriageDismissed = useModalStore((s) => s.isTriageDismissed);
+
+  const setIsAuthModalOpen = useModalStore((s) => s.setIsAuthModalOpen);
+  const setIsQuickAddOpen = useModalStore((s) => s.setIsQuickAddOpen);
+  const setQuickAddDraft = useModalStore((s) => s.setQuickAddDraft);
+  const setIsTemplatePickerOpen = useModalStore((s) => s.setIsTemplatePickerOpen);
+  const setIsWeeklyReviewOpen = useModalStore((s) => s.setIsWeeklyReviewOpen);
+  const setIsSmartFilterModalOpen = useModalStore((s) => s.setIsSmartFilterModalOpen);
+  const setIsInterruptionModalOpen = useModalStore((s) => s.setIsInterruptionModalOpen);
+  const setIsEveningShutdownOpen = useModalStore((s) => s.setIsEveningShutdownOpen);
+  const dismissShutdown = useModalStore((s) => s.dismissShutdown);
+  const setIsTriageDismissed = useModalStore((s) => s.setIsTriageDismissed);
 
   const storeFocusSession = useFocusStore((s) => s.focusSession);
   const focusSession = (preferences.focusSession as FocusSession | null) || (storeFocusSession?.workspaceId === workspaceId ? storeFocusSession : null);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const calendarEvents = useTaskStore((s) => s.calendarEvents);
   const todayStr = getTodayStr();
+
   const settings = useMemo<UserWorkflowSettings>(
     () => ({ ...DEFAULT_WORKFLOW_SETTINGS, ...((preferences.settings as Partial<UserWorkflowSettings>) || {}) }),
     [preferences.settings]
@@ -318,6 +339,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     } else void store.load();
     return () => { abort.abort(); release?.(); };
   }, [store, workspaceId]);
+
   useEffect(() => {
     if (!connected || !snapshot.ready) return;
     let cancelled = false;
@@ -331,24 +353,22 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     window.addEventListener('online', retry);
     return () => { cancelled = true; stop?.(); store.disconnect(); window.removeEventListener('online', retry); };
   }, [connected, snapshot.ready, store, workspaceId, showToast]);
-  const setWorkspacePreference = (key: string, value: unknown) => { const checkpointAt = key === 'focusSession' ? writeFocusCheckpoint(workspaceId, value as FocusSession | null) : undefined; store.run('Update workspace preference', r => ({ ...r, preferences: { ...r.preferences, [key]: value, ...(checkpointAt ? { focusCheckpointAt: checkpointAt } : {}) } }), false); };
-  const setTheme = (value: AppTheme) => { setWorkspacePreference('appearance', { ...normalizeAppearance(current().preferences.appearance), theme: value, mode: 'manual', accent: '' }); };
-  const toggleTheme = () => setTheme(THEMES[useUIStore.getState().theme].scheme === 'dark' ? 'light' : 'dark');
-  const updateSettings = (updates: Partial<UserWorkflowSettings>) => setWorkspacePreference('settings', { ...DEFAULT_WORKFLOW_SETTINGS, ...(current().preferences.settings as object || {}), ...updates });
-  const resetSettings = () => setWorkspacePreference('settings', DEFAULT_WORKFLOW_SETTINGS);
-  function execute(factory: (list: Task[]) => CommandResult) {
-    const result = factory(current().tasks);
-    store.run(result.description, r => ({ ...r, tasks: result.updatedTasks }));
-    return result;
-  }
-  const undoLastAction = () => { try { store.undo(); } catch (error) { showToast(String((error as Error).message)); } };
-  const redoLastAction = () => { try { store.redo(); showToast('Action redone'); } catch (error) { showToast(String((error as Error).message)); } };
-  const addTask = (input: string, overrides?: Partial<Task>): Task => {
-    const result = commandService.createTask(current().tasks, input, overrides, { defaultPriority: settings.defaultTaskPriority, enableParsing: settings.enableSmartSyntaxParsing, defaultPlannedDate: activeView === 'today' ? todayStr : undefined, defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox' });
-    if (!current().projects.some(p => p.id === result.createdTask.projectId)) result.createdTask.projectId = 'inbox';
-    store.run(result.description, r => ({ ...r, tasks: result.updatedTasks }));
-    return result.createdTask;
+
+  const setWorkspacePreference = (key: string, value: unknown) => {
+    useTaskStore.getState().setWorkspacePreference(key, value);
   };
+
+  const setTheme = (value: AppTheme) => {
+    setWorkspacePreference('appearance', { ...normalizeAppearance(current().preferences.appearance), theme: value, mode: 'manual', accent: '' });
+  };
+  const toggleTheme = () => setTheme(THEMES[useUIStore.getState().theme].scheme === 'dark' ? 'light' : 'dark');
+  const updateSettings = (updates: Partial<UserWorkflowSettings>) => useTaskStore.getState().updateSettings(updates);
+  const resetSettings = () => useTaskStore.getState().resetSettings();
+
+  const undoLastAction = () => useTaskStore.getState().undoLastAction();
+  const redoLastAction = () => useTaskStore.getState().redoLastAction();
+
+  const addTask = (input: string, overrides?: Partial<Task>): Task => useTaskStore.getState().addTask(input, overrides);
   const addTaskRef = useRef(addTask); addTaskRef.current = addTask;
   const showToastRef = useRef(showToast); showToastRef.current = showToast;
 
@@ -370,66 +390,33 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     window.addEventListener('message', handleExternalCaptureMessage);
     return () => window.removeEventListener('message', handleExternalCaptureMessage);
   }, []);
-  const addMultipleTasks = (lines: string[], overrides?: Partial<Task>) => {
-    store.run('Add multiple tasks', r => ({ ...r, tasks: lines.map(l => l.trim()).filter(Boolean).reduce((list, line) => commandService.createTask(list, line, overrides, { defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox', defaultPriority: settings.defaultTaskPriority, enableParsing: settings.enableSmartSyntaxParsing, defaultPlannedDate: activeView === 'today' ? todayStr : undefined }).updatedTasks, r.tasks) }));
-  };
-  const updateTask = (id: string, updates: Partial<Task>) => { execute(list => commandService.updateTask(list, id, updates)); };
-  const deleteTask = (id: string) => { execute(list => commandService.deleteTask(list, id)); showToast('Task moved to Trash', 'Undo', undoLastAction); };
-  const permanentDeleteTask = (id: string) => { execute(list => commandService.permanentDeleteTask(list, id)); };
-  const archiveTask = (id: string) => { execute(list => commandService.archiveTask(list, id)); showToast('Task archived', 'Undo', undoLastAction); };
-  const restoreTask = (id: string) => { execute(list => commandService.restoreTask(list, id)); };
-  const toggleTaskStatus = (id: string) => { execute(list => commandService.toggleTaskStatus(list, id)); audioEngine.playTaskComplete(); };
-  const toggleTaskPinToday = (id: string) => {
-    const task = current().tasks.find(t => t.id === id); if (!task || !isActiveTask(task)) return false;
-    const pinned = isFocusTask(task, todayStr);
-    if (!pinned && current().tasks.filter(t => isFocusTask(t, todayStr)).length >= 3) { showToast('Your Top 3 is full. Unpin a task first.'); return false; }
-    updateTask(id, { isPinnedToday: !pinned, topThreeDate: pinned ? undefined : todayStr, plannedDate: pinned ? task.plannedDate : todayStr }); return true;
-  };
-  const editSubtasks = (taskId: string, transform: (subs: SubTask[]) => SubTask[]) => {
-    const task = current().tasks.find(t => t.id === taskId); if (task) updateTask(taskId, { subtasks: transform(task.subtasks) });
-  };
-  const toggleSubTask = (taskId: string, subId: string) => editSubtasks(taskId, subs => subs.map(s => s.id === subId ? { ...s, completed: !s.completed } : s));
-  const addSubTask = (taskId: string, title: string, estimatedMinutes?: number, extra?: Partial<SubTask>) => editSubtasks(taskId, subs => [...subs, { ...extra, id: crypto.randomUUID(), title: title.trim(), estimatedMinutes, completed: false }]);
-  const addSubTasks = (taskId: string, newSubs: Array<{ title: string; estimatedMinutes?: number; extra?: Partial<SubTask> }>) => editSubtasks(taskId, subs => [...subs, ...newSubs.map(s => ({ ...s.extra, id: crypto.randomUUID(), title: s.title.trim(), estimatedMinutes: s.estimatedMinutes, completed: false }))]);
-  const updateSubTask = (taskId: string, subId: string, updates: Partial<SubTask>) => editSubtasks(taskId, subs => subs.map(s => s.id === subId ? { ...s, ...updates, id: s.id } : s));
-  const deleteSubTask = (taskId: string, subId: string) => editSubtasks(taskId, subs => subs.filter(s => s.id !== subId));
-  const moveSubTask = (taskId: string, subId: string, direction: 'up' | 'down') => editSubtasks(taskId, subs => {
-    const index = subs.findIndex(s => s.id === subId), target = index + (direction === 'up' ? -1 : 1);
-    if (index < 0 || target < 0 || target >= subs.length) return subs;
-    const next = [...subs]; [next[index], next[target]] = [next[target], next[index]]; return next;
-  });
-  const promoteSubTaskToTask = (taskId: string, subId: string) => {
-    store.run('Promote subtask', r => {
-      const parent = r.tasks.find(t => t.id === taskId), sub = parent?.subtasks.find(s => s.id === subId); if (!parent || !sub) return r;
-      const list = r.tasks.map(t => t.id === taskId ? { ...t, subtasks: t.subtasks.filter(s => s.id !== subId) } : t);
-      return { ...r, tasks: commandService.createTask(list, sub.title, { projectId: parent.projectId, plannedDate: parent.plannedDate, priority: parent.priority, estimatedMinutes: sub.estimatedMinutes }).updatedTasks };
-    });
-  };
-  const duplicateTask = (id: string): Task | null => {
-    const task = current().tasks.find(t => t.id === id); if (!task) return null;
-    return addTask(`${task.title} (Copy)`, { ...task, title: `${task.title} (Copy)`, isPinnedToday: false, topThreeDate: undefined, subtasks: task.subtasks.map(s => ({ ...s, id: crypto.randomUUID(), completed: false })) });
-  };
-  const mergeTasks = (target: string, source: string) => { execute(list => commandService.mergeTasks(list, target, source)); };
-  const addStudySessions = (sessions: ParsedSession[], date = todayStr, projectId = 'inbox') => {
-    const created = sessions.map(s => convertSessionToTask(s, date, projectId)); store.run('Add study sessions', r => ({ ...r, tasks: [...created, ...r.tasks] })); return created;
-  };
-  const applyTaskChanges = (changes: Array<{ id: string; updates: Partial<Task> }>, description = 'Update tasks') => store.run(description, r => ({ ...r, tasks: r.tasks.map(task => { const change = changes.find(c => c.id === task.id); return change ? { ...task, ...change.updates } : task; }) }));
-  const batchUpdateTasks = (ids: string[], updates: Partial<Task>) => { execute(list => commandService.batchUpdate(list, ids, updates)); };
-  const batchDeleteTasks = (ids: string[]) => {
-    execute(list => commandService.batchDelete(list, ids));
-    clearTaskSelection();
-    showToast('Tasks moved to Trash', 'Undo', undoLastAction);
-  };
-  const batchToggleStatus = (ids: string[]) => {
-    store.run('Change task completion', r => {
-      const allDone = r.tasks.filter(t => ids.includes(t.id)).every(t => t.status === 'done');
-      return { ...r, tasks: ids.reduce((list, id) => { const task = list.find(t => t.id === id); return task && (task.status === 'done') === allDone ? commandService.toggleTaskStatus(list, id).updatedTasks : list; }, r.tasks) };
-    });
-  };
-  const bulkRescheduleOverdue = (action: 'today' | 'someday' | 'dismiss') => {
-    if (action === 'dismiss') { setIsTriageDismissed(true); return; }
-    batchUpdateTasks(current().tasks.filter(t => isActiveTask(t) && t.dueDate && t.dueDate < todayStr).map(t => t.id), action === 'today' ? { plannedDate: todayStr, isSomeday: false } : { plannedDate: undefined, isSomeday: true });
-  };
+
+  const addMultipleTasks = (lines: string[], overrides?: Partial<Task>) => useTaskStore.getState().addMultipleTasks(lines, overrides);
+  const updateTask = (id: string, updates: Partial<Task>) => useTaskStore.getState().updateTask(id, updates);
+  const deleteTask = (id: string) => useTaskStore.getState().deleteTask(id);
+  const permanentDeleteTask = (id: string) => useTaskStore.getState().permanentDeleteTask(id);
+  const archiveTask = (id: string) => useTaskStore.getState().archiveTask(id);
+  const restoreTask = (id: string) => useTaskStore.getState().restoreTask(id);
+  const toggleTaskStatus = (id: string) => useTaskStore.getState().toggleTaskStatus(id);
+  const toggleTaskPinToday = (id: string) => useTaskStore.getState().toggleTaskPinToday(id);
+
+  const toggleSubTask = (taskId: string, subId: string) => useTaskStore.getState().toggleSubTask(taskId, subId);
+  const addSubTask = (taskId: string, title: string, estimatedMinutes?: number, extra?: Partial<SubTask>) => useTaskStore.getState().addSubTask(taskId, title, estimatedMinutes, extra);
+  const addSubTasks = (taskId: string, newSubs: Array<{ title: string; estimatedMinutes?: number; extra?: Partial<SubTask> }>) => useTaskStore.getState().addSubTasks(taskId, newSubs);
+  const updateSubTask = (taskId: string, subId: string, updates: Partial<SubTask>) => useTaskStore.getState().updateSubTask(taskId, subId, updates);
+  const deleteSubTask = (taskId: string, subId: string) => useTaskStore.getState().deleteSubTask(taskId, subId);
+  const moveSubTask = (taskId: string, subId: string, direction: 'up' | 'down') => useTaskStore.getState().moveSubTask(taskId, subId, direction);
+  const promoteSubTaskToTask = (taskId: string, subId: string) => useTaskStore.getState().promoteSubTaskToTask(taskId, subId);
+
+  const duplicateTask = (id: string): Task | null => useTaskStore.getState().duplicateTask(id);
+  const mergeTasks = (target: string, source: string) => useTaskStore.getState().mergeTasks(target, source);
+  const addStudySessions = (sessions: ParsedSession[], date = todayStr, projectId = 'inbox') => useTaskStore.getState().addStudySessions(sessions, date, projectId);
+  const applyTaskChanges = (changes: Array<{ id: string; updates: Partial<Task> }>, description = 'Update tasks') => useTaskStore.getState().applyTaskChanges(changes, description);
+  const batchUpdateTasks = (ids: string[], updates: Partial<Task>) => useTaskStore.getState().batchUpdateTasks(ids, updates);
+  const batchDeleteTasks = (ids: string[]) => useTaskStore.getState().batchDeleteTasks(ids);
+  const batchToggleStatus = (ids: string[]) => useTaskStore.getState().batchToggleStatus(ids);
+  const bulkRescheduleOverdue = (action: 'today' | 'someday' | 'dismiss') => useTaskStore.getState().bulkRescheduleOverdue(action);
+
   function stopFocusSession() {
     const result = useFocusStore.getState().stopFocusSession();
     const candidateSession = (current().preferences.focusSession as FocusSession | null) || result.session;
@@ -439,7 +426,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     const checkpointAt = writeFocusCheckpoint(workspaceId, pendingSession && pendingSeconds > 0 ? { ...pendingSession, finishedAt, state: 'completed', accumulatedElapsedMs: pendingSeconds * 1000, totalPausedMs: (pendingSession.totalPausedMs || 0) + (pendingSession.state === 'paused' ? Math.max(0, finishedAt - (pendingSession.pausedAt || finishedAt)) : 0) } : null, Boolean(pendingSession && pendingSeconds > 0));
     store.run('Log focus session', r => {
       const session = (r.preferences.focusSession as FocusSession | null) || result.session;
-      if (!session || session.workspaceId && session.workspaceId !== workspaceId) return { ...r, preferences: { ...r.preferences, focusSession: null } };
+      if (!session || (session.workspaceId && session.workspaceId !== workspaceId)) return { ...r, preferences: { ...r.preferences, focusSession: null } };
       const logs = (r.preferences.focusLogs || []) as FocusLog[];
       if (logs.some(log => log.id === session.id)) {
         return { ...r, preferences: { ...r.preferences, focusSession: null } };
@@ -614,93 +601,69 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const activeTimerTaskId = focusSession?.taskId || null;
   const startTaskTimer = (id: string) => startFocusSession('stopwatch', id, current().tasks.find(t => t.id === id)?.title);
   const stopTaskTimer = stopFocusSession;
-  const toggleTaskTimer = (id: string) => { const session = current().preferences.focusSession as FocusSession | null; if (session?.taskId !== id) startTaskTimer(id); else if (session.state === 'running') pauseFocusSession(); else resumeFocusSession(); };
-  const stashActiveFocus = (override?: { id: string; title: string; projectId?: string }, elapsed?: number) => {
-    const session = current().preferences.focusSession as FocusSession | null, id = override?.id || session?.taskId; if (!id) return;
-    setWorkspacePreference('interruptionStash', { taskId: id, taskTitle: override?.title || session?.taskTitle || 'Focus', elapsedSeconds: elapsed ?? useFocusStore.getState().focusElapsedSeconds, stashedAt: Date.now(), projectId: override?.projectId }); stopFocusSession();
+  const toggleTaskTimer = (id: string) => {
+    const session = current().preferences.focusSession as FocusSession | null;
+    if (session?.taskId !== id) startTaskTimer(id);
+    else if (session.state === 'running') pauseFocusSession();
+    else resumeFocusSession();
   };
+
+  const stashActiveFocus = (override?: { id: string; title: string; projectId?: string }, elapsed?: number) => {
+    const session = current().preferences.focusSession as FocusSession | null, id = override?.id || session?.taskId;
+    if (!id) return;
+    setWorkspacePreference('interruptionStash', {
+      taskId: id,
+      taskTitle: override?.title || session?.taskTitle || 'Focus',
+      elapsedSeconds: elapsed ?? useFocusStore.getState().focusElapsedSeconds,
+      stashedAt: Date.now(),
+      projectId: override?.projectId,
+    });
+    stopFocusSession();
+  };
+
   const clearInterruptionStash = () => setWorkspacePreference('interruptionStash', null);
+
   const restoreStashedFocus = () => {
     const stash = current().preferences.interruptionStash as InterruptionStash | null;
     if (!stash) return;
-    if (current().preferences.focusSession) { showToast('Finish the current session before restoring your saved focus. Your saved context is still here.'); return; }
+    if (current().preferences.focusSession) {
+      showToast('Finish the current session before restoring your saved focus. Your saved context is still here.');
+      return;
+    }
     startFocusSession('stopwatch', stash.taskId, stash.taskTitle);
     clearInterruptionStash();
   };
-  const setCalendarIcsUrl = (url: string) => setWorkspacePreference('calendarUrl', url);
-  const calendarFile = preferences._calendarFile as { name: string; content: string } | undefined;
-  const calendarRequest = useRef(0);
-  useEffect(() => () => { calendarRequest.current++; }, [workspaceId]);
-  const importCalendarFile = async (file: File) => {
-    if (file.size > 2 * 1024 * 1024) throw new Error('Choose a calendar smaller than 2 MB.');
-    const content = await file.text();
-    if (!content.includes('BEGIN:VCALENDAR') || !content.includes('END:VCALENDAR')) throw new Error('Choose a valid .ics calendar file.');
-    const events = parseICSFeed(content, todayStr);
-    setWorkspacePreference('_calendarFile', { name: file.name, content });
-    return events.length;
-  };
-  const removeImportedCalendar = () => setWorkspacePreference('_calendarFile', undefined);
-  const refreshCalendarEvents = useCallback(async (date = todayStr) => {
-    const request = ++calendarRequest.current;
-    const imported = calendarFile ? parseICSFeed(calendarFile.content, date).map(event => ({ ...event, id: `file:${event.id}` })) : [];
-    if (!calendarIcsUrl.trim()) { setCalendarEvents(imported); return; }
-    try {
-      const feed = await fetchICSFeed(calendarIcsUrl, date);
-      if (request === calendarRequest.current) setCalendarEvents([...imported, ...feed.map(event => ({ ...event, id: `feed:${event.id}` }))]);
-    } catch (error) {
-      if (request === calendarRequest.current) { setCalendarEvents(imported); showToast(`Calendar could not refresh: ${(error as Error).message}`); }
-    }
-  }, [calendarIcsUrl, calendarFile, todayStr, showToast]);
-  useEffect(() => { void refreshCalendarEvents(); }, [refreshCalendarEvents]);
-  const addProject = (name: string, color: string, icon?: string) => { if (!name.trim()) return; store.run('Create project', r => ({ ...r, projects: [...r.projects, { id: crypto.randomUUID(), name: name.trim(), color, icon, createdAt: Date.now() }] })); };
-  const updateProject = (id: string, updates: Partial<Project>) => store.run('Update project', r => ({ ...r, projects: r.projects.map(p => p.id === id ? { ...p, ...updates, id } : p) }));
-  const deleteProject = (id: string, reassignToProjectId = 'inbox') => {
-    if (id === 'inbox' || id === reassignToProjectId || !current().projects.some(p => p.id === reassignToProjectId)) return;
-    store.run('Delete project and move its tasks', r => ({ ...r, projects: r.projects.filter(p => p.id !== id), tasks: r.tasks.map(t => t.projectId === id ? { ...t, projectId: reassignToProjectId } : t) }));
-  };
-  const archiveProject = (id: string) => { if (id !== 'inbox') updateProject(id, { isArchived: true, archivedAt: Date.now() }); };
+
+  const setCalendarIcsUrl = (url: string) => useTaskStore.getState().setCalendarIcsUrl(url);
+  const importCalendarFile = (file: File) => useTaskStore.getState().importCalendarFile(file);
+  const removeImportedCalendar = () => useTaskStore.getState().removeImportedCalendar();
+  const refreshCalendarEvents = useCallback((date = todayStr) => useTaskStore.getState().refreshCalendarEvents(date), [todayStr]);
+
+  const addProject = (name: string, color: string, icon?: string) => useTaskStore.getState().addProject(name, color, icon);
+  const updateProject = (id: string, updates: Partial<Project>) => useTaskStore.getState().updateProject(id, updates);
+  const deleteProject = (id: string, reassignToProjectId = 'inbox') => useTaskStore.getState().deleteProject(id, reassignToProjectId);
+  const archiveProject = (id: string) => useTaskStore.getState().archiveProject(id);
+
   const smartViews = useMemo(() => [...BUILT_IN_SMART_VIEWS, ...customSmartViews], [customSmartViews]);
-  const addSmartView = (name: string, icon: string, color: string, predicate: SmartFilterPredicate): SmartFilterView => {
-    const view = { id: crypto.randomUUID(), name, icon, color, predicate }; store.run('Save view', r => ({ ...r, customViews: [...r.customViews, view] }), false); return view;
-  };
-  const deleteSmartView = (id: string) => store.run('Remove saved view', r => ({ ...r, customViews: r.customViews.filter(v => v.id !== id) }), false);
-  async function importTasks(importedTasks: Task[], importedProjects?: Project[], replace = false, extras?: BackupExtras) {
-    const before = current();
-    const nextProjects = replace ? importedProjects || before.projects : [...before.projects, ...(importedProjects || []).filter(p => !before.projects.some(old => old.id === p.id))];
-    const nextTasks = replace ? importedTasks : [...before.tasks, ...importedTasks.filter(t => !before.tasks.some(old => old.id === t.id))];
-    const validated = validateWorkspaceData(nextTasks, nextProjects);
-    const validatedExtras = extras ? validateBackupExtras(extras) : undefined;
-    localStorage.setItem(`flowtask_pre_import_${workspaceId}`, JSON.stringify(before));
-    if (replace && validatedExtras && current().preferences.focusSession) stopFocusSession();
-    const restoreCheckpoint = replace && validatedExtras ? writeFocusCheckpoint(workspaceId,null) : 0;
-    store.run(replace ? 'Restore backup' : 'Import tasks', r => { const restored = { ...r, ...validated, ...(validatedExtras ? mergeBackupExtras(r, validatedExtras, replace) : {}) }; return restoreCheckpoint ? {...restored,preferences:{...restored.preferences,focusSession:null,focusCheckpointAt:restoreCheckpoint}} : restored; });
-    await store.settled(); showToast(`Saved ${importedTasks.length} imported tasks`);
-  }
-  const forceSyncToCloud = async () => { if (!connected) { setIsAuthModalOpen(true); return; } await store.retry(); };
-  const downloadWorkspaceBackup = () => {
-    const exportedAt = Date.now();
-    const before = current();
-    const withExportDate = { ...before, preferences: { ...before.preferences, _lastBackupAt: exportedAt } };
-    downloadJson(createWorkspaceBackup(withExportDate), `flowtask-${workspaceId}-${todayStr}.json`);
-    store.run('Record backup export', r => ({ ...r, preferences: { ...r.preferences, _lastBackupAt: exportedAt } }), false);
-  };
-  const resolveSyncConflict = async (choice: 'local' | 'remote') => { try { await store.resolveConflict(choice); } catch (error) { showToast((error as Error).message); } };
-  const importLocalWorkspace = async () => {
-    const local = await dbService.loadWorkspace('local');
-    if (local) await importTasks(local.tasks, local.projects);
-  };
-  const updateDashboards = (nextDashboards: WorkspaceDashboard[], newActiveId?: string) => {
-    store.run('Update dashboards', (r) => ({
-      ...r,
-      dashboards: nextDashboards,
-      preferences: newActiveId
-        ? { ...r.preferences, activeDashboardId: newActiveId }
-        : r.preferences,
-    }));
-  };
+  const addSmartView = (name: string, icon: string, color: string, predicate: SmartFilterPredicate): SmartFilterView => useTaskStore.getState().addSmartView(name, icon, color, predicate);
+  const deleteSmartView = (id: string) => useTaskStore.getState().deleteSmartView(id);
+
+  const importTasks = (importedTasks: Task[], importedProjects?: Project[], replace = false, extras?: BackupExtras) => useTaskStore.getState().importTasks(importedTasks, importedProjects, replace, extras);
+  const forceSyncToCloud = () => useTaskStore.getState().forceSyncToCloud();
+  const downloadWorkspaceBackup = () => useTaskStore.getState().downloadWorkspaceBackup();
+  const resolveSyncConflict = (choice: 'local' | 'remote') => useTaskStore.getState().resolveSyncConflict(choice);
+  const importLocalWorkspace = () => useTaskStore.getState().importLocalWorkspace();
+  const updateDashboards = (nextDashboards: WorkspaceDashboard[], newActiveId?: string) => useTaskStore.getState().updateDashboards(nextDashboards, newActiveId);
 
   const contextValue = useMemo<TaskContextType>(() => ({
-    workspaceId, workspacePreferences: preferences, setWorkspacePreference, downloadWorkspaceBackup, resolveSyncConflict, importLocalWorkspace, importCalendarFile, removeImportedCalendar,
+    workspaceId,
+    workspacePreferences: preferences,
+    setWorkspacePreference,
+    downloadWorkspaceBackup,
+    resolveSyncConflict,
+    importLocalWorkspace,
+    importCalendarFile,
+    removeImportedCalendar,
     dashboards,
     updateDashboards,
     tasks,
@@ -716,6 +679,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     soundProfile,
     overdueTasks,
     isTriageDismissed,
+    setIsTriageDismissed,
     toast,
     syncStatus,
     lastSyncedAt,
@@ -857,57 +821,6 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     </WorkspaceStoreContext.Provider>
   );
 };
-
-export const WorkspaceStoreContext = createContext<WorkspaceStore | null>(null);
-
-export function useWorkspaceSelector<T>(
-  selector: (snapshot: import('../services/workspaceStore').StoreSnapshot) => T,
-  isEqual: (a: T, b: T) => boolean = Object.is
-): T | undefined {
-  const store = useContext(WorkspaceStoreContext);
-  const lastSelectedRef = useRef<{ hasValue: boolean; value: T | undefined }>({ hasValue: false, value: undefined });
-
-  const getSelection = useCallback(() => {
-    if (!store) return undefined as unknown as T;
-    const next = selector(store.getSnapshot());
-    if (lastSelectedRef.current.hasValue && isEqual(lastSelectedRef.current.value as T, next)) {
-      return lastSelectedRef.current.value as T;
-    }
-    lastSelectedRef.current = { hasValue: true, value: next };
-    return next;
-  }, [store, selector, isEqual]);
-
-  const subscribe = useCallback(
-    (notify: () => void) => {
-      if (!store) return () => {};
-      return store.subscribe(notify);
-    },
-    [store]
-  );
-
-  return useSyncExternalStore(subscribe, getSelection, getSelection);
-}
-
-export function useWorkspaceTasks(): Task[] {
-  const store = useContext(WorkspaceStoreContext);
-  const tasks = useWorkspaceSelector(useCallback(s => s.record.tasks, []));
-  const fallback = useContext(TaskContext);
-  return store ? (tasks || []) : (fallback?.tasks || []);
-}
-
-export function useWorkspaceProjects(): Project[] {
-  const store = useContext(WorkspaceStoreContext);
-  const projects = useWorkspaceSelector(useCallback(s => s.record.projects, []));
-  const fallback = useContext(TaskContext);
-  return store ? (projects || []) : (fallback?.projects || []);
-}
-
-export function useActiveTask(taskId: string | null): Task | null {
-  const store = useContext(WorkspaceStoreContext);
-  const activeTask = useWorkspaceSelector(useCallback(s => taskId ? s.record.tasks.find(t => t.id === taskId) || null : null, [taskId]));
-  const fallback = useContext(TaskContext);
-  return store ? (activeTask || null) : (taskId ? fallback?.tasks.find(t => t.id === taskId) || null : null);
-}
 
 export const useTaskContext = (): TaskContextType => {
   const context = useContext(TaskContext);

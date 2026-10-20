@@ -32,8 +32,18 @@ export default defineConfig({
         globIgnores: [
           '**/media/**',
           '**/firebase*.js',
+          '**/ical*.js',
           '**/brand/social-preview*',
+          '**/brand/*.png',
           '**/*Modal*.js',
+          '**/SettingsDrawer*.js',
+          '**/CopilotOmnibar*.js',
+          '**/WelcomePage*.{js,css}',
+          '**/FeedbackForm*.js',
+          '**/velocityCalibrator*.js',
+          '**/workspaceEntities*.js',
+          '**/motion*.js',
+          '**/nlp*.js',
           '**/ReviewView*.js',
           '**/TimelineView*.js',
           '**/FocusStudio*.js',
@@ -61,11 +71,14 @@ export default defineConfig({
           {
             urlPattern: ({ url }) =>
               url.pathname.includes('/assets/firebase') ||
+              url.pathname.includes('/assets/ical') ||
               url.pathname.includes('/assets/rolldown-runtime') ||
               url.pathname.includes('/assets/motion') ||
+              url.pathname.includes('/assets/nlp') ||
               (url.pathname.includes('/assets/') &&
                 (url.pathname.includes('Modal') ||
                   url.pathname.includes('SettingsDrawer') ||
+                  url.pathname.includes('CopilotOmnibar') ||
                   url.pathname.includes('ReviewView') ||
                   url.pathname.includes('TimelineView') ||
                   url.pathname.includes('FocusStudio') ||
@@ -78,6 +91,8 @@ export default defineConfig({
                   url.pathname.includes('OnboardingFlow') ||
                   url.pathname.includes('CommandPalette') ||
                   url.pathname.includes('FeedbackForm') ||
+                  url.pathname.includes('velocityCalibrator') ||
+                  url.pathname.includes('workspaceEntities') ||
                   url.pathname.includes('standupGenerator') ||
                   url.pathname.includes('cloudWorkspace'))),
             handler: 'StaleWhileRevalidate',
@@ -87,7 +102,7 @@ export default defineConfig({
                 statuses: [0, 200],
               },
               expiration: {
-                maxEntries: 60,
+                maxEntries: 80,
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
               },
             },
@@ -128,6 +143,9 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('firebase')) {
               return 'firebase';
+            }
+            if (id.includes('ical.js')) {
+              return 'ical';
             }
             if (id.includes('react') || id.includes('scheduler')) {
               return 'vendor';

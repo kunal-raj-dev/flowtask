@@ -18,6 +18,7 @@ import type {
 } from "../types/task";
 import { writeFocusCheckpoint } from "./focusCheckpoint";
 import { focusSessionService } from "./focusSessionService";
+import { suggestSubtasks, generateStarterStep, type SuggestedSubtask } from "../utils/aiCopilot";
 
 export interface WebMcpToolDefinition<
   TParams = Record<string, unknown>,
@@ -48,6 +49,33 @@ export interface CreateTaskParams {
   description?: string;
 }
 
+export interface UpdateTaskParams {
+  taskId: string;
+  title?: string;
+  priority?: Priority;
+  plannedDate?: string;
+  dueDate?: string;
+  estimatedMinutes?: number;
+  projectId?: string;
+  description?: string;
+  isPinnedToday?: boolean;
+  isSomeday?: boolean;
+}
+
+export interface CompleteTaskParams {
+  taskId: string;
+  completed?: boolean;
+}
+
+export interface ListTasksParams {
+  status?: "all" | "todo" | "done";
+  priority?: Priority;
+  projectId?: string;
+  plannedDate?: string;
+  searchQuery?: string;
+  limit?: number;
+}
+
 export interface ListTodayTasksParams {
   includeCompleted?: boolean;
   projectId?: string;
@@ -58,6 +86,26 @@ export interface StartFocusSessionParams {
   taskTitle?: string;
   mode?: FocusSessionMode;
   targetDurationMinutes?: number;
+}
+
+export interface StopFocusSessionParams {
+  abandon?: boolean;
+}
+
+export interface ScheduleTimelineBlockParams {
+  taskId: string;
+  startTime: string;
+  date?: string;
+  durationMinutes?: number;
+}
+
+export interface GetDailySummaryParams {
+  date?: string;
+}
+
+export interface DecomposeTaskParams {
+  taskId?: string;
+  taskTitle?: string;
 }
 
 export interface WorkspaceStatusResult {
@@ -150,6 +198,101 @@ export const createTaskSchema = {
   required: ["title"],
 } as const;
 
+export const updateTaskSchema = {
+  type: "object",
+  properties: {
+    taskId: {
+      type: "string",
+      description: "ID of the task to update",
+    },
+    title: {
+      type: "string",
+      description: "Updated title",
+    },
+    priority: {
+      type: "string",
+      enum: ["p1", "p2", "p3", "p4"],
+      description: "Updated priority",
+    },
+    plannedDate: {
+      type: "string",
+      description: "Scheduled date in YYYY-MM-DD",
+    },
+    dueDate: {
+      type: "string",
+      description: "Due date in YYYY-MM-DD",
+    },
+    estimatedMinutes: {
+      type: "number",
+      description: "Estimated duration in minutes",
+    },
+    projectId: {
+      type: "string",
+      description: "Target project ID",
+    },
+    description: {
+      type: "string",
+      description: "Updated description notes",
+    },
+    isPinnedToday: {
+      type: "boolean",
+      description: "Pin to Top 3 today",
+    },
+    isSomeday: {
+      type: "boolean",
+      description: "Move to someday backlog",
+    },
+  },
+  required: ["taskId"],
+} as const;
+
+export const completeTaskSchema = {
+  type: "object",
+  properties: {
+    taskId: {
+      type: "string",
+      description: "ID of the task to complete or toggle",
+    },
+    completed: {
+      type: "boolean",
+      description: "Explicit completion state (default: true)",
+    },
+  },
+  required: ["taskId"],
+} as const;
+
+export const listTasksSchema = {
+  type: "object",
+  properties: {
+    status: {
+      type: "string",
+      enum: ["all", "todo", "done"],
+      description: "Filter by status (default: all)",
+    },
+    priority: {
+      type: "string",
+      enum: ["p1", "p2", "p3", "p4"],
+      description: "Filter by priority",
+    },
+    projectId: {
+      type: "string",
+      description: "Filter by project ID",
+    },
+    plannedDate: {
+      type: "string",
+      description: "Filter by planned date YYYY-MM-DD",
+    },
+    searchQuery: {
+      type: "string",
+      description: "Search filter for title or description",
+    },
+    limit: {
+      type: "number",
+      description: "Maximum number of tasks to return",
+    },
+  },
+} as const;
+
 export const listTodayTasksSchema = {
   type: "object",
   properties: {
@@ -185,6 +328,63 @@ export const startFocusSessionSchema = {
       type: "number",
       description:
         "Duration in minutes (default: 25 for pomodoro, 50 for sprint)",
+    },
+  },
+} as const;
+
+export const stopFocusSessionSchema = {
+  type: "object",
+  properties: {
+    abandon: {
+      type: "boolean",
+      description: "Whether to abandon without saving focus log (default: false)",
+    },
+  },
+} as const;
+
+export const scheduleTimelineBlockSchema = {
+  type: "object",
+  properties: {
+    taskId: {
+      type: "string",
+      description: "ID of the task to schedule",
+    },
+    startTime: {
+      type: "string",
+      description: "Start time in HH:mm format (e.g. 09:30, 14:15)",
+    },
+    date: {
+      type: "string",
+      description: "Target date in YYYY-MM-DD format (defaults to today)",
+    },
+    durationMinutes: {
+      type: "number",
+      description: "Duration in minutes (snapped to 15m intervals)",
+    },
+  },
+  required: ["taskId", "startTime"],
+} as const;
+
+export const getDailySummarySchema = {
+  type: "object",
+  properties: {
+    date: {
+      type: "string",
+      description: "Target date in YYYY-MM-DD format (defaults to today)",
+    },
+  },
+} as const;
+
+export const decomposeTaskSchema = {
+  type: "object",
+  properties: {
+    taskId: {
+      type: "string",
+      description: "ID of an existing task to decompose into subtasks",
+    },
+    taskTitle: {
+      type: "string",
+      description: "Title of a task or goal to break down",
     },
   },
 } as const;
@@ -271,6 +471,185 @@ export const createTaskTool: WebMcpToolDefinition<
     return {
       success: true,
       task: result.createdTask,
+    };
+  },
+};
+
+export const updateTaskTool: WebMcpToolDefinition<
+  UpdateTaskParams,
+  { success: boolean; task: Task }
+> = {
+  name: "updateTask",
+  description:
+    "Update an existing task in FlowTask by ID, modifying fields such as title, priority, dates, notes, or project.",
+  parameters: updateTaskSchema,
+  inputSchema: updateTaskSchema,
+  execute: async (params: UpdateTaskParams = {} as UpdateTaskParams) => {
+    if (!params || typeof params.taskId !== "string" || !params.taskId.trim()) {
+      throw new Error('updateTask requires a valid "taskId" parameter.');
+    }
+
+    const store = resolveStore();
+    if (!store.getSnapshot().ready) {
+      await store.load();
+    }
+
+    const currentTasks = store.getSnapshot().record.tasks || [];
+    const task = currentTasks.find((t) => t.id === params.taskId);
+    if (!task) {
+      throw new Error(`Task with ID "${params.taskId}" not found in workspace.`);
+    }
+
+    if (
+      params.priority &&
+      !["p1", "p2", "p3", "p4"].includes(params.priority)
+    ) {
+      throw new Error(
+        `Invalid priority "${params.priority}". Must be one of: p1, p2, p3, p4.`,
+      );
+    }
+
+    const updates: Partial<Task> = {};
+    if (typeof params.title === "string" && params.title.trim()) updates.title = params.title.trim();
+    if (params.priority) updates.priority = params.priority;
+    if (params.plannedDate !== undefined) updates.plannedDate = params.plannedDate;
+    if (params.dueDate !== undefined) updates.dueDate = params.dueDate;
+    if (typeof params.estimatedMinutes === "number") updates.estimatedMinutes = params.estimatedMinutes;
+    if (params.projectId) updates.projectId = params.projectId;
+    if (params.description !== undefined) updates.description = params.description;
+    if (typeof params.isPinnedToday === "boolean") {
+      updates.isPinnedToday = params.isPinnedToday;
+      if (params.isPinnedToday) updates.topThreeDate = formatLocalDate(new Date());
+    }
+    if (typeof params.isSomeday === "boolean") {
+      updates.isSomeday = params.isSomeday;
+      if (params.isSomeday) {
+        updates.plannedDate = undefined;
+        updates.isPinnedToday = false;
+      }
+    }
+
+    const updatedTask: Task = { ...task, ...updates, updatedAt: Date.now() };
+
+    store.run(`Update task "${updatedTask.title}"`, (record) => ({
+      ...record,
+      tasks: record.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+    }));
+
+    return {
+      success: true,
+      task: updatedTask,
+    };
+  },
+};
+
+export const completeTaskTool: WebMcpToolDefinition<
+  CompleteTaskParams,
+  { success: boolean; task: Task }
+> = {
+  name: "completeTask",
+  description:
+    "Mark a task as completed or incomplete in FlowTask.",
+  parameters: completeTaskSchema,
+  inputSchema: completeTaskSchema,
+  execute: async (params: CompleteTaskParams = {} as CompleteTaskParams) => {
+    if (!params || typeof params.taskId !== "string" || !params.taskId.trim()) {
+      throw new Error('completeTask requires a valid "taskId" parameter.');
+    }
+
+    const store = resolveStore();
+    if (!store.getSnapshot().ready) {
+      await store.load();
+    }
+
+    const currentTasks = store.getSnapshot().record.tasks || [];
+    const task = currentTasks.find((t) => t.id === params.taskId);
+    if (!task) {
+      throw new Error(`Task with ID "${params.taskId}" not found in workspace.`);
+    }
+
+    const targetDone = params.completed !== undefined ? params.completed : task.status !== "done";
+    const updatedTask: Task = {
+      ...task,
+      status: targetDone ? "done" : "todo",
+      completedAt: targetDone ? Date.now() : undefined,
+      updatedAt: Date.now(),
+    };
+
+    store.run(
+      targetDone ? `Complete task "${task.title}"` : `Reopen task "${task.title}"`,
+      (record) => ({
+        ...record,
+        tasks: record.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      }),
+    );
+
+    return {
+      success: true,
+      task: updatedTask,
+    };
+  },
+};
+
+export const listTasksTool: WebMcpToolDefinition<
+  ListTasksParams,
+  { totalCount: number; tasks: Task[] }
+> = {
+  name: "listTasks",
+  description:
+    "Query tasks in FlowTask with flexible filters by status (todo/done/all), priority, project, plannedDate, or search keywords.",
+  parameters: listTasksSchema,
+  inputSchema: listTasksSchema,
+  execute: async (params: ListTasksParams = {}) => {
+    const store = resolveStore();
+    if (!store.getSnapshot().ready) {
+      await store.load();
+    }
+
+    let tasks = store.getSnapshot().record.tasks || [];
+
+    // Filter by status
+    if (params.status === "todo") {
+      tasks = tasks.filter((t) => isActiveTask(t));
+    } else if (params.status === "done") {
+      tasks = tasks.filter((t) => t.status === "done" && !t.deletedAt && !t.archivedAt);
+    } else {
+      tasks = tasks.filter((t) => !t.deletedAt && !t.archivedAt);
+    }
+
+    // Filter by priority
+    if (params.priority) {
+      tasks = tasks.filter((t) => t.priority === params.priority);
+    }
+
+    // Filter by project
+    if (params.projectId) {
+      tasks = tasks.filter((t) => t.projectId === params.projectId);
+    }
+
+    // Filter by plannedDate
+    if (params.plannedDate) {
+      tasks = tasks.filter((t) => t.plannedDate === params.plannedDate);
+    }
+
+    // Search query filter
+    if (params.searchQuery && params.searchQuery.trim()) {
+      const q = params.searchQuery.toLowerCase().trim();
+      tasks = tasks.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          (t.description && t.description.toLowerCase().includes(q)),
+      );
+    }
+
+    const totalCount = tasks.length;
+    if (typeof params.limit === "number" && params.limit > 0) {
+      tasks = tasks.slice(0, params.limit);
+    }
+
+    return {
+      totalCount,
+      tasks,
     };
   },
 };
@@ -402,6 +781,276 @@ export const startFocusSessionTool: WebMcpToolDefinition<
   },
 };
 
+export const stopFocusSessionTool: WebMcpToolDefinition<
+  StopFocusSessionParams,
+  { success: boolean; loggedSeconds: number }
+> = {
+  name: "stopFocusSession",
+  description:
+    "Stop and finish the currently running focus session in FlowTask.",
+  parameters: stopFocusSessionSchema,
+  inputSchema: stopFocusSessionSchema,
+  execute: async (params: StopFocusSessionParams = {}) => {
+    const store = resolveStore();
+    if (!store.getSnapshot().ready) {
+      await store.load();
+    }
+
+    const currentSession = useFocusStore.getState().focusSession;
+    if (!currentSession) {
+      throw new Error("No active focus session to stop.");
+    }
+
+    const elapsed = useFocusStore.getState().focusElapsedSeconds || 0;
+    const abandon = params.abandon === true;
+
+    if (!abandon && elapsed > 10) {
+      const newLog: FocusLog = {
+        id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        taskId: currentSession.taskId || null,
+        taskTitle: currentSession.taskTitle || undefined,
+        seconds: elapsed,
+        startedAt: currentSession.startedAt,
+        endedAt: Date.now(),
+        mode: currentSession.mode,
+        phase: "focus",
+      };
+
+      store.run("Log completed focus session", (record) => {
+        const existingLogs = (record.preferences.focusLogs as FocusLog[] | undefined) || [];
+        return {
+          ...record,
+          preferences: {
+            ...record.preferences,
+            focusSession: null,
+            focusLogs: [...existingLogs, newLog],
+          },
+        };
+      });
+    } else {
+      store.run("Clear focus session", (record) => ({
+        ...record,
+        preferences: {
+          ...record.preferences,
+          focusSession: null,
+        },
+      }));
+    }
+
+    useFocusStore.getState().setFocusSession(null);
+
+    return {
+      success: true,
+      loggedSeconds: abandon ? 0 : elapsed,
+    };
+  },
+};
+
+export const scheduleTimelineBlockTool: WebMcpToolDefinition<
+  ScheduleTimelineBlockParams,
+  { success: boolean; task: Task; scheduledSlot: { start: string; end: string } }
+> = {
+  name: "scheduleTimelineBlock",
+  description:
+    "Schedule a task into a specific time block on the Horizon 24h timeline rail, snapped to 15-minute intervals.",
+  parameters: scheduleTimelineBlockSchema,
+  inputSchema: scheduleTimelineBlockSchema,
+  execute: async (params: ScheduleTimelineBlockParams = {} as ScheduleTimelineBlockParams) => {
+    if (!params || typeof params.taskId !== "string" || !params.taskId.trim()) {
+      throw new Error('scheduleTimelineBlock requires a valid "taskId".');
+    }
+    if (!params.startTime || !/^\d{1,2}:\d{2}$/.test(params.startTime.trim())) {
+      throw new Error('scheduleTimelineBlock requires a valid "startTime" in HH:mm format.');
+    }
+
+    const store = resolveStore();
+    if (!store.getSnapshot().ready) {
+      await store.load();
+    }
+
+    const tasks = store.getSnapshot().record.tasks || [];
+    const task = tasks.find((t) => t.id === params.taskId);
+    if (!task) {
+      throw new Error(`Task with ID "${params.taskId}" not found.`);
+    }
+
+    const [hours, minutes] = params.startTime.trim().split(":").map(Number);
+    const totalMinutes = hours * 60 + minutes;
+    const snappedStartMin = Math.max(0, Math.min(1410, Math.round(totalMinutes / 15) * 15));
+    const duration = Math.max(15, Math.round((params.durationMinutes || task.estimatedMinutes || 30) / 15) * 15);
+    const snappedEndMin = Math.min(1440, snappedStartMin + duration);
+
+    const formatMin = (m: number) => {
+      const h = Math.floor(m / 60);
+      const min = m % 60;
+      return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+    };
+
+    const scheduledStart = formatMin(snappedStartMin);
+    const scheduledEnd = formatMin(snappedEndMin);
+    const plannedDate = params.date || task.plannedDate || formatLocalDate(new Date());
+
+    const updatedTask: Task = {
+      ...task,
+      plannedDate,
+      scheduledStart,
+      scheduledEnd,
+      isSomeday: false,
+      updatedAt: Date.now(),
+    };
+
+    store.run(`Schedule task "${task.title}" at ${scheduledStart}`, (record) => ({
+      ...record,
+      tasks: record.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+    }));
+
+    return {
+      success: true,
+      task: updatedTask,
+      scheduledSlot: {
+        start: scheduledStart,
+        end: scheduledEnd,
+      },
+    };
+  },
+};
+
+export const getDailySummaryTool: WebMcpToolDefinition<
+  GetDailySummaryParams,
+  {
+    date: string;
+    totalTasks: number;
+    completedTasks: number;
+    completionRate: number;
+    topThreeCount: number;
+    topThreeCompleted: number;
+    totalPlannedMinutes: number;
+    focusedSeconds: number;
+  }
+> = {
+  name: "getDailySummary",
+  description:
+    "Retrieve a comprehensive productivity summary for a given day, including Top 3 execution rate, completed tasks, and deep work focus time.",
+  parameters: getDailySummarySchema,
+  inputSchema: getDailySummarySchema,
+  execute: async (params: GetDailySummaryParams = {}) => {
+    const store = resolveStore();
+    if (!store.getSnapshot().ready) {
+      await store.load();
+    }
+
+    const record = store.getSnapshot().record;
+    const tasks = record.tasks || [];
+    const dateStr = params.date || formatLocalDate(new Date());
+
+    const dayTasks = tasks.filter(
+      (t) =>
+        !t.deletedAt &&
+        !t.archivedAt &&
+        (t.plannedDate === dateStr || t.topThreeDate === dateStr || completedOn(t, dateStr)),
+    );
+
+    const completed = dayTasks.filter((t) => t.status === "done" && completedOn(t, dateStr));
+    const topThree = dayTasks.filter((t) => isFocusTask(t, dateStr));
+    const topThreeDone = topThree.filter((t) => t.status === "done");
+
+    const totalPlannedMinutes = dayTasks.reduce(
+      (acc, t) => acc + (t.estimatedMinutes || 30),
+      0,
+    );
+
+    // Focus time
+    const focusLogs = (record.preferences.focusLogs as FocusLog[] | undefined) || [];
+    const dayFocusedSec = focusLogs
+      .filter((log) => log.endedAt && formatLocalDate(new Date(log.endedAt)) === dateStr)
+      .reduce((acc, log) => acc + (log.seconds || 0), 0);
+
+    const completionRate =
+      dayTasks.length > 0 ? Math.round((completed.length / dayTasks.length) * 100) : 0;
+
+    return {
+      date: dateStr,
+      totalTasks: dayTasks.length,
+      completedTasks: completed.length,
+      completionRate,
+      topThreeCount: topThree.length,
+      topThreeCompleted: topThreeDone.length,
+      totalPlannedMinutes,
+      focusedSeconds: dayFocusedSec,
+    };
+  },
+};
+
+export const decomposeTaskTool: WebMcpToolDefinition<
+  DecomposeTaskParams,
+  {
+    success: boolean;
+    taskTitle: string;
+    subtasks: SuggestedSubtask[];
+    starterStep: string;
+    task?: Task;
+  }
+> = {
+  name: "decomposeTask",
+  description:
+    "Break down an ambitious or intimidating task into 3-4 actionable subtasks and an anti-procrastination 2-minute starter step using the offline heuristic engine.",
+  parameters: decomposeTaskSchema,
+  inputSchema: decomposeTaskSchema,
+  execute: async (params: DecomposeTaskParams = {}) => {
+    const store = resolveStore();
+    if (!store.getSnapshot().ready) {
+      await store.load();
+    }
+
+    let title = params.taskTitle || "";
+    let matchedTask: Task | undefined;
+
+    if (params.taskId) {
+      matchedTask = store.getSnapshot().record.tasks.find((t) => t.id === params.taskId);
+      if (matchedTask) {
+        title = matchedTask.title;
+      }
+    }
+
+    if (!title.trim()) {
+      throw new Error('decomposeTask requires a "taskTitle" or valid "taskId".');
+    }
+
+    const subtasks = suggestSubtasks(title);
+    const starterStep = generateStarterStep(title);
+
+    let updatedTask: Task | undefined;
+    if (matchedTask) {
+      const generatedSubtasks = subtasks.map((s, idx) => ({
+        id: `sub-${Date.now()}-${idx}`,
+        title: s.title,
+        completed: false,
+        estimatedMinutes: s.estimatedMinutes,
+      }));
+
+      updatedTask = {
+        ...matchedTask,
+        subtasks: [...(matchedTask.subtasks || []), ...generatedSubtasks],
+        nextAction: starterStep,
+        updatedAt: Date.now(),
+      };
+
+      store.run(`Decompose task "${matchedTask.title}"`, (record) => ({
+        ...record,
+        tasks: record.tasks.map((t) => (t.id === updatedTask!.id ? updatedTask! : t)),
+      }));
+    }
+
+    return {
+      success: true,
+      taskTitle: title,
+      subtasks,
+      starterStep,
+      task: updatedTask,
+    };
+  },
+};
+
 export const getWorkspaceStatusTool: WebMcpToolDefinition<
   Record<string, unknown>,
   WorkspaceStatusResult
@@ -472,10 +1121,18 @@ export const getWorkspaceStatusTool: WebMcpToolDefinition<
   },
 };
 
+// 8 primary atomic tools + aliases for complete compatibility
 export const flowTaskWebMcpTools: WebMcpToolDefinition[] = [
   createTaskTool as unknown as WebMcpToolDefinition,
-  listTodayTasksTool as unknown as WebMcpToolDefinition,
+  updateTaskTool as unknown as WebMcpToolDefinition,
+  completeTaskTool as unknown as WebMcpToolDefinition,
+  listTasksTool as unknown as WebMcpToolDefinition,
   startFocusSessionTool as unknown as WebMcpToolDefinition,
+  stopFocusSessionTool as unknown as WebMcpToolDefinition,
+  scheduleTimelineBlockTool as unknown as WebMcpToolDefinition,
+  getDailySummaryTool as unknown as WebMcpToolDefinition,
+  decomposeTaskTool as unknown as WebMcpToolDefinition,
+  listTodayTasksTool as unknown as WebMcpToolDefinition,
   getWorkspaceStatusTool as unknown as WebMcpToolDefinition,
 ];
 

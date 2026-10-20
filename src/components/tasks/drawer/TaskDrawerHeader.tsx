@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import type { Task } from '../../../types/task';
+import { useTodayStr } from '../../../hooks/useCurrentDate';
+import { isFocusTask } from '../../../utils/taskSelectors';
+import celebrate from '../../../utils/celebrate';
 import {
   X,
   Star,
@@ -44,6 +47,21 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const isDone = task.status === 'done';
+  const today = useTodayStr();
+  const isTopThree = isFocusTask(task, today);
+
+  const handleToggleStatus = () => {
+    const willBeDone = task.status !== 'done';
+    toggleTaskStatus(task.id);
+    if (willBeDone && isTopThree) {
+      celebrate({
+        particleCount: 45,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#3B82F6'],
+      });
+    }
+  };
 
   // Click outside to close action menu
   useEffect(() => {
@@ -79,7 +97,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={() => toggleTaskStatus(task.id)}
+            onClick={handleToggleStatus}
             className={`w-5 h-5 rounded-full flex items-center justify-center border active:scale-85 transition-all duration-150 ${
               isDone
                 ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white text-white dark:text-stone-950 shadow-xs'

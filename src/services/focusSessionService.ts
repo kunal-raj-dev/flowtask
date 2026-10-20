@@ -118,7 +118,10 @@ export const focusSessionService = {
   },
 
   getElapsedSeconds(session: FocusSession, now: number = Date.now()): number {
-    const cap = (seconds: number) => session.targetDurationSec > 0 ? Math.min(session.targetDurationSec, seconds) : seconds;
+    const cap = (seconds: number) =>
+      session.mode === 'pomodoro' && session.targetDurationSec > 0
+        ? Math.min(session.targetDurationSec, seconds)
+        : seconds;
     if (session.state === 'running') {
       const currentSegment = Math.max(0, now - session.startedAt);
       return cap(Math.floor((session.accumulatedElapsedMs + currentSegment) / 1000));

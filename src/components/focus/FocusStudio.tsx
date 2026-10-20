@@ -126,6 +126,11 @@ function Range({
     </label>
   );
 }
+
+/**
+ * @deprecated Superseded in FlowTask V4 by FocusEngineModal. Retained for test backward compatibility.
+ * Use FocusEngineModal from './FocusEngineModal' instead.
+ */
 export function FocusStudio({
   taskId,
   onClose,

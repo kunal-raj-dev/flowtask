@@ -30,6 +30,10 @@ interface PomodoroModalProps {
 
 type Mode = 'focus' | 'short_break' | 'long_break';
 
+/**
+ * @deprecated Superseded in FlowTask V4 by FocusEngineModal. Retained for test backward compatibility.
+ * Use FocusEngineModal from './FocusEngineModal' instead.
+ */
 export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose }) => {
   const context = useTaskContext();
   const tasks = context?.tasks || [];

@@ -1,3 +1,4 @@
+import { createContext, useContext, useCallback, useRef, useSyncExternalStore } from 'react';
 import { SYNC_COLLECTIONS, workspaceEntities, replaceEntities, applyEntityChanges } from './workspaceEntities';
 import type { Task, Project } from '../types/task';
 import type { WorkspaceRecord, EntityChange, PendingOperation, SyncCollection, SyncedEntity } from '../types/workspace';
@@ -212,10 +213,51 @@ export class WorkspaceStore {
   }
 }
 
-export {
-  useWorkspaceTasks,
-  useWorkspaceProjects,
-  useActiveTask,
-  useWorkspaceSelector,
-  WorkspaceStoreContext,
-} from '../context/TaskContext';
+export const WorkspaceStoreContext = createContext<WorkspaceStore | null>(null);
+
+export function useWorkspaceSelector<T>(
+  selector: (snapshot: StoreSnapshot) => T,
+  isEqual: (a: T, b: T) => boolean = Object.is
+): T | undefined {
+  const store = useContext(WorkspaceStoreContext);
+  const lastSelectedRef = useRef<{ hasValue: boolean; value: T | undefined }>({ hasValue: false, value: undefined });
+
+  const getSelection = useCallback(() => {
+    if (!store) return undefined as unknown as T;
+    const next = selector(store.getSnapshot());
+    if (lastSelectedRef.current.hasValue && isEqual(lastSelectedRef.current.value as T, next)) {
+      return lastSelectedRef.current.value as T;
+    }
+    lastSelectedRef.current = { hasValue: true, value: next };
+    return next;
+  }, [store, selector, isEqual]);
+
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      if (!store) return () => {};
+      return store.subscribe(notify);
+    },
+    [store]
+  );
+
+  return useSyncExternalStore(subscribe, getSelection, getSelection);
+}
+
+export function useWorkspaceTasks(): Task[] {
+  const store = useContext(WorkspaceStoreContext);
+  const tasks = useWorkspaceSelector(useCallback((s) => s.record.tasks, []));
+  return store ? (tasks || []) : [];
+}
+
+export function useWorkspaceProjects(): Project[] {
+  const store = useContext(WorkspaceStoreContext);
+  const projects = useWorkspaceSelector(useCallback((s) => s.record.projects, []));
+  return store ? (projects || []) : [];
+}
+
+export function useActiveTask(taskId: string | null): Task | null {
+  const store = useContext(WorkspaceStoreContext);
+  const activeTask = useWorkspaceSelector(useCallback((s) => (taskId ? s.record.tasks.find((t) => t.id === taskId) || null : null), [taskId]));
+  return store ? (activeTask || null) : null;
+}
+

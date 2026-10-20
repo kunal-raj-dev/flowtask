@@ -30,6 +30,10 @@ interface StudySprintRunnerModalProps {
   onClose: () => void;
 }
 
+/**
+ * @deprecated Superseded in FlowTask V4 by FocusEngineModal. Retained for test backward compatibility.
+ * Use FocusEngineModal from './FocusEngineModal' instead.
+ */
 export const StudySprintRunnerModal: React.FC<StudySprintRunnerModalProps> = ({
   isOpen,
   taskId,

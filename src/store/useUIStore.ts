@@ -24,6 +24,7 @@ export interface UIState {
   soundEnabled: boolean;
   soundProfile: SoundProfile;
   toast: ToastState | null;
+  activePopover: { type: 'priority' | 'date'; taskId: string } | null;
 
   isAuthModalOpen: boolean;
   isQuickAddOpen: boolean;
@@ -55,6 +56,7 @@ export interface UIState {
   setSoundProfile: (p: SoundProfile) => void;
   showToast: (message: string, actionLabel?: string, onAction?: () => void) => void;
   clearToast: () => void;
+  setActivePopover: (popover: { type: 'priority' | 'date'; taskId: string } | null) => void;
 
   setIsAuthModalOpen: (open: boolean) => void;
   setIsQuickAddOpen: (open: boolean) => void;
@@ -106,6 +108,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   soundEnabled: audioEngine.getSoundEnabled(),
   soundProfile: audioEngine.getSoundProfile(),
   toast: null,
+  activePopover: null,
+  setActivePopover: (popover) => set({ activePopover: popover }),
 
   isAuthModalOpen: false,
   isQuickAddOpen: false,

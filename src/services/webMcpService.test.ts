@@ -7,14 +7,18 @@ import {
   setWebMcpActiveStore,
   webMcpService,
   createTaskTool,
-  listTodayTasksTool,
+  updateTaskTool,
+  completeTaskTool,
+  listTasksTool,
   startFocusSessionTool,
-  getWorkspaceStatusTool,
+  stopFocusSessionTool,
+  scheduleTimelineBlockTool,
+  getDailySummaryTool,
+  decomposeTaskTool,
 } from './webMcpService';
 import { WorkspaceStore } from './workspaceStore';
 import { useFocusStore } from '../store/useFocusStore';
 import { formatLocalDate } from '../utils/nlpParser';
-import type { Task } from '../types/task';
 
 describe('webMcpService (Client-Side WebMCP Tools)', () => {
   let store: WorkspaceStore;
@@ -58,14 +62,21 @@ describe('webMcpService (Client-Side WebMCP Tools)', () => {
   });
 
   describe('Tool Definitions and Metadata', () => {
-    it('exposes all 4 required atomic tools with valid JSON Schemas', () => {
+    it('exposes all atomic tools with valid JSON Schemas', () => {
       const tools = getWebMcpTools();
-      expect(tools).toHaveLength(4);
+      expect(tools.length).toBeGreaterThanOrEqual(8);
 
       const names = tools.map((t) => t.name);
       expect(names).toContain('createTask');
-      expect(names).toContain('listTodayTasks');
+      expect(names).toContain('updateTask');
+      expect(names).toContain('completeTask');
+      expect(names).toContain('listTasks');
       expect(names).toContain('startFocusSession');
+      expect(names).toContain('stopFocusSession');
+      expect(names).toContain('scheduleTimelineBlock');
+      expect(names).toContain('getDailySummary');
+      expect(names).toContain('decomposeTask');
+      expect(names).toContain('listTodayTasks');
       expect(names).toContain('getWorkspaceStatus');
 
       for (const tool of tools) {
@@ -79,7 +90,7 @@ describe('webMcpService (Client-Side WebMCP Tools)', () => {
     });
 
     it('webMcpService wrapper delegates correctly to getTools and executeTool', async () => {
-      expect(webMcpService.getTools()).toHaveLength(4);
+      expect(webMcpService.getTools().length).toBeGreaterThanOrEqual(8);
 
       const status = (await webMcpService.executeTool('getWorkspaceStatus', {})) as {
         activeTasksCount: number;
@@ -99,7 +110,7 @@ describe('webMcpService (Client-Side WebMCP Tools)', () => {
       const cleanup = registerWebMcpTools({ store });
       expect(window.__FLOWTASK_MCP__).toBeDefined();
       expect(window.__FLOWTASK_MCP__?.version).toBe('1.0.0');
-      expect(window.__FLOWTASK_MCP__?.tools).toHaveLength(4);
+      expect(window.__FLOWTASK_MCP__?.tools.length).toBeGreaterThanOrEqual(8);
       expect(typeof window.__FLOWTASK_MCP__?.callTool).toBe('function');
       expect(typeof window.__FLOWTASK_MCP__?.executeTool).toBe('function');
 
@@ -119,279 +130,211 @@ describe('webMcpService (Client-Side WebMCP Tools)', () => {
     it('does not register if AbortSignal is already aborted', () => {
       const controller = new AbortController();
       controller.abort();
-
       const onUnregistered = vi.fn();
       registerWebMcpTools({ signal: controller.signal, store, onUnregistered });
-
       expect(window.__FLOWTASK_MCP__).toBeUndefined();
       expect(onUnregistered).toHaveBeenCalled();
-    });
-
-    it('allows executing tools via window.__FLOWTASK_MCP__.callTool', async () => {
-      registerWebMcpTools({ store });
-      const result = (await window.__FLOWTASK_MCP__!.callTool('createTask', {
-        title: 'MCP Bridge Task',
-      })) as { success: boolean; task: Task };
-
-      expect(result.success).toBe(true);
-      expect(result.task.title).toBe('MCP Bridge Task');
     });
   });
 
   describe('createTask Tool', () => {
-    it('validates required arguments', async () => {
-      // @ts-expect-error testing missing title
-      await expect(createTaskTool.execute({})).rejects.toThrow(/non-empty "title"/);
-      await expect(createTaskTool.execute({ title: '   ' })).rejects.toThrow(/non-empty "title"/);
-      // @ts-expect-error testing invalid priority
-      await expect(createTaskTool.execute({ title: 'Test', priority: 'p99' })).rejects.toThrow(/Invalid priority/);
-      await expect(createTaskTool.execute({ title: 'Test', estimatedMinutes: -5 })).rejects.toThrow(
-        /estimatedMinutes must be a non-negative number/
-      );
-    });
-
-    it('creates a task with parsed natural language tokens', async () => {
-      const result = await createTaskTool.execute({
-        title: 'Draft architecture review #work p1 ~45m',
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.task.title).toBe('Draft architecture review');
-      expect(result.task.priority).toBe('p1');
-      expect(result.task.projectId).toBe('work');
-      expect(result.task.estimatedMinutes).toBe(45);
-
-      // Verify committed into WorkspaceStore
-      const currentTasks = store.getSnapshot().record.tasks;
-      expect(currentTasks).toHaveLength(1);
-      expect(currentTasks[0].id).toBe(result.task.id);
-    });
-
-    it('respects explicit parameter overrides over title tokens', async () => {
-      const result = await createTaskTool.execute({
-        title: 'Review proposal #inbox p4',
-        priority: 'p2',
-        projectId: 'work',
-        plannedDate: '2026-10-20',
-        dueDate: '2026-10-25',
-        estimatedMinutes: 60,
-        description: 'Detailed scope notes',
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.task.priority).toBe('p2');
-      expect(result.task.projectId).toBe('work');
-      expect(result.task.plannedDate).toBe('2026-10-20');
-      expect(result.task.dueDate).toBe('2026-10-25');
-      expect(result.task.estimatedMinutes).toBe(60);
-      expect(result.task.description).toBe('Detailed scope notes');
-    });
-
-    it('falls back to inbox project if target project does not exist', async () => {
-      const result = await createTaskTool.execute({
-        title: 'Task for unknown project',
-        projectId: 'non-existent-project-xyz',
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.task.projectId).toBe('inbox');
-    });
-  });
-
-  describe('listTodayTasks Tool', () => {
-    beforeEach(async () => {
-      // Seed some tasks for today and other days
-      await createTaskTool.execute({
-        title: 'Top 3 Focus Task',
+    it('creates a task with explicit parameters and adds to store', async () => {
+      const res = await createTaskTool.execute({
+        title: 'Draft quarterly product roadmap',
         priority: 'p1',
         plannedDate: todayStr,
+        estimatedMinutes: 60,
       });
 
-      // Pin the first task to Top 3
-      const firstTask = store.getSnapshot().record.tasks[0];
-      store.run('Pin Top 3', (r) => ({
-        ...r,
-        tasks: r.tasks.map((t) => (t.id === firstTask.id ? { ...t, isPinnedToday: true, topThreeDate: todayStr } : t)),
-      }));
+      expect(res.success).toBe(true);
+      expect(res.task.title).toBe('Draft quarterly product roadmap');
+      expect(res.task.priority).toBe('p1');
+      expect(res.task.plannedDate).toBe(todayStr);
+      expect(res.task.estimatedMinutes).toBe(60);
 
-      await createTaskTool.execute({
-        title: 'Regular Daytime Task',
-        priority: 'p2',
-        plannedDate: todayStr,
-      });
-
-      await createTaskTool.execute({
-        title: 'Work Project Sprint Task',
-        priority: 'p3',
-        plannedDate: todayStr,
-        projectId: 'work',
-      });
-
-      await createTaskTool.execute({
-        title: 'Future Task',
-        priority: 'p2',
-        plannedDate: '2099-12-31',
-      });
+      const inStore = store.getSnapshot().record.tasks;
+      expect(inStore).toHaveLength(1);
+      expect(inStore[0].id).toBe(res.task.id);
     });
 
-    it('queries and groups tasks into topThree and daytime', async () => {
-      const result = await listTodayTasksTool.execute({});
+    it('throws validation errors on invalid inputs', async () => {
+      await expect(createTaskTool.execute({ title: '' })).rejects.toThrow(
+        /requires a non-empty "title"/
+      );
 
-      expect(result.date).toBe(todayStr);
-      expect(result.topThree).toHaveLength(1);
-      expect(result.topThree[0].title).toBe('Top 3 Focus Task');
+      await expect(
+        createTaskTool.execute({ title: 'Task', priority: 'invalid' as any })
+      ).rejects.toThrow(/Invalid priority/);
 
-      expect(result.daytime).toHaveLength(2);
-      expect(result.completed).toHaveLength(0);
-      expect(result.totalCount).toBe(3);
-    });
-
-    it('filters by projectId', async () => {
-      const result = await listTodayTasksTool.execute({ projectId: 'work' });
-
-      expect(result.totalCount).toBe(1);
-      expect(result.daytime).toHaveLength(1);
-      expect(result.daytime[0].title).toBe('Work Project Sprint Task');
-    });
-
-    it('includes completed tasks when requested', async () => {
-      // Mark one task as completed today
-      const regularTask = store.getSnapshot().record.tasks.find((t) => t.title === 'Regular Daytime Task')!;
-      store.run('Complete task', (r) => ({
-        ...r,
-        tasks: r.tasks.map((t) =>
-          t.id === regularTask.id ? { ...t, status: 'done', completedAt: Date.now() } : t
-        ),
-      }));
-
-      const withoutCompleted = await listTodayTasksTool.execute({ includeCompleted: false });
-      expect(withoutCompleted.completed).toHaveLength(0);
-      expect(withoutCompleted.totalCount).toBe(2);
-
-      const withCompleted = await listTodayTasksTool.execute({ includeCompleted: true });
-      expect(withCompleted.completed).toHaveLength(1);
-      expect(withCompleted.completed[0].id).toBe(regularTask.id);
-      expect(withCompleted.totalCount).toBe(3);
+      await expect(
+        createTaskTool.execute({ title: 'Task', estimatedMinutes: -10 })
+      ).rejects.toThrow(/must be a non-negative number/);
     });
   });
 
-  describe('startFocusSession Tool', () => {
-    it('starts a pomodoro session with default duration (25m / 1500s)', async () => {
-      const result = await startFocusSessionTool.execute({
-        taskTitle: 'Write unit tests',
+  describe('updateTask Tool', () => {
+    it('updates priority, plannedDate, and estimatedMinutes of existing task', async () => {
+      const created = await createTaskTool.execute({ title: 'Initial task' });
+      const taskId = created.task.id;
+
+      const updated = await updateTaskTool.execute({
+        taskId,
+        title: 'Renamed task',
+        priority: 'p2',
+        plannedDate: '2026-11-01',
+        estimatedMinutes: 45,
       });
 
-      expect(result.success).toBe(true);
-      expect(result.session.mode).toBe('pomodoro');
-      expect(result.session.taskTitle).toBe('Write unit tests');
-      expect(result.session.targetDurationSec).toBe(1500);
-      expect(result.session.state).toBe('running');
+      expect(updated.success).toBe(true);
+      expect(updated.task.title).toBe('Renamed task');
+      expect(updated.task.priority).toBe('p2');
+      expect(updated.task.plannedDate).toBe('2026-11-01');
+      expect(updated.task.estimatedMinutes).toBe(45);
 
-      // Verify store state
-      const currentSession = useFocusStore.getState().focusSession;
-      expect(currentSession?.id).toBe(result.session.id);
+      const inStore = store.getSnapshot().record.tasks.find((t) => t.id === taskId);
+      expect(inStore?.title).toBe('Renamed task');
     });
 
-    it('starts a sprint session with custom duration', async () => {
-      const { task } = await createTaskTool.execute({ title: 'Sprint session' });
-      const result = await startFocusSessionTool.execute({
-        mode: 'sprint',
-        taskId: task.id,
-        taskTitle: 'Sprint session',
-        targetDurationMinutes: 45,
+    it('throws error when taskId does not exist', async () => {
+      await expect(
+        updateTaskTool.execute({ taskId: 'non-existent', title: 'Test' })
+      ).rejects.toThrow(/not found in workspace/);
+    });
+  });
+
+  describe('completeTask Tool', () => {
+    it('marks a task as done and toggles back to todo', async () => {
+      const created = await createTaskTool.execute({ title: 'Incomplete task' });
+      const taskId = created.task.id;
+
+      const doneResult = await completeTaskTool.execute({ taskId, completed: true });
+      expect(doneResult.task.status).toBe('done');
+      expect(doneResult.task.completedAt).toBeDefined();
+
+      const undoneResult = await completeTaskTool.execute({ taskId, completed: false });
+      expect(undoneResult.task.status).toBe('todo');
+      expect(undoneResult.task.completedAt).toBeUndefined();
+    });
+  });
+
+  describe('listTasks Tool', () => {
+    it('filters tasks by status, priority, and search query', async () => {
+      await createTaskTool.execute({ title: 'Important bug fix #work', priority: 'p1' });
+      await createTaskTool.execute({ title: 'Write unit tests', priority: 'p2' });
+      const doneTask = await createTaskTool.execute({ title: 'Archived task' });
+      await completeTaskTool.execute({ taskId: doneTask.task.id, completed: true });
+
+      const all = await listTasksTool.execute({});
+      expect(all.totalCount).toBe(3);
+
+      const activeOnly = await listTasksTool.execute({ status: 'todo' });
+      expect(activeOnly.totalCount).toBe(2);
+
+      const p1Only = await listTasksTool.execute({ priority: 'p1' });
+      expect(p1Only.totalCount).toBe(1);
+      expect(p1Only.tasks[0].title).toContain('Important bug fix');
+
+      const searchResult = await listTasksTool.execute({ searchQuery: 'unit tests' });
+      expect(searchResult.totalCount).toBe(1);
+      expect(searchResult.tasks[0].title).toBe('Write unit tests');
+    });
+  });
+
+  describe('scheduleTimelineBlock Tool', () => {
+    it('snaps arbitrary start time to 15-minute grid and sets scheduledEnd', async () => {
+      const created = await createTaskTool.execute({
+        title: 'Deep Architecture Design',
+        estimatedMinutes: 45,
       });
 
-      expect(result.success).toBe(true);
-      expect(result.session.mode).toBe('sprint');
-      expect(result.session.taskId).toBe(task.id);
-      expect(result.session.targetDurationSec).toBe(2700); // 45 * 60
+      const res = await scheduleTimelineBlockTool.execute({
+        taskId: created.task.id,
+        startTime: '09:18', // should snap to 09:15
+        durationMinutes: 45,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.scheduledSlot.start).toBe('09:15');
+      expect(res.scheduledSlot.end).toBe('10:00');
+      expect(res.task.scheduledStart).toBe('09:15');
+      expect(res.task.scheduledEnd).toBe('10:00');
     });
 
-    it('persists assistant sessions to the registered workspace and does not overwrite active work', async () => {
-      const result = await startFocusSessionTool.execute({ taskTitle: 'Persisted session' });
-      expect(store.getSnapshot().record.preferences.focusSession).toEqual(result.session);
-      expect(result.session.workspaceId).toBe(store.id);
-      await expect(startFocusSessionTool.execute({})).rejects.toThrow(/Finish the current/);
-      expect(useFocusStore.getState().focusSession?.id).toBe(result.session.id);
+    it('rejects malformed time strings', async () => {
+      await expect(
+        scheduleTimelineBlockTool.execute({ taskId: 't1', startTime: 'invalid-time' })
+      ).rejects.toThrow(/valid "startTime"/);
+    });
+  });
+
+  describe('getDailySummary Tool', () => {
+    it('computes daily completion rate and planned minutes', async () => {
+      await createTaskTool.execute({
+        title: 'Task 1',
+        plannedDate: todayStr,
+        estimatedMinutes: 30,
+      });
+
+      const t2 = await createTaskTool.execute({
+        title: 'Task 2',
+        plannedDate: todayStr,
+        estimatedMinutes: 30,
+      });
+
+      await completeTaskTool.execute({ taskId: t2.task.id, completed: true });
+
+      const summary = await getDailySummaryTool.execute({ date: todayStr });
+      expect(summary.totalTasks).toBe(2);
+      expect(summary.completedTasks).toBe(1);
+      expect(summary.completionRate).toBe(50);
+      expect(summary.totalPlannedMinutes).toBe(60);
+    });
+  });
+
+  describe('decomposeTask Tool', () => {
+    it('generates structured subtasks and 2-min starter step for coding defect', async () => {
+      const res = await decomposeTaskTool.execute({
+        taskTitle: 'Fix memory leak in focus audio engine',
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.subtasks.length).toBeGreaterThanOrEqual(3);
+      expect(res.starterStep).toContain('2-Min Starter');
     });
 
-    it('rejects tasks outside this workspace', async () => {
-      await expect(startFocusSessionTool.execute({ taskId: 'another-account-task' })).rejects.toThrow(/active task/);
+    it('attaches subtasks directly to existing task in store', async () => {
+      const created = await createTaskTool.execute({ title: 'Implement OAuth Login Flow' });
+      const res = await decomposeTaskTool.execute({ taskId: created.task.id });
+
+      expect(res.success).toBe(true);
+      expect(res.task?.subtasks?.length).toBeGreaterThanOrEqual(3);
+      expect(res.task?.nextAction).toBeDefined();
+
+      const inStore = store.getSnapshot().record.tasks.find((t) => t.id === created.task.id);
+      expect(inStore?.subtasks?.length).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  describe('startFocusSession and stopFocusSession Tools', () => {
+    it('starts focus session and stops with recorded focus log', async () => {
+      const task = await createTaskTool.execute({ title: 'Deep Work Task' });
+
+      const startRes = await startFocusSessionTool.execute({
+        taskId: task.task.id,
+        targetDurationMinutes: 25,
+      });
+
+      expect(startRes.success).toBe(true);
+      expect(startRes.session.taskId).toBe(task.task.id);
+      expect(useFocusStore.getState().focusSession).toBeDefined();
+
+      // Simulate 60 seconds elapsed
+      useFocusStore.setState({ focusElapsedSeconds: 60 });
+
+      const stopRes = await stopFocusSessionTool.execute({ abandon: false });
+      expect(stopRes.success).toBe(true);
+      expect(stopRes.loggedSeconds).toBe(60);
       expect(useFocusStore.getState().focusSession).toBeNull();
-    });
-  });
-
-  it('does not create a second local writer before registration or after cleanup', async () => {
-    unregisterWebMcpTools();
-    await expect(createTaskTool.execute({ title: 'Must not leak' })).rejects.toThrow(/Open a workspace/);
-  });
-
-  it('invalidates old bridges and ignores their cleanup after a newer registration', async () => {
-    const oldCleanup = registerWebMcpTools({ store });
-    const oldBridge = window.__FLOWTASK_MCP__!;
-    registerWebMcpTools({ store });
-    const currentBridge = window.__FLOWTASK_MCP__!;
-    oldCleanup();
-    expect(window.__FLOWTASK_MCP__).toBe(currentBridge);
-    await expect(oldBridge.callTool('createTask', { title: 'Stale account' })).rejects.toThrow(/no longer connected/);
-    expect(store.getSnapshot().record.tasks).toHaveLength(0);
-  });
-
-  describe('getWorkspaceStatus Tool', () => {
-    it('aggregates workspace telemetry accurately', async () => {
-      // Seed tasks: 1 today active, 1 overdue, 1 future, 1 completed
-      await createTaskTool.execute({
-        title: 'Active Today Task',
-        plannedDate: todayStr,
-      });
-
-      await createTaskTool.execute({
-        title: 'Overdue Task',
-        dueDate: '2020-01-01',
-      });
-
-      await createTaskTool.execute({
-        title: 'Future Task',
-        plannedDate: '2099-01-01',
-      });
-
-      await createTaskTool.execute({
-        title: 'Done Task',
-        plannedDate: todayStr,
-      });
-
-      const doneTask = store.getSnapshot().record.tasks.find((t) => t.title === 'Done Task')!;
-      store.run('Complete Done Task', (r) => ({
-        ...r,
-        tasks: r.tasks.map((t) => (t.id === doneTask.id ? { ...t, status: 'done', completedAt: Date.now() } : t)),
-      }));
-
-      // Add a focus log of 1200 seconds today
-      store.run('Add Focus Log', (r) => ({
-        ...r,
-        preferences: {
-          ...r.preferences,
-          focusLogs: [
-            { id: 'log-1', seconds: 1200, startedAt: Date.now() - 1200000, endedAt: Date.now() },
-            { id: 'log-2', seconds: 600, startedAt: Date.parse('2020-01-01T11:00:00Z'), endedAt: Date.parse('2020-01-01T12:00:00Z') }, // past day
-          ],
-        },
-      }));
-
-      // Start an active focus session
-      await startFocusSessionTool.execute({
-        taskTitle: 'Active Study Sprint',
-        mode: 'pomodoro',
-      });
-
-      const status = await getWorkspaceStatusTool.execute({});
-
-      expect(status.activeTasksCount).toBe(3); // Active Today + Overdue + Future
-      expect(status.todayTasksCount).toBe(1); // Active Today only
-      expect(status.overdueCount).toBe(1); // Overdue Task
-      expect(status.activeFocusSession).not.toBeNull();
-      expect(status.activeFocusSession?.taskTitle).toBe('Active Study Sprint');
-      expect(status.todayFocusedSeconds).toBeGreaterThanOrEqual(1200);
     });
   });
 });

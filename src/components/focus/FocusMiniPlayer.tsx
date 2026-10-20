@@ -61,9 +61,9 @@ export const FocusMiniPlayer: React.FC<FocusMiniPlayerProps> = ({ variant = 'des
           type="button"
           onClick={() => {
             if (focusSession.mode === 'sprint') {
-              openModal('studySprint', { taskId: focusSession.taskId });
+              openModal('studySprint', { taskId: focusSession.taskId, initialMode: 'sprint' });
             } else {
-              openModal('pomodoro', { taskId: focusSession.taskId });
+              openModal('pomodoro', { taskId: focusSession.taskId, initialMode: 'zen' });
             }
           }}
           className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono tabular-nums text-[10px] font-bold border border-amber-500/30 shrink-0 mr-1 active:scale-95"
@@ -123,13 +123,9 @@ export const FocusMiniPlayer: React.FC<FocusMiniPlayerProps> = ({ variant = 'des
           type="button"
           onClick={() => {
             if (focusSession.mode === 'sprint') {
-              openModal('studySprint', { taskId: focusSession.taskId });
-            } else if (focusSession.mode === 'pomodoro') {
-              openModal('pomodoro', { taskId: focusSession.taskId });
-            } else if (focusSession.taskId) {
-              setSelectedTaskId(focusSession.taskId);
+              openModal('studySprint', { taskId: focusSession.taskId, initialMode: 'sprint' });
             } else {
-              openModal('pomodoro');
+              openModal('pomodoro', { taskId: focusSession.taskId, initialMode: 'zen' });
             }
           }}
           className="hover:underline truncate max-w-[170px]"
