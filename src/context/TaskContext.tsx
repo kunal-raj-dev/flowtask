@@ -1,4 +1,5 @@
 import { SyncFeedback } from '../components/workflow/SyncFeedback';
+import { WorkspaceRecoveryNotice } from '../components/workflow/WorkspaceRecoveryNotice';
 import { WorkspaceReadOnly } from '../components/workflow/WorkspaceReadOnly';
 import { ownWorkspace } from '../services/workspaceOwnership';
 import { DeviceImportPrompt } from '../components/workflow/DeviceImportPrompt';
@@ -752,7 +753,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
       <TaskContext.Provider value={contextValue}>
         <SyncFeedback store={store} snapshot={snapshot} download={downloadWorkspaceBackup} />
         {snapshot.readOnly && <div className="workspace-readonly-banner" role="status"><span>Read-only preview · This workspace is being edited in another tab.</span><button className="desk-button" onClick={() => void ownership.current?.takeOver()}>Use this tab</button></div>}
-        {snapshot.recoveryError && <div className="workspace-recovery-notice" role="status">{snapshot.recoveryError}<button className="desk-button" onClick={downloadWorkspaceBackup}>Download backup</button></div>}
+        {snapshot.recoveryError && <WorkspaceRecoveryNotice key={`${workspaceId}:${snapshot.recoveryError}`} error={snapshot.recoveryError} download={downloadWorkspaceBackup} />}
         <div className="workspace-provider-content" inert={snapshot.readOnly || undefined}>{snapshot.readOnly ? <WorkspaceReadOnly record={snapshot.record} /> : children}</div>
         {!snapshot.readOnly && connected && <DeviceImportPrompt />}
       </TaskContext.Provider>

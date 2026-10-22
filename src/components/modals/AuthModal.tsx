@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTaskContext } from '../../context/TaskContext';
+import { useWorkspaceSelector } from '../../services/workspaceStore';
 import { Button } from '../ui/Button';
 
 interface AuthModalProps {
@@ -41,6 +42,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     clearAuthError,
   } = useAuth();
   const { syncStatus, lastSyncedAt, forceSyncToCloud, tasks, projects, downloadWorkspaceBackup } = useTaskContext();
+  const recoveryError = useWorkspaceSelector(snapshot => snapshot.recoveryError);
 
   if (!isOpen) return null;
 
@@ -182,7 +184,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 Sync Status
               </span>
               <div className="flex items-center gap-2">
-                {syncStatus === 'synced' && (
+                {recoveryError && <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400"><AlertCircle size={14} aria-hidden="true" />Needs attention</span>}
+                {syncStatus === 'synced' && !recoveryError && (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     Cloud Synced
@@ -207,6 +210,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 )}
               </div>
             </div>
+
+            {recoveryError && <p role="status" className="text-sm text-[var(--text-secondary)]">{recoveryError}</p>}
 
             <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
               <div className="p-3 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] card-surface">
