@@ -508,7 +508,7 @@ export const FocusEngineModal: React.FC<FocusEngineModalProps> = ({
 
   // Sprint: Mark current subtask completed and advance to next
   const handleMarkSolvedAndNext = useCallback(() => {
-    if (!currentSubtask || !task) return;
+    if (!currentSubtask || !task || currentSubtask.completed) return;
 
     // 1. Calculate surplus seconds for banked time
     const stepTarget = (currentSubtask.estimatedMinutes || 30) * 60;
@@ -516,9 +516,7 @@ export const FocusEngineModal: React.FC<FocusEngineModalProps> = ({
     setBankedSeconds((prev) => prev + surplus);
 
     // 2. Mark current subtask complete
-    if (!currentSubtask.completed) {
-      taskContext?.toggleSubTask?.(task.id, currentSubtask.id);
-    }
+    taskContext?.toggleSubTask?.(task.id, currentSubtask.id);
 
     // 3. Audio & Confetti
     try {
@@ -526,22 +524,17 @@ export const FocusEngineModal: React.FC<FocusEngineModalProps> = ({
       celebrate({ particleCount: 75, spread: 80, origin: { y: 0.6 } });
     } catch {}
 
-    // 4. Advance to next uncompleted subtask
-    const nextUnsolved = subtasks.findIndex((s, idx) => idx > activeSubtaskIndex && !s.completed);
-    const nextIdx =
-      nextUnsolved >= 0
-        ? nextUnsolved
-        : activeSubtaskIndex < subtasks.length - 1
-        ? activeSubtaskIndex + 1
-        : activeSubtaskIndex;
-
-    if (nextIdx !== activeSubtaskIndex) {
-      const nextSub = subtasks[nextIdx];
+    // 4. Advance to next uncompleted subtask or cleanly finish session if all done
+    const nextUnsolved = subtasks.findIndex((s, idx) => idx > activeSubtaskIndex && !s.completed && s.id !== currentSubtask.id);
+    if (nextUnsolved >= 0) {
+      const nextSub = subtasks[nextUnsolved];
       const nextTargetSec = (nextSub?.estimatedMinutes || 30) * 60;
-      setActiveSubtaskIndex(nextIdx);
+      setActiveSubtaskIndex(nextUnsolved);
       if (focusSession && switchSubtask && nextSub) {
         switchSubtask(nextSub.id, nextSub.title, nextTargetSec);
       }
+    } else {
+      stopFocusSession();
     }
   }, [
     currentSubtask,
@@ -552,6 +545,7 @@ export const FocusEngineModal: React.FC<FocusEngineModalProps> = ({
     focusSession,
     switchSubtask,
     taskContext,
+    stopFocusSession,
   ]);
 
   // Reset timer

@@ -80,12 +80,13 @@ export const focusSessionService = {
     if (session.state === 'running') return session;
 
     const now = Date.now();
+    const wasReady = session.state === 'ready';
     const updated: FocusSession = {
       ...session,
       state: 'running',
       startedAt: now,
-      originalStartedAt: session.originalStartedAt || session.startedAt,
-      totalPausedMs: (session.totalPausedMs || 0) + Math.max(0, now - (session.pausedAt || now)),
+      originalStartedAt: wasReady ? now : (session.originalStartedAt || session.startedAt),
+      totalPausedMs: wasReady ? 0 : (session.totalPausedMs || 0) + Math.max(0, now - (session.pausedAt || now)),
       pausedAt: null,
     };
 
@@ -100,12 +101,16 @@ export const focusSessionService = {
   },
 
   getElapsedSeconds(session: FocusSession, now: number = Date.now()): number {
+    if (session.state === 'ready' || session.state === 'idle') return 0;
     return elapsedFocusSeconds(session, now);
   },
 
   getRemainingSeconds(session: FocusSession, now: number = Date.now()): number {
     if (!session.targetDurationSec || session.targetDurationSec <= 0) {
       return 0;
+    }
+    if (session.state === 'ready') {
+      return session.targetDurationSec;
     }
     const elapsed = this.getElapsedSeconds(session, now);
     return Math.max(0, session.targetDurationSec - elapsed);

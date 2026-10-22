@@ -31,6 +31,7 @@ import {
   CloudOff,
   Settings2,
   Coffee,
+  Sparkles,
 } from "lucide-react";
 import { useTaskContext } from "../../context/TaskContext";
 import { useModal } from "../../context/ModalContext";
@@ -52,6 +53,7 @@ import { BrandLogo } from "../ui/BrandLogo";
 import { pictureInPictureService } from "../../services/pictureInPictureService";
 import { transitionView } from "../../utils/viewTransitions";
 import { FocusAudioPanel } from "./FocusAudioPanel";
+import { ResetConfirmationDialog } from "./ResetConfirmationDialog";
 import { FEATURED_ROOMS, roomImage } from '../../services/featuredRooms';
 import type {
   FocusRecipe,
@@ -331,16 +333,13 @@ export function FocusStudio({
     const listener = () => {
       if (document.hidden) {
         videoRef.current?.pause();
-        if (active?.state === "running" && pictureInPictureService.isSupported() && !pictureInPictureService.isOpen()) {
-          void pictureInPictureService.requestPipWindow({ width: 340, height: 220 }).catch(() => {});
-        }
       } else if (!motionPaused) {
         void videoRef.current?.play().catch(() => {});
       }
     };
     document.addEventListener("visibilitychange", listener);
     return () => document.removeEventListener("visibilitychange", listener);
-  }, [motionPaused, active?.state]);
+  }, [motionPaused]);
   useEffect(
     () => () => {
       packAbort.current?.abort();
@@ -386,16 +385,48 @@ export function FocusStudio({
     setSummaryDismissed(last?.finishedAt || Date.now());
   };
   const toggle = async () => {
-    if (running) ctx.pauseFocusSession();
-    else if (active?.state === "paused") {
+    if (running) {
+      ctx.pauseFocusSession();
+    } else if (active?.state === "paused" || active?.state === "ready") {
       try {
         if (p.layers.length || p.musicId) await studioAudio.unlock();
       } catch {
         /* timer still works */
       }
       ctx.resumeFocusSession();
-    } else await start();
+    } else {
+      await start();
+    }
   };
+  const [resetConfirmMode, setResetConfirmMode] = useState<"reset" | "restartRound" | null>(null);
+  const wasRunningBeforeReset = useRef(false);
+
+  const handleResetClick = () => {
+    if (!active) return;
+    if (elapsed === 0 || active.state === "ready") {
+      ctx.resetFocusSession("discard", active.id);
+      return;
+    }
+    wasRunningBeforeReset.current = active.state === "running";
+    if (wasRunningBeforeReset.current) {
+      ctx.pauseFocusSession();
+    }
+    setResetConfirmMode("reset");
+  };
+
+  const handleRestartRoundClick = () => {
+    if (!active) return;
+    if (elapsed === 0 || active.state === "ready") {
+      ctx.restartFocusRound("discard", active.id);
+      return;
+    }
+    wasRunningBeforeReset.current = active.state === "running";
+    if (wasRunningBeforeReset.current) {
+      ctx.pauseFocusSession();
+    }
+    setResetConfirmMode("restartRound");
+  };
+
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
@@ -405,6 +436,29 @@ export function FocusStudio({
       if (event.code === "Space") {
         event.preventDefault();
         void toggle();
+      } else if (event.code === "KeyF") {
+        event.preventDefault();
+        if (!document.fullscreenElement) {
+          void root.current?.requestFullscreen?.().catch(() => setMessage('Fullscreen is unavailable. Studio still fills your browser.'));
+        } else {
+          void document.exitFullscreen?.().catch(() => {});
+        }
+      } else if (event.code === "KeyZ") {
+        event.preventDefault();
+        setClear((prev) => !prev);
+        setPanel(null);
+      } else if (event.code === "KeyP") {
+        event.preventDefault();
+        void showPip();
+      } else if (event.code === "Escape") {
+        event.preventDefault();
+        if (panel) {
+          setPanel(null);
+        } else if (clear) {
+          setClear(false);
+        } else {
+          void transitionView(() => onClose());
+        }
       }
     };
     window.addEventListener("keydown", key);
@@ -652,10 +706,10 @@ export function FocusStudio({
               setClear(!clear);
               setPanel(null);
             }}
-            aria-label={clear ? "Show focus controls" : "Hide focus controls"}
-            title="Clear mode (C)"
+            aria-label={clear ? "Exit Zen view" : "Enter Zen view"}
+            title={clear ? "Exit Zen view (Z)" : "Zen view (Z)"}
           >
-            {clear ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            <Sparkles size={18} />
           </button>
           <button
             onClick={() => {
@@ -668,11 +722,12 @@ export function FocusStudio({
             aria-label="Toggle fullscreen"
             title="Fullscreen (F)"
           >
-            <Maximize2 size={18} />
+            {document.fullscreenElement ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
           </button>
           <button
             onClick={() => void showPip()}
             aria-label="Open floating timer"
+            title="Floating timer (P)"
           >
             <PictureInPicture2 size={18} />
           </button>
@@ -757,30 +812,63 @@ export function FocusStudio({
         </p>
         <div className="studio-playback">
           <button
-            className="studio-round"
-            onClick={() => {
-              if (active) finish("interrupted");
-              setSummaryDismissed(Date.now());
-            }}
-            aria-label="Reset session"
+            type="button"
+            className="studio-control-btn studio-reset-btn"
+            disabled={!active}
+            onClick={handleResetClick}
+            aria-label="Reset current timer"
+            title="Reset current timer"
           >
-            <RotateCcw size={19} />
+            <RotateCcw size={17} />
+            <span>Reset</span>
           </button>
-          <button className="studio-start" onClick={() => void toggle()}>
+
+          {timer.mode === "pomodoro" &&
+            Boolean(active && ((active.pomodoroCycle && active.pomodoroCycle > 1) || active.pomodoroPhase !== "focus")) && (
+              <button
+                type="button"
+                className="studio-control-btn studio-restart-round-btn"
+                disabled={!active}
+                onClick={handleRestartRoundClick}
+                aria-label="Restart Pomodoro round from cycle 1"
+                title="Restart Pomodoro round"
+              >
+                <RotateCcw size={15} />
+                <span>Restart round</span>
+              </button>
+            )}
+
+          <button
+            type="button"
+            className="studio-start"
+            onClick={() => void toggle()}
+          >
             {running ? (
               <Pause size={20} fill="currentColor" />
             ) : (
               <Play size={20} fill="currentColor" />
             )}
-            <span>{running ? "Pause" : active ? "Resume" : currentPhase === "focus" ? "Start focus" : "Start break"}</span>
+            <span>
+              {running
+                ? "Pause"
+                : active?.state === "paused" || active?.state === "ready"
+                  ? "Resume"
+                  : currentPhase === "focus"
+                    ? "Start focus"
+                    : "Start break"}
+            </span>
           </button>
+
           <button
-            className="studio-round"
+            type="button"
+            className="studio-control-btn studio-finish-btn"
             disabled={!active}
             onClick={() => finish("completed")}
             aria-label="Finish session"
+            title="Finish session"
           >
-            <Check size={21} />
+            <Check size={18} />
+            <span>Finish</span>
           </button>
         </div>
         <button
@@ -1649,7 +1737,9 @@ export function FocusStudio({
               : "That was time well spent."}
           </h2>
           <p>
-            {Math.floor(last.seconds / 60)} min{" "}
+            {last.seconds < 60
+              ? `${last.seconds}s`
+              : `${Math.floor(last.seconds / 60)} min${last.seconds % 60 ? ` ${last.seconds % 60}s` : ""}`}{" "}
             {last.session.pomodoroPhase === "focus" ? "focused" : "of rest"}
             {last.session.taskTitle ? ` · ${last.session.taskTitle}` : ""}
           </p>
@@ -1673,10 +1763,23 @@ export function FocusStudio({
             </button>
             <button
               className="studio-primary"
-              onClick={() => void start(last.nextPhase)}
+              onClick={() => {
+                if (
+                  last.session.timerConfiguration?.mode === "stopwatch" ||
+                  last.session.timerConfiguration?.mode === "countdown"
+                ) {
+                  void start("focus");
+                } else {
+                  void start(last.nextPhase);
+                }
+              }}
             >
-              {" "}
-              {last.nextPhase === "focus" ? "Back to focus" : "Take a break"}
+              {last.session.timerConfiguration?.mode === "stopwatch" ||
+              last.session.timerConfiguration?.mode === "countdown"
+                ? "Start new session"
+                : last.nextPhase === "focus"
+                  ? "Back to focus"
+                  : "Take a break"}
               <ArrowRight size={15} />
             </button>
           </div>
@@ -1702,6 +1805,35 @@ export function FocusStudio({
           )}
         </section>
       )}
+      <ResetConfirmationDialog
+        isOpen={resetConfirmMode !== null}
+        onClose={() => {
+          if (wasRunningBeforeReset.current) {
+            ctx.resumeFocusSession();
+          }
+          setResetConfirmMode(null);
+        }}
+        onConfirmSave={() => {
+          if (resetConfirmMode === "restartRound") {
+            ctx.restartFocusRound("save", active?.id);
+          } else {
+            ctx.resetFocusSession("save", active?.id);
+          }
+          setResetConfirmMode(null);
+        }}
+        onConfirmDiscard={() => {
+          if (resetConfirmMode === "restartRound") {
+            ctx.restartFocusRound("discard", active?.id);
+          } else {
+            ctx.resetFocusSession("discard", active?.id);
+          }
+          setResetConfirmMode(null);
+        }}
+        elapsedSeconds={elapsed}
+        taskTitle={active?.taskTitle || task?.title}
+        phase={currentPhase}
+        isRoundRestart={resetConfirmMode === "restartRound"}
+      />
     </div>
   );
 }

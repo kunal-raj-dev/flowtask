@@ -4,7 +4,15 @@ import { WorkspaceReadOnly } from '../components/workflow/WorkspaceReadOnly';
 import { ownWorkspace } from '../services/workspaceOwnership';
 import { DeviceImportPrompt } from '../components/workflow/DeviceImportPrompt';
 import { WorkspaceRecovery } from '../components/workflow/WorkspaceRecovery';
-import { startWorkspaceFocus, finishWorkspaceFocus, changeWorkspaceFocusState } from '../services/focusLifecycle';
+import {
+  startWorkspaceFocus,
+  finishWorkspaceFocus,
+  changeWorkspaceFocusState,
+  resetWorkspaceFocus,
+  restartWorkspaceFocusRound,
+  type FocusStartInput,
+} from '../services/focusLifecycle';
+import type { MutationReceipt } from '../services/workspaceStore';
 import { commandService } from '../services/commandService';
 import { validateWorkspaceData } from '../utils/workspaceValidation';
 import { normalizeAppearance } from '../utils/appearance';
@@ -94,17 +102,19 @@ export interface TaskContextType {
   focusLogs: FocusLog[];
   totalFocusedTodaySeconds: number;
   startFocusSession: (
-    mode: FocusSessionMode,
+    inputOrMode: FocusStartInput | FocusSessionMode,
     taskId?: string | null,
     title?: string | null,
     targetSec?: number,
     subtaskId?: string | null,
     subtaskTitle?: string | null,
     pacingSec?: number
-  ) => void;
-  pauseFocusSession: () => void;
-  resumeFocusSession: () => void;
-  stopFocusSession: () => void;
+  ) => FocusSession | void;
+  pauseFocusSession: (options?: { expectedSessionId?: string } | unknown) => void;
+  resumeFocusSession: (options?: { expectedSessionId?: string } | unknown) => void;
+  stopFocusSession: (options?: { abandon?: boolean; expectedSessionId?: string } | unknown) => number | void;
+  resetFocusSession: (choice: 'save' | 'discard', expectedSessionId?: string) => { session: FocusSession; receipt?: MutationReceipt } | null;
+  restartFocusRound: (choice: 'save' | 'discard', expectedSessionId?: string) => { session: FocusSession; receipt?: MutationReceipt } | null;
   updateFocusSession: (updates: Partial<FocusSession>) => void;
   switchFocusSubtask: (subtaskId: string, subtaskTitle: string, targetSec: number) => void;
   logFocusSegment: (taskId: string | null, seconds: number, subtaskId?: string, subtaskTitle?: string) => void;
@@ -457,30 +467,72 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const batchToggleStatus = (ids: string[]) => useTaskStore.getState().batchToggleStatus(ids);
   const bulkRescheduleOverdue = (action: 'today' | 'someday' | 'dismiss') => useTaskStore.getState().bulkRescheduleOverdue(action);
 
-  function stopFocusSession() {
-    finishWorkspaceFocus(store);
+  function stopFocusSession(arg?: { abandon?: boolean; expectedSessionId?: string } | unknown) {
+    const options = (arg && typeof arg === 'object' && ('abandon' in arg || 'expectedSessionId' in arg))
+      ? (arg as { abandon?: boolean; expectedSessionId?: string })
+      : {};
+    const seconds = finishWorkspaceFocus(store, options);
     useFocusStore.getState().setFocusSession(null);
+    return seconds;
   }
   function startFocusSession(
-    mode: FocusSessionMode,
+    inputOrMode: FocusStartInput | FocusSessionMode,
     taskId: string | null = null,
     title: string | null = null,
-    targetSec = mode === 'stopwatch' ? 0 : 1500,
+    targetSec?: number,
     subtaskId: string | null = null,
     subtaskTitle: string | null = null,
     pacingSec: number = 0
   ) {
-    if (current().preferences.focusSession) { showToast('Return to your current focus session, or finish it before starting another.'); return; }
-    const taskObj = taskId ? current().tasks.find(t => t.id === taskId) : null;
-    const session = startWorkspaceFocus(store, { mode, taskId, taskTitle: title || taskObj?.title, targetDurationSec: targetSec, subtaskId, subtaskTitle, pacingSecondsPerUnit: pacingSec });
+    const input: FocusStartInput = typeof inputOrMode === 'object'
+      ? inputOrMode
+      : {
+          mode: inputOrMode,
+          taskId,
+          taskTitle: title || (taskId ? current().tasks.find(t => t.id === taskId)?.title : null),
+          targetDurationSec: targetSec ?? (inputOrMode === 'stopwatch' ? 0 : 1500),
+          subtaskId,
+          subtaskTitle,
+          pacingSecondsPerUnit: pacingSec,
+        };
+
+    const currentSession = current().preferences.focusSession as FocusSession | null;
+    if (currentSession && currentSession.state !== 'completed') {
+      if (!input.expectedSessionId || input.expectedSessionId !== currentSession.id) {
+        showToast('Return to your current focus session, or finish it before starting another.');
+        return;
+      }
+    }
+    const taskObj = input.taskId ? current().tasks.find(t => t.id === input.taskId) : null;
+    const session = startWorkspaceFocus(store, {
+      ...input,
+      taskTitle: input.taskTitle || taskObj?.title || 'Focus session',
+    });
     useFocusStore.getState().setFocusSession(session);
+    return session;
   }
 
-  const pauseFocusSession = () => {
-    useFocusStore.getState().setFocusSession(changeWorkspaceFocusState(store, 'paused'));
+  const pauseFocusSession = (arg?: { expectedSessionId?: string } | string | unknown) => {
+    const expectedSessionId = typeof arg === 'string' ? arg : (arg && typeof arg === 'object' && 'expectedSessionId' in arg) ? (arg as { expectedSessionId?: string }).expectedSessionId : undefined;
+    useFocusStore.getState().setFocusSession(changeWorkspaceFocusState(store, 'paused', Date.now(), { expectedSessionId }));
   };
-  const resumeFocusSession = () => {
-    useFocusStore.getState().setFocusSession(changeWorkspaceFocusState(store, 'running'));
+  const resumeFocusSession = (arg?: { expectedSessionId?: string } | string | unknown) => {
+    const expectedSessionId = typeof arg === 'string' ? arg : (arg && typeof arg === 'object' && 'expectedSessionId' in arg) ? (arg as { expectedSessionId?: string }).expectedSessionId : undefined;
+    useFocusStore.getState().setFocusSession(changeWorkspaceFocusState(store, 'running', Date.now(), { expectedSessionId }));
+  };
+  const resetFocusSession = (choice: 'save' | 'discard', expectedSessionId?: string) => {
+    const res = resetWorkspaceFocus(store, { choice, expectedSessionId });
+    if (res) {
+      useFocusStore.getState().setFocusSession(res.session);
+    }
+    return res;
+  };
+  const restartFocusRound = (choice: 'save' | 'discard', expectedSessionId?: string) => {
+    const res = restartWorkspaceFocusRound(store, { choice, expectedSessionId });
+    if (res) {
+      useFocusStore.getState().setFocusSession(res.session);
+    }
+    return res;
   };
   const updateFocusSession = (updates: Partial<FocusSession>) => {
     const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
@@ -645,6 +697,8 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     pauseFocusSession,
     resumeFocusSession,
     stopFocusSession,
+    resetFocusSession,
+    restartFocusRound,
     updateFocusSession,
     switchFocusSubtask,
     logFocusSegment,

@@ -259,7 +259,7 @@ export interface FocusSession {
   pausedAt?: number | null;
   accumulatedElapsedMs: number;
   targetDurationSec: number;
-  state: 'idle' | 'running' | 'paused' | 'completed';
+  state: 'idle' | 'ready' | 'running' | 'paused' | 'completed';
   pomodoroCycle?: number;
   pomodoroPhase?: 'focus' | 'short_break' | 'long_break';
   pacingSecondsPerUnit?: number;
