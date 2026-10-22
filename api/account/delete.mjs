@@ -1,8 +1,10 @@
+import { firestoreRateLimit } from '../../server/rate-limit.mjs';
+import { deploymentOrigin } from '../../server/deployment-origin.mjs';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-export function createDeleteAccountHandler({ auth, database, origin, now = () => Date.now() }) {
+export function createDeleteAccountHandler({ auth, database, origin, now = () => Date.now(), rateLimit = async () => true }) {
   return async function deleteAccount(request, response) {
     response.setHeader('Cache-Control', 'no-store');
     const reply = (status, error) => response.status(status).json({ error });
@@ -15,6 +17,8 @@ export function createDeleteAccountHandler({ auth, database, origin, now = () =>
     let token;
     try { token = await auth.verifyIdToken(bearer); } catch { return reply(401, 'Sign in again to delete your account.'); }
     if (!Number.isFinite(token.auth_time) || now() / 1000 - token.auth_time > 300 || token.auth_time > now() / 1000 + 30) return reply(401, 'Re-authenticate within five minutes before deleting your account.');
+    try { if (!await rateLimit(token.uid)) { response.setHeader('Retry-After', '3600'); return reply(429, 'Too many attempts. Retry later.'); } }
+    catch { return reply(503, 'Account deletion is temporarily unavailable. Please retry.'); }
     const root = database.doc(`users/${token.uid}`);
     try {
       // This write barrier remains through partial failures and blocks old ID tokens.
@@ -39,10 +43,10 @@ export function createDeleteAccountHandler({ auth, database, origin, now = () =>
   };
 }
 export default async function handler(request, response) {
-  const { FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY, APP_ORIGIN } = process.env;
+  const { FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY } = process.env;
   if (!FIREBASE_ADMIN_PROJECT_ID || !FIREBASE_ADMIN_CLIENT_EMAIL || !FIREBASE_ADMIN_PRIVATE_KEY) return response.status(503).json({ error: 'Account deletion is not configured for this installation.' });
   try {
     const app = getApps().find(a => a.name === 'flowtask-admin') || initializeApp({ credential: cert({ projectId: FIREBASE_ADMIN_PROJECT_ID, clientEmail: FIREBASE_ADMIN_CLIENT_EMAIL, privateKey: FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n') }) }, 'flowtask-admin');
-    return await createDeleteAccountHandler({ auth: getAuth(app), database: getFirestore(app), origin: APP_ORIGIN })(request, response);
+    return await createDeleteAccountHandler({ auth: getAuth(app), database: getFirestore(app), origin: deploymentOrigin(), rateLimit: firestoreRateLimit(getFirestore(app), 'account-delete', 10, 3600) })(request, response);
   } catch { return response.status(503).json({ error: 'Account deletion is unavailable. Please try again later.' }); }
 }

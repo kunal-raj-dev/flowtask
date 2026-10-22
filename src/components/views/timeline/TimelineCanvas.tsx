@@ -665,7 +665,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
                     </span>
                     <span>({effectiveDuration}m)</span>
                     {isDragging && (
-                      <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 animate-pulse ml-1">
+                      <span className="text-[9px] font-bold text-amber-800 dark:text-amber-300 animate-pulse ml-1">
                         Moving
                       </span>
                     )}
@@ -783,7 +783,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
             {bufferHeightPx > 0 && !isDone && (
               <div
                 data-testid={`timeline-buffer-${task.id}`}
-                className="absolute left-16 right-2 rounded-b-lg border-x border-b border-dashed border-amber-400/40 dark:border-amber-400/25 bg-amber-500/[0.05] dark:bg-amber-500/[0.08] text-amber-700 dark:text-amber-300 text-[10px] font-mono flex items-center justify-between px-3 pointer-events-none select-none z-[5] transition-all"
+                className="absolute left-16 right-2 rounded-b-lg border-x border-b border-dashed border-amber-400/40 dark:border-amber-400/25 bg-amber-500/[0.05] dark:bg-amber-500/[0.08] text-amber-800 dark:text-amber-300 text-[10px] font-mono flex items-center justify-between px-3 pointer-events-none select-none z-[5] transition-all"
                 style={{
                   top: `${topPx + heightPx}px`,
                   height: `${bufferHeightPx}px`,
@@ -792,7 +792,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
                 <span className="flex items-center gap-1 font-semibold">
                   ☕ Rest Buffer (+{bufferMin}m)
                 </span>
-                <span className="text-[9px] opacity-75 hidden sm:inline">Cognitive recovery</span>
+                <span className="text-[9px] hidden sm:inline">Cognitive recovery</span>
               </div>
             )}
           </React.Fragment>

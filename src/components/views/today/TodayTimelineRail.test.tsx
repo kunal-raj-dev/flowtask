@@ -99,6 +99,8 @@ describe('TodayTimelineRail', () => {
 
     const canvas = container.querySelector('.overscroll-contain')!;
     expect(canvas).toBeDefined();
+    expect(canvas.getAttribute('tabindex')).toBe('0');
+    expect(canvas.getAttribute('aria-label')).toBe('Day timeline schedule');
 
     // Mock drop event at y = 600px (10:00 AM)
     const dropEvent = {

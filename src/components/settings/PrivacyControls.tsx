@@ -1,3 +1,4 @@
+import { useTelemetryConsent, setTelemetryConsent } from '../../hooks/useTelemetryConsent';
 import { useState } from "react";
 import { FeedbackForm } from "./FeedbackForm";
 import { downloadFile } from "../../utils/fileExporter";
@@ -9,6 +10,7 @@ import { ShieldCheck, Download, AlertTriangle, MessageSquare, ExternalLink } fro
 export function PrivacyControls() {
   const { user, signOutUser } = useAuth();
   const ctx = useTaskContext();
+  const consent = useTelemetryConsent(ctx.workspaceId);
   const profile = (ctx.workspacePreferences?.profile || {}) as {
     diagnosticsEnabled?: boolean;
   };
@@ -70,12 +72,13 @@ export function PrivacyControls() {
         <div className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] space-y-2">
           <label className="v2-check flex items-center justify-between cursor-pointer">
             <span className="text-xs font-semibold text-[var(--text-primary)]">
-              Save anonymous usage diagnostics
+              Allow anonymous reliability diagnostics
             </span>
             <input
               type="checkbox"
-              checked={Boolean(profile.diagnosticsEnabled)}
+              checked={consent && Boolean(profile.diagnosticsEnabled)}
               onChange={(e) => {
+                setTelemetryConsent(ctx.workspaceId, e.target.checked);
                 ctx.setWorkspacePreference("profile", {
                   ...profile,
                   diagnosticsEnabled: e.target.checked,
@@ -90,8 +93,7 @@ export function PrivacyControls() {
           </label>
           <p className="text-[11px] text-[var(--text-muted)]">
             Diagnostics contain event counts, never task titles, notes, feed URLs
-            or personal media. Counts stay on this device. Turning this off
-            removes them immediately.
+            or personal media. Event counts stay on this device. When site monitoring is enabled, consenting also sends numeric performance measurements, error counts, build version and the current view category to this site. Turning this off stops future reports and removes local counts.
           </p>
           {profile.diagnosticsEnabled && (
             <button

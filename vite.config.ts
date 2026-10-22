@@ -1,13 +1,18 @@
+import { createHash } from 'node:crypto';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { applySocialOrigin } from './src/utils/socialMetadata.ts';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execFileSync } from 'node:child_process';
 
-const buildId = process.env.VERCEL_GIT_COMMIT_SHA || (() => {
+const sourceCommit = process.env.VERCEL_GIT_COMMIT_SHA || (() => {
   try { return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); }
   catch { return 'development'; }
 })();
+// CLI previews can include uncommitted work, so the commit alone is not a release identity.
+const buildId = process.env.VERCEL_DEPLOYMENT_ID || sourceCommit;
 
 export default defineConfig({
   define: { __FLOWTASK_BUILD__: JSON.stringify(buildId) },
@@ -18,7 +23,22 @@ export default defineConfig({
       return applySocialOrigin(html, configured);
     } },
     { name: 'flowtask-build-identity', generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'build-info.json', source: JSON.stringify({ commit: buildId }) });
+      this.emitFile({ type: 'asset', fileName: 'build-info.json', source: JSON.stringify({ commit: sourceCommit, build: buildId }) });
+    } },
+    { name: 'flowtask-media-revisions', async generateBundle() {
+      const revisions: Record<string, string> = {};
+      const directory = path.resolve('public/media');
+      const walk = async (root: string) => {
+        for (const entry of await readdir(root, { withFileTypes: true })) {
+          const target = path.join(root, entry.name);
+          if (entry.isDirectory()) await walk(target);
+          else if (entry.isFile() && /\.(webp|png|jpg|jpeg|svg|mp4|webm|mp3|wav|ogg)$/i.test(entry.name)) {
+            revisions['/media/' + path.relative(directory, target).replaceAll('\\', '/')] = createHash('sha256').update(await readFile(target)).digest('hex').slice(0, 12);
+          }
+        }
+      };
+      await walk(directory);
+      this.emitFile({ type: 'asset', fileName: 'media-revisions.json', source: JSON.stringify(revisions) });
     } },
     VitePWA({
       registerType: 'prompt',
@@ -31,27 +51,25 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         globIgnores: [
           '**/media/**',
+          '**/media-revisions.json',
           '**/firebase*.js',
           '**/ical*.js',
+          '**/calendarService*.js',
           '**/brand/social-preview*',
           '**/brand/*.png',
           '**/*Modal*.js',
-          '**/SettingsDrawer*.js',
-          '**/CopilotOmnibar*.js',
-          '**/WelcomePage*.{js,css}',
-          '**/FeedbackForm*.js',
+          '**/SettingsDrawer*.{js,css}',
+          '**/WorkspaceVisualPicker*.{js,css}',
+          '**/CopilotOmnibar*.{js,css}',
           '**/velocityCalibrator*.js',
-          '**/workspaceEntities*.js',
-          '**/motion*.js',
-          '**/nlp*.js',
-          '**/ReviewView*.js',
-          '**/TimelineView*.js',
-          '**/FocusStudio*.js',
+          '**/ReviewView*.{js,css}',
+          '**/TimelineView*.{js,css}',
+          '**/FocusStudio*.{js,css}',
           '**/KanbanView*.js',
           '**/EisenhowerView*.js',
-          '**/ProjectsView*.js',
+          '**/ProjectsView*.{js,css}',
           '**/StudyView*.js',
-          '**/UpcomingView*.js',
+          '**/UpcomingView*.{js,css}',
           '**/OnboardingFlow*.js',
           '**/CommandPalette*.js',
           '**/standupGenerator*.js',
@@ -69,32 +87,8 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: ({ url }) =>
-              url.pathname.includes('/assets/firebase') ||
-              url.pathname.includes('/assets/ical') ||
-              url.pathname.includes('/assets/rolldown-runtime') ||
-              url.pathname.includes('/assets/motion') ||
-              url.pathname.includes('/assets/nlp') ||
-              (url.pathname.includes('/assets/') &&
-                (url.pathname.includes('Modal') ||
-                  url.pathname.includes('SettingsDrawer') ||
-                  url.pathname.includes('CopilotOmnibar') ||
-                  url.pathname.includes('ReviewView') ||
-                  url.pathname.includes('TimelineView') ||
-                  url.pathname.includes('FocusStudio') ||
-                  url.pathname.includes('KanbanView') ||
-                  url.pathname.includes('EisenhowerView') ||
-                  url.pathname.includes('ProjectsView') ||
-                  url.pathname.includes('StudyView') ||
-                  url.pathname.includes('UpcomingView') ||
-                  url.pathname.includes('WelcomePage') ||
-                  url.pathname.includes('OnboardingFlow') ||
-                  url.pathname.includes('CommandPalette') ||
-                  url.pathname.includes('FeedbackForm') ||
-                  url.pathname.includes('velocityCalibrator') ||
-                  url.pathname.includes('workspaceEntities') ||
-                  url.pathname.includes('standupGenerator') ||
-                  url.pathname.includes('cloudWorkspace'))),
+            urlPattern: ({ url, sameOrigin }) => sameOrigin &&
+              url.pathname.startsWith('/assets/') && /\.(?:js|css)$/.test(url.pathname),
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'flowtask-ondemand-runtime',
@@ -107,35 +101,12 @@ export default defineConfig({
               },
             },
           },
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'google-fonts-stylesheets',
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-webfonts',
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
         ],
       },
     }),
   ],
   build: {
+    manifest: true,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {

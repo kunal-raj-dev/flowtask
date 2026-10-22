@@ -234,6 +234,21 @@ describe('Zustand State Architecture Modernization', () => {
       expect(useTaskStore.getState().tasks.some((t) => t.id === task.id)).toBe(true);
     });
 
+    it('resolves project names identically for inline capture and multiline import', () => {
+      useTaskStore.setState({ projects: [
+        ...useTaskStore.getState().projects,
+        { id: 'project-generated-id', name: 'Research', color: '#6366f1', createdAt: 1 },
+      ] });
+      const captured = useTaskStore.getState().addTask('Read paper #research');
+      const explicit = useTaskStore.getState().addTask('Review sources', { projectId: 'research' });
+      useTaskStore.getState().addMultipleTasks(['Summarize #research', 'Unknown #missing']);
+      expect(captured.projectId).toBe('project-generated-id');
+      expect(explicit.projectId).toBe(captured.projectId);
+      const tasks = useTaskStore.getState().tasks;
+      expect(tasks.find(task => task.title === 'Summarize')?.projectId).toBe(captured.projectId);
+      expect(tasks.find(task => task.title === 'Unknown')?.projectId).toBe('inbox');
+    });
+
     it('updates, toggles, and deletes tasks', () => {
       const task = useTaskStore.getState().addTask('Prepare release');
       useTaskStore.getState().updateTask(task.id, { priority: 'p1' });

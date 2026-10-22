@@ -1,9 +1,10 @@
-import type { Task, Priority } from '../types/task';
+import type { Task, Priority, Project } from '../types/task';
 import { calculateNextDueDate } from '../utils/storage';
 import { parseTaskInput } from '../utils/nlpParser';
 import { mergeTaskData, redirectDependencies } from '../utils/dependencyUtils';
 
 export interface CommandResult {
+  checkpoint?: boolean;
   updatedTasks: Task[];
   description: string;
   inverse: (currentTasks: Task[]) => Task[];
@@ -23,18 +24,24 @@ export const commandService = {
     tasks: Task[],
     input: string,
     overrides?: Partial<Task>,
-    currentContext?: { defaultProjectId?: string; defaultPlannedDate?: string; defaultPriority?: Priority; enableParsing?: boolean }
+    currentContext?: { defaultProjectId?: string; defaultPlannedDate?: string; defaultPriority?: Priority; enableParsing?: boolean; projects?: Pick<Project, 'id' | 'name'>[] }
   ): CommandResult & { createdTask: Task } {
     const parsed = currentContext?.enableParsing === false ? { cleanTitle: input.trim() } : parseTaskInput(input);
     const now = Date.now();
     const id = `task-${now}-${Math.random().toString(36).substring(2, 7)}`;
 
     // Precedence: explicit overrides > parsed tokens > context defaults > fallback
-    const projectId =
+    const requestedProject =
       overrides?.projectId ||
       parsed.projectTag ||
       currentContext?.defaultProjectId ||
       'inbox';
+    const availableProjects = currentContext?.projects;
+    const projectId = availableProjects
+      ? (availableProjects.find(project => project.id === requestedProject)
+        || availableProjects.find(project => project.name.toLowerCase() === requestedProject.toLowerCase())
+        || availableProjects.find(project => project.id === 'inbox'))?.id || 'inbox'
+      : requestedProject;
 
     const plannedDate =
       overrides?.plannedDate !== undefined
@@ -106,6 +113,7 @@ export const commandService = {
       };
     }
 
+    if (updates.projectId && updates.projectId !== original.projectId && !('milestoneId' in updates)) updates = { ...updates, milestoneId: undefined };
     const previousValues: Partial<Task> = {};
     for (const key of Object.keys(updates) as (keyof Task)[]) {
       previousValues[key] = original[key] as any;
@@ -311,13 +319,20 @@ export const commandService = {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return { updatedTasks: tasks, description: 'No-op', inverse: (c) => c };
 
-    const updatedTasks = tasks.filter((t) => t.id !== taskId);
+    const dependents = tasks.filter(t => t.blockedBy?.includes(taskId));
+    const remove = (list: Task[]) => list.filter(t => t.id !== taskId).map(t =>
+      t.blockedBy?.includes(taskId) ? { ...t, blockedBy: t.blockedBy.filter(id => id !== taskId) } : t);
+    const updatedTasks = remove(tasks);
 
     return {
       updatedTasks,
       description: `Permanently deleted "${task.title}"`,
-      inverse: (currentTasks: Task[]) => [task, ...currentTasks],
-      forward: (currentTasks: Task[]) => currentTasks.filter((t) => t.id !== taskId),
+      checkpoint: true,
+      inverse: (currentTasks: Task[]) => [task, ...currentTasks.map(t => {
+        const original = dependents.find(value => value.id === t.id);
+        return original ? { ...t, blockedBy: original.blockedBy } : t;
+      })],
+      forward: remove,
     };
   },
 
@@ -442,6 +457,7 @@ export const commandService = {
    * Batch update multiple tasks
    */
   batchUpdate(tasks: Task[], taskIds: string[], updates: Partial<Task>): CommandResult {
+    if (updates.projectId && !('milestoneId' in updates)) updates = { ...updates, milestoneId: undefined };
     const idSet = new Set(taskIds);
     const prevSnapshots = new Map<string, Partial<Task>>();
 
@@ -491,6 +507,7 @@ export const commandService = {
     return {
       updatedTasks,
       description: `Moved ${taskIds.length} tasks to Trash`,
+      checkpoint: true,
       inverse: (currentTasks: Task[]) =>
         currentTasks.map((t) =>
           idSet.has(t.id) ? { ...t, deletedAt: undefined, updatedAt: Date.now() } : t

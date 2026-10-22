@@ -1,7 +1,6 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { lazy, Suspense, useMemo, useState, useCallback } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { HorizonTodayView } from './today/HorizonTodayView';
-import { DashboardCanvasView } from './DashboardCanvasView';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { isFocusTask, isTodayTask } from '../../utils/taskSelectors';
@@ -9,6 +8,8 @@ import { OnboardingFlow } from '../modals/OnboardingFlow';
 import { BackupReminder } from '../workflow/BackupReminder';
 import celebrate from '../../utils/celebrate';
 import { TodayAppearance } from '../workspace/TodayAppearance';
+
+const DashboardCanvasView = lazy(() => import('./DashboardCanvasView').then(module => ({ default: module.DashboardCanvasView })));
 
 interface TodayViewProps {
   onSelectTask: (id: string) => void;
@@ -117,6 +118,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
           onCustomize={() => setCustomizeOpen(true)}
         />
       ) : (
+        <Suspense fallback={<p role="status">Opening your dashboard…</p>}>
         <DashboardCanvasView
           introduction={introduction}
           onSelectTask={onSelectTask}
@@ -124,6 +126,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
           onStartSprint={onStartSprint}
           onSwitchToHorizon={() => setViewMode('horizon')}
         />
+        </Suspense>
       )}
       </div>
     </div>

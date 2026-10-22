@@ -1,0 +1,26 @@
+
+.copilot-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.copilot-actions button[aria-pressed="true"] { border-color: var(--color-brand); background: var(--color-brand-subtle); }
+.copilot-command { display: flex; gap: 8px; margin-bottom: 16px; }
+.copilot-command input { flex: 1; }
+.copilot-fields { display: grid; gap: 16px; }
+.copilot-fields label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 550; }
+.copilot-subtask { display: grid; grid-template-columns: minmax(0,1fr) 88px 36px; align-items: end; gap: 8px; }
+.copilot-subtask label { min-width: 0; }
+.copilot-form-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.copilot-help { font-size: 12px; line-height: 1.65; color: var(--text-secondary); overflow-wrap: anywhere; }
+.copilot-help { margin: 12px 0; }
+.copilot-result { margin-top: 20px; padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-surface-l1); }
+.copilot-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.copilot-summary strong { display: block; font-size: 24px; }
+@media (max-width: 767px) {
+  .copilot-form-row { grid-template-columns: minmax(0,1fr); }
+  .copilot-subtask { grid-template-columns: minmax(0,1fr) 72px 36px; gap: 6px; }
+}
+@media (max-width: 380px) {
+  .copilot-command { flex-wrap: wrap; }
+  .copilot-command input { flex-basis: 100%; }
+  .copilot-subtask { grid-template-columns: minmax(0,1fr) 36px; }
+  .copilot-subtask > label:first-child { grid-column: 1 / -1; }
+  .copilot-summary { grid-template-columns: minmax(0,1fr); }
+}

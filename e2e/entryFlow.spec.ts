@@ -67,7 +67,7 @@ test('returning through landing preserves tasks, theme, desk and active session'
   expect(after.tasks).toEqual(before.tasks);
   expect(after.dashboards).toEqual(before.dashboards);
   expect(after.sessionId).toBe(before.sessionId);
-  await page.getByRole('button',{name:'Focus',exact:true}).click();
+  await page.getByRole('button',{name:/^Focus Studio/}).first().click();
   studio = page.getByRole('dialog',{name:'Focus Studio',exact:true});
   await expect(studio.getByRole('heading',{name:'Continue my existing work',exact:true})).toBeVisible();
   await expect(studio.getByRole('button',{name:'Pause',exact:true})).toBeVisible();

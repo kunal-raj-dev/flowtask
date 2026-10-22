@@ -1,3 +1,4 @@
+import { act as flushRender } from '@testing-library/react';
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -110,8 +111,8 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
     (audioEngine as any).lastCompletionChimeTime = 0;
   });
 
-  afterEach(() => {
-    delete document.documentElement.dataset.reducedMotion;
+  afterEach(async () => {
+    await act(async () => { delete document.documentElement.dataset.reducedMotion; });
     vi.unstubAllGlobals();
     vi.clearAllMocks();
     (audioEngine as any).ctx = null;
@@ -128,7 +129,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       expect(isFocusTask(mockCompletedTop3Task, todayStr)).toBe(false);
     });
 
-    it('fires celebrate when completing a Top 3 task in WorkspaceTaskRow', () => {
+    it('fires celebrate when completing a Top 3 task in WorkspaceTaskRow', async () => {
       const toggleTaskStatusMock = vi.fn();
       const mockContext = {
         tasks: [mockTop3Task],
@@ -141,11 +142,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
         toggleTaskTimer: vi.fn(),
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockContext}>
           <WorkspaceTaskRow task={mockTop3Task} onSelectTask={vi.fn()} />
         </TaskContext.Provider>
-      );
+      )));
 
       const checkbox = screen.getByRole('checkbox', { name: /mark as complete/i });
       fireEvent.click(checkbox);
@@ -162,7 +163,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       );
     });
 
-    it('NEVER fires celebrate when completing a non-Top 3 task in WorkspaceTaskRow', () => {
+    it('NEVER fires celebrate when completing a non-Top 3 task in WorkspaceTaskRow', async () => {
       const toggleTaskStatusMock = vi.fn();
       const mockContext = {
         tasks: [mockRegularTodayTask],
@@ -175,11 +176,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
         toggleTaskTimer: vi.fn(),
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockContext}>
           <WorkspaceTaskRow task={mockRegularTodayTask} onSelectTask={vi.fn()} />
         </TaskContext.Provider>
-      );
+      )));
 
       const checkbox = screen.getByRole('checkbox', { name: /mark as complete/i });
       fireEvent.click(checkbox);
@@ -188,7 +189,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       expect(confetti).not.toHaveBeenCalled();
     });
 
-    it('fires celebrate when completing a Top 3 task in TaskDrawerHeader', () => {
+    it('fires celebrate when completing a Top 3 task in TaskDrawerHeader', async () => {
       const toggleTaskStatusMock = vi.fn();
       const mockContext = {
         tasks: [mockTop3Task],
@@ -199,11 +200,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
         focusSession: null,
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockContext}>
           <TaskDrawerHeader task={mockTop3Task} />
         </TaskContext.Provider>
-      );
+      )));
 
       const checkboxBtn = screen.getByRole('button', { name: /mark as complete/i });
       fireEvent.click(checkboxBtn);
@@ -219,7 +220,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       );
     });
 
-    it('NEVER fires celebrate when completing a non-Top 3 task in TaskDrawerHeader', () => {
+    it('NEVER fires celebrate when completing a non-Top 3 task in TaskDrawerHeader', async () => {
       const toggleTaskStatusMock = vi.fn();
       const mockContext = {
         tasks: [mockRegularTodayTask],
@@ -230,11 +231,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
         focusSession: null,
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockContext}>
           <TaskDrawerHeader task={mockRegularTodayTask} />
         </TaskContext.Provider>
-      );
+      )));
 
       const checkboxBtn = screen.getByRole('button', { name: /mark as complete/i });
       fireEvent.click(checkboxBtn);
@@ -243,7 +244,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       expect(confetti).not.toHaveBeenCalled();
     });
 
-    it('fires celebrate when completing Top 3 task via keyboard in TodayView', () => {
+    it('fires celebrate when completing Top 3 task via keyboard in TodayView', async () => {
       const toggleTaskStatusMock = vi.fn();
       const mockContext = {
         tasks: [mockTop3Task, mockRegularTodayTask],
@@ -263,11 +264,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
         showToast: vi.fn(),
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockContext}>
           <TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />
         </TaskContext.Provider>
-      );
+      )));
 
       // Focus Top 3 task (index 0) with 'j'
       fireEvent.keyDown(window, { key: 'j' });
@@ -287,7 +288,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       );
     });
 
-    it('NEVER fires celebrate when completing non-Top 3 task via keyboard in TodayView', () => {
+    it('NEVER fires celebrate when completing non-Top 3 task via keyboard in TodayView', async () => {
       const toggleTaskStatusMock = vi.fn();
       const mockContext = {
         tasks: [mockTop3Task, mockRegularTodayTask],
@@ -307,11 +308,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
         showToast: vi.fn(),
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockContext}>
           <TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />
         </TaskContext.Provider>
-      );
+      )));
 
       // Advance focus to regular task (index 1) with 'j' twice
       fireEvent.keyDown(window, { key: 'j' });
@@ -330,7 +331,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
   // SECTION 2: Uncheck Behavior: Audio & Confetti Suppression
   // =========================================================================
   describe('2. Uncheck Behavior: Audio & Confetti Suppression', () => {
-    it('NEVER fires confetti when unchecking completed Top 3 task in WorkspaceTaskRow', () => {
+    it('NEVER fires confetti when unchecking completed Top 3 task in WorkspaceTaskRow', async () => {
       const toggleTaskStatusMock = vi.fn();
       const mockContext = {
         tasks: [mockCompletedTop3Task],
@@ -343,11 +344,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
         toggleTaskTimer: vi.fn(),
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockContext}>
           <WorkspaceTaskRow task={mockCompletedTop3Task} onSelectTask={vi.fn()} />
         </TaskContext.Provider>
-      );
+      )));
 
       const checkbox = screen.getByRole('checkbox', { name: /mark as incomplete/i });
       fireEvent.click(checkbox);
@@ -356,7 +357,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       expect(confetti).not.toHaveBeenCalled();
     });
 
-    it('NEVER fires confetti when unchecking completed Top 3 task in TaskDrawerHeader', () => {
+    it('NEVER fires confetti when unchecking completed Top 3 task in TaskDrawerHeader', async () => {
       const toggleTaskStatusMock = vi.fn();
       const mockContext = {
         tasks: [mockCompletedTop3Task],
@@ -367,11 +368,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
         focusSession: null,
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockContext}>
           <TaskDrawerHeader task={mockCompletedTop3Task} />
         </TaskContext.Provider>
-      );
+      )));
 
       const checkboxBtn = screen.getByRole('button', { name: /mark as incomplete/i });
       fireEvent.click(checkboxBtn);
@@ -408,12 +409,12 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       playUncheckSpy.mockRestore();
     });
 
-    it('MorphCheckbox uncheck click plays playClickSound and NEVER playCompletionChime', () => {
+    it('MorphCheckbox uncheck click plays playClickSound and NEVER playCompletionChime', async () => {
       const chimeSpy = vi.spyOn(audioEngine, 'playCompletionChime').mockImplementation(() => {});
       const clickSpy = vi.spyOn(audioEngine, 'playClickSound').mockImplementation(() => {});
       const onChange = vi.fn();
 
-      render(<MorphCheckbox checked={true} onChange={onChange} />);
+      await flushRender(async () => (render(<MorphCheckbox checked={true} onChange={onChange} />)));
 
       const btn = screen.getByRole('checkbox');
       fireEvent.click(btn);
@@ -426,12 +427,12 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       clickSpy.mockRestore();
     });
 
-    it('MorphCheckbox uncheck keyboard Enter/Space plays playClickSound and NEVER playCompletionChime', () => {
+    it('MorphCheckbox uncheck keyboard Enter/Space plays playClickSound and NEVER playCompletionChime', async () => {
       const chimeSpy = vi.spyOn(audioEngine, 'playCompletionChime').mockImplementation(() => {});
       const clickSpy = vi.spyOn(audioEngine, 'playClickSound').mockImplementation(() => {});
       const onChange = vi.fn();
 
-      render(<MorphCheckbox checked={true} onChange={onChange} />);
+      await flushRender(async () => (render(<MorphCheckbox checked={true} onChange={onChange} />)));
 
       const btn = screen.getByRole('checkbox');
       fireEvent.keyDown(btn, { key: ' ' });
@@ -658,10 +659,10 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
     });
 
     it('hook useMotionPreference correctly reflects dataset reducedMotion mutation', async () => {
-      const { result, rerender } = renderHook(() => useMotionPreference());
+      const { result, rerender } = await flushRender(async () => (renderHook(() => useMotionPreference())));
       expect(result.current).toBe(false);
 
-      act(() => {
+      await act(async () => {
         document.documentElement.dataset.reducedMotion = 'true';
       });
 
@@ -673,7 +674,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       rerender();
       expect(result.current).toBe(true);
 
-      act(() => {
+      await act(async () => {
         delete document.documentElement.dataset.reducedMotion;
       });
 
@@ -685,11 +686,11 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       expect(result.current).toBe(false);
     });
 
-    it('renders MorphCheckbox cleanly under reduced motion dataset preference', () => {
+    it('renders MorphCheckbox cleanly under reduced motion dataset preference', async () => {
       document.documentElement.dataset.reducedMotion = 'true';
 
       let container: HTMLElement | null = null;
-      act(() => {
+      await act(async () => {
         const res = render(<MorphCheckbox checked={true} />);
         container = res.container;
       });
@@ -699,7 +700,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       expect(button?.getAttribute('aria-checked')).toBe('true');
     });
 
-    it('renders MorphCheckbox cleanly under OS prefers-reduced-motion preference', () => {
+    it('renders MorphCheckbox cleanly under OS prefers-reduced-motion preference', async () => {
       vi.stubGlobal('matchMedia', (query: string) => ({
         matches: query.includes('prefers-reduced-motion'),
         media: query,
@@ -710,7 +711,7 @@ describe('Empirical Challenger Suite: Milestone 4 Micro-Interactions, Audio Debo
       }));
 
       let container: HTMLElement | null = null;
-      act(() => {
+      await act(async () => {
         const res = render(<MorphCheckbox checked={false} />);
         container = res.container;
       });

@@ -48,13 +48,17 @@ function syncTicker(get: () => FocusState, set: (partial: Partial<FocusState>) =
   }
 }
 
-const initialStored = typeof window !== 'undefined' ? focusSessionService.getStoredSession() : null;
-const initialElapsed = initialStored ? focusSessionService.getElapsedSeconds(initialStored) : 0;
+// Workspace focus state is persisted with its workspace, not in a device-global
+// localStorage record. Hydration is performed by TaskContext after the active
+// workspace has been identified. Starting from a global cached session here
+// could briefly expose the preceding account's task title on a shared device.
+const initialStored: FocusSession | null = null;
+const initialElapsed = 0;
 
 export const useFocusStore = create<FocusState>((set, get) => ({
   focusSession: initialStored,
   focusElapsedSeconds: initialElapsed,
-  activeTimerTaskId: initialStored?.taskId || null,
+  activeTimerTaskId: null,
   activeTimerSeconds: initialElapsed,
 
   setFocusSession: (session: FocusSession | null) => {
@@ -65,6 +69,10 @@ export const useFocusStore = create<FocusState>((set, get) => ({
       activeTimerTaskId: session?.taskId || null,
       activeTimerSeconds: elapsed,
     });
+    // Older standalone focus surfaces used a device-global persistence key.
+    // Clear it when a workspace-owned session reaches this display store so
+    // it cannot be picked up before a different account finishes hydration.
+    if (session?.workspaceId) focusSessionService.saveSession(null);
     syncTicker(get, set);
   },
 

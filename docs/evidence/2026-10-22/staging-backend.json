@@ -1,0 +1,10 @@
+{
+  "project": "flowtask-kunal-staging",
+  "billingEnabled": false,
+  "ruleset": "projects/flowtask-kunal-staging/rulesets/bc7e9545-5ef6-4189-a6fc-c299cd5a2dbe",
+  "rulesMatchSource": true,
+  "sha256NormalizedLf": "9e4aa28223203a5866d1b77d014e1d2fe24db9222e1b520fc0992033ebe0ec43",
+  "ttlEnabled": false,
+  "googleProvider": "User-confirmed sign-in on earlier candidate, same Firebase web app",
+  "appCheck": "Real Enterprise token exchanges HTTP 200; enforcement disabled"
+}

@@ -141,7 +141,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
       subtitle: 'Immediate deadlines, emergencies, top priorities',
       icon: Flame,
       color: 'text-rose-500',
-      badgeColor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+      badgeColor: 'bg-rose-500/10 text-rose-800 dark:text-rose-300 border-rose-500/20',
       bgAccent: 'border-rose-500/20',
     },
     {
@@ -150,7 +150,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
       subtitle: 'Strategic work, major milestones, deep focus',
       icon: Target,
       color: 'text-amber-500',
-      badgeColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+      badgeColor: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20',
       bgAccent: 'border-amber-500/20',
     },
     {
@@ -285,7 +285,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
       {/* Top Header & Multi-Factor Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
         <div className="flex items-center gap-3">
-          <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs flex-shrink-0">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 shadow-xs flex-shrink-0">
             <Grid2X2 size={20} className="stroke-[2.2]" />
           </div>
           <div>
@@ -343,7 +343,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
             aria-label="Rank tasks by score"
             className={`min-h-[36px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${
               sortByScore
-                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
                 : 'bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-hairline)]'
             }`}
             title="Sort tasks within quadrants by composite priority score"
@@ -518,7 +518,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       onClick={() => {
                         if (quadTasks.length > 0) batchUpdateTasks(quadTasks.map((t) => t.id), { plannedDate: todayStr });
                       }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-[11px] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 font-semibold text-[11px] transition-colors"
                       title="Schedule all P1 tasks for Today"
                     >
                       <Calendar size={11} className="stroke-[2.2]" />
@@ -531,7 +531,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       onClick={() => {
                         if (quadTasks.length > 0) batchUpdateTasks(quadTasks.map((t) => t.id), { plannedDate: tomorrowStr });
                       }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-semibold text-[11px] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-semibold text-[11px] transition-colors"
                       title="Schedule all P2 tasks for Tomorrow"
                     >
                       <Calendar size={11} className="stroke-[2.2]" />
@@ -671,7 +671,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                         <div className="flex items-center gap-1.5 shrink-0">
                           {score && (
                             <span
-                              className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                              className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20"
                               title={`Priority Score: ${score.compositeScore}/100\nUrgency: ${score.urgencyScore}/50 (${score.urgencyReason})\nImportance: ${score.importanceScore}/50 (${score.importanceReason})`}
                             >
                               ⚡{score.compositeScore}

@@ -90,16 +90,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const [isMoreCollapsed, setIsMoreCollapsed] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('flowtask_sidebar_more_collapsed') === 'true';
+      return localStorage.getItem('flowtask_sidebar_more_collapsed') !== 'false';
     } catch {
       return false;
-    }
-  });
-  const [isPerspectivesCollapsed, setIsPerspectivesCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('flowtask_sidebar_perspectives_collapsed') !== 'false';
-    } catch {
-      return true;
     }
   });
   const [isSmartViewsCollapsed, setIsSmartViewsCollapsed] = useState<boolean>(() => {
@@ -124,11 +117,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [isMoreCollapsed]);
   useEffect(() => {
     try {
-      localStorage.setItem('flowtask_sidebar_perspectives_collapsed', String(isPerspectivesCollapsed));
-    } catch {}
-  }, [isPerspectivesCollapsed]);
-  useEffect(() => {
-    try {
       localStorage.setItem('flowtask_sidebar_smartviews_collapsed', String(isSmartViewsCollapsed));
     } catch {}
   }, [isSmartViewsCollapsed]);
@@ -142,10 +130,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [prevActiveView, setPrevActiveView] = useState(activeView);
   if (activeView !== prevActiveView) {
     setPrevActiveView(activeView);
-    if (['review', 'all', 'someday'].includes(activeView)) {
+    if (['upcoming', 'study', 'review', 'all', 'someday', 'kanban', 'matrix', 'archive', 'trash'].includes(activeView)) {
       setIsMoreCollapsed(false);
-    } else if (['kanban', 'matrix'].includes(activeView)) {
-      setIsPerspectivesCollapsed(false);
     } else if (activeView.startsWith('smart:')) {
       setIsSmartViewsCollapsed(false);
     } else if (activeView.startsWith('project:')) {
@@ -219,17 +205,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isNew?: boolean;
   }
 
-  // 5 Primary destinations: Today, Inbox, Plan, Upcoming, Projects
+  // Focus has a dedicated entry beside the four planning destinations.
   const primaryNavItems: SidebarNavItem[] = [
     { id: 'today', label: 'Today', icon: Sun, count: todayCount, color: 'text-amber-500' },
     { id: 'inbox', label: 'Inbox', icon: Inbox, count: inboxCount, color: 'text-blue-500' },
     { id: 'timeline', label: 'Plan', icon: Clock, count: null, color: 'text-teal-500' },
-    { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: upcomingCount, color: 'text-purple-500' },
     { id: 'projects', label: 'Projects', icon: Folder, count: activeProjectCount, color: 'text-indigo-500' },
   ];
 
   // Dedicated Tools Group: Study & Review
   const toolsNavItems: SidebarNavItem[] = [
+    { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: upcomingCount, color: 'text-purple-500' },
     { id: 'study', label: 'Study Hub', icon: BookOpen, count: null, color: 'text-amber-600' },
     { id: 'review', label: 'Review', icon: TrendingUp, count: null, color: 'text-teal-500' },
   ];
@@ -535,24 +521,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Dedicated Tools Group */}
-        <details className="sidebar-tools" open={['study','review'].includes(activeView) || undefined}><summary>Study & reflection</summary>{toolsNavItems.map(renderNavItem)}</details>
+        <details className="sidebar-tools" open={!isMoreCollapsed} onToggle={event => setIsMoreCollapsed(!event.currentTarget.open)}><summary>More</summary>{toolsNavItems.map(renderNavItem)}{perspectiveNavItems.map(renderNavItem)}</details>
 
         {/* Perspectives Section */}
         {pinnedItems.length > 0 && <div className="space-y-0.5"><div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">Pinned</div>{pinnedItems.map(renderNavItem)}</div>}
-        <div className="space-y-0.5">
-          <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
-            <span>Perspectives</span>
-            <button
-              type="button"
-              onClick={() => setIsPerspectivesCollapsed((prev) => !prev)}
-              className="p-0.5 rounded hover:text-[var(--text-primary)] transition-colors"
-              title={isPerspectivesCollapsed ? 'Expand Perspectives' : 'Collapse Perspectives'}
-            >
-              {isPerspectivesCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-            </button>
-          </div>
-          {!isPerspectivesCollapsed && perspectiveNavItems.map(renderNavItem)}
-        </div>
 
         {/* Smart Filter Views Section */}
         <div className="pt-2 pb-0.5 flex items-center justify-between px-2.5">

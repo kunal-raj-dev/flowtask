@@ -129,3 +129,4 @@ export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }
     <p className="appearance-credits">Pastel palettes adapted from <a href="https://catppuccin.com/palette/" target="_blank" rel="noreferrer">Catppuccin</a> · <a href="https://github.com/catppuccin/catppuccin/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT license</a>. Adjusted for FlowTask surfaces and contrast.</p>
   </div>;
 }
+import '../../styles/appearance.css';

@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { parseTaskInput, formatLocalDate } from './nlpParser';
 
 describe('nlpParser', () => {
+  it.each(['overmorrow', 'midday', 'noon', 'next week', 'in two hours', 'Wednesday', 'Thu', 'September', 'Sep 12', '2026-12-01', '5pm'])('retains the English date grammar for %s', phrase => {
+    const parsed = parseTaskInput(`Review the release ${phrase}`);
+    expect(parsed.dueDate).toBeDefined();
+  });
+
   it('parses plain title without metadata', () => {
     const res = parseTaskInput('Buy groceries at the store');
     expect(res.cleanTitle).toBe('Buy groceries at the store');

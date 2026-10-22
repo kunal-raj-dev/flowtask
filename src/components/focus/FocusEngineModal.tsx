@@ -4,7 +4,9 @@ import React, {
   useRef,
   useMemo,
   useCallback,
+  useContext,
 } from 'react';
+import { WorkspaceStoreContext } from '../../services/workspaceStore';
 import {
   Play,
   Pause,
@@ -286,16 +288,23 @@ export const FocusEngineModal: React.FC<FocusEngineModalProps> = ({
   // Domain Store & Context
   const storeTasks = useTaskStore((s) => s.tasks);
   const taskContext = useTaskContext();
+  const workspaceStore = useContext(WorkspaceStoreContext);
   const tasks = taskContext?.tasks || storeTasks;
 
   const focusSession = useFocusStore((s) => s.focusSession);
   const liveElapsedSeconds = useFocusElapsedSeconds();
-  const startFocusSession = useFocusStore((s) => s.startFocusSession);
-  const pauseFocusSession = useFocusStore((s) => s.pauseFocusSession);
-  const resumeFocusSession = useFocusStore((s) => s.resumeFocusSession);
-  const stopFocusSession = useFocusStore((s) => s.stopFocusSession);
-  const updateFocusSession = useFocusStore((s) => s.updateFocusSession);
-  const switchSubtask = useFocusStore((s) => s.switchSubtask);
+  const legacyStart = useFocusStore((s) => s.startFocusSession);
+  const legacyPause = useFocusStore((s) => s.pauseFocusSession);
+  const legacyResume = useFocusStore((s) => s.resumeFocusSession);
+  const legacyStop = useFocusStore((s) => s.stopFocusSession);
+  const legacyUpdate = useFocusStore((s) => s.updateFocusSession);
+  const legacySwitch = useFocusStore((s) => s.switchSubtask);
+  const startFocusSession = workspaceStore ? taskContext.startFocusSession : legacyStart;
+  const pauseFocusSession = workspaceStore ? taskContext.pauseFocusSession : legacyPause;
+  const resumeFocusSession = workspaceStore ? taskContext.resumeFocusSession : legacyResume;
+  const stopFocusSession = workspaceStore ? taskContext.stopFocusSession : legacyStop;
+  const updateFocusSession = workspaceStore ? taskContext.updateFocusSession : legacyUpdate;
+  const switchSubtask = workspaceStore ? taskContext.switchFocusSubtask : legacySwitch;
 
   // Mode Selection: 'zen' | 'studio' | 'sprint'
   const [mode, setMode] = useState<FocusEngineMode>(() => {

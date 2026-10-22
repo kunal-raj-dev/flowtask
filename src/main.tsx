@@ -1,17 +1,18 @@
 import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
+import './styles/fonts.css'
 import './index.css'
-import './styles/appearance.css'
-import './styles/redesign.css'
 import { isLandingLocation } from './utils/entryRoute';
 import { FeatureBoundary } from './components/ui/FeatureBoundary';
 const App = lazy(() => import('./App.tsx'));
 const WelcomePage = lazy(() => import('./components/views/WelcomePage').then(m => ({default:m.WelcomePage})));
 const welcome = isLandingLocation(window.location);
+const help = ['/help', '/privacy', '/data-retention'].includes(window.location.pathname);
+const HelpPage = lazy(() => import('./components/views/HelpPage'));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <FeatureBoundary title="FlowTask"><Suspense fallback={<div role="status" style={{padding:40}}>Opening your space…</div>}>{welcome ? <WelcomePage /> : <App />}</Suspense></FeatureBoundary>
+    <FeatureBoundary title="FlowTask"><Suspense fallback={<div role="status" style={{padding:40}}>Opening your space…</div>}>{help ? <HelpPage /> : welcome ? <WelcomePage /> : <App />}</Suspense></FeatureBoundary>
   </StrictMode>,
 )
 

@@ -41,7 +41,7 @@ export function UpdateBanner({
     <aside className="v2-update" role="status">
       <span>
         {blocked
-          ? "An update is ready. It will wait until your session finishes."
+          ? "An update is ready. Finish your focus session and save pending changes before updating."
           : "A fresh FlowTask is ready."}
         {error}
       </span>

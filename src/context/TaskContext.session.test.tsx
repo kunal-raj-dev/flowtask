@@ -29,16 +29,16 @@ async function ready() {
 }
 it('keeps saved interruption context when another session prevents restoration', async () => {
   const result = await ready();
-  act(() => { result.current.startFocusSession('stopwatch', 'original'); result.current.stashActiveFocus(); result.current.startFocusSession('stopwatch', 'urgent'); });
+  await act(async () => { result.current.startFocusSession('stopwatch', 'original'); result.current.stashActiveFocus(); result.current.startFocusSession('stopwatch', 'urgent'); });
   const session = result.current.focusSession!.id;
-  act(() => result.current.restoreStashedFocus());
+  await act(async () => result.current.restoreStashedFocus());
   expect(result.current.focusSession?.id).toBe(session);
   expect(result.current.interruptionStash?.taskId).toBe('original');
 });
 it('restores the original task once the current session has been explicitly finished', async () => {
   const result = await ready();
-  act(() => { result.current.startFocusSession('stopwatch', 'original'); result.current.stashActiveFocus(); result.current.startFocusSession('stopwatch', 'urgent'); });
-  act(() => { result.current.stopFocusSession(); result.current.restoreStashedFocus(); });
+  await act(async () => { result.current.startFocusSession('stopwatch', 'original'); result.current.stashActiveFocus(); result.current.startFocusSession('stopwatch', 'urgent'); });
+  await act(async () => { result.current.stopFocusSession(); result.current.restoreStashedFocus(); });
   expect(result.current.focusSession?.taskId).toBe('original');
   expect(result.current.interruptionStash).toBeNull();
 });

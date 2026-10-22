@@ -1,3 +1,4 @@
+import { loadMediaRevisions, revisionedMediaUrl } from './mediaRevisions';
 import type { FocusRecipe, MediaAsset } from "../types/studio";
 import { DEFAULT_TIMER } from "../types/studio";
 
@@ -134,7 +135,9 @@ export async function loadCatalog(
     if (!Array.isArray(list) || !list.every(assetValid))
       throw new Error("Media catalog has invalid entries.");
     await cache?.put(path, response).catch(() => {});
-    return list;
+    if (!import.meta.env.PROD) return list;
+    const revisions = await loadMediaRevisions();
+    return list.map((asset: MediaAsset) => withMediaRevisions(asset, revisions));
   } catch (error) {
     if (signal?.aborted) throw error;
     const saved = await cache?.match(path);
@@ -143,8 +146,23 @@ export async function loadCatalog(
     const list = Array.isArray(data)
       ? data
       : data.assets || data.backgrounds || data.tracks || [];
-    return list.filter(assetValid);
+    const assets = list.filter(assetValid) as MediaAsset[];
+    if (!import.meta.env.PROD) return assets;
+    const revisions = await loadMediaRevisions();
+    return assets.map(asset => withMediaRevisions(asset, revisions));
   }
+}
+function withMediaRevisions(asset: MediaAsset, revisions: Record<string, string>): MediaAsset {
+  return {
+    ...asset,
+    src: revisionedMediaUrl(asset.src, revisions) || asset.src,
+    thumbnail: revisionedMediaUrl(asset.thumbnail, revisions),
+    poster: revisionedMediaUrl(asset.poster, revisions),
+    variants: asset.variants?.map(variant => ({
+      ...variant,
+      src: revisionedMediaUrl(variant.src, revisions) || variant.src,
+    })),
+  };
 }
 export function resolveAsset(
   id: string | null | undefined,

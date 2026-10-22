@@ -1,3 +1,4 @@
+/** @deprecated Legacy format reader for compatibility. New UI must use account-scoped recoveryService. */
 import type { Task, Project } from '../types/task';
 import { getDatabase } from '../services/dbService';
 

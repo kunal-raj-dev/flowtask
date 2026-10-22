@@ -1,4 +1,6 @@
-import React, { useId, useRef, useState, useEffect, useCallback } from 'react';
+import { WorkspaceStoreContext } from '../../services/workspaceStore';
+import { useTaskStore } from '../../store/useTaskStore';
+import React, { useId, useRef, useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Star, Play, Pause, MoreHorizontal, Flag, Lock, Repeat2, ArrowRight, Clock } from 'lucide-react';
 import { MorphCheckbox } from '../ui/MorphCheckbox';
@@ -48,7 +50,24 @@ export interface WorkspaceTaskRowProps {
   showEstimates?: boolean;
 }
 
-export const WorkspaceTaskRow: React.FC<WorkspaceTaskRowProps> = React.memo(({
+type RowContext = Pick<ReturnType<typeof useTaskContext>, 'toggleTaskStatus' | 'toggleTaskPinToday' | 'updateTask' | 'projects' | 'selectedTaskIds' | 'toggleTaskSelection' | 'focusSession' | 'activeTimerTaskId' | 'toggleTaskTimer' | 'settings'>;
+
+export const WorkspaceTaskRow: React.FC<WorkspaceTaskRowProps> = React.memo(props => {
+  const store = useContext(WorkspaceStoreContext);
+  return store ? <ConnectedTaskRow {...props}/> : <ContextTaskRow {...props}/>;
+});
+const ContextTaskRow = (props: WorkspaceTaskRowProps) => <TaskRowContent {...props} context={useTaskContext()}/>;
+const ConnectedTaskRow = React.memo((props: WorkspaceTaskRowProps) => {
+  const projects = useTaskStore(state => state.projects);
+  const settings = useTaskStore(state => state.settings);
+  const selected = useUIStore(state => state.selectedTaskIds.includes(props.task.id));
+  const focusSession = useFocusStore(state => state.focusSession?.taskId === props.task.id ? state.focusSession : null);
+  const activeTimerTaskId = useFocusStore(state => state.activeTimerTaskId === props.task.id ? props.task.id : null);
+  const context = useMemo<RowContext>(() => ({ ...useTaskStore.getState(), projects, settings, selectedTaskIds: selected ? [props.task.id] : [], toggleTaskSelection: useUIStore.getState().toggleTaskSelection, focusSession, activeTimerTaskId, toggleTaskTimer: (id: string) => window.dispatchEvent(new CustomEvent('flowtask:toggle-task-timer', { detail: id })) }), [projects, settings, selected, props.task.id, focusSession, activeTimerTaskId]);
+  return <TaskRowContent {...props} context={context}/>;
+});
+ConnectedTaskRow.displayName = 'ConnectedTaskRow';
+const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> = React.memo(({
   task,
   onSelectTask,
   onStartFocus,
@@ -58,8 +77,8 @@ export const WorkspaceTaskRow: React.FC<WorkspaceTaskRowProps> = React.memo(({
   showNextAction,
   rank,
   showEstimates = true,
+  context,
 }) => {
-  const context = useTaskContext();
   const today = useTodayStr();
   const domId = useId();
   const {
@@ -398,4 +417,5 @@ export const WorkspaceTaskRow: React.FC<WorkspaceTaskRowProps> = React.memo(({
     </div>
   );
 });
+TaskRowContent.displayName = 'TaskRowContent';
 WorkspaceTaskRow.displayName = 'WorkspaceTaskRow';

@@ -1,8 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { createDeleteAccountHandler } from '../api/account/delete.mjs';
 import worker from '../workers/calendar-proxy.js';
+
+test('server handlers load on hosts without synchronous require(ESM) support', () => {
+  // Vercel's instrumented Node loader rejects jwks-rsa 4 -> jose 6 even on Node 22.
+  // Exercise module initialization in that condition before any network/credentials.
+  execFileSync(process.execPath, ['--no-experimental-require-module', '--input-type=module', '-e', "await import('./api/account/delete.mjs'); await import('./api/diagnostics.mjs');"], { cwd: new URL('..', import.meta.url), stdio: 'pipe' });
+});
 test('Vercel uses its native Node runtime and a supported Node engine',()=>{
   const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
   const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
@@ -30,7 +37,7 @@ test('all cloud collections are deleted before identity, with a token write barr
 test('partial cloud deletion remains retryable and does not remove authentication',async()=>{
   const h=harness();h.database.recursiveDelete=async()=>{throw Error('temporary');};await h.handler(h.request,h.res);assert.equal(h.res.code,503);assert.deepEqual(h.events,['barrier']);
 });
-const env={ALLOWED_ORIGINS:'https://flow.test'};
+const env={TEST_MODE:true,ALLOWED_ORIGINS:'https://flow.test'};
 const request=(url,origin='https://flow.test')=>new Request('https://proxy.test',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({url})});
 test('calendar proxy rejects other origins, private hosts, credentials and insecure ports',async()=>{
   assert.equal((await worker.fetch(request('https://calendar.google.com/a','https://bad.test'),env)).status,403);

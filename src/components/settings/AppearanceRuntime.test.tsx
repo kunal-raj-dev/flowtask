@@ -4,7 +4,7 @@ import { render, act, cleanup } from '@testing-library/react';
 import { AppearanceRuntime } from './AppearanceRuntime';
 import { normalizeAppearance } from '../../utils/appearance';
 import { THEMES } from '../../utils/themeRegistry';
-const context = vi.hoisted(() => ({ workspaceId: 'local', workspacePreferences: { appearance: undefined as unknown }, setWorkspacePreference: vi.fn() }));
+const context = vi.hoisted(() => ({ workspaceId: 'local', syncStatus: 'local', workspacePreferences: { appearance: undefined as unknown }, setWorkspacePreference: vi.fn() }));
 vi.mock('../../context/TaskContext', () => ({ useTaskContext: () => context }));
 function matchMedia(dark = false) {
   const target = new EventTarget();
@@ -15,6 +15,18 @@ function matchMedia(dark = false) {
 beforeEach(() => { const data = new Map<string,string>(); vi.stubGlobal('localStorage', { getItem: (key:string) => data.get(key) ?? null, setItem: (key:string,value:string) => data.set(key,value) }); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 describe('single appearance runtime', () => {
+  it('waits for account hydration before migrating appearance and preserves the remote choice', () => {
+    matchMedia(); context.workspaceId = 'account-A'; context.syncStatus = 'syncing'; context.workspacePreferences.appearance = undefined;
+    const rendered = render(<AppearanceRuntime />);
+    expect(context.setWorkspacePreference).not.toHaveBeenCalled();
+    context.workspacePreferences.appearance = normalizeAppearance({ theme: 'forest' }); context.syncStatus = 'synced';
+    rendered.rerender(<AppearanceRuntime />);
+    expect(context.setWorkspacePreference).not.toHaveBeenCalled();
+    expect(document.documentElement.dataset.theme).toBe('forest');
+    context.workspacePreferences.appearance = undefined;
+    rendered.rerender(<AppearanceRuntime />);
+    expect(context.setWorkspacePreference).toHaveBeenCalledOnce();
+  });
   it('crosses schedule boundaries once, survives sleep and responds to manual mode', () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date(2026,9,17,16,59,59)); matchMedia();
     context.workspaceId = 'local'; context.workspacePreferences.appearance = normalizeAppearance({ mode: 'schedule' });

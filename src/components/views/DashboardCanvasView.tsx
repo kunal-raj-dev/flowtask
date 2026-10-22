@@ -80,3 +80,5 @@ export const DashboardCanvasView: React.FC<DashboardCanvasViewProps> = ({
     </div>
   );
 };
+import '../../styles/dashboard-canvas.css';
+import 'react-grid-layout/css/styles.css';

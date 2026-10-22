@@ -329,7 +329,7 @@ describe('webMcpService (Client-Side WebMCP Tools)', () => {
       expect(useFocusStore.getState().focusSession).toBeDefined();
 
       // Simulate 60 seconds elapsed
-      useFocusStore.setState({ focusElapsedSeconds: 60 });
+      store.run('Simulate elapsed session', record => ({ ...record, preferences: { ...record.preferences, focusSession: { ...startRes.session, startedAt: Date.now() - 60000 } } }), false);
 
       const stopRes = await stopFocusSessionTool.execute({ abandon: false });
       expect(stopRes.success).toBe(true);

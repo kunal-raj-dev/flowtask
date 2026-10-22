@@ -17,9 +17,12 @@ export interface PendingOperation {
   description: string;
   changes: EntityChange[];
   createdAt: number;
+  attempts?: number;
+  nextAttemptAt?: number;
 }
 export interface WorkspaceRecord {
-  schemaVersion: 3 | 4 | 5 | 6 | 7;
+  writeVersion?: number;
+  schemaVersion: 3 | 4 | 5 | 6 | 7 | 8;
   workspaceId: string;
   tasks: Task[];
   projects: Project[];

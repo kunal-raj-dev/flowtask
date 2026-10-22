@@ -1,0 +1,7 @@
+
+
+
+.desk-settings-nav { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:12px 20px; gap:6px; border-bottom:1px solid var(--border-color); }
+.desk-settings-nav button { min-height:38px; padding:8px 10px; color:var(--text-secondary); font-size:12px; border:1px solid transparent; border-radius:9px; }
+.desk-settings-nav button[aria-pressed="true"] { color:var(--text-primary); background:var(--desk-accent-soft); border-color:var(--color-brand-border); font-weight:600; }
+@media(max-width:767px) { .desk-settings-nav { padding-inline:15px; gap:4px; }.desk-settings-nav button { min-height:42px; font-size:11px; } }

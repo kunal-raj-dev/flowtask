@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Image, LayoutGrid } from 'lucide-react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useMediaCatalog } from '../../hooks/useStudio';
@@ -6,7 +6,8 @@ import { resolveActiveDashboard } from '../../utils/activeDashboard';
 import type { WorkspacePreferences } from '../../types/dashboard';
 import { STARTER_DASHBOARDS } from '../../services/starterDashboards';
 import { Dialog } from '../ui/Dialog';
-import { WorkspaceVisualPicker } from './WorkspaceVisualPicker';
+
+const WorkspaceVisualPicker = lazy(() => import('./WorkspaceVisualPicker').then(module => ({ default: module.WorkspaceVisualPicker })));
 
 export function TodayAppearance({ customizeOpen, onClose, onEditWidgets }: {
   customizeOpen: boolean; onClose: () => void; onEditWidgets: () => void;
@@ -33,9 +34,9 @@ export function TodayAppearance({ customizeOpen, onClose, onEditWidgets }: {
         <button className="desk-button" onClick={() => { onClose(); onEditWidgets(); }}><LayoutGrid size={18} />Dashboard widgets and layouts</button>
       </div>
     </Dialog>
-    {picker && <WorkspaceVisualPicker isOpen onClose={() => setPicker(false)} assets={media.visuals} loading={media.loading} catalogError={media.error} context={{ kind: 'dashboard' }} value={dashboard.coverImage} focalPoint={dashboard.coverFocalPoint} onSelect={(coverImage, coverFocalPoint) => {
+    {picker && <Suspense fallback={<Dialog isOpen onClose={() => setPicker(false)} title="Choose a workspace image"><p role="status">Opening your image library…</p></Dialog>}><WorkspaceVisualPicker isOpen onClose={() => setPicker(false)} assets={media.visuals} loading={media.loading} catalogError={media.error} context={{ kind: 'dashboard' }} value={dashboard.coverImage} focalPoint={dashboard.coverFocalPoint} onSelect={(coverImage, coverFocalPoint) => {
       updateDashboards((dashboards.length ? dashboards : STARTER_DASHBOARDS).map(d => d.id === dashboard.id ? { ...d, coverImage, coverFocalPoint: coverImage ? coverFocalPoint : undefined, updatedAt: Date.now() } : d));
       setFailedSrc('');
-    }} />}
+    }} /></Suspense>}
   </>;
 }

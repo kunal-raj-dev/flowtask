@@ -1,9 +1,8 @@
-@import "tailwindcss";
-@import "react-grid-layout/css/styles.css";
-@import "./styles/focus-studio.css";
+@import "tailwindcss" source("./");
 @import "./styles/themes-v2.css";
-@import "./styles/workflow-v2.css";
-@import "./styles/workspace-v2.css";
+
+@source not "./**/*.test.ts";
+@source not "./**/*.test.tsx";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

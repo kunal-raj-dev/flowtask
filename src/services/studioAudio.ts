@@ -169,7 +169,9 @@ class StudioAudio {
 
   private getContext() {
     if (!this.context) {
-      this.context = new AudioContext();
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) throw new Error('Audio playback is unavailable in this browser. Your focus timer will continue silently.');
+      this.context = new AudioCtx();
       this.master = this.context.createGain();
       const limiter = this.context.createDynamicsCompressor();
       limiter.threshold.value = -6;

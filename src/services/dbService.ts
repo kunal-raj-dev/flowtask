@@ -42,20 +42,26 @@ export async function requestPersistentStorage(): Promise<boolean> {
 let database: Promise<IDBPDatabase> | undefined;
 export function getDatabase() {
   if (!database) {
-    database = openDB('flowtask_storage_v2', 2, { upgrade(db) {
+    database = new Promise<IDBPDatabase>((resolve, reject) => {
+      let wasBlocked = false;
+      void openDB('flowtask_storage_v2', 2, {
+      blocked() { wasBlocked = true; reject(new Error('An older FlowTask tab is holding device storage open. Close other FlowTask tabs, then retry opening. Your saved data has not been changed.')); },
+      blocking() { const previous = database; database = undefined; void previous?.then(db => db.close()); },
+      upgrade(db) {
       for (const name of ['workspaces', 'snapshots', 'legacy_backups', 'outbox', 'media']) {
         if (!db.objectStoreNames.contains(name)) {
           const store = db.createObjectStore(name, { keyPath: name === 'workspaces' ? 'workspaceId' : 'id' });
           if (name === 'snapshots' || name === 'outbox') store.createIndex('by_workspace', 'workspaceId');
         }
       }
-    }}).catch(error => { database = undefined; throw error; });
+    }}).then(db => { if (wasBlocked) db.close(); else resolve(db); }, reject);
+    }).catch(error => { database = undefined; throw error; });
   }
   return database;
 }
 export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
   return {
-    schemaVersion: 7,
+    schemaVersion: 8,
     workspaceId,
     tasks: [],
     projects: DEFAULT_PROJECTS.filter(p => p.id !== 'ideas'),
@@ -68,6 +74,7 @@ export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
   };
 }
 function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
+  if (typeof raw.schemaVersion === 'number' && raw.schemaVersion > 8) throw new Error('This workspace requires a newer FlowTask version. Export the original data before updating.');
   const data = validateWorkspaceData(raw.tasks || [], raw.projects || DEFAULT_PROJECTS);
   const date = formatLocalDate(new Date());
   const starters = createStarterDashboards();
@@ -84,7 +91,7 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
     ...data,
     dashboards,
     workspaceId: id,
-    schemaVersion: 7,
+    schemaVersion: 8,
     preferences: {
       ...raw.preferences,
       ...(dashboardRecovery ? { _dashboardRecovery: true } : {}),
@@ -103,6 +110,18 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
   };
 }
 export const dbService = {
+  async readRawWorkspace(id: string): Promise<unknown> {
+    if (typeof indexedDB !== 'undefined') {
+      const record = await (await getDatabase()).get('workspaces', id);
+      if (record) return record;
+    }
+    return { workspace: localStorage.getItem(`flowtask_ws_${id}`), ...(id === 'local' ? { legacy: localStorage.getItem('flowtask_legacy_backup_raw') } : {}) };
+  },
+  async archiveRawWorkspace(id: string) {
+    const record = await this.readRawWorkspace(id);
+    const db = await getDatabase();
+    await db.put('legacy_backups', { id: `recovery:${id}:${crypto.randomUUID()}`, workspaceId: id, savedAt: Date.now(), record });
+  },
   async loadWorkspace(id: string): Promise<WorkspaceRecord | null> {
     if (typeof indexedDB !== 'undefined') {
       // A failed read must not be mistaken for an empty workspace.
@@ -123,21 +142,20 @@ export const dbService = {
         if ((record.schemaVersion || 0) < 7 && !await db.get('legacy_backups', `v6:${id}`)) {
           await db.put('legacy_backups', { id: `v6:${id}`, workspaceId: id, savedAt: Date.now(), record });
         }
+        if ((record.schemaVersion || 0) < 8 && !await db.get('legacy_backups', `v7:${id}`)) await db.put('legacy_backups', { id: `v7:${id}`, workspaceId: id, savedAt: Date.now(), record });
         return normalize(record, id);
       }
     }
     const raw = localStorage.getItem(`flowtask_ws_${id}`);
     if (!raw) return null;
-    try {
-      return normalize(JSON.parse(raw), id);
-    } catch (e) {
-      console.warn(`Failed to parse cached workspace flowtask_ws_${id}:`, e);
-      return null;
-    }
+    return normalize(JSON.parse(raw), id);
   },
   async ensureLegacyMigrated(id = 'local'): Promise<WorkspaceRecord> {
     const existing = await this.loadWorkspace(id);
-    if (existing) return existing;
+    if (existing) {
+      if (typeof indexedDB !== 'undefined' && !await (await getDatabase()).get('workspaces', id)) await this.saveWorkspace(id, existing);
+      return existing;
+    }
     const record = emptyWorkspace(id);
     // Unscoped legacy data belongs only to the local workspace, never a new account.
     if (id === 'local') {
@@ -147,8 +165,8 @@ export const dbService = {
         localStorage.setItem('flowtask_legacy_backup_raw', JSON.stringify({ tasks, projects }));
         let parsedTasks = [];
         let parsedProjects = DEFAULT_PROJECTS;
-        try { parsedTasks = tasks ? JSON.parse(tasks) : []; } catch { /* ignore */ }
-        try { parsedProjects = projects ? JSON.parse(projects) : DEFAULT_PROJECTS; } catch { /* ignore */ }
+        try { parsedTasks = tasks ? JSON.parse(tasks) : []; } catch { throw new Error('Older task data could not be read. Export the original data from recovery before making changes.'); }
+        try { parsedProjects = projects ? JSON.parse(projects) : DEFAULT_PROJECTS; } catch { throw new Error('Older project data could not be read. Export the original data from recovery before making changes.'); }
         Object.assign(record, normalize({ tasks: parsedTasks, projects: parsedProjects }, id));
       }
       const legacyKeys: Record<string, string> = { settings: 'flowtask_workflow_settings_v1', templates: 'flowtask_custom_templates', scratchpad: 'flowtask_scratchpad_v1', calendarUrl: 'flowtask_calendar_ics_url' };
@@ -164,11 +182,19 @@ export const dbService = {
     await this.saveWorkspace(id, record);
     return record;
   },
-  async saveWorkspace(id: string, data: Partial<WorkspaceRecord> & Pick<WorkspaceRecord, 'tasks' | 'projects'>): Promise<void> {
+  async saveWorkspace(id: string, data: Partial<WorkspaceRecord> & Pick<WorkspaceRecord, 'tasks' | 'projects'>, expectedWriteVersion?: number): Promise<void> {
     const record = { ...emptyWorkspace(id), ...data, workspaceId: id };
     if (typeof indexedDB !== 'undefined') {
       const db = await getDatabase();
       const tx = db.transaction(['workspaces', 'outbox'], 'readwrite');
+      if (expectedWriteVersion !== undefined) {
+        const previous = await tx.objectStore('workspaces').get(id);
+        if (Number(previous?.writeVersion || 0) !== expectedWriteVersion) {
+          tx.abort();
+          await tx.done.catch(() => {});
+          throw new Error('Another tab saved newer device data. Your edits remain here. Download a backup before reopening the workspace.');
+        }
+      }
       await tx.objectStore('workspaces').put(record);
       const pending = tx.objectStore('outbox');
       const old = await pending.index('by_workspace').getAllKeys(id);
@@ -178,6 +204,10 @@ export const dbService = {
       return;
     }
     // One scoped fallback; errors are returned to the UI.
+    if (expectedWriteVersion !== undefined) {
+      const previous = JSON.parse(localStorage.getItem(`flowtask_ws_${id}`) || 'null');
+      if (Number(previous?.writeVersion || 0) !== expectedWriteVersion) throw new Error('Another tab saved newer device data. Download a backup before reopening the workspace.');
+    }
     localStorage.setItem(`flowtask_ws_${id}`, JSON.stringify(record));
   },
   async deleteWorkspace(id: string) {
@@ -193,6 +223,6 @@ export const dbService = {
     }
     localStorage.removeItem(`flowtask_ws_${id}`);
     for (const key of Object.keys(localStorage)) if (key.startsWith(`flowtask-dashboard-draft:${id}:`) || key.startsWith(`flowtask-dashboard-mobile:${id}:`)) localStorage.removeItem(key);
-    for (const key of [`flowtask_pre_import_${id}`,`flowtask_conflict_backup_${id}`,`flowtask-diagnostics:${id}`,`flowtask-focus-checkpoint:${id}`]) localStorage.removeItem(key);
+    for (const key of [`flowtask_pre_import_${id}`,`flowtask_conflict_backup_${id}`,`flowtask-diagnostics:${id}`,`flowtask-telemetry-consent:${id}`,`flowtask-focus-checkpoint:${id}`,`flowtask_device_import_choice:${id}`,`flowtask_auto_migrated_v1_${id}`]) localStorage.removeItem(key);
   },
 };

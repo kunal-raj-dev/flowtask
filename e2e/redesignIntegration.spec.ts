@@ -181,7 +181,7 @@ test("clear and fullscreen shortcuts are distinct, while failed scenes can recov
     exact: true,
   });
   if (await launch.isVisible()) await launch.click();
-  else await page.getByRole("button", { name: "Focus", exact: true }).click();
+  else await page.getByRole("button", { name: /^Focus Studio/ }).first().click();
   const studio = page.getByRole("dialog", {
     name: "Focus Studio",
     exact: true,

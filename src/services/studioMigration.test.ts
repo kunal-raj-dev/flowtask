@@ -4,7 +4,7 @@ import { dbService, emptyWorkspace, getDatabase } from './dbService';
 it('upgrades v3 repeatedly without rewriting historical phases or replacing its backup',async()=>{
   const db=await getDatabase();const original={...emptyWorkspace('migration-test'),schemaVersion:3,preferences:{focusLogs:[{id:'old',seconds:20,mode:'stopwatch',taskId:null,startedAt:1,endedAt:20001}],scratchpad:'keep'}};
   await db.put('workspaces',original);const migrated=await dbService.loadWorkspace('migration-test');
-  expect(migrated?.schemaVersion).toBe(7);expect(migrated?.preferences._v4CloudSeedNeeded).toBe(true);expect(migrated?.preferences._v5DashboardSeedNeeded).toBe(true);expect(migrated?.preferences.focusLogs).toEqual(original.preferences.focusLogs);
+  expect(migrated?.schemaVersion).toBe(8);expect(migrated?.preferences._v4CloudSeedNeeded).toBe(true);expect(migrated?.preferences._v5DashboardSeedNeeded).toBe(true);expect(migrated?.preferences.focusLogs).toEqual(original.preferences.focusLogs);
   const backup=await db.get('legacy_backups','v3:migration-test');expect(backup.record).toEqual(original);
   const backupV4=await db.get('legacy_backups','v4:migration-test');expect(backupV4.record).toEqual(original);
   const backupV5=await db.get('legacy_backups','v5:migration-test');expect(backupV5.record).toEqual(original);
@@ -13,7 +13,7 @@ it('upgrades v3 repeatedly without rewriting historical phases or replacing its 
   expect(db.objectStoreNames.contains('media')).toBe(true);
 });
 
-it('upgrades v5 workspace to schemaVersion 6 writing v5 snapshot to legacy_backups', async () => {
+it('upgrades v5 workspace to the current schema writing v5 snapshot to legacy_backups', async () => {
   const db = await getDatabase();
   const v5Original = {
     ...emptyWorkspace('v5-migration-test'),
@@ -31,7 +31,7 @@ it('upgrades v5 workspace to schemaVersion 6 writing v5 snapshot to legacy_backu
   };
   await db.put('workspaces', v5Original);
   const migrated = await dbService.loadWorkspace('v5-migration-test');
-  expect(migrated?.schemaVersion).toBe(7);
+  expect(migrated?.schemaVersion).toBe(8);
   expect(migrated?.tasks[0].id).toBe('task-1');
   const backup = await db.get('legacy_backups', 'v5:v5-migration-test');
   expect(backup).toBeDefined();
@@ -43,7 +43,7 @@ it('upgrades a v6 project without milestones and preserves a repeat-safe v6 back
   const original = { ...emptyWorkspace('v6-path-test'), schemaVersion: 6 as const, projects: [{ id: 'inbox', name: 'Inbox', color: '#64748B' }, { id: 'course', name: 'Course', color: '#3B82F6' }] };
   await db.put('workspaces', original);
   const migrated = await dbService.loadWorkspace('v6-path-test');
-  expect(migrated?.schemaVersion).toBe(7);
+  expect(migrated?.schemaVersion).toBe(8);
   expect(migrated?.projects.find(project => project.id === 'course')?.milestones).toBeUndefined();
   const snapshot = await db.get('legacy_backups', 'v6:v6-path-test');
   expect(snapshot.record).toEqual(original);

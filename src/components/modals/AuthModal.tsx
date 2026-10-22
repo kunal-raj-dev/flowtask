@@ -40,7 +40,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     authErrorCode,
     clearAuthError,
   } = useAuth();
-  const { syncStatus, lastSyncedAt, forceSyncToCloud, tasks, projects, importLocalWorkspace, showToast, downloadWorkspaceBackup } = useTaskContext();
+  const { syncStatus, lastSyncedAt, forceSyncToCloud, tasks, projects, downloadWorkspaceBackup } = useTaskContext();
 
   if (!isOpen) return null;
 
@@ -93,7 +93,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 <div className="text-xs text-[var(--text-secondary)] leading-relaxed">
                   <span className="font-semibold text-[var(--text-primary)] block mb-0.5">
-                    Device Workspace Migration
+                    Import from this device
                   </span>
                   Your local device workspace is stored separately. Importing merges any tasks whose IDs are not already in this cloud account.
                 </div>
@@ -103,7 +103,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   variant="secondary"
                   size="xs"
                   leftIcon={<UploadCloud size={12} />}
-                  onClick={() => void importLocalWorkspace().catch((error) => showToast(error.message))}
+                  onClick={() => { onClose(); window.dispatchEvent(new Event('flowtask:preview-device-import')); }}
                 >
                   Import device workspace
                 </Button>

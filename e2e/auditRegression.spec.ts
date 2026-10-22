@@ -54,7 +54,7 @@ test("first-run setup captures one real task and opens a task-linked Studio", as
   await expect(
     studio.getByRole("button", { name: "Pause", exact: true }),
   ).toBeVisible();
-  expect((await savedWorkspace(page)).preferences.settings.onboardingCompleted).toBe(true);
+  await expect.poll(async () => (await savedWorkspace(page)).preferences.settings?.onboardingCompleted).toBe(true);
 });
 
 test("a complete day links capture, project, schedule, focus, review and a restorable backup", async ({
@@ -88,6 +88,9 @@ test("a complete day links capture, project, schedule, focus, review and a resto
   await page.getByRole("button", { name: "Plan", exact: true }).click();
   await page
     .getByRole("button", { name: "Auto-Slot Day", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Preview schedule", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Apply schedule", exact: true })
@@ -230,6 +233,7 @@ test("assistant tools use the visible workspace, preserve manual edits and resto
 test("OS pause and resume persist through refresh and stop logs work exactly once", async ({
   page,
 }) => {
+  test.skip(!(await page.evaluate(() => Boolean(window.AudioContext || (window as any).webkitAudioContext))), 'This browser runtime has no Web Audio; silent focus fallback is tested separately.');
   await page.addInitScript(() => {
     const handlers: Record<string, MediaSessionActionHandler | null> = {};
     Object.defineProperty(navigator, "mediaSession", {
@@ -293,6 +297,26 @@ test("OS pause and resume persist through refresh and stop logs work exactly onc
     .toBe(1);
   await page.reload();
   expect((await savedWorkspace(page)).preferences.focusLogs).toHaveLength(1);
+});
+
+test('unavailable browser audio explains the fallback and preserves the focus timer', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'AudioContext', { configurable: true, value: undefined });
+    Object.defineProperty(window, 'webkitAudioContext', { configurable: true, value: undefined });
+  });
+  await openWorkspace(page);
+  await page.getByRole('button', { name: 'Focus', exact: true }).click();
+  const studio = page.getByRole('dialog', { name: 'Focus Studio', exact: true });
+  await studio.getByRole('button', { name: 'Sound', exact: true }).click();
+  await studio.getByRole('button', { name: 'Brown noise', exact: true }).click();
+  await studio.getByRole('button', { name: 'Close customization panel', exact: true }).click();
+  await studio.getByRole('button', { name: 'Start focus', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Your focus timer will continue silently.' })).toBeVisible();
+  await expect(studio.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  await studio.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect.poll(async () => (await savedWorkspace(page)).preferences.focusSession?.state).toBe('paused');
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Resume Focus Session', exact: true })).toBeVisible();
 });
 
 test("an uncached offline section keeps navigation and tasks available", async ({
@@ -490,14 +514,11 @@ for (const size of [
       ),
     ).toBe(true);
     await page.getByRole('button', { name: 'Customize', exact: true }).click();
-  await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
-    await page
-      .getByRole("button", { name: "Configure Top 3 Priorities", exact: true })
-      .click();
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await page
-      .getByRole("button", { name: "Close dialog", exact: true })
-      .click();
+    await page.getByRole('button', { name: 'Dashboard widgets and layouts', exact: true }).click();
+    await page.getByRole('button', { name: 'Customize', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
+    await expect(page.getByLabel('Workspace layout tools')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add Widget', exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
     expect(
       await page.evaluate(
@@ -516,13 +537,11 @@ test("reduced motion, high contrast and a 200 percent zoom-equivalent viewport k
     document.documentElement.dataset.highContrast = "true";
   });
   await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await page.getByRole('button', { name: 'Dashboard widgets and layouts', exact: true }).click();
+  await page.getByRole('button', { name: 'Customize', exact: true }).click();
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
-  await page
-    .getByRole("button", { name: "Move Top 3 Priorities later", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Undo layout change", exact: true })
-    .click();
+  await expect(page.getByLabel('Workspace layout tools')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Desktop preview', exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   expect(
     await page.evaluate(

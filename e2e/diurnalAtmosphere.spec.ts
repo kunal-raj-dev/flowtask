@@ -124,7 +124,7 @@ test('changing appearance preserves an active task-linked Studio session and med
     localStorage.setItem('flowtask_tasks_v1',JSON.stringify([{id:'appearance-focus-task',title:'Keep the same session',nextAction:'Check appearance safely',status:'todo',priority:'p1',projectId:'inbox',subtasks:[],createdAt:Date.now(),plannedDate:today,topThreeDate:today,isPinnedToday:true,estimatedMinutes:25}]));
   });
   await page.goto('/app'); await page.locator('main#main-content').waitFor();
-  await page.getByRole('button',{name:'Focus',exact:true}).click();
+  await page.getByRole('button',{name:/^Focus Studio/}).first().click();
   const studio = page.getByRole('dialog',{name:'Focus Studio',exact:true});
   await studio.getByRole('button',{name:'Room',exact:true}).click();
   await studio.getByRole('button',{name:'Use Misty Pines background',exact:true}).click();
@@ -137,7 +137,7 @@ test('changing appearance preserves an active task-linked Studio session and med
   await page.getByRole('button',{name:'Apply Northern Aurora theme',exact:true}).click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button',{name:'Pause Focus Session',exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'Focus',exact:true}).click();
+  await page.getByRole('button',{name:/^Focus Studio/}).first().click();
   await expect(studio.getByRole('heading',{name:'Keep the same session',exact:true})).toBeVisible();
   await expect(studio.getByRole('button',{name:'Pause',exact:true})).toBeVisible();
   await expect(studio.locator('.studio-backdrop img')).toHaveAttribute('src', scene!);
@@ -179,8 +179,9 @@ test('workspace ownership handoff retains appearance and keyboard theme selectio
   await theme.focus(); await page.keyboard.press('Enter');
   await expect(page.locator('html')).toHaveAttribute('data-theme','mocha');
   const second = await context.newPage(); await second.goto('/app');
-  await expect(second.getByRole('status')).toContainText('open in another tab');
+  await expect(second.getByText('Read-only preview', { exact: false })).toBeVisible();
   await page.close();
+  await second.getByRole('button',{name:'Use this tab',exact:true}).click();
   await expect(second.locator('main#main-content')).toBeVisible();
   await expect(second.locator('html')).toHaveAttribute('data-theme','mocha');
   await second.keyboard.press('Control+,'); await second.getByRole('button',{name:'Appearance',exact:true}).click();

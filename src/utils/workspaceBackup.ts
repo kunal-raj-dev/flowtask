@@ -27,6 +27,7 @@ const object = (v: unknown): v is Record<string, unknown> =>
 export function validateBackupExtras(raw: unknown): BackupExtras | undefined {
   if (!object(raw) || (!("preferences" in raw) && !("customViews" in raw) && !("dashboards" in raw)))
     return undefined;
+  if ((typeof raw.schemaVersion === 'number' && raw.schemaVersion > 6) || (typeof raw.version === 'number' && raw.version > 6)) throw new Error('This backup requires a newer FlowTask version.');
   const prefs = raw.preferences;
   if (prefs !== undefined && !object(prefs))
     throw new Error("Backup preferences must be an object.");

@@ -345,7 +345,7 @@ export function WelcomePage() {
           <BrandLogo size={27} showWordmark />
         </a>
         <span>Plan your day. Enter your flow.</span>
-        <a href="#feedback">Feedback ↗</a>
+        <a href="/help">Help</a><a href="/privacy">Privacy</a><a href="/data-retention">Data retention</a><a href="#feedback">Feedback ↗</a>
         <span className="welcome-build" title={BUILD_ID}>
           Build {BUILD_LABEL}
         </span>

@@ -56,11 +56,11 @@ export const TodayFocusProgressBar: React.FC<TodayFocusProgressBarProps> = ({
 
         <div className="daily-summary-actions flex items-center gap-3">
           <section className="daily-progress flex items-center gap-3 text-xs text-[var(--text-secondary)] font-medium">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-semibold">
               <Check size={13} strokeWidth={2.5} />
               {summary.completedTaskCount} completed
             </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-semibold">
               <Flame size={13} strokeWidth={2} />
               {formatSecondsToHumanReadable(focusedSeconds)} focused
             </span>

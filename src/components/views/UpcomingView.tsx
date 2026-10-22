@@ -282,3 +282,4 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
     </div>
   );
 };
+import '../../styles/upcoming.css';

@@ -1,3 +1,4 @@
+import { startWorkspaceFocus, finishWorkspaceFocus } from './focusLifecycle';
 import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/settings';
 import { commandService } from "./commandService";
 import { WorkspaceStore } from "./workspaceStore";
@@ -16,8 +17,6 @@ import type {
   FocusSession,
   FocusLog,
 } from "../types/task";
-import { writeFocusCheckpoint } from "./focusCheckpoint";
-import { focusSessionService } from "./focusSessionService";
 import { suggestSubtasks, generateStarterStep, type SuggestedSubtask } from "../utils/aiCopilot";
 
 export interface WebMcpToolDefinition<
@@ -767,23 +766,7 @@ export const startFocusSessionTool: WebMcpToolDefinition<
       targetSec = mode === "pomodoro" ? 1500 : 3000;
     }
 
-    const session = {
-      ...focusSessionService.startSession(mode, taskId, taskTitle, targetSec),
-      workspaceId: store.id,
-    };
-    const focusCheckpointAt = writeFocusCheckpoint(store.id, session);
-    store.run(
-      "Start focus session",
-      (record) => ({
-        ...record,
-        preferences: {
-          ...record.preferences,
-          focusSession: session,
-          focusCheckpointAt,
-        },
-      }),
-      false,
-    );
+    const session = startWorkspaceFocus(store, { mode, taskId, taskTitle, targetDurationSec: targetSec });
     useFocusStore.getState().setFocusSession(session);
 
     return {
@@ -813,41 +796,9 @@ export const stopFocusSessionTool: WebMcpToolDefinition<
       throw new Error("No active focus session to stop.");
     }
 
-    const elapsed = useFocusStore.getState().focusElapsedSeconds || 0;
     const abandon = params.abandon === true;
-
-    if (!abandon && elapsed > 10) {
-      const newLog: FocusLog = {
-        id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        taskId: currentSession.taskId || null,
-        taskTitle: currentSession.taskTitle || undefined,
-        seconds: elapsed,
-        startedAt: currentSession.startedAt,
-        endedAt: Date.now(),
-        mode: currentSession.mode,
-        phase: "focus",
-      };
-
-      store.run("Log completed focus session", (record) => {
-        const existingLogs = (record.preferences.focusLogs as FocusLog[] | undefined) || [];
-        return {
-          ...record,
-          preferences: {
-            ...record.preferences,
-            focusSession: null,
-            focusLogs: [...existingLogs, newLog],
-          },
-        };
-      });
-    } else {
-      store.run("Clear focus session", (record) => ({
-        ...record,
-        preferences: {
-          ...record.preferences,
-          focusSession: null,
-        },
-      }));
-    }
+    const elapsed = finishWorkspaceFocus(store, { abandon });
+    await store.settled();
 
     useFocusStore.getState().setFocusSession(null);
 

@@ -5,6 +5,21 @@ import type { WorkspaceRecord, EntityChange, PendingOperation, SyncCollection, S
 import { dbService, emptyWorkspace } from './dbService';
 import { readFocusCheckpoint } from './focusCheckpoint';
 import type { WorkspaceDashboard } from '../types/dashboard';
+import { validateWorkspaceData } from '../utils/workspaceValidation';
+import { recoveryService } from './recoveryService';
+import { formatLocalDate } from '../utils/nlpParser';
+import { validateBackupExtras } from '../utils/workspaceBackup';
+import { DEFAULT_PROJECTS } from '../utils/storage';
+
+// Older accounts may reference built-in projects without having stored a
+// project document. Keep Inbox available and recover only referenced built-ins;
+// missing custom projects still fail graph validation and wait for cloud data.
+function completeBuiltinProjects(projects: Project[], tasks: Task[]) {
+  const existing = new Set(projects.map(project => project.id));
+  const needed = new Set(['inbox', ...tasks.map(task => task.projectId)]);
+  const missing = DEFAULT_PROJECTS.filter(project => project.id !== 'ideas' && needed.has(project.id) && !existing.has(project.id));
+  return missing.length ? [...projects, ...missing.map(project => ({ ...project }))] : projects;
+}
 
 export interface StoreSnapshot {
   record: WorkspaceRecord;
@@ -12,7 +27,13 @@ export interface StoreSnapshot {
   saving: boolean;
   error: string | null;
   sync: 'local' | 'syncing' | 'synced' | 'offline' | 'conflict' | 'error';
+  readOnly?: boolean;
+  lastSavedAt?: number;
+  lastSyncedAt?: number;
+  nextRetryAt?: number;
+  recoveryError?: string | null;
 }
+export interface MutationReceipt { operationId: string; persisted: Promise<void> }
 export interface CloudAdapter {
   apply: (operation: PendingOperation) => Promise<void>;
   read: () => Promise<{ tasks: Task[]; projects: Project[]; dashboards?: SyncedEntity[]; focusLogs?: SyncedEntity[]; recipes?: SyncedEntity[]; preferences?: SyncedEntity[] }>;
@@ -23,6 +44,7 @@ const uid = () => crypto.randomUUID();
 export function changesBetween(before: WorkspaceRecord, after: WorkspaceRecord): EntityChange[] {
   const changes: EntityChange[] = [];
   for (const collection of SYNC_COLLECTIONS) {
+    if ((collection === 'tasks' || collection === 'projects' || collection === 'dashboards') && before[collection] === after[collection]) continue;
     const old = new Map(workspaceEntities(before, collection).map(x => [x.id, x]));
     const next = new Map(workspaceEntities(after, collection).map(x => [x.id, x]));
     for (const id of new Set([...old.keys(), ...next.keys()])) {
@@ -47,6 +69,11 @@ export class WorkspaceStore {
   private disposed = false;
   private generation = 0;
   private redoStack: PendingOperation[] = [];
+  private retryTimer?: ReturnType<typeof setTimeout>;
+  private checkpointDay = '';
+  private remoteGraph = new Map<SyncCollection, SyncedEntity[]>();
+  private durableVersion = 0;
+  private blockedCheckpoint?: WorkspaceRecord;
   readonly id: string;
   readonly connected: boolean;
   private persistence: typeof dbService;
@@ -56,12 +83,20 @@ export class WorkspaceStore {
   }
   getSnapshot = () => this.snapshot;
   subscribe = (callback: () => void) => { this.listeners.add(callback); return () => { this.listeners.delete(callback); }; };
+  setReadOnly(readOnly: boolean) { this.publish({ readOnly }); }
+  follow(record: WorkspaceRecord) {
+    if (!this.snapshot.readOnly || record.workspaceId !== this.id) return;
+    validateWorkspaceData(record.tasks, record.projects);
+    this.publish({ record, ready: true, saving: false, error: null });
+  }
+  async reload() { this.loadPromise = undefined; await this.load(); }
   private publish(patch: Partial<StoreSnapshot>) { this.snapshot = { ...this.snapshot, ...patch }; this.listeners.forEach(fn => fn()); }
   load() {
-    if (!this.loadPromise) this.loadPromise = this.persistence.ensureLegacyMigrated(this.id).then(record => {
+    if (!this.loadPromise) this.loadPromise = (this.snapshot.readOnly ? this.persistence.loadWorkspace(this.id).then(record => record || emptyWorkspace(this.id)) : this.persistence.ensureLegacyMigrated(this.id)).then(record => {
+      this.durableVersion = record.writeVersion || 0;
       this.publish({ record, ready: true, error: null });
       const checkpoint=readFocusCheckpoint(this.id);
-      if(checkpoint && checkpoint.at > Number(record.preferences.focusCheckpointAt || 0)) {
+      if(!this.snapshot.readOnly && checkpoint && checkpoint.at > Number(record.preferences.focusCheckpointAt || 0)) {
         const logged=checkpoint.session && ((record.preferences.focusLogs || []) as {id:string}[]).some(log=>log.id===checkpoint.session!.id);
         this.run('Recover focus lifecycle checkpoint',r=>({...r,preferences:{...r.preferences,focusCheckpointAt:checkpoint.at,
           focusSession: logged ? null : checkpoint.finished && checkpoint.session ? {...checkpoint.session,recoverCompletion:true} : checkpoint.session}}),false);
@@ -69,21 +104,44 @@ export class WorkspaceStore {
     }).catch(error => { this.loadPromise = undefined; this.publish({ error: `Could not open this workspace: ${String(error.message || error)}`, sync: 'error' }); });
     return this.loadPromise;
   }
-  private persist() {
+  private persist(checkpoint?: WorkspaceRecord) {
     const record = structuredClone(this.snapshot.record);
     this.writes++;
     this.publish({ saving: true });
-    const job = this.tail.then(() => this.persistence.saveWorkspace(this.id, record));
+    const job = this.tail.then(async () => {
+      if (this.persistence === dbService && typeof indexedDB !== 'undefined' && (checkpoint || this.blockedCheckpoint)) {
+        this.blockedCheckpoint ??= checkpoint;
+        await recoveryService.create(this.id, this.blockedCheckpoint!, 'pre_batch', 'Before destructive changes');
+        this.blockedCheckpoint = undefined;
+      }
+      await this.persistence.saveWorkspace(this.id, { ...record, writeVersion: this.durableVersion + 1 }, this.durableVersion);
+      this.durableVersion++;
+      this.publish({ lastSavedAt: Date.now() });
+      const day = formatLocalDate(new Date());
+      if (this.persistence === dbService && typeof indexedDB !== 'undefined' && record.tasks.length && record.updatedAt && this.checkpointDay !== day) {
+        try {
+          await recoveryService.create(this.id, record, 'auto_daily');
+          this.checkpointDay = day;
+          this.publish({ recoveryError: null });
+        } catch { this.publish({ recoveryError: 'Your work is saved, but the recovery checkpoint could not be written. Download a backup and check device storage.' }); }
+      }
+    });
     this.tail = job.catch(error => {
       this.publish({ error: `Changes are not saved: ${String(error.message || error)}. Keep this tab open and retry or download a backup.`, sync: 'error' });
     }).finally(() => { this.writes--; this.publish({ saving: this.writes > 0 }); });
     return job;
   }
   async settled() { await this.tail; if (this.snapshot.error) throw new Error(this.snapshot.error); }
-  run(description: string, transform: (record: WorkspaceRecord) => WorkspaceRecord, remember = true) {
+  run(description: string, transform: (record: WorkspaceRecord) => WorkspaceRecord, remember = true, options: { checkpoint?: boolean } = {}): MutationReceipt | undefined {
     if (!this.snapshot.ready) throw new Error('Wait for the workspace to finish loading.');
+    if (this.snapshot.readOnly) throw new Error('This tab is a read-only preview. Choose Use this tab to make changes.');
     const before = this.snapshot.record;
     let after = transform(before);
+    if (before.tasks !== after.tasks || before.projects !== after.projects) {
+      validateWorkspaceData(after.tasks, after.projects);
+      const projectIds = new Set(after.projects.map(project => project.id));
+      if (after.tasks.some(task => !projectIds.has(task.projectId))) throw new Error('Choose an available project before saving this task.');
+    }
     const changes = changesBetween(before, after).map(change => ({ ...change,
       after: change.after ? { ...change.after, revision: ((change.before as Task | null)?.revision || 0) + 1, updatedAt: Date.now() } : null,
     }));
@@ -101,8 +159,10 @@ export class WorkspaceStore {
       pending: this.connected && changes.length ? [...before.pending, ...deliveries] : before.pending,
       undo: remember && changes.length ? [...before.undo.slice(-19), operation] : after.undo,
     };
-    this.publish({ record: after, sync: this.connected && changes.length ? 'syncing' : this.snapshot.sync });
-    void this.persist().then(() => this.flush()).catch(() => {});
+    this.publish({ record: after, sync: this.connected && changes.length && !['offline', 'error', 'conflict'].includes(this.snapshot.sync) ? 'syncing' : this.snapshot.sync });
+    const persisted = this.persist(options.checkpoint ? before : undefined);
+    void persisted.then(() => this.flush()).catch(() => {});
+    return { operationId: operation.id, persisted };
   }
   canUndo() { return (this.snapshot.record.undo?.length || 0) > 0; }
   canRedo() { return this.redoStack.length > 0; }
@@ -129,14 +189,27 @@ export class WorkspaceStore {
     this.run(`Redo: ${operation.description}`, current => ({ ...applyChanges(current, operation.changes), undo: [...current.undo.slice(-19), operation] }), false);
   }
   connect(adapter: CloudAdapter) { this.adapter = adapter; this.disposed = false; void this.flush(); }
-  disconnect() { this.disposed = true; this.generation++; this.adapter = undefined; }
+  prepareConnection() { this.disposed = false; this.generation++; this.adapter = undefined; clearTimeout(this.retryTimer); }
+  disconnect() { this.disposed = true; this.generation++; this.adapter = undefined; clearTimeout(this.retryTimer); this.remoteGraph.clear(); }
   async retry() {
-    this.publish({ error: null, sync: this.connected ? 'syncing' : 'local' });
+    clearTimeout(this.retryTimer);
+    this.publish({ error: null, nextRetryAt: undefined, sync: this.connected ? 'syncing' : 'local', record: {
+      ...this.snapshot.record,
+      pending: this.snapshot.record.pending.map((operation, index) => index === 0 ? { ...operation, nextAttemptAt: undefined } : operation),
+    } });
     await this.persist();
     await this.flush();
   }
   async flush() {
-    if (!this.adapter || this.flushing || this.disposed || !this.snapshot.ready || this.snapshot.error || this.snapshot.sync === 'conflict') return;
+    if (!this.adapter || this.flushing || this.disposed || this.snapshot.readOnly || !this.snapshot.ready || this.snapshot.error || this.snapshot.sync === 'conflict') return;
+    const nextAttemptAt = this.snapshot.record.pending[0]?.nextAttemptAt;
+    if (nextAttemptAt && nextAttemptAt > Date.now()) {
+      this.publish({ sync: 'offline', nextRetryAt: nextAttemptAt });
+      clearTimeout(this.retryTimer);
+      const generation = this.generation;
+      this.retryTimer = setTimeout(() => { if (!this.disposed && generation === this.generation) void this.retry().catch(() => {}); }, nextAttemptAt - Date.now());
+      return;
+    }
     this.flushing = true;
     const adapter = this.adapter;
     const generation = this.generation;
@@ -147,23 +220,40 @@ export class WorkspaceStore {
         const operation = this.snapshot.record.pending[0];
         await adapter.apply(operation);
         if (this.disposed || generation !== this.generation) return;
-        this.publish({ record: { ...this.snapshot.record, pending: this.snapshot.record.pending.filter(x => x.id !== operation.id) } });
+        this.publish({ record: { ...this.snapshot.record, pending: this.snapshot.record.pending.filter(x => x.id !== operation.id) }, lastSyncedAt: Date.now(), nextRetryAt: undefined });
         await this.persist();
       }
       if (!this.disposed && generation === this.generation) this.publish({ sync: 'synced', error: null });
     } catch (error) {
       if (!this.disposed && generation === this.generation) {
-        console.error('[FlowTask Cloud Sync]:', error);
         const conflict = error instanceof Error && error.name === 'SyncConflict';
+        const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : 'unavailable';
+        const permanent = /permission-denied|unauthenticated|invalid-argument|failed-precondition/.test(code);
         const errDetail = error instanceof Error ? error.message : String(error);
         this.publish({
-          sync: conflict ? 'conflict' : 'offline',
+          sync: conflict ? 'conflict' : permanent ? 'error' : 'offline',
           error: conflict
             ? 'An account record changed on another device. Your local changes are preserved. Review the conflict in Account & sync.'
             : `Cloud sync paused: ${errDetail}. Changes are saved on this device and queued for retry.`,
         });
+        if (!conflict && !permanent && this.snapshot.record.pending.length) {
+          const head = this.snapshot.record.pending[0];
+          const attempts = (head.attempts || 0) + 1;
+          const nextRetryAt = Date.now() + Math.min(60000, 1000 * 2 ** Math.min(attempts, 6)) * (0.8 + Math.random() * 0.4);
+          this.publish({ nextRetryAt, record: { ...this.snapshot.record, pending: [{ ...head, attempts, nextAttemptAt: nextRetryAt }, ...this.snapshot.record.pending.slice(1)] } });
+          await this.persist();
+          clearTimeout(this.retryTimer);
+          this.retryTimer = setTimeout(() => { if (!this.disposed && generation === this.generation) void this.retry().catch(() => {}); }, Math.max(0, nextRetryAt - Date.now()));
+
+        }
       }
-    } finally { this.flushing = false; }
+    } finally {
+      this.flushing = false;
+      // A replaced connection may have tried to flush while this delivery still
+      // held the lock. Retry the same operation ID so its durable receipt can
+      // acknowledge a delivery that already reached the server.
+      if (!this.disposed && generation !== this.generation) void this.flush();
+    }
   }
   receive(collection: SyncCollection, remote: SyncedEntity[]) {
     if (!this.snapshot.ready || this.disposed) return;
@@ -180,7 +270,23 @@ export class WorkspaceStore {
     let record: WorkspaceRecord;
     try { record = replaceEntities(current, collection, collection === 'projects' && remote.length === 0 ? emptyWorkspace(this.id).projects : remote); }
     catch { this.publish({ record: before, error: 'A cloud dashboard could not be opened. Your local layout is preserved. Export a backup before resolving sync.', sync: 'conflict' }); return; }
-    record = applyChanges(record, record.pending.flatMap(op => op.changes.filter(c => c.collection === collection)));
+    if (collection === 'tasks' || collection === 'projects') {
+      this.remoteGraph.set(collection, collection === 'projects' && !remote.length ? emptyWorkspace(this.id).projects : remote);
+      for (const [kind, values] of this.remoteGraph) record = replaceEntities(record, kind, values);
+    }
+    record = applyChanges(record, record.pending.flatMap(op => op.changes));
+    record = { ...record, projects: completeBuiltinProjects(record.projects, record.tasks) };
+    try {
+      const projects = new Set(record.projects.map(project => project.id));
+      if (record.tasks.some(task => !projects.has(task.projectId))) throw new Error('Incomplete cloud project relationships.');
+      validateWorkspaceData(record.tasks, record.projects);
+      validateBackupExtras({ preferences: record.preferences, customViews: record.customViews, dashboards: record.dashboards });
+    }
+    catch {
+      this.publish({ recoveryError: 'A cloud update has incomplete task relationships. Your last valid workspace is preserved. Retry sync or download a backup.' });
+      return;
+    }
+    this.remoteGraph.clear();
     const seeded = (before.preferences._v4CloudSeeded || []) as string[];
     if (before.preferences._v4CloudSeedNeeded && !['tasks', 'projects', 'dashboards'].includes(collection) && !seeded.includes(collection)) {
       const localOnly = workspaceEntities(before, collection).filter(entity => !remote.some(value => value.id === entity.id));
@@ -190,16 +296,19 @@ export class WorkspaceStore {
       else void this.persist().catch(() => {});
       return;
     }
-    this.publish({ record });
+    this.publish({ record, recoveryError: this.snapshot.recoveryError?.startsWith('A cloud update') ? null : this.snapshot.recoveryError });
     void this.persist().catch(() => {});
   }
   async resolveConflict(choice: 'local' | 'remote') {
     if (!this.adapter) return;
+    const generation = this.generation;
+    const original = this.snapshot.record;
     const remote = await this.adapter.read();
+    if (this.disposed || this.snapshot.readOnly || generation !== this.generation || this.snapshot.record !== original) throw new Error('The workspace changed during review. Reopen the conflict review before choosing a version.');
+    validateWorkspaceData(remote.tasks, remote.projects);
     // Preserve both versions before a deliberate conflict choice.
     localStorage.setItem(`flowtask_conflict_backup_${this.id}`, JSON.stringify({ local: this.snapshot.record, remote, savedAt: Date.now() }));
-    const original = this.snapshot.record;
-    let base = { ...original, tasks: remote.tasks, projects: remote.projects, pending: [], undo: [] } as WorkspaceRecord;
+    let base = { ...original, tasks: remote.tasks, projects: completeBuiltinProjects(remote.projects.length ? remote.projects : emptyWorkspace(this.id).projects, remote.tasks), pending: [], undo: [] } as WorkspaceRecord;
     for (const key of ['dashboards', 'focusLogs', 'recipes', 'preferences'] as const) if (remote[key]) base = replaceEntities(base, key, remote[key]);
     const dashboardChanges = new Map(original.pending.flatMap(op => op.changes).filter(c => c.collection === 'dashboards').map(c => [c.id, c]));
     const copies: WorkspaceDashboard[] = [];
@@ -210,6 +319,12 @@ export class WorkspaceStore {
       copies.push({ ...structuredClone(preserved), id: uid(), name: `${preserved.name.slice(0, 80)} (Recovered)`, isDefault: false, order: base.dashboards.length + copies.length, revision: 0, createdAt: Date.now(), updatedAt: Date.now() });
     }
     if (base.dashboards.length + copies.length > 20) throw new Error('Both dashboard versions are backed up. Free a dashboard slot before resolving this conflict.');
+    const chosen = choice === 'local' ? applyChanges(base, original.pending.flatMap(operation => operation.changes)) : base;
+    const candidate = { ...chosen, dashboards: [...chosen.dashboards, ...copies] };
+    validateWorkspaceData(candidate.tasks, candidate.projects);
+    validateBackupExtras({ preferences: candidate.preferences, dashboards: candidate.dashboards, customViews: candidate.customViews });
+    if (this.persistence === dbService && typeof indexedDB !== 'undefined') await recoveryService.create(this.id, original, 'pre_batch', 'Before resolving account changes');
+    if (this.disposed || this.snapshot.readOnly || this.snapshot.record !== original) throw new Error('The workspace changed during review. Reopen the conflict review before choosing a version.');
     this.publish({ record: base, error: null, sync: 'syncing' });
     if (choice === 'local' || copies.length) this.run('Resolve conflict and preserve dashboard versions', record => {
       const next = choice === 'local' ? applyChanges(record, original.pending.flatMap(op => op.changes)) : record;
@@ -217,6 +332,29 @@ export class WorkspaceStore {
     });
     else await this.persist();
     await this.flush();
+  }
+
+  async previewConflict() {
+    if (!this.adapter) throw new Error('Connect your account before reviewing conflicts.');
+    const generation = this.generation;
+    const remote = await this.adapter.read();
+    if (this.disposed || generation !== this.generation) throw new Error('The account changed. Reopen the review.');
+    let account = { ...this.snapshot.record, tasks: remote.tasks, projects: completeBuiltinProjects(remote.projects.length ? remote.projects : emptyWorkspace(this.id).projects, remote.tasks) };
+    for (const key of ['dashboards', 'focusLogs', 'recipes', 'preferences'] as const) if (remote[key]) account = replaceEntities(account, key, remote[key]);
+    const affected = new Map<string, EntityChange>();
+    for (const operation of this.snapshot.record.pending) for (const change of operation.changes) affected.set(`${change.collection}:${change.id}`, change);
+    return [...affected.values()].map(change => ({ collection: change.collection, id: change.id, device: workspaceEntities(this.snapshot.record, change.collection).find(value => value.id === change.id) || null, account: workspaceEntities(account, change.collection).find(value => value.id === change.id) || null }));
+  }
+
+  connectionFailed(error?: unknown) {
+    const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : '';
+    const permanent = /permission-denied|unauthenticated|invalid-argument|failed-precondition/.test(code);
+    const action = /unauthenticated/.test(code) ? 'Your sign-in expired. Sign in again to reconnect.'
+      : /permission-denied/.test(code) ? 'Cloud access was denied. Sign in again or contact the site operator.'
+      : permanent ? 'Cloud configuration needs attention. Contact the site operator before retrying.'
+      : 'Your account could not be reached. Retry the connection when online.';
+    clearTimeout(this.retryTimer);
+    this.publish({ sync: permanent ? 'error' : 'offline', nextRetryAt: undefined, error: `${action} Device changes are preserved; you can download a backup.` });
   }
 }
 

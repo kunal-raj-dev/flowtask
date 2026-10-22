@@ -69,11 +69,11 @@ class AudioEngine {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
-        this.ctx = new AudioCtx();
+        try { this.ctx = new AudioCtx(); } catch { return null; }
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      void this.ctx.resume().catch(() => { /* Browser may require another user gesture. */ });
     }
     return this.ctx;
   }

@@ -1,13 +1,20 @@
-import { SYNC_COLLECTIONS } from './workspaceEntities';
+import { SYNC_COLLECTIONS, SYNC_PREFERENCE_KEYS } from './workspaceEntities';
 import type { SyncCollection, SyncedEntity } from '../types/workspace';
 import {
   collection,
   doc,
   getDocs,
+  getDocsFromServer,
   onSnapshot,
   runTransaction,
   deleteField,
   writeBatch,
+  query,
+  where,
+  limit,
+  Timestamp,
+  documentId,
+  type Firestore,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { CloudAdapter } from './workspaceStore';
@@ -83,6 +90,13 @@ export function prepareTaskForFirestore(task: Task): Record<string, unknown> {
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
+function workspaceCollection(database: Firestore, uid: string, kind: SyncCollection) {
+  const ref = collection(database, 'users', uid, kind);
+  // Rules restrict preference IDs. An unrestricted collection query cannot
+  // prove that restriction, even for a new empty account, and is denied.
+  return kind === 'preferences' ? query(ref, where(documentId(), 'in', [...SYNC_PREFERENCE_KEYS])) : ref;
+}
+
 /**
  * 7-day TTL cleanup for historical Firestore operation idempotency receipts.
  */
@@ -90,7 +104,7 @@ export async function cleanupExpiredOperationReceipts(uid: string): Promise<numb
   if (!db) return 0;
   try {
     const opsCol = collection(db, 'users', uid, 'operations');
-    const snap = await getDocs(opsCol);
+    const snap = await getDocs(query(opsCol, where('expiresAt', '<', Timestamp.now()), limit(100)));
     const cutoff = Date.now() - SEVEN_DAYS_MS;
     const expiredDocs = snap.docs.filter((docSnap) => {
       const data = docSnap.data();
@@ -116,10 +130,7 @@ export function createCloudAdapter(uid: string): CloudAdapter {
   const database = db;
   return {
     async read() {
-      // Background 7-day TTL cleanup of expired idempotency receipts
-      void cleanupExpiredOperationReceipts(uid);
-
-      const snapshots = await Promise.all(SYNC_COLLECTIONS.map(name => getDocs(collection(database, 'users', uid, name))));
+      const snapshots = await Promise.all(SYNC_COLLECTIONS.map(name => getDocsFromServer(workspaceCollection(database, uid, name))));
       const [tasks, projects, dashboards, focusLogs, recipes, preferences] = snapshots;
       return {
         tasks: tasks.docs.map((d) => ({ ...d.data(), id: d.id })) as Task[],
@@ -175,7 +186,8 @@ export function createCloudAdapter(uid: string): CloudAdapter {
         });
         transaction.set(receipt, {
           createdAt: operation.createdAt,
-          description: operation.description,
+          description: 'Workspace update',
+          expiresAt: Timestamp.fromMillis(Date.now() + SEVEN_DAYS_MS),
         });
       });
     },
@@ -190,7 +202,7 @@ export function watchCloud(
   if (!db) throw new Error('Cloud connection is unavailable.');
   const stops = SYNC_COLLECTIONS.map((kind) =>
     onSnapshot(
-      collection(db!, 'users', uid, kind),
+      workspaceCollection(db!, uid, kind),
       { includeMetadataChanges: true },
       (snapshot) => {
         if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;

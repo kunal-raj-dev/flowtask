@@ -8,7 +8,8 @@ service cloud.firestore {
     }
     function revision() {
       return request.resource.data.revision is int && request.resource.data.revision >= 1
-        && request.resource.data.updatedAt is number;
+        && request.resource.data.updatedAt is number
+        && request.resource.data.revision == (request.method == 'create' ? 1 : resource.data.get('revision', 0) + 1);
     }
     function validWidget(w) {
       // Enforce the renderable shape here; bounded optional metadata is normalized
@@ -21,10 +22,13 @@ service cloud.firestore {
       let d = request.resource.data;
       let widgets = d.widgets;
       let count = widgets.size();
-      return d.keys().hasOnly(['id','name','icon','coverImage','isDefault','order','widgets','layouts','revision','createdAt','updatedAt'])
+      return d.keys().hasOnly(['id','name','icon','coverImage','coverFocalPoint','isDefault','order','widgets','layouts','revision','createdAt','updatedAt'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 100
         && d.order is int && d.order >= 0 && d.order <= 100
         && d.createdAt is number && d.widgets is list && d.widgets.size() <= 24
+        && (!('coverFocalPoint' in d) || (d.coverFocalPoint is map && d.coverFocalPoint.keys().hasOnly(['x','y'])
+          && d.coverFocalPoint.x is number && d.coverFocalPoint.x >= 0 && d.coverFocalPoint.x <= 100
+          && d.coverFocalPoint.y is number && d.coverFocalPoint.y >= 0 && d.coverFocalPoint.y <= 100))
         && d.layouts is map && d.layouts.keys().hasOnly(['lg','md'])
         && d.layouts.lg is list && d.layouts.lg.size() <= 24
         && (!('md' in d.layouts) || (d.layouts.md is list && d.layouts.md.size() <= 24))
@@ -59,13 +63,17 @@ service cloud.firestore {
       match /tasks/{id} {
         allow read, delete: if owner(uid);
         allow create, update: if owner(uid) && revision() && request.resource.data.id == id
+          && request.resource.data.keys().hasOnly(['milestoneId','scheduleLocked','nextAction','recurrenceSourceId','id','title','description','status','priority','projectId','plannedDate','dueDate','dueTime','topThreeDate','isPinnedToday','isSomeday','isEvening','archivedAt','deletedAt','revision','updatedAt','estimatedMinutes','timeSpentMinutes','subtasks','recurrence','customRecurrence','scheduledStart','scheduledEnd','timezone','tags','contextTags','blockedBy','sessionMetadata','rolloverCount','lastRolledOverAt','bufferMinutes','isAutoTriaged','createdAt','completedAt'])
           && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 10000
           && request.resource.data.status in ['todo','in_progress','done'] && request.resource.data.priority in ['p1','p2','p3','p4']
-          && request.resource.data.projectId is string && request.resource.data.subtasks is list;
+          && request.resource.data.projectId is string && request.resource.data.subtasks is list && request.resource.data.subtasks.size() <= 1000
+          && (!('description' in request.resource.data) || (request.resource.data.description is string && request.resource.data.description.size() <= 100000))
+          && (!('blockedBy' in request.resource.data) || (request.resource.data.blockedBy is list && request.resource.data.blockedBy.size() <= 1000));
       }
       match /projects/{id} {
         allow read, delete: if owner(uid);
         allow create, update: if owner(uid) && revision() && request.resource.data.id == id
+          && request.resource.data.keys().hasOnly(['milestones','outcome','targetDate','coverAssetId','coverFocalPoint','focusRecipeId','wipLimit','revision','id','name','color','icon','isArchived','archivedAt','createdAt','updatedAt'])
           && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
           && request.resource.data.color is string
           && (!('milestones' in request.resource.data) || (request.resource.data.milestones is list && request.resource.data.milestones.size() <= 100));
@@ -98,8 +106,9 @@ service cloud.firestore {
       }
       match /operations/{id} {
         allow read, delete: if owner(uid);
-        allow create: if owner(uid) && request.resource.data.keys().hasOnly(['createdAt','description'])
-          && request.resource.data.createdAt is number && request.resource.data.description is string && request.resource.data.description.size() <= 1000;
+        allow create: if owner(uid) && request.resource.data.keys().hasOnly(['createdAt','description','expiresAt'])
+          && request.resource.data.createdAt is number && request.resource.data.description is string && request.resource.data.description.size() <= 1000
+          && (!('expiresAt' in request.resource.data) || request.resource.data.expiresAt is timestamp);
         allow update: if false;
       }
     }

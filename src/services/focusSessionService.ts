@@ -1,3 +1,4 @@
+import { createFocusSession, elapsedFocusSeconds } from './focusLifecycle';
 import type { FocusSession, FocusSessionMode } from '../types/task';
 
 const FOCUS_STORAGE_KEY = 'flowtask_active_focus_session';
@@ -44,26 +45,7 @@ export const focusSessionService = {
     subtaskTitle: string | null = null,
     pacingSecondsPerUnit: number = 0
   ): FocusSession {
-    const now = Date.now();
-    const session: FocusSession = {
-      id: `focus_${now}_${Math.random().toString(36).substring(2, 7)}`,
-      mode,
-      taskId,
-      taskTitle: taskTitle || (taskId ? 'Active Task' : 'Focus Session'),
-      subtaskId: subtaskId || undefined,
-      subtaskTitle: subtaskTitle || undefined,
-      startedAt: now,
-      originalStartedAt: now,
-      pausedAt: null,
-      accumulatedElapsedMs: 0,
-      targetDurationSec,
-      pacingSecondsPerUnit: pacingSecondsPerUnit || undefined,
-      bankedSeconds: 0,
-      state: 'running',
-      pomodoroCycle: 1,
-      pomodoroPhase: 'focus',
-      loggedSegments: [],
-    };
+    const session = createFocusSession({ mode, taskId, taskTitle, targetDurationSec, subtaskId, subtaskTitle, pacingSecondsPerUnit });
 
     this.saveSession(session);
     return session;
@@ -118,15 +100,7 @@ export const focusSessionService = {
   },
 
   getElapsedSeconds(session: FocusSession, now: number = Date.now()): number {
-    const cap = (seconds: number) =>
-      session.mode === 'pomodoro' && session.targetDurationSec > 0
-        ? Math.min(session.targetDurationSec, seconds)
-        : seconds;
-    if (session.state === 'running') {
-      const currentSegment = Math.max(0, now - session.startedAt);
-      return cap(Math.floor((session.accumulatedElapsedMs + currentSegment) / 1000));
-    }
-    return cap(Math.floor(session.accumulatedElapsedMs / 1000));
+    return elapsedFocusSeconds(session, now);
   },
 
   getRemainingSeconds(session: FocusSession, now: number = Date.now()): number {

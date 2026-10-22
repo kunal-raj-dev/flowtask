@@ -1,3 +1,6 @@
+import { useWorkspaceSelector } from '../../services/workspaceStore';
+import { isFocusComplete } from '../../services/focusLifecycle';
+import { DEFAULT_TIMER } from '../../types/studio';
 import {
   nextStudioPhase,
   type FinishedStudioSession,
@@ -8,12 +11,12 @@ import { useFocusStore } from "../../store/useFocusStore";
 import { useStudioPreferences, useMediaCatalog } from "../../hooks/useStudio";
 import { studioAudio } from "../../services/studioAudio";
 import { resolveAsset } from "../../services/studioCatalog";
-import { focusSessionService } from "../../services/focusSessionService";
 import { audioEngine } from "../../utils/audioEngine";
 import { useWakeLock } from "../../hooks/useWakeLock";
 
 export function FocusRuntime() {
   const context = useTaskContext();
+  const readOnly = useWorkspaceSelector(snapshot => Boolean(snapshot.readOnly));
   const current = useRef(context);
   useEffect(() => {
     current.current = context;
@@ -36,6 +39,7 @@ export function FocusRuntime() {
   const catalog = useMediaCatalog();
   const [owner, setOwner] = useState(false);
   useEffect(() => {
+    if (readOnly) return;
     const abort = new AbortController();
     let release: (() => void) | undefined;
     if (navigator.locks) {
@@ -88,7 +92,7 @@ export function FocusRuntime() {
       studioAudio.stop();
       setOwner(false);
     };
-  }, [context.workspaceId]);
+  }, [context.workspaceId, readOnly]);
   useEffect(() => {
     if (!owner) return;
     const complete = () => {
@@ -96,14 +100,13 @@ export function FocusRuntime() {
       const active = useFocusStore.getState().focusSession;
       if(active?.recoverCompletion && active.workspaceId===ctx.workspaceId) { ctx.stopFocusSession(); return; }
       if (
-        !active?.timerConfiguration ||
+        !active ||
         active.workspaceId !== ctx.workspaceId ||
         active.state !== "running" ||
         active.targetDurationSec <= 0
       )
         return;
-      const seconds = focusSessionService.getElapsedSeconds(active);
-      if (seconds < active.targetDurationSec) return;
+      if (!isFocusComplete(active)) return;
       const transition = nextStudioPhase(active);
       ctx.updateFocusSession({
         outcome: "completed",
@@ -117,8 +120,8 @@ export function FocusRuntime() {
           ? "Session complete. Take a little breathing room."
           : "Break complete. Ready when you are.",
       );
-      if (active.timerConfiguration.autoStart && active.mode === "pomodoro") {
-        const config = active.timerConfiguration;
+      if (active.timerConfiguration?.autoStart && active.mode === "pomodoro") {
+        const config = active.timerConfiguration || DEFAULT_TIMER;
         const target =
           transition.nextPhase === "focus"
             ? config.focusMinutes

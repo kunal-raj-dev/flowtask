@@ -4,6 +4,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import type { TaskStatus } from '../../types/task';
 import { Kanban, Plus, Circle, Clock, CheckCircle2 } from 'lucide-react';
 import { Badge } from '../ui';
+import { useMotionPreference } from '../../hooks/useMotionPreference';
 
 interface KanbanViewProps {
   onSelectTask: (taskId: string) => void;
@@ -14,6 +15,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   onSelectTask,
   projectId,
 }) => {
+  const reduced = useMotionPreference();
   const { tasks: allTasks, projects = [], updateTask, addTask, toggleTaskStatus } = useTaskContext();
   const tasks = allTasks.filter(t => !t.deletedAt && !t.archivedAt && (!projectId || t.projectId === projectId));
   const [mobileColumn, setMobileColumn] = useState<TaskStatus>('todo');
@@ -240,7 +242,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     <div className="max-w-7xl mx-auto px-3.5 sm:px-4 py-4 sm:py-6 h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-4 sm:mb-6 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
             <Kanban size={20} className="stroke-[2.2]" />
           </div>
           <div>
@@ -269,7 +271,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               onClick={() => setMobileColumn(col.status)}
               className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-1 sm:px-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap min-w-0 ${
                 isDragTarget
-                  ? 'bg-amber-500/25 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/60'
+                  ? 'bg-amber-500/25 text-amber-800 dark:text-amber-300 ring-2 ring-amber-500/60'
                   : isActive
                   ? 'bg-white dark:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-sm card-surface'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -392,9 +394,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         key={task.id}
                         data-task-id={task.id}
                         layout="position"
-                        initial={{ opacity: 0, scale: 0.95 }}
+                        initial={reduced ? false : { opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
+                        exit={reduced ? undefined : { opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
                         transition={{
                           type: 'spring',
                           stiffness: 350,
@@ -422,10 +424,10 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                             <span
                               className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border shadow-xs shrink-0 ${
                                 task.priority === 'p1'
-                                  ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                                  ? 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30'
                                   : task.priority === 'p2'
-                                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                                  : 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30'
+                                  ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
+                                  : 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-500/30'
                               }`}
                             >
                               {task.priority}
@@ -468,7 +470,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                             <button
                               type="button"
                               onClick={() => updateTask(task.id, { status: 'in_progress' })}
-                              className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-[10px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+                              className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-[10px] font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
                               title={col.status === 'todo' ? 'Start Task' : 'Move to In Progress'}
                             >
                               {col.status === 'todo' ? 'Start →' : '← In Prog'}

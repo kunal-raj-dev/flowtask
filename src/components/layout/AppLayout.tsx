@@ -529,7 +529,7 @@ export const AppLayout: React.FC = () => {
           onClick={() => openModal('copilotOmnibar')}
           title="FlowTask Copilot"
           aria-label="Open Copilot Omnibar"
-          className="p-2 text-[var(--color-brand)] rounded-xl hover:bg-[var(--bg-surface-hover)]"
+          className="mobile-secondary-action p-2 text-[var(--color-brand)] rounded-xl hover:bg-[var(--bg-surface-hover)]"
         >
           <Sparkles size={18} />
         </button>
@@ -547,7 +547,7 @@ export const AppLayout: React.FC = () => {
           onClick={() => openModal('settings')}
           title="Preferences & Settings"
           aria-label="Preferences and Settings"
-          className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+          className="mobile-secondary-action p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
         >
           <Settings size={18} strokeWidth={1.75} />
         </button>

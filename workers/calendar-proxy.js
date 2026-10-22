@@ -8,6 +8,11 @@ export default {
     if (!allowed.includes(origin)) return fail(403, 'Origin is not permitted.');
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' } });
     if (request.method !== 'POST') return fail(405, 'Use POST.');
+    if (!env.CALENDAR_RATE_LIMITER && !env.TEST_MODE) return fail(503, 'Calendar feed connection is not configured. Import an .ics file instead.');
+    if (env.CALENDAR_RATE_LIMITER) {
+      const result = await env.CALENDAR_RATE_LIMITER.limit({ key: request.headers.get('CF-Connecting-IP') || 'unknown' });
+      if (!result.success) return fail(429, 'Too many refreshes. Retry shortly.');
+    }
     const hosts = String(env.CALENDAR_HOSTS || 'calendar.google.com,outlook.live.com,outlook.office365.com').split(',').map(s => s.trim().toLowerCase());
     try {
       if (Number(request.headers.get('Content-Length') || 0) > 4096) return fail(413, 'Request is too large.');

@@ -19,11 +19,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onOpenMenu,
   todayCount = 0,
   inboxCount = 0,
-  upcomingCount = 0,
+  upcomingCount: _upcomingCount = 0,
 }) => {
   const isToday = activeView === 'today';
   const isInbox = activeView === 'inbox';
-  const isUpcoming = activeView === 'upcoming';
+  const isUpcoming = activeView === 'timeline';
   const isMore = !isToday && !isInbox && !isUpcoming;
 
   return (
@@ -105,30 +105,30 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         {/* Tab 3: Upcoming */}
         <button
           type="button"
-          onClick={() => onSelectView('upcoming')}
+          onClick={() => onSelectView('timeline')}
           className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all active:scale-95 ${
             isUpcoming
-              ? 'text-purple-500 font-semibold'
+              ? 'text-[var(--color-brand)] font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
-          aria-label="Upcoming View"
+          aria-label="Plan View"
         >
           <div className="relative flex flex-col items-center">
-            <Calendar size={20} strokeWidth={1.75} className={isUpcoming ? 'text-purple-500' : ''} />
-            {upcomingCount > 0 && (
-              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-purple-500 text-white font-mono tabular-nums text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
-                {upcomingCount > 99 ? '99+' : upcomingCount}
+            <Calendar size={20} strokeWidth={1.75} className={isUpcoming ? 'text-[var(--color-brand)]' : ''} />
+            {_upcomingCount > 0 && (
+              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[var(--color-brand)] text-white font-mono tabular-nums text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
+                {_upcomingCount > 99 ? '99+' : _upcomingCount}
               </span>
             )}
             {isUpcoming && (
               <motion.span
                 layoutId="mobileActiveTabIndicator"
-                className="absolute -bottom-1.5 w-4 h-0.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]"
+                className="absolute -bottom-1.5 w-4 h-0.5 rounded-full bg-[var(--color-brand)] "
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
           </div>
-          <span className="text-[10px] mt-1.5 tracking-tight">Upcoming</span>
+          <span className="text-[10px] mt-1.5 tracking-tight">Plan</span>
         </button>
 
         {/* Tab 4: More / Menu (opens mobile drawer with Projects, Review, Someday, All Tasks, Settings) */}

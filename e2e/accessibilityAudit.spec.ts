@@ -4,6 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
   const setupPage = async (page: any, width = 1280, height = 800) => {
     await page.setViewportSize({ width, height });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.addInitScript(() => {
       const today = new Date().toISOString().split('T')[0];
       const now = new Date().toISOString();
@@ -67,7 +68,7 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
     await page.waitForTimeout(300);
   };
 
-  test('Typography tokens guarantee WCAG 2.2 AAA / AA high-contrast ratios', async ({ page }) => {
+  test('Rendered typography tokens meet AA contrast on workspace surfaces', async ({ page }) => {
     await setupPage(page);
 
     const contrastAudit = await page.evaluate(() => {
@@ -85,21 +86,20 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
         return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
       };
 
-      // Primary Text (#0F172A) on Alabaster Surface (#FAF9F6)
-      const primaryOnPaper = getRatio([15, 23, 42], [250, 249, 246]);
-      // Secondary Text (#334155) on Elevated Surface (#F3F0E8)
-      const secondaryOnElevated = getRatio([51, 65, 85], [243, 240, 232]);
-      // Muted Text (#475569) on Elevated Surface (#F3F0E8)
-      const mutedOnElevated = getRatio([71, 85, 105], [243, 240, 232]);
+      const token = (name: string) => {
+        const sample = document.createElement('span'); sample.style.color = `var(${name})`; document.body.append(sample);
+        const rgb = getComputedStyle(sample).color.match(/[\d.]+/g)!.slice(0, 3).map(Number); sample.remove(); return rgb;
+      };
+      const primaryOnPaper = getRatio(token('--text-primary'), token('--bg-main'));
+      const secondaryOnElevated = getRatio(token('--text-secondary'), token('--bg-surface-l1'));
+      const mutedOnElevated = getRatio(token('--text-muted'), token('--bg-surface-l1'));
 
       return { primaryOnPaper, secondaryOnElevated, mutedOnElevated };
     });
 
-    // WCAG AAA requires >= 7:1 for normal text
-    expect(contrastAudit.primaryOnPaper).toBeGreaterThan(14.0);
-    // WCAG AA requires >= 4.5:1 for normal text
-    expect(contrastAudit.secondaryOnElevated).toBeGreaterThan(7.0);
-    expect(contrastAudit.mutedOnElevated).toBeGreaterThan(4.5);
+    expect(contrastAudit.primaryOnPaper).toBeGreaterThanOrEqual(4.5);
+    expect(contrastAudit.secondaryOnElevated).toBeGreaterThanOrEqual(4.5);
+    expect(contrastAudit.mutedOnElevated).toBeGreaterThanOrEqual(4.5);
   });
 
   test('Today View passes WCAG 2.2 AA audit with 0 critical or serious violations', async ({ page }) => {
@@ -107,7 +107,6 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSerious = accessibilityScanResults.violations.filter(
@@ -125,7 +124,6 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSerious = accessibilityScanResults.violations.filter(
@@ -138,12 +136,11 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
   test('Kanban Board View passes WCAG 2.2 AA audit', async ({ page }) => {
     await setupPage(page);
 
-    await page.locator('aside[aria-label="Desktop navigation"]').getByRole('button', { name: /Kanban/i }).click();
+    await page.locator('aside[aria-label="Desktop navigation"]').getByRole('button', { name: /^Board/ }).click();
     await page.waitForSelector('h2:has-text("Kanban Board")', { state: 'visible' });
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSerious = accessibilityScanResults.violations.filter(
@@ -156,12 +153,11 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
   test('Priority Matrix (Eisenhower) View passes WCAG 2.2 AA audit', async ({ page }) => {
     await setupPage(page);
 
-    await page.locator('aside[aria-label="Desktop navigation"]').getByRole('button', { name: /Priority Matrix/i }).click();
+    await page.locator('aside[aria-label="Desktop navigation"]').getByRole('button', { name: /^Matrix/ }).click();
     await page.waitForSelector('h2:has-text("Priority Matrix")', { state: 'visible' });
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSerious = accessibilityScanResults.violations.filter(
@@ -174,12 +170,11 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
   test('Day Timeline View passes WCAG 2.2 AA audit', async ({ page }) => {
     await setupPage(page);
 
-    await page.locator('aside[aria-label="Desktop navigation"]').getByRole('button', { name: /Timeline/i }).click();
-    await page.waitForSelector('h3:has-text("Day Timeline")', { state: 'visible' });
+    await page.locator('aside[aria-label="Desktop navigation"]').getByRole('button', { name: /^Plan/ }).click();
+    await expect(page.getByRole('heading', { name: 'Plan.', exact: true })).toBeVisible();
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSerious = accessibilityScanResults.violations.filter(
@@ -201,7 +196,6 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
     const accessibilityScanResults = await new AxeBuilder({ page })
       .include('div[role="dialog"][aria-label="Task Details"]')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSerious = accessibilityScanResults.violations.filter(
@@ -219,7 +213,7 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
   test('Quick Add Modal dialog passes WCAG 2.2 AA audit and keyboard escape dismiss', async ({ page }) => {
     await setupPage(page);
 
-    const addBtn = page.getByRole('button', { name: /Quick Add Task/i }).or(page.getByRole('button', { name: /New Task/i })).first();
+    const addBtn = page.getByRole('button', { name: 'New Task', exact: true });
     await addBtn.click();
 
     const dialog = page.locator('div[role="dialog"][aria-labelledby="quick-add-title"]');
@@ -228,7 +222,6 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
     const accessibilityScanResults = await new AxeBuilder({ page })
       .include('div[role="dialog"][aria-labelledby="quick-add-title"]')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSerious = accessibilityScanResults.violations.filter(
@@ -247,14 +240,13 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
     const settingsBtn = page.getByRole('button', { name: /Preferences and Settings/i }).first();
     await settingsBtn.click();
 
-    const dialog = page.locator('div[role="dialog"][aria-label="Application Settings"]');
+    const dialog = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: 'Close settings' }) });
     await expect(dialog).toBeVisible();
 
     // Audit Tab 1: Workflow & Capacity
     const scanWorkflow = await new AxeBuilder({ page })
       .include('div[role="dialog"]')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSeriousWorkflow = scanWorkflow.violations.filter(
@@ -263,13 +255,12 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
     expect(criticalOrSeriousWorkflow).toEqual([]);
 
     // Switch to Tab 2: Aesthetics & Tactile Sound Profiles
-    await dialog.locator('button').filter({ hasText: /Aesthetics/i }).first().click();
+    await dialog.getByRole('button', { name: /^Appearance/ }).first().click();
     await page.waitForTimeout(300);
 
     const scanAesthetics = await new AxeBuilder({ page })
       .include('div[role="dialog"]')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSeriousAesthetics = scanAesthetics.violations.filter(
@@ -297,7 +288,6 @@ test.describe('Automated Accessibility & WCAG 2.2 AA Audit', () => {
     const accessibilityScanResults = await new AxeBuilder({ page })
       .include('div[role="dialog"]')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const criticalOrSerious = accessibilityScanResults.violations.filter(

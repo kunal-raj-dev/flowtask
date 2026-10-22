@@ -1,3 +1,4 @@
+import { act as flushRender } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, cleanup, renderHook } from '@testing-library/react';
@@ -281,7 +282,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
         );
       };
 
-      render(<TestHost />);
+      await flushRender(async () => (render(<TestHost />)));
 
       // Open 2 modals: 'shortcuts' then 'exportImport'
       await act(async () => {
@@ -419,7 +420,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
         );
       };
 
-      render(<TestHarness />);
+      await flushRender(async () => (render(<TestHarness />)));
 
       // Initial mount counts
       const initialA = renderCountRowA;
@@ -432,7 +433,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
 
       // Now simulate 10 consecutive 1-second ticks of the focus timer
       for (let sec = 1; sec <= 10; sec++) {
-        act(() => {
+        await act(async () => {
           useFocusStore.setState({
             activeTimerSeconds: sec,
             focusElapsedSeconds: sec,
@@ -451,7 +452,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
       expect(screen.getByText('00:10')).toBeDefined();
     });
 
-    it('TaskRowTimer component re-renders independently and displays live clock', () => {
+    it('TaskRowTimer component re-renders independently and displays live clock', async () => {
       useFocusStore.setState({
         activeTimerTaskId: 'timer-task',
         activeTimerSeconds: 0,
@@ -469,12 +470,12 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
         },
       });
 
-      render(<TaskRowTimer taskId="timer-task" isRunning={true} />);
+      await flushRender(async () => (render(<TaskRowTimer taskId="timer-task" isRunning={true} />)));
       expect(screen.getByText('00:00')).toBeDefined();
 
       // Tick 5 times
       for (let i = 1; i <= 5; i++) {
-        act(() => {
+        await act(async () => {
           useFocusStore.setState({ activeTimerSeconds: i });
         });
       }
@@ -505,7 +506,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
       vi.spyOn(dbService, 'ensureLegacyMigrated').mockResolvedValue(mockRecord);
       vi.spyOn(dbService, 'saveWorkspace').mockResolvedValue(undefined);
 
-      const { result } = renderHook(() => useTaskContext(), { wrapper: TaskProvider });
+      const { result } = await flushRender(async () => (renderHook(() => useTaskContext(), { wrapper: TaskProvider })));
 
       // Wait for workspace ready
       await act(async () => {
@@ -569,7 +570,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
       vi.spyOn(dbService, 'ensureLegacyMigrated').mockResolvedValue(mockRecord);
       vi.spyOn(dbService, 'saveWorkspace').mockResolvedValue(undefined);
 
-      const { result } = renderHook(() => useTaskContext(), { wrapper: TaskProvider });
+      const { result } = await flushRender(async () => (renderHook(() => useTaskContext(), { wrapper: TaskProvider })));
 
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -577,7 +578,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
 
       // Mutate via context adapter
       let added: Task | undefined;
-      act(() => {
+      await act(async () => {
         added = result.current.addTask('Created via TaskContext Adapter', { priority: 'p1' });
       });
 
@@ -587,7 +588,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
       expect(useTaskStore.getState().tasks.some((t) => t.id === added!.id)).toBe(true);
 
       // Mutate via Zustand store
-      act(() => {
+      await act(async () => {
         useTaskStore.getState().updateTask(added!.id, { title: 'Updated via Zustand directly' });
       });
 
@@ -682,7 +683,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
         </TaskContext.Provider>
       );
 
-      render(<TestHost />);
+      await flushRender(async () => (render(<TestHost />)));
 
       await act(async () => {
         useModalStore.getState().openModal('pomodoro');
@@ -712,7 +713,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
       expect(useModalStore.getState().activeModals).toEqual([]);
     });
 
-    it('demonstrates keyboard navigation focus targeting via focusedTaskId', () => {
+    it('demonstrates keyboard navigation focus targeting via focusedTaskId', async () => {
       const taskA: Task = {
         id: 'task-a',
         title: 'Task A',
@@ -742,12 +743,12 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
         toggleTaskSelection: vi.fn(),
       } as unknown as TaskContextType;
 
-      render(
+      await flushRender(async () => (render(
         <TaskContext.Provider value={mockCtx}>
           <WorkspaceTaskRow task={taskA} onSelectTask={vi.fn()} />
           <WorkspaceTaskRow task={taskB} onSelectTask={vi.fn()} />
         </TaskContext.Provider>
-      );
+      )));
 
       // Neither is focused initially
       const rowAEl = screen.getByText('Task A').closest('.desk-task-row');
@@ -756,7 +757,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
       expect(rowBEl?.getAttribute('data-keyboard-focused')).toBeNull();
 
       // Focus task A via useUIStore
-      act(() => {
+      await act(async () => {
         useUIStore.setState({ focusedTaskId: 'task-a' });
       });
 
@@ -765,7 +766,7 @@ describe('Milestone M1 Adversarial Stress Test Suite', () => {
       expect(rowBEl?.getAttribute('data-keyboard-focused')).toBeNull();
 
       // Move focus to Task B
-      act(() => {
+      await act(async () => {
         useUIStore.setState({ focusedTaskId: 'task-b' });
       });
 

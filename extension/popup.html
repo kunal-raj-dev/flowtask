@@ -114,6 +114,10 @@
     <span class="title">Quick Capture</span>
   </div>
 
+  <label for="app-origin">Your FlowTask website origin</label>
+  <input type="url" id="app-origin" placeholder="https://your-flowtask.example" />
+  <button type="button" class="save-btn" id="connect-origin">Connect website</button>
+  <p style="font-size:12px;color:#94A3B8">Connect only your FlowTask website. Captures are delivered to that exact origin.</p>
   <label for="task-title">Task Title</label>
   <input type="text" id="task-title" placeholder="What needs to be done?" autofocus />
 
@@ -132,7 +136,7 @@
     <span>Save capture locally</span>
   </button>
 
-  <div class="status" id="status-msg">Saved in this extension. Export and import in FlowTask to transfer.</div>
+  <div role="status" class="status" id="status-msg">Saved in this extension. Export and import in FlowTask to transfer.</div>
 
   <button type="button" class="save-btn" id="export-tasks">Export captured tasks</button>
   <p>In FlowTask, open Export / Import → Import and paste the downloaded JSON.</p>

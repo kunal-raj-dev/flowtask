@@ -1,3 +1,4 @@
+import { act as flushRender } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
@@ -206,8 +207,8 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
     }
   });
 
-  afterEach(() => {
-    pictureInPictureService.closePipWindow();
+  afterEach(async () => {
+    await act(async () => { pictureInPictureService.closePipWindow(); });
     vi.unstubAllGlobals();
   });
 
@@ -246,7 +247,7 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
       );
 
       // B: FocusEngineModal gracefully hides PiP button
-      render(<FocusEngineModal isOpen={true} taskId="task-adversarial-1" onClose={vi.fn()} />);
+      await flushRender(async () => (render(<FocusEngineModal isOpen={true} taskId="task-adversarial-1" onClose={vi.fn()} />)));
       expect(screen.queryByRole('button', { name: 'Toggle Picture-in-Picture' })).toBeNull();
       expect(screen.queryByTitle(/Picture-in-Picture/i)).toBeNull();
 
@@ -294,7 +295,7 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
         subscriberStates.push(open);
       });
 
-      render(<FocusEngineModal isOpen={true} taskId="task-adversarial-1" onClose={vi.fn()} />);
+      await flushRender(async () => (render(<FocusEngineModal isOpen={true} taskId="task-adversarial-1" onClose={vi.fn()} />)));
 
       // Open PiP
       const pipBtn = screen.getByRole('button', { name: 'Toggle Picture-in-Picture' });
@@ -385,7 +386,7 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
   // Challenge 2: Media Session OS Actions Under Simulated Background Events
   // =========================================================================
   describe('Challenge 2: Media Session OS Action Handlers & Background Events', () => {
-    it('2.1 executes all OS action handlers (play, pause, stop, nexttrack, previoustrack) across session states', () => {
+    it('2.1 executes all OS action handlers (play, pause, stop, nexttrack, previoustrack) across session states', async () => {
       const handlers: Record<string, () => void> = {};
       const mockMediaSession = {
         metadata: null as any,
@@ -398,55 +399,55 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
       vi.stubGlobal('MediaMetadata', FakeMediaMetadata);
 
       const onClose = vi.fn();
-      render(
+      await flushRender(async () => (render(
         <FocusEngineModal
           isOpen={true}
           taskId="task-adversarial-1"
           initialMode="sprint"
           onClose={onClose}
         />
-      );
+      )));
 
       // A. Idle state: 'play' starts the focus session
       expect(useFocusStore.getState().focusSession).toBeNull();
-      act(() => {
+      await act(async () => {
         handlers.play();
       });
       expect(useFocusStore.getState().focusSession?.state).toBe('running');
       expect(useFocusStore.getState().focusSession?.mode).toBe('sprint');
 
       // B. Running state: 'pause' pauses the focus session
-      act(() => {
+      await act(async () => {
         handlers.pause();
       });
       expect(useFocusStore.getState().focusSession?.state).toBe('paused');
 
       // C. Paused state: 'play' resumes the focus session
-      act(() => {
+      await act(async () => {
         handlers.play();
       });
       expect(useFocusStore.getState().focusSession?.state).toBe('running');
 
       // D. Sprint mode: 'nexttrack' completes subtask 1 and advances to subtask 2
-      act(() => {
+      await act(async () => {
         handlers.nexttrack();
       });
       expect(mockToggleSubTask).toHaveBeenCalledWith('task-adversarial-1', 'sub-adv-1');
 
       // E. Sprint mode: 'previoustrack' returns to subtask 1
-      act(() => {
+      await act(async () => {
         handlers.previoustrack();
       });
       expect(screen.getByText('Step 1 of 3')).toBeDefined();
 
       // F. Sprint mode: 'previoustrack' at index 0 remains at index 0 (safe lower bound)
-      act(() => {
+      await act(async () => {
         handlers.previoustrack();
       });
       expect(screen.getByText('Step 1 of 3')).toBeDefined();
 
       // G. 'stop' cleans up session and triggers onClose
-      act(() => {
+      await act(async () => {
         handlers.stop();
       });
       expect(useFocusStore.getState().focusSession).toBeNull();
@@ -474,10 +475,10 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
       });
       vi.stubGlobal('MediaMetadata', FakeMediaMetadata);
 
-      render(<FocusEngineModal isOpen={true} taskId="task-adversarial-1" onClose={vi.fn()} />);
+      await flushRender(async () => (render(<FocusEngineModal isOpen={true} taskId="task-adversarial-1" onClose={vi.fn()} />)));
 
       // Start session
-      act(() => {
+      await act(async () => {
         handlers.play();
       });
       expect(useFocusStore.getState().focusSession?.state).toBe('running');
@@ -530,14 +531,14 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
         requestWindow: vi.fn(async () => mockPipWindow),
       });
 
-      render(
+      await flushRender(async () => (render(
         <FocusEngineModal
           isOpen={true}
           taskId="task-adversarial-1"
           initialMode="zen"
           onClose={mockClose}
         />
-      );
+      )));
 
       // Create test elements
       const textInput = document.createElement('input');
@@ -584,14 +585,14 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
         expect(pictureInPictureService.isOpen()).toBe(false);
 
         // 4. 'f' / 'F': must NOT toggle fullscreen
-        act(() => {
+        await act(async () => {
           fireEvent.keyDown(el, { key: 'f' });
           fireEvent.keyDown(el, { key: 'F' });
         });
         expect(mockRequestFullscreen).not.toHaveBeenCalled();
 
         // 5. 'Escape': must NOT call onClose
-        act(() => {
+        await act(async () => {
           fireEvent.keyDown(el, { key: 'Escape' });
         });
         expect(mockClose).not.toHaveBeenCalled();
@@ -610,14 +611,14 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
         requestWindow: vi.fn(async () => mockPipWindow),
       });
 
-      render(
+      await flushRender(async () => (render(
         <FocusEngineModal
           isOpen={true}
           taskId="task-adversarial-1"
           initialMode="zen"
           onClose={mockClose}
         />
-      );
+      )));
 
       // Outside input: Space starts session
       await act(async () => {
@@ -655,7 +656,7 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
   // Challenge 4: Escape Key Hierarchy (Fullscreen vs Modal Dismissal)
   // =========================================================================
   describe('Challenge 4: Escape Key Hierarchy (Fullscreen vs Modal Dismissal)', () => {
-    it('4.1 in browser fullscreen, Escape exits fullscreen first without closing modal; second Escape closes modal', () => {
+    it('4.1 in browser fullscreen, Escape exits fullscreen first without closing modal; second Escape closes modal', async () => {
       const mockClose = vi.fn();
       const mockExitFullscreen = vi.fn().mockImplementation(() => {
         Object.defineProperty(document, 'fullscreenElement', {
@@ -666,14 +667,14 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
       });
       document.exitFullscreen = mockExitFullscreen;
 
-      render(
+      await flushRender(async () => (render(
         <FocusEngineModal
           isOpen={true}
           taskId="task-adversarial-1"
           initialMode="zen"
           onClose={mockClose}
         />
-      );
+      )));
 
       // Simulate user entering fullscreen
       Object.defineProperty(document, 'fullscreenElement', {
@@ -714,11 +715,11 @@ describe('Empirical Challenge: Milestone 3 Focus Engine V4', () => {
         );
       };
 
-      render(
+      await flushRender(async () => (render(
         <ModalProvider>
           <TestRoot />
         </ModalProvider>
-      );
+      )));
 
       // Open focusEngine modal
       await act(async () => {

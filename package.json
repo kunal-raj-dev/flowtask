@@ -3,7 +3,9 @@
   "private": true,
   "version": "2.0.0-beta.1",
   "type": "module",
-  "engines": { "node": "22.x" },
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -11,10 +13,19 @@
     "test": "vitest run",
     "test:e2e": "playwright test --project=chromium",
     "preview": "vite preview",
-    "test:security": "node --test scripts/security.test.mjs",
-    "test:rules": "node --test scripts/firestore-rules.test.mjs"
+    "test:security": "node --test scripts/security.test.mjs scripts/production-security.test.mjs",
+    "test:rules": "node scripts/test-rules.mjs",
+    "typecheck": "tsc -b --pretty false",
+    "test:rules:connected": "node --test scripts/firestore-rules.test.mjs",
+    "test:budgets": "node scripts/check-budgets.mjs",
+    "test:performance": "node scripts/check-lab-performance.mjs",
+    "test:e2e:release": "playwright test --config=playwright.release.config.ts",
+    "test:cloud:staging": "node scripts/test-staging-cloud.mjs",
+    "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "canvas-confetti": "^1.9.4",
     "chrono-node": "^2.10.1",
     "clsx": "^2.1.1",
@@ -28,6 +39,7 @@
     "react-dom": "^19.2.8",
     "react-grid-layout": "^2.3.0",
     "tailwind-merge": "^3.7.0",
+    "web-vitals": "^5.3.0",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
@@ -49,11 +61,14 @@
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
-    "vite": "^8.3.0",
+    "vite": "^8.3.4",
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "@grpc/grpc-js": "^1.13.6"
+    "@grpc/grpc-js": "^1.13.6",
+    "firebase-admin": {
+      "jwks-rsa": "3.2.2"
+    }
   }
 }

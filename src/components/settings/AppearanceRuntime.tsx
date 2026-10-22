@@ -6,7 +6,7 @@ import { applyTheme } from '../../utils/themeRegistry';
 import { DIURNAL_CONFIGS } from '../../utils/diurnalAura';
 
 export function AppearanceRuntime() {
-  const { workspacePreferences, workspaceId, setWorkspacePreference } = useTaskContext();
+  const { workspacePreferences, workspaceId, syncStatus, setWorkspacePreference } = useTaskContext();
   const raw = workspacePreferences.appearance;
   const appearance = useMemo(() => {
     let storage: Storage | undefined;
@@ -14,11 +14,15 @@ export function AppearanceRuntime() {
     return migrateAppearance(raw, workspaceId, storage);
   }, [raw, workspaceId]);
   useEffect(() => {
+    // Render safe defaults immediately, but hydrate the account before deciding
+    // that its appearance is missing. Otherwise each new device queues a create
+    // against an existing preference and starts with an avoidable conflict.
+    if (workspaceId !== 'local' && syncStatus !== 'synced') return;
     if ((raw as { version?: number } | undefined)?.version !== 2) {
       setWorkspacePreference('appearance', appearance);
       if (workspaceId === 'local') try { localStorage.setItem('flowtask_appearance_legacy_imported', 'true'); } catch { /* Optional cache. */ }
     }
-  }, [raw, appearance, workspaceId, setWorkspacePreference]);
+  }, [raw, appearance, workspaceId, syncStatus, setWorkspacePreference]);
   useLayoutEffect(() => {
     const root = document.documentElement;
     const media = window.matchMedia('(prefers-color-scheme: dark)');

@@ -1,7 +1,5 @@
 import { useMotionPreference } from '../../hooks/useMotionPreference';
 import React from 'react';
-import { motion } from 'framer-motion';
-import { SPRING_TACTILE } from '../../utils/springPhysics';
 import { audioEngine } from '../../utils/audioEngine';
 import type { Priority } from '../../types/task';
 
@@ -71,7 +69,7 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
   };
 
   return (
-    <motion.button
+    <button
       type="button"
       role="checkbox"
       aria-checked={checked}
@@ -79,9 +77,6 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
       disabled={disabled}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      whileTap={reduced ? undefined : { scale: 0.9 }}
-      animate={{ scale: !reduced && checked ? [1, 1.15, 1] : 1 }}
-      transition={reduced ? { duration: 0 } : SPRING_TACTILE}
       style={{
         width: `${size}px`,
         height: `${size}px`,
@@ -89,9 +84,11 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
       }}
       className={`rounded-[6px] shrink-0 flex items-center justify-center border transition-colors select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
         !checked ? getBorderColor() : ''
+      } ${reduced ? '' : 'active:scale-90'} ${
+        reduced ? 'transition-none' : ''
       } ${className}`}
     >
-      <motion.svg
+      <svg
         viewBox="0 0 16 16"
         fill="none"
         className="w-[70%] h-[70%]"
@@ -100,21 +97,14 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <motion.path
+        <path
           d="M3 8.5L6.5 12L13 4"
-          initial={false}
-          animate={{
-            pathLength: checked ? 1 : 0,
-            opacity: checked ? 1 : 0,
-          }}
-          transition={reduced ? { duration: 0 } : {
-            type: 'spring',
-            stiffness: 450,
-            damping: 30,
-          }}
+          pathLength={1}
+          style={{ strokeDasharray: 1, strokeDashoffset: checked ? 0 : 1, opacity: checked ? 1 : 0,
+            transition: reduced ? 'none' : 'stroke-dashoffset 140ms ease-out, opacity 140ms ease-out' }}
           className="text-white"
         />
-      </motion.svg>
-    </motion.button>
+      </svg>
+    </button>
   );
 };

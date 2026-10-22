@@ -5,3 +5,10 @@
 .github
 *.log
 docs/
+test-results*/
+playwright-report/
+screenshots/
+.agents/
+node_modules/
+dist/
+dist-ssr/

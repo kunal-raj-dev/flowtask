@@ -11,6 +11,21 @@ export function useTactileAudioClicks(enabled: boolean = true, keyboardEnabled =
   useEffect(() => {
     if (!enabled) return;
 
+    // First-time AudioContext creation can take hundreds of milliseconds on
+    // some devices. Let the action paint before optional feedback starts.
+    let frame: number | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const queueClick = () => {
+      if (frame !== null || timer !== null || document.hidden) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        timer = setTimeout(() => {
+          timer = null;
+          audioEngine.playClickSound();
+        }, 0);
+      });
+    };
+
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as Element | null;
       if (!target || typeof target.closest !== 'function') return;
@@ -27,15 +42,17 @@ export function useTactileAudioClicks(enabled: boolean = true, keyboardEnabled =
       );
 
       if (isInteractive) {
-        audioEngine.playClickSound();
+        queueClick();
       }
     };
 
-    const handleTyping = (e: KeyboardEvent) => { const target = e.target as HTMLInputElement | null; if (!keyboardEnabled || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1 || target?.type === 'password') return; if (target?.matches('input,textarea,[contenteditable=true]')) audioEngine.playClickSound(); };
+    const handleTyping = (e: KeyboardEvent) => { const target = e.target as HTMLInputElement | null; if (!keyboardEnabled || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1 || target?.type === 'password') return; if (target?.matches('input,textarea,[contenteditable=true]')) queueClick(); };
     window.addEventListener('keydown', handleTyping);
     window.addEventListener('click', handleGlobalClick, { capture: true, passive: true });
 
     return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      if (timer !== null) clearTimeout(timer);
       window.removeEventListener('keydown', handleTyping);
       window.removeEventListener('click', handleGlobalClick, { capture: true });
     };

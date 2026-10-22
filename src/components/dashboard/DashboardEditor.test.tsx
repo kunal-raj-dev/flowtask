@@ -1,3 +1,4 @@
+import { act as flushRender } from '@testing-library/react';
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
@@ -78,15 +79,15 @@ describe('DashboardEditor Component', () => {
     onPlanMyDay = vi.fn();
   });
 
-  it('renders Today heading, active dashboard name, and action buttons', () => {
-    render(
+  it('renders Today heading, active dashboard name, and action buttons', async () => {
+    await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={sampleDashboards[0].id}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     expect(screen.getByText('Today')).toBeDefined();
     expect(screen.getByText('Daily Desk')).toBeDefined();
@@ -94,30 +95,30 @@ describe('DashboardEditor Component', () => {
     expect(screen.getByRole('button', { name: 'Customize' })).toBeDefined();
   });
 
-  it('invokes onPlanMyDay callback when clicking Plan my day', () => {
-    render(
+  it('invokes onPlanMyDay callback when clicking Plan my day', async () => {
+    await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={sampleDashboards[0].id}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     const planBtn = screen.getByRole('button', { name: /Plan my day/i });
     fireEvent.click(planBtn);
     expect(onPlanMyDay).toHaveBeenCalledTimes(1);
   });
 
-  it('enters editing mode on clicking Edit workspace and reveals toolbar controls', () => {
-    render(
+  it('enters editing mode on clicking Edit workspace and reveals toolbar controls', async () => {
+    await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={sampleDashboards[0].id}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     enterEdit();
 
@@ -128,15 +129,15 @@ describe('DashboardEditor Component', () => {
     expect(screen.getByRole('button', { name: /Redo/i })).toBeDefined();
   });
 
-  it('saves changes and commits one dashboard update when Save is clicked', () => {
-    render(
+  it('saves changes and commits one dashboard update when Save is clicked', async () => {
+    await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={sampleDashboards[0].id}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     // Enter edit mode
     enterEdit();
@@ -150,15 +151,15 @@ describe('DashboardEditor Component', () => {
     expect(updated.length).toBe(sampleDashboards.length);
   });
 
-  it('cancels edit mode on clicking Cancel without saving', () => {
-    render(
+  it('cancels edit mode on clicking Cancel without saving', async () => {
+    await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={sampleDashboards[0].id}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     enterEdit();
     expect(screen.getByRole('button', { name: /Cancel/i })).toBeDefined();
@@ -170,14 +171,14 @@ describe('DashboardEditor Component', () => {
   });
 
   it('opens widget catalog and allows adding a new widget to dashboard', async () => {
-    render(
+    await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={sampleDashboards[0].id}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     enterEdit();
     fireEvent.click(screen.getByRole('button', { name: /Add Widget/i }));
@@ -194,18 +195,18 @@ describe('DashboardEditor Component', () => {
     await waitFor(() => expect(screen.queryByText('Add Widget to Workspace')).toBeNull());
   });
 
-  it('persists draft to localStorage during edit mode and shows recovery banner on return', () => {
+  it('persists draft to localStorage during edit mode and shows recovery banner on return', async () => {
     const dashId = sampleDashboards[0].id;
     const draftKey = `flowtask-dashboard-draft:local:${dashId}`;
 
-    const { unmount } = render(
+    const { unmount } = await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={dashId}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     // Enter edit mode
     enterEdit();
@@ -215,14 +216,14 @@ describe('DashboardEditor Component', () => {
     unmount();
 
     // Re-render component: should show recovery banner
-    render(
+    await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={dashId}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     expect(
       screen.getByText(/Your unfinished layout/i)
@@ -235,15 +236,15 @@ describe('DashboardEditor Component', () => {
     expect(localStorage.getItem(draftKey)).toBeNull();
   });
 
-  it('supports dashboard switching and creation via the switcher dropdown', () => {
-    render(
+  it('supports dashboard switching and creation via the switcher dropdown', async () => {
+    await flushRender(async () => (render(
       <DashboardEditor
         dashboards={sampleDashboards}
         activeDashboardId={sampleDashboards[0].id}
         onUpdateDashboards={onUpdateDashboards}
         onPlanMyDay={onPlanMyDay}
       />
-    );
+    )));
 
     // Click switcher dropdown
     const switcherTrigger = screen.getByRole('button', { name: /Switch dashboard/i });

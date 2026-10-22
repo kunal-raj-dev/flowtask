@@ -150,7 +150,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             <button
               type="button"
               onClick={() => updateTask(task.id, { plannedDate: undefined })}
-              className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+              className="text-[10px] text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
             >
               Clear
             </button>
@@ -204,7 +204,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             <button
               type="button"
               onClick={() => updateTask(task.id, { dueDate: undefined })}
-              className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+              className="text-[10px] text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
             >
               Clear
             </button>

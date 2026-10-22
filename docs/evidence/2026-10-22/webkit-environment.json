@@ -1,0 +1,13 @@
+{
+  "browser": "WebKit 26.6 (2359)",
+  "result": "Blocked before application navigation",
+  "exitCode": "0xC0E90002",
+  "windowsEvents": [
+    3077,
+    3033
+  ],
+  "blockedModule": "nghttp3.dll",
+  "cause": "Windows Code Integrity: bundled DLL did not meet enterprise signing requirements",
+  "securityPolicyChanged": false,
+  "requiredFollowup": "Run the mandatory browser suite in Linux CI or a permitted supported browser runtime"
+}

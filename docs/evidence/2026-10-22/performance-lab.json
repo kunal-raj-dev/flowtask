@@ -1,0 +1,184 @@
+{
+  "measuredAt": "2026-10-22T08:25:30.972Z",
+  "conditions": "Three cold-profile Chromium runs per route/device; service workers blocked; local preview; 40ms latency, 1.6MB/s download, 750KB/s upload; mobile CPU 4x slowdown. Scripted capture Event Timing is a lab guard, not field INP. No authentication or cloud latency included.",
+  "summary": [
+    {
+      "device": "desktop",
+      "route": "/",
+      "lcpP75Ms": 688,
+      "clsP75": 0,
+      "captureInteractionP75Ms": null
+    },
+    {
+      "device": "desktop",
+      "route": "/app",
+      "lcpP75Ms": 872,
+      "clsP75": 0.0005102965931833526,
+      "captureInteractionP75Ms": 24
+    },
+    {
+      "device": "mobile",
+      "route": "/",
+      "lcpP75Ms": 968,
+      "clsP75": 0,
+      "captureInteractionP75Ms": null
+    },
+    {
+      "device": "mobile",
+      "route": "/app",
+      "lcpP75Ms": 800,
+      "clsP75": 0,
+      "captureInteractionP75Ms": 104
+    }
+  ],
+  "samples": [
+    {
+      "device": "desktop",
+      "route": "/",
+      "run": 1,
+      "lcp": 688,
+      "cls": 0,
+      "interaction": 0,
+      "slowestEvent": null
+    },
+    {
+      "device": "desktop",
+      "route": "/",
+      "run": 2,
+      "lcp": 636,
+      "cls": 0,
+      "interaction": 0,
+      "slowestEvent": null
+    },
+    {
+      "device": "desktop",
+      "route": "/",
+      "run": 3,
+      "lcp": 608,
+      "cls": 0,
+      "interaction": 0,
+      "slowestEvent": null
+    },
+    {
+      "device": "desktop",
+      "route": "/app",
+      "run": 1,
+      "lcp": 872,
+      "cls": 0.0005102965931833526,
+      "interaction": 24,
+      "slowestEvent": {
+        "type": "keydown",
+        "phase": "submit",
+        "target": "INPUT",
+        "sinceNavigationMs": 3074.399999999441,
+        "inputDelayMs": 0.20000000018626451,
+        "handlerMs": 0.20000000018626451
+      }
+    },
+    {
+      "device": "desktop",
+      "route": "/app",
+      "run": 2,
+      "lcp": 684,
+      "cls": 0.0005102965931833526,
+      "interaction": 24,
+      "slowestEvent": {
+        "type": "keydown",
+        "phase": "submit",
+        "target": "INPUT",
+        "sinceNavigationMs": 3001.7999999998137,
+        "inputDelayMs": 0.10000000055879354,
+        "handlerMs": 0.39999999944120646
+      }
+    },
+    {
+      "device": "desktop",
+      "route": "/app",
+      "run": 3,
+      "lcp": 668,
+      "cls": 0.0005102965931833526,
+      "interaction": 24,
+      "slowestEvent": {
+        "type": "pointerdown",
+        "sinceNavigationMs": 1798.2999999998137,
+        "inputDelayMs": 2.1000000005587935,
+        "handlerMs": 0.39999999944120646
+      }
+    },
+    {
+      "device": "mobile",
+      "route": "/",
+      "run": 1,
+      "lcp": 968,
+      "cls": 0,
+      "interaction": 0,
+      "slowestEvent": null
+    },
+    {
+      "device": "mobile",
+      "route": "/",
+      "run": 2,
+      "lcp": 960,
+      "cls": 0,
+      "interaction": 0,
+      "slowestEvent": null
+    },
+    {
+      "device": "mobile",
+      "route": "/",
+      "run": 3,
+      "lcp": 924,
+      "cls": 0,
+      "interaction": 0,
+      "slowestEvent": null
+    },
+    {
+      "device": "mobile",
+      "route": "/app",
+      "run": 1,
+      "lcp": 800,
+      "cls": 0,
+      "interaction": 104,
+      "slowestEvent": {
+        "type": "keydown",
+        "phase": "submit",
+        "target": "INPUT",
+        "sinceNavigationMs": 3901.4000000003725,
+        "inputDelayMs": 0.20000000018626451,
+        "handlerMs": 1
+      }
+    },
+    {
+      "device": "mobile",
+      "route": "/app",
+      "run": 2,
+      "lcp": 776,
+      "cls": 0,
+      "interaction": 96,
+      "slowestEvent": {
+        "type": "keydown",
+        "phase": "submit",
+        "target": "INPUT",
+        "sinceNavigationMs": 3738.7999999998137,
+        "inputDelayMs": 0.2999999998137355,
+        "handlerMs": 1.400000000372529
+      }
+    },
+    {
+      "device": "mobile",
+      "route": "/app",
+      "run": 3,
+      "lcp": 768,
+      "cls": 0,
+      "interaction": 88,
+      "slowestEvent": {
+        "type": "keydown",
+        "phase": "submit",
+        "target": "INPUT",
+        "sinceNavigationMs": 3882.7999999998137,
+        "inputDelayMs": 0.30000000074505806,
+        "handlerMs": 1.099999999627471
+      }
+    }
+  ]
+}

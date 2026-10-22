@@ -68,6 +68,7 @@ export const FocusMiniPlayer: React.FC<FocusMiniPlayerProps> = ({ variant = 'des
           }}
           className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono tabular-nums text-[10px] font-bold border border-amber-500/30 shrink-0 mr-1 active:scale-95"
           title={`Active ${focusSession.mode}: ${focusSession.taskTitle}`}
+          aria-label={focusSession.state === 'paused' ? 'Open paused focus session' : 'Open active focus session'}
         >
           <span
             className={`w-1.5 h-1.5 rounded-full bg-amber-500 ${

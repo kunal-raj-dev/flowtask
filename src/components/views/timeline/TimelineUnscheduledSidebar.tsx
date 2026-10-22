@@ -28,7 +28,7 @@ export const TimelineUnscheduledSidebar: React.FC<TimelineUnscheduledSidebarProp
   onScheduleUnscheduled,
 }) => {
   return (
-    <div className="lg:col-span-4 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-xl p-4 card-surface space-y-3">
+    <div className={`timeline-backlog ${unscheduledTasks.length === 0 ? 'timeline-backlog-empty' : ''} lg:col-span-4 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-xl p-4 card-surface space-y-3`}>
       <div className="flex items-center justify-between border-b border-[var(--border-hairline)] pb-2.5">
         <div className="flex items-center gap-1.5">
           <Calendar size={14} className="text-amber-500" />
@@ -65,9 +65,9 @@ export const TimelineUnscheduledSidebar: React.FC<TimelineUnscheduledSidebarProp
       </div>
 
       {unscheduledTasks.length === 0 ? (
-        <div className="text-center py-8 text-[var(--text-muted)] text-xs">
+        <div className="timeline-backlog-message text-center py-8 text-[var(--text-muted)] text-xs">
           <CheckCircle2 size={24} className="mx-auto mb-2 text-emerald-500/60" />
-          All today&apos;s tasks are scheduled on your timeline!
+          {scheduledTasksCount ? 'All tasks for this day are scheduled.' : 'Choose a time on the timeline to start planning.'}
         </div>
       ) : (
         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">

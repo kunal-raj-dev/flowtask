@@ -9,7 +9,7 @@ async function seed(page:Page){
     localStorage.setItem('flowtask_tasks_v1',JSON.stringify([{id:'flow-test',title:'Explain binary search',nextAction:'Write the loop invariant',status:'todo',priority:'p1',projectId:'inbox',subtasks:[],createdAt:Date.now(),plannedDate:today,topThreeDate:today,isPinnedToday:true,estimatedMinutes:50}]));
   }); await page.goto('/app'); await page.locator('main#main-content').waitFor();
 }
-async function open(page:Page){const launcher=page.getByRole('button',{name:'Launch Focus Mode',exact:true}); if(await launcher.isVisible()) await launcher.click(); else await page.getByRole('button',{name:'Focus',exact:true}).click();await page.getByRole('dialog',{name:'Focus Studio',exact:true}).waitFor();}
+async function open(page:Page){const studioEntry=page.getByRole('button',{name:/^Focus Studio/}).first(); const launcher=page.getByRole('button',{name:'Launch Focus Mode',exact:true}); if(await studioEntry.isVisible()) await studioEntry.click(); else await launcher.click();await page.getByRole('dialog',{name:'Focus Studio',exact:true}).waitFor();}
 test('task-linked session survives minimize, pause and reload without duplicate history',async({page})=>{
   await seed(page);await open(page);const studio=page.getByRole('dialog',{name:'Focus Studio',exact:true});
   await expect(studio.getByRole('heading',{name:'Explain binary search'})).toBeVisible();await expect(studio.getByText('Next step · Write the loop invariant')).toBeVisible();
@@ -58,7 +58,7 @@ test('break completion after sleep logs exactly once and never adds task work',a
 });
 test('a second tab waits for the workspace owner and cannot duplicate playback',async({page,context})=>{
   await seed(page);await open(page);await page.getByRole('button',{name:'Start focus',exact:true}).click();
-  const second=await context.newPage();await second.goto('/app');await expect(second.getByRole('status')).toContainText('open in another tab');await page.close();
+  const second=await context.newPage();await second.goto('/app');await expect(second.getByText('Read-only preview', { exact: false })).toBeVisible();await page.close();await second.getByRole('button',{name:'Use this tab',exact:true}).click();
   await expect(second.locator('main#main-content')).toBeVisible();await expect(second.getByRole('button',{name:'Pause Focus Session',exact:true})).toBeVisible();
 });
 test('a saved recipe can be edited and started from the lobby in two actions',async({page})=>{

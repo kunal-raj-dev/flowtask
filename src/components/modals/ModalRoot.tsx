@@ -19,6 +19,7 @@ const TemplatePickerModal = lazy(() => import('./TemplatePickerModal').then(m =>
 const WeeklyReviewModal = lazy(() => import('./WeeklyReviewModal').then(m => ({ default: m.WeeklyReviewModal })));
 const StudySessionModal = lazy(() => import('./StudySessionModal').then(m => ({ default: m.StudySessionModal })));
 const FocusEngineModal = lazy(() => import('../focus/FocusEngineModal').then(m => ({ default: m.FocusEngineModal })));
+const FocusStudio = lazy(() => import('../focus/FocusStudio').then(m => ({ default: m.FocusStudio })));
 const SettingsDrawer = lazy(() => import('./SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
 const CopilotOmnibar = lazy(() => import('./CopilotOmnibar').then(m => ({ default: m.CopilotOmnibar })));
 import { OnboardingFlow } from './OnboardingFlow';
@@ -146,12 +147,10 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
 
         {/* Pomodoro Focus Modal via FocusEngineModal */}
         {isModalOpen('pomodoro') && (
-          <FocusEngineModal
-            isOpen={true}
+          <FocusStudio
             taskId={getModalProps<{ taskId?: string | null }>('pomodoro')?.taskId || null}
-            initialMode={getModalProps<{ initialMode?: 'zen' | 'studio' | 'sprint' }>('pomodoro')?.initialMode || 'zen'}
-            initialPhase={getModalProps<{ initialPhase?: string }>('pomodoro')?.initialPhase}
-            initialPanel={getModalProps<{ initialPanel?: string }>('pomodoro')?.initialPanel}
+            initialPhase={getModalProps<{ initialPhase?: 'focus' | 'short_break' | 'long_break' }>('pomodoro')?.initialPhase}
+            initialPanel={getModalProps<{ initialPanel?: 'scenes' | 'sound' | 'recipes' | 'notes' | 'timer' | 'queue' }>('pomodoro')?.initialPanel}
             onClose={() => closeModal('pomodoro')}
           />
         )}

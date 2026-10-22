@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import type { Task, CalendarEvent } from '../../../types/task';
 import { TimelineCurrentTimeRail } from '../TimelineCurrentTimeRail';
 import {
@@ -49,6 +49,11 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
   const todayStr = useTodayStr();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [planning, setPlanning] = useState(false);
+  useEffect(() => {
+    if (!isOpen || !canvasRef.current || canvasRef.current.clientHeight <= 0) return;
+    const hour = new Date().getHours();
+    canvasRef.current.scrollTop = Math.max(0, (hour - startHour - 1) * hourHeightPx);
+  }, [isOpen, startHour, hourHeightPx]);
 
   if (!isOpen) {
     return (
@@ -172,6 +177,9 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
         ref={canvasRef}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        tabIndex={0}
+        role="region"
+        aria-label="Day timeline schedule"
         className="flex-1 overflow-y-auto relative overscroll-contain"
         style={{ height: `${(endHour - startHour) * hourHeightPx}px` }}
       >

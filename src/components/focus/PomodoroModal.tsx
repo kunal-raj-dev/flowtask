@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useFocusStore } from '../../store/useFocusStore';
 import { useTotalFocusedTodaySeconds } from '../../hooks/useTotalFocusedTodaySeconds';
 import { ModalContext } from '../../context/ModalContext';
-import { audioEngine } from '../../utils/audioEngine';
 import { formatSecondsToHumanReadable, formatTimerClock } from '../../utils/focusTimeFormat';
 import { useFocusModalShortcuts } from './useFocusModalShortcuts';
 import { useFocusAmbientSound } from './useFocusAmbientSound';
@@ -96,34 +95,7 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
     }
   };
 
-  // Completion trigger on zero remaining time
-  useEffect(() => {
-    if (isPomodoroActive && activeRemainingSec !== null && activeRemainingSec <= 0) {
-      audioEngine.playPomodoroComplete();
-      audioEngine.stopAmbientSound();
-      stopFocusSession();
-
-      const timerId = setTimeout(() => {
-        if (mode === 'focus') {
-          if (cycleCount >= 4) {
-            setCycleCount(1);
-            setMode('long_break');
-            setLocalTimeLeft(15 * 60);
-          } else {
-            setCycleCount((c) => c + 1);
-            setMode('short_break');
-            setLocalTimeLeft(5 * 60);
-          }
-        } else {
-          setMode('focus');
-          setLocalTimeLeft(focusDuration);
-        }
-      }, 0);
-
-      return () => clearTimeout(timerId);
-    }
-  }, [isPomodoroActive, activeRemainingSec, mode, cycleCount, focusDuration, stopFocusSession]);
-
+  // Completion is owned by FocusRuntime, including when this panel is closed.
   const toggleTimer = () => {
     if (isRunning) {
       pauseFocusSession();

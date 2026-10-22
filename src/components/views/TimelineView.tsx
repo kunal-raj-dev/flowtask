@@ -253,3 +253,4 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     </div>
   );
 };
+import '../../styles/plan.css';

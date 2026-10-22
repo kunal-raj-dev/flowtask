@@ -474,3 +474,4 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     </div>
   );
 };
+import '../../styles/projects.css';

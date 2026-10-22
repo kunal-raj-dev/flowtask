@@ -1,3 +1,4 @@
+import { recoveryService } from '../services/recoveryService';
 import { create } from 'zustand';
 import type {
   Task,
@@ -24,7 +25,6 @@ import { validateWorkspaceData } from '../utils/workspaceValidation';
 import { dbService, emptyWorkspace } from '../services/dbService';
 import { writeFocusCheckpoint } from '../services/focusCheckpoint';
 import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser';
-import { fetchICSFeed, parseICSFeed } from '../services/calendarService';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local' | 'conflict' | 'error';
 
@@ -122,7 +122,7 @@ function execute(
   if (store) {
     const currentTasks = store.getSnapshot().record.tasks;
     const result = factory(currentTasks);
-    store.run(result.description, (r) => ({ ...r, tasks: result.updatedTasks }));
+    store.run(result.description, (r) => ({ ...r, tasks: result.updatedTasks }), true, { checkpoint: result.checkpoint });
     return result;
   }
   const result = factory(tasks);
@@ -131,6 +131,7 @@ function execute(
 }
 
 const defaultLocalWorkspace = emptyWorkspace('local');
+let calendarRequestSequence = 0;
 
 export const useTaskStore = create<TaskState>((set, get) => ({
   workspaceId: 'local',
@@ -148,7 +149,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   store: null,
 
   setWorkspaceStore: (store: WorkspaceStore) => {
-    set({ store, workspaceId: store.id });
+    if (get().store !== store) calendarRequestSequence++;
+    set({ store, workspaceId: store.id, calendarEvents: [], lastSyncedAt: null });
     const snap = store.getSnapshot();
     if (snap.ready) {
       get().syncFromSnapshot(snap);
@@ -158,7 +160,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   syncFromSnapshot: (snapshot: StoreSnapshot) => {
     const { record, ready, sync } = snapshot;
     const prefSettings = (record.preferences.settings as Partial<UserWorkflowSettings>) || {};
-    const mergedSettings: UserWorkflowSettings = {
+    const mergedSettings: UserWorkflowSettings = get().preferences.settings === record.preferences.settings ? get().settings : {
       ...DEFAULT_WORKFLOW_SETTINGS,
       ...prefSettings,
     };
@@ -189,6 +191,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const result = commandService.createTask(currentTasks, input, overrides, {
       defaultPriority: settings.defaultTaskPriority,
       enableParsing: settings.enableSmartSyntaxParsing,
+      projects: currentProjects,
       defaultPlannedDate: activeView === 'today' ? todayStr : undefined,
       defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox',
     });
@@ -223,6 +226,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
                 defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox',
                 defaultPriority: settings.defaultTaskPriority,
                 enableParsing: settings.enableSmartSyntaxParsing,
+                projects: r.projects,
                 defaultPlannedDate: activeView === 'today' ? todayStr : undefined,
               }).updatedTasks,
             r.tasks
@@ -239,6 +243,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
                 defaultProjectId: activeView.startsWith('project:') ? activeView.slice(8) : 'inbox',
                 defaultPriority: settings.defaultTaskPriority,
                 enableParsing: settings.enableSmartSyntaxParsing,
+                projects: s.projects,
                 defaultPlannedDate: activeView === 'today' ? todayStr : undefined,
               }).updatedTasks,
             s.tasks
@@ -531,8 +536,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       store.run('Delete project and move its tasks', (r) => ({
         ...r,
         projects: r.projects.filter((p) => p.id !== id),
-        tasks: r.tasks.map((t) => (t.projectId === id ? { ...t, projectId: reassignToProjectId } : t)),
-      }));
+        tasks: r.tasks.map((t) => (t.projectId === id ? { ...t, projectId: reassignToProjectId, milestoneId: undefined } : t)),
+      }), true, { checkpoint: true });
     }
   },
 
@@ -647,7 +652,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   importTasks: async (importedTasks: Task[], importedProjects?: Project[], replace = false, extras?: BackupExtras) => {
     const { store, workspaceId, tasks, projects } = get();
-    const beforeTasks = store ? store.getSnapshot().record.tasks : tasks;
+    const beforeRecord = store?.getSnapshot().record;
+    const beforeTasks = beforeRecord ? beforeRecord.tasks : tasks;
     const beforeProjects = store ? store.getSnapshot().record.projects : projects;
 
     const nextProjects = replace
@@ -665,6 +671,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
 
     if (store) {
+      if (replace && typeof indexedDB !== 'undefined') await recoveryService.create(workspaceId, beforeRecord!, 'pre_batch', 'Before replacing workspace');
+      if (get().store !== store || store.getSnapshot().record !== beforeRecord) throw new Error('The workspace changed while preparing the import. Review it and retry.');
       const restoreCheckpoint = replace && validatedExtras ? writeFocusCheckpoint(workspaceId, null) : 0;
       store.run(replace ? 'Restore backup' : 'Import tasks', (r) => {
         const restored = {
@@ -701,12 +709,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   importCalendarFile: async (file: File) => {
+    const { store, workspaceId } = get();
     if (file.size > 2 * 1024 * 1024) throw new Error('Choose a calendar smaller than 2 MB.');
     const content = await file.text();
     if (!content.includes('BEGIN:VCALENDAR') || !content.includes('END:VCALENDAR')) {
       throw new Error('Choose a valid .ics calendar file.');
     }
     const todayStr = getTodayStr();
+    const { parseICSFeed } = await import('../services/calendarService');
+    if (get().store !== store || get().workspaceId !== workspaceId) throw new Error('Your workspace changed. Choose the calendar file again.');
     const events = parseICSFeed(content, todayStr);
     get().setWorkspacePreference('_calendarFile', { name: file.name, content });
     return events.length;
@@ -717,19 +728,28 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   refreshCalendarEvents: async (date = getTodayStr()) => {
-    const { preferences, calendarIcsUrl } = get();
+    const request = ++calendarRequestSequence;
+    const { preferences, calendarIcsUrl, store, workspaceId } = get();
     const calendarFile = preferences._calendarFile as { name: string; content: string } | undefined;
-    const imported = calendarFile ? parseICSFeed(calendarFile.content, date).map((event) => ({ ...event, id: `file:${event.id}` })) : [];
+    const isCurrent = () => request === calendarRequestSequence && get().store === store &&
+      get().workspaceId === workspaceId && get().calendarIcsUrl === calendarIcsUrl &&
+      get().preferences._calendarFile === calendarFile;
+    let imported: CalendarEvent[] = [];
 
-    if (!calendarIcsUrl.trim()) {
-      set({ calendarEvents: imported });
+    if (!calendarIcsUrl.trim() && !calendarFile) {
+      set({ calendarEvents: [] });
       return;
     }
 
     try {
-      const feed = await fetchICSFeed(calendarIcsUrl, date);
+      const { parseICSFeed, fetchICSFeed } = await import('../services/calendarService');
+      if (!isCurrent()) return;
+      imported = calendarFile ? parseICSFeed(calendarFile.content, date).map(event => ({ ...event, id: `file:${event.id}` })) : [];
+      const feed = calendarIcsUrl.trim() ? await fetchICSFeed(calendarIcsUrl, date) : [];
+      if (!isCurrent()) return;
       set({ calendarEvents: [...imported, ...feed.map((event) => ({ ...event, id: `feed:${event.id}` }))] });
     } catch (error) {
+      if (!isCurrent()) return;
       set({ calendarEvents: imported });
       useUIStore.getState().showToast(`Calendar could not refresh: ${(error as Error).message}`);
     }

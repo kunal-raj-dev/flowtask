@@ -1,3 +1,4 @@
+import { act as flushRender } from '@testing-library/react';
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -105,7 +106,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
   });
 
   describe('1. HTML5 Drag-and-Drop Contract & Payload Robustness', () => {
-    it('WorkspaceTaskRow sets draggable=true when task is not scheduleLocked', () => {
+    it('WorkspaceTaskRow sets draggable=true when task is not scheduleLocked', async () => {
       const task: Task = {
         id: 'task-unlocked',
         title: 'Draggable Task',
@@ -118,16 +119,16 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         subtasks: [],
       };
 
-      const { container } = render(
+      const { container } = await flushRender(async () => (render(
         <WorkspaceTaskRow task={task} onSelectTask={vi.fn()} />
-      );
+      )));
 
       const row = container.querySelector('.desk-task-row');
       expect(row).not.toBeNull();
       expect(row?.getAttribute('draggable')).toBe('true');
     });
 
-    it('WorkspaceTaskRow sets draggable=false when task.scheduleLocked is true', () => {
+    it('WorkspaceTaskRow sets draggable=false when task.scheduleLocked is true', async () => {
       const task: Task = {
         id: 'task-locked',
         title: 'Locked Task',
@@ -140,16 +141,16 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         subtasks: [],
       };
 
-      const { container } = render(
+      const { container } = await flushRender(async () => (render(
         <WorkspaceTaskRow task={task} onSelectTask={vi.fn()} />
-      );
+      )));
 
       const row = container.querySelector('.desk-task-row');
       expect(row).not.toBeNull();
       expect(row?.getAttribute('draggable')).toBe('false');
     });
 
-    it('WorkspaceTaskRow onDragStart populates application/json payload with taskId and duration', () => {
+    it('WorkspaceTaskRow onDragStart populates application/json payload with taskId and duration', async () => {
       const task: Task = {
         id: 'task-dnd-1',
         title: 'DnD Test Task',
@@ -161,9 +162,9 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         subtasks: [],
       };
 
-      const { container } = render(
+      const { container } = await flushRender(async () => (render(
         <WorkspaceTaskRow task={task} onSelectTask={vi.fn()} />
-      );
+      )));
 
       const row = container.querySelector('.desk-task-row')!;
       const setDataMock = vi.fn();
@@ -183,7 +184,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(dragStartEvent.dataTransfer.effectAllowed).toBe('move');
     });
 
-    it('WorkspaceTaskRow onDragStart falls back to 30m duration if estimatedMinutes is undefined or 0', () => {
+    it('WorkspaceTaskRow onDragStart falls back to 30m duration if estimatedMinutes is undefined or 0', async () => {
       const task: Task = {
         id: 'task-fallback-duration',
         title: 'No estimate task',
@@ -194,9 +195,9 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         subtasks: [],
       };
 
-      const { container } = render(
+      const { container } = await flushRender(async () => (render(
         <WorkspaceTaskRow task={task} onSelectTask={vi.fn()} />
-      );
+      )));
 
       const row = container.querySelector('.desk-task-row')!;
       const setDataMock = vi.fn();
@@ -215,8 +216,8 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       );
     });
 
-    it('TodayTimelineRail magnetic grid snapping: mathematically snaps 7m->0m, 8m->15m, 22m->15m, 23m->30m', () => {
-      const { container } = render(
+    it('TodayTimelineRail magnetic grid snapping: mathematically snaps 7m->0m, 8m->15m, 22m->15m, 23m->30m', async () => {
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -225,7 +226,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
 
@@ -278,8 +279,8 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('TodayTimelineRail clamps boundary drops at 00:00 and 24:00 (midnight limit)', () => {
-      const { container } = render(
+    it('TodayTimelineRail clamps boundary drops at 00:00 and 24:00 (midnight limit)', async () => {
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -288,7 +289,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
 
@@ -317,7 +318,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('TodayTimelineRail snaps magnetically to calendar event end boundary within 10-minute threshold', () => {
+    it('TodayTimelineRail snaps magnetically to calendar event end boundary within 10-minute threshold', async () => {
       const events: CalendarEvent[] = [
         {
           id: 'standup-meeting',
@@ -328,7 +329,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         },
       ];
 
-      const { container } = render(
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -338,7 +339,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
 
@@ -355,14 +356,14 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('TodayTimelineRail handles malformed, empty, or non-json drag payloads safely without throwing', () => {
-      const { container } = render(
+    it('TodayTimelineRail handles malformed, empty, or non-json drag payloads safely without throwing', async () => {
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
           tasks={[]}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
 
@@ -387,7 +388,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
   });
 
   describe('2. TodayView.test.tsx Contract & Horizon Assertions Verification', () => {
-    it('satisfies all TodayView.test.tsx baseline assertions cleanly', () => {
+    it('satisfies all TodayView.test.tsx baseline assertions cleanly', async () => {
       mockTasks = [
         {
           id: 'today-task',
@@ -406,7 +407,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       mockFocusedSeconds = 4500; // 1h 15m
 
       const onFocus = vi.fn();
-      render(<TodayView onSelectTask={vi.fn()} onStartFocus={onFocus} />);
+      await flushRender(async () => (render(<TodayView onSelectTask={vi.fn()} onStartFocus={onFocus} />)));
 
       // Baseline checks
       expect(screen.getByRole('heading', { name: 'Today.' })).toBeDefined();
@@ -430,7 +431,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(screen.getByRole('dialog', { name: 'Make room for today' })).toBeDefined();
     });
 
-    it('satisfies overbooked warning threshold calculation (480m vs 360m available = 120m overbooked)', () => {
+    it('satisfies overbooked warning threshold calculation (480m vs 360m available = 120m overbooked)', async () => {
       mockTasks = [
         {
           id: 'huge-task',
@@ -447,15 +448,15 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         },
       ];
 
-      render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
+      await flushRender(async () => (render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />)));
 
       expect(screen.getByText(/Overbooked by 120 minutes/)).toBeDefined();
     });
 
-    it('renders empty day state gracefully with guidance prompt and zero error cascades', () => {
+    it('renders empty day state gracefully with guidance prompt and zero error cascades', async () => {
       mockTasks = [];
 
-      render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
+      await flushRender(async () => (render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />)));
 
       expect(screen.getByText('What matters most today?')).toBeDefined();
       expect(
@@ -466,7 +467,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       );
     });
 
-    it('correctly partitions daytime batches: Morning, Flow, Evening, Someday, and Completed', () => {
+    it('correctly partitions daytime batches: Morning, Flow, Evening, Someday, and Completed', async () => {
       mockTasks = [
         {
           id: 'p-1',
@@ -540,7 +541,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         },
       ];
 
-      render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
+      await flushRender(async () => (render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />)));
 
       // Top 3
       expect(screen.getByText('Top Priority Item')).toBeDefined();
@@ -567,37 +568,37 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
   });
 
   describe('3. DashboardCanvasView & View Switching Stress & Stability', () => {
-    it('cleanly renders DashboardEditor inside DashboardCanvasView', () => {
-      render(
+    it('cleanly renders DashboardEditor inside DashboardCanvasView', async () => {
+      await flushRender(async () => (render(
         <DashboardCanvasView
           onSelectTask={vi.fn()}
           onStartFocus={vi.fn()}
           onSwitchToHorizon={vi.fn()}
         />
-      );
+      )));
 
       expect(screen.getByText('Modular Dashboard Canvas')).toBeDefined();
       expect(screen.getByText('Back to Horizon Daily Flow')).toBeDefined();
       expect(document.querySelector('.dashboard-workspace')).not.toBeNull();
     });
 
-    it('triggers onSwitchToHorizon when Back button is clicked', () => {
+    it('triggers onSwitchToHorizon when Back button is clicked', async () => {
       const switchHorizonMock = vi.fn();
-      render(
+      await flushRender(async () => (render(
         <DashboardCanvasView
           onSelectTask={vi.fn()}
           onStartFocus={vi.fn()}
           onSwitchToHorizon={switchHorizonMock}
         />
-      );
+      )));
 
       const backBtn = screen.getByRole('button', { name: 'Back to Horizon Daily Flow' });
       fireEvent.click(backBtn);
       expect(switchHorizonMock).toHaveBeenCalledTimes(1);
     });
 
-    it('TodayView switches between Horizon View and Dashboard Canvas cleanly', () => {
-      render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
+    it('TodayView switches between Horizon View and Dashboard Canvas cleanly', async () => {
+      await flushRender(async () => (render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />)));
 
       // Initially in Horizon View
       expect(screen.getByText('Horizon View')).toBeDefined();
@@ -605,7 +606,10 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
 
       // Click "Switch dashboard" button
       const switchBtn = screen.getByRole('button', { name: 'Switch dashboard' });
-      fireEvent.click(switchBtn);
+      await act(async () => {
+        fireEvent.click(switchBtn);
+        await import('../src/components/views/DashboardCanvasView');
+      });
 
       // Now in Dashboard Canvas View
       expect(screen.getByText('Modular Dashboard Canvas')).toBeDefined();
@@ -620,11 +624,11 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(screen.getByRole('heading', { name: 'Today.' })).toBeDefined();
     });
 
-    it('stress-test: 10 rapid consecutive view mode toggles without state desync or memory leaks', () => {
-      const { container } = render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
+    it('stress-test: 10 rapid consecutive view mode toggles without state desync or memory leaks', async () => {
+      const { container } = await flushRender(async () => (render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />)));
 
       for (let i = 0; i < 10; i++) {
-        act(() => {
+        await act(async () => {
           // Switch to Dashboard
           const switchBtn = screen.getByRole('button', { name: 'Switch dashboard' });
           fireEvent.click(switchBtn);
@@ -632,7 +636,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
 
         expect(screen.getByText('Modular Dashboard Canvas')).toBeDefined();
 
-        act(() => {
+        await act(async () => {
           // Switch back to Horizon
           const backBtn = screen.getByRole('button', { name: 'Back to Horizon Daily Flow' });
           fireEvent.click(backBtn);
@@ -651,10 +655,10 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
   // 4. HorizonTodayView Scalability & Boundary Stress (0, 1, 3, 50+ Tasks)
   // =========================================================================
   describe('4. HorizonTodayView Scalability & Boundary Stress (0, 1, 3, 50+ Tasks)', () => {
-    it('0 tasks: renders clean empty states across Top 3, Daytime Flow, and Capacity Summary', () => {
+    it('0 tasks: renders clean empty states across Top 3, Daytime Flow, and Capacity Summary', async () => {
       mockTasks = [];
 
-      render(<HorizonTodayView />);
+      await flushRender(async () => (render(<HorizonTodayView />)));
 
       expect(screen.getByText('What matters most today?')).toBeDefined();
       expect(screen.getByText(/Star up to three tasks below/)).toBeDefined();
@@ -666,7 +670,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(summary?.textContent).toContain('0 completed');
     });
 
-    it('1 task in Top 3: renders single rank badge 01 and exactly 2 spaces left banner', () => {
+    it('1 task in Top 3: renders single rank badge 01 and exactly 2 spaces left banner', async () => {
       mockTasks = [
         {
           id: 'solo-top-task',
@@ -683,7 +687,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         },
       ];
 
-      render(<HorizonTodayView />);
+      await flushRender(async () => (render(<HorizonTodayView />)));
 
       expect(screen.getByText('Sole Focus Task')).toBeDefined();
       expect(screen.getByLabelText('Priority 1')).toBeDefined();
@@ -692,7 +696,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(screen.getByText('2 spaces left. Leave room for what matters.')).toBeDefined();
     });
 
-    it('3 tasks in Top 3: renders badges 01, 02, 03 sorted by priority and hides empty spaces banner', () => {
+    it('3 tasks in Top 3: renders badges 01, 02, 03 sorted by priority and hides empty spaces banner', async () => {
       mockTasks = [
         {
           id: 'task-p3',
@@ -732,7 +736,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         },
       ];
 
-      render(<HorizonTodayView />);
+      await flushRender(async () => (render(<HorizonTodayView />)));
 
       expect(screen.getByText('3/3 · Keep it intentional')).toBeDefined();
       expect(screen.queryByText(/spaces left/)).toBeNull();
@@ -749,7 +753,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(rows[2].textContent).toContain('Priority 3 Task');
     });
 
-    it('50+ tasks in Top 3: strictly caps deck to 3 highest-priority items', () => {
+    it('50+ tasks in Top 3: strictly caps deck to 3 highest-priority items', async () => {
       const tasks50: Task[] = [];
       const priorities: Priority[] = ['p4', 'p3', 'p2', 'p1'];
       for (let i = 0; i < 55; i++) {
@@ -768,7 +772,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       }
       mockTasks = tasks50;
 
-      render(<HorizonTodayView />);
+      await flushRender(async () => (render(<HorizonTodayView />)));
 
       const topThreeSection = document.querySelector('.daily-priorities');
       const ranks = topThreeSection?.querySelectorAll('.desk-task-rank');
@@ -784,7 +788,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('50+ tasks in daytime batches: virtual list renders without degradation or desync', () => {
+    it('50+ tasks in daytime batches: virtual list renders without degradation or desync', async () => {
       const massive: Task[] = [];
 
       // 3 Top 3 tasks
@@ -850,7 +854,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
 
       mockTasks = massive;
 
-      render(<HorizonTodayView />);
+      await flushRender(async () => (render(<HorizonTodayView />)));
 
       const morningSection = screen.getByRole('region', { name: 'Morning Focus' });
       expect(morningSection.textContent).toContain('20');
@@ -867,8 +871,8 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
   // 5. TodayTimelineRail Extreme Time Boundaries (00:00, 23:45, Boundary Crossovers)
   // =========================================================================
   describe('5. TodayTimelineRail Extreme Time Boundaries (00:00, 23:45, Boundary Crossovers)', () => {
-    it('snaps drop at 00:00 start of day cleanly', () => {
-      const { container } = render(
+    it('snaps drop at 00:00 start of day cleanly', async () => {
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -877,7 +881,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
       const ev = createDropEvent(canvas, 0, {
@@ -892,8 +896,8 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('clamps negative clientY drops (scrolled/dragged above top) to 00:00', () => {
-      const { container } = render(
+    it('clamps negative clientY drops (scrolled/dragged above top) to 00:00', async () => {
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -902,7 +906,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
       const ev = createDropEvent(canvas, -120, {
@@ -917,8 +921,8 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('snaps drop at 23:45 with 15m duration and clamps scheduledEnd to 23:59', () => {
-      const { container } = render(
+    it('snaps drop at 23:45 with 15m duration and clamps scheduledEnd to 23:59', async () => {
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -927,7 +931,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
       // 23:45 = 1425 minutes -> 1425px
@@ -943,8 +947,8 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('clamps drop at 23:45 with 60m duration so task does not overflow past 24h (starts at 23:00)', () => {
-      const { container } = render(
+    it('clamps drop at 23:45 with 60m duration so task does not overflow past 24h (starts at 23:00)', async () => {
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -953,7 +957,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
       // 23:45 with duration 60m: maxStart = 1440 - 60 = 1380 (23:00)
@@ -969,8 +973,8 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('clamps drop far past 24:00 (clientY = 2500px) within 24h boundary', () => {
-      const { container } = render(
+    it('clamps drop far past 24:00 (clientY = 2500px) within 24h boundary', async () => {
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -979,7 +983,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
       const ev = createDropEvent(canvas, 2500, {
@@ -995,7 +999,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       });
     });
 
-    it('magnetically snaps to calendar event end boundary within 10-minute threshold', () => {
+    it('magnetically snaps to calendar event end boundary within 10-minute threshold', async () => {
       const events: CalendarEvent[] = [
         {
           id: 'ev-retro',
@@ -1006,7 +1010,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         },
       ];
 
-      const { container } = render(
+      const { container } = await flushRender(async () => (render(
         <TodayTimelineRail
           isOpen={true}
           onToggleCollapse={vi.fn()}
@@ -1016,7 +1020,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           startHour={0}
           endHour={24}
         />
-      );
+      )));
 
       const canvas = container.querySelector('.overscroll-contain')!;
       // 15:15 is 915px. 15:10 is 910m. Distance |915 - 910| = 5 <= 10m threshold -> snaps to 15:10
@@ -1124,12 +1128,12 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
   // 7. Modular Shell Responsiveness & View Transitions Across Breakpoints
   // =========================================================================
   describe('7. Modular Shell Responsiveness & View Transitions Across Breakpoints', () => {
-    it('DesktopHeader renders view title, breadcrumb, focus controls, and quick capture', () => {
+    it('DesktopHeader renders view title, breadcrumb, focus controls, and quick capture', async () => {
       const onToggle = vi.fn();
       const onQuickAdd = vi.fn();
       const onOpenFocus = vi.fn();
 
-      render(
+      await flushRender(async () => (render(
         <DesktopHeader
           viewTitle="Today Horizon"
           isSidebarCollapsed={false}
@@ -1143,13 +1147,13 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           user={{ displayName: 'Alex Mercer', email: 'alex@flowtask.app' }}
           isAnonymous={false}
         />
-      );
+      )));
 
       expect(screen.getByText('Today Horizon')).toBeDefined();
       expect(screen.getByText('FlowTask')).toBeDefined();
-      expect(screen.getByTestId('focus-mini-player-desktop')).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Focus', exact: true })).toBeDefined();
       expect(screen.getByText('Alex Mercer')).toBeDefined();
-      expect(screen.getByText('Cloud')).toBeDefined();
+      expect(screen.getByText('Synced')).toBeDefined();
 
       const quickAddBtn = screen.getByRole('button', { name: 'New Task' });
       fireEvent.click(quickAddBtn);
@@ -1160,12 +1164,12 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(onToggle).toHaveBeenCalled();
     });
 
-    it('MobileBottomNav renders navigation tabs, caps count badge at 99+, and handles view selection', () => {
+    it('MobileBottomNav renders navigation tabs, caps count badge at 99+, and handles view selection', async () => {
       const onSelectView = vi.fn();
       const onQuickAdd = vi.fn();
       const onOpenMenu = vi.fn();
 
-      render(
+      await flushRender(async () => (render(
         <MobileBottomNav
           activeView="today"
           onSelectView={onSelectView}
@@ -1175,7 +1179,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
           inboxCount={8}
           upcomingCount={0}
         />
-      );
+      )));
 
       expect(screen.getByText('99+')).toBeDefined();
       expect(screen.getByText('8')).toBeDefined();
@@ -1193,7 +1197,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(onOpenMenu).toHaveBeenCalled();
     });
 
-    it('ViewContainer resets scroll position on activeView transition and renders shared snapshot banner', () => {
+    it('ViewContainer resets scroll position on activeView transition and renders shared snapshot banner', async () => {
       const onImport = vi.fn();
       const onDismiss = vi.fn();
 
@@ -1204,7 +1208,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         tasks: [{ title: 'Milestone 1' }, { title: 'Milestone 2' }],
       };
 
-      const { rerender } = render(
+      const { rerender } = await flushRender(async () => (render(
         <ViewContainer
           activeView="today"
           viewTitle="Today"
@@ -1215,7 +1219,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         >
           <div data-testid="today-content">Today Content</div>
         </ViewContainer>
-      );
+      )));
 
       expect(screen.getByText(/Shared Task Snapshot: "Project Roadmap Snapshot"/)).toBeDefined();
       expect(screen.getByText(/Contains 2 tasks shared via zero-auth client link/)).toBeDefined();
@@ -1241,8 +1245,8 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(screen.getByTestId('upcoming-content')).toBeDefined();
     });
 
-    it('AppShell mounts workspace frame, skip link, and passes children to main container', () => {
-      render(
+    it('AppShell mounts workspace frame, skip link, and passes children to main container', async () => {
+      await flushRender(async () => (render(
         <AppShell
           isSidebarCollapsed={false}
           onToggleSidebar={vi.fn()}
@@ -1273,7 +1277,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         >
           <div data-testid="shell-main-content">Shell Main Content</div>
         </AppShell>
-      );
+      )));
 
       expect(screen.getByText('Skip to main content')).toBeDefined();
       expect(screen.getByTestId('test-desktop-header')).toBeDefined();

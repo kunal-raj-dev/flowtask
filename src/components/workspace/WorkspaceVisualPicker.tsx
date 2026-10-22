@@ -130,3 +130,4 @@ export const WorkspaceVisualPicker: React.FC<Props> = ({ isOpen, onClose, value,
     </div>
   </Dialog>;
 };
+import '../../styles/workspace-visual-picker.css';

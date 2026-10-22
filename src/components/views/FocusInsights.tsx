@@ -76,3 +76,4 @@ export function FocusInsights() {
     </section>
   );
 }
+import '../../styles/focus-insights.css';

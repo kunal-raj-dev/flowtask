@@ -26,14 +26,7 @@ import {
   Plus,
   Table,
 } from 'lucide-react';
-import {
-  getStoredSnapshots,
-  loadSnapshotsFromIDB,
-  createLocalSnapshot,
-  restoreSnapshot,
-  deleteSnapshot,
-  type LocalSnapshot,
-} from '../../utils/backupService';
+import { recoveryService, type RecoverySnapshot } from '../../services/recoveryService';
 
 interface ExportImportModalProps {
   onClose: () => void;
@@ -46,11 +39,14 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 }) => {
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, onClose);
-  const { tasks, projects, importTasks, showToast, workspacePreferences = {}, smartViews = [], dashboards = [] } = useTaskContext();
+  const { workspaceId, tasks, projects, importTasks, showToast, workspacePreferences = {}, smartViews = [], dashboards = [] } = useTaskContext();
   const [activeTab, setActiveTab] = useState<'standup' | 'markdown' | 'csv' | 'share' | 'json' | 'import' | 'snapshots'>(
     initialTab
   );
-  const [localSnapshots, setLocalSnapshots] = useState<LocalSnapshot[]>(() => getStoredSnapshots());
+  const [localSnapshots, setLocalSnapshots] = useState<RecoverySnapshot[]>([]);
+  const [snapshotBusy, setSnapshotBusy] = useState(false);
+  const [legacyCount, setLegacyCount] = useState(0);
+  const checkpointRecord = () => ({ tasks, projects, preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn), dashboards });
   const [copied, setCopied] = useState(false);
   const [standupFormat, setStandupFormat] = useState<'slack' | 'markdown' | 'plain'>('slack');
   const [importJsonText, setImportJsonText] = useState('');
@@ -58,12 +54,11 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   const [importError, setImportError] = useState('');
 
   useEffect(() => {
-    void loadSnapshotsFromIDB().then((snaps) => {
-      if (snaps && snaps.length > 0) {
-        setLocalSnapshots(snaps);
-      }
-    });
-  }, []);
+    let cancelled = false;
+    void recoveryService.list(workspaceId).then(values => { if (!cancelled) setLocalSnapshots(values); }).catch(() => { if (!cancelled) setImportError('Checkpoints could not be loaded. Download a backup before clearing browser storage.'); });
+    void recoveryService.legacy().then(values => { if (!cancelled) setLegacyCount(values.length); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [workspaceId]);
 
   const validationPreview = useMemo(() => {
     if (!importJsonText.trim()) return null;
@@ -118,9 +113,6 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
     try {
 
       const before = { tasks: [...tasks], projects: [...projects], preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn), dashboards: [...dashboards] };
-      if (importMode === 'replace') {
-        createLocalSnapshot(tasks, projects, 'Pre-Import Replace Safety Snapshot', 'pre_batch');
-      }
 
       await importTasks(validationPreview.data.tasks, validationPreview.data.projects, importMode === 'replace', validationPreview.data.extras);
       audioEngine.playCompletionChime();
@@ -235,7 +227,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           </button>
           <button
             onClick={() => {
-              setLocalSnapshots(getStoredSnapshots());
+              void recoveryService.list(workspaceId).then(setLocalSnapshots).catch(() => setImportError('Checkpoints could not be loaded.'));
               setActiveTab('snapshots');
             }}
             className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
@@ -524,21 +516,29 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         {/* 6. Local Snapshots & Revisions Tab */}
         {activeTab === 'snapshots' && (
           <div className="space-y-3">
+            {importError && <p role="alert" className="desk-notice">{importError}</p>}
+            {legacyCount > 0 && <div className="desk-notice"><p>{legacyCount} older checkpoints have unverified ownership. Export and review them before importing into an account.</p><button className="desk-button" onClick={() => void recoveryService.legacy().then(values => downloadFile(JSON.stringify(values, null, 2), 'flowtask-legacy-recovery.json', 'application/json')).catch(() => setImportError('Older checkpoints could not be exported.'))}>Export older checkpoints</button></div>}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-stone-800 dark:text-stone-200">
                   Point-in-Time Rolling Snapshots
                 </p>
                 <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                  Automatic daily checkpoints & manual rollback points stored locally.
+                  Latest 10 checkpoints for this workspace, stored on this device. Keep a downloaded backup for device loss.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  createLocalSnapshot(tasks, projects, undefined, 'manual');
-                  setLocalSnapshots(getStoredSnapshots());
-                  audioEngine.playCompletionChime();
+                disabled={snapshotBusy}
+                onClick={async () => {
+                  setSnapshotBusy(true);
+                  try {
+                    await recoveryService.create(workspaceId, checkpointRecord());
+                    setLocalSnapshots(await recoveryService.list(workspaceId));
+                    audioEngine.playCompletionChime();
+                    setImportError('');
+                  } catch { setImportError('Checkpoint was not saved. Download a backup and check available storage.'); }
+                  finally { setSnapshotBusy(false); }
                 }}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-xs font-bold shadow-xs transition-all shrink-0"
               >
@@ -550,7 +550,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
             <div className="max-h-[260px] overflow-y-auto space-y-2 pr-1">
               {localSnapshots.length === 0 ? (
                 <div className="text-center py-8 text-stone-400 text-xs">
-                  No snapshots recorded yet. Automatic daily snapshots will appear here.
+                  No checkpoints yet. A daily checkpoint is saved after activity while FlowTask is open.
                 </div>
               ) : (
                 localSnapshots.map((snap) => (
@@ -591,19 +591,16 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                       <button
                         type="button"
                         onClick={async () => {
-                          const prevTasks = [...tasks];
-                          const prevProjects = [...projects];
-                          createLocalSnapshot(tasks, projects, 'Pre-Restore Auto-Backup', 'pre_batch');
-                          const restored = restoreSnapshot(snap.id);
-                          if (restored) {
-                            try { await importTasks(restored.tasks, restored.projects, true); } catch (error) { setImportError((error as Error).message); return; }
+                          const previous = checkpointRecord();
+                          try {
+                            const restored = await recoveryService.read(workspaceId, snap.id);
+                            await importTasks(restored.tasks, restored.projects, true, validateBackupExtras(restored));
                             audioEngine.playCompletionChime();
-                            confetti({ particleCount: 40, spread: 50 });
-                            showToast(`Restored snapshot "${snap.label}"`, 'Undo', () => {
-                              void importTasks(prevTasks, prevProjects, true).catch(error => showToast(error.message));
+                            showToast(`Restored checkpoint "${snap.label}"`, 'Undo', () => {
+                              void importTasks(previous.tasks, previous.projects, true, previous).catch(error => showToast(error.message));
                             });
                             onClose();
-                          }
+                          } catch (error) { setImportError((error as Error).message); }
                         }}
                         className="px-2.5 py-1 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-950 font-bold text-[11px] shadow-xs hover:opacity-90 transition-opacity flex items-center gap-1"
                       >
@@ -612,9 +609,9 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          deleteSnapshot(snap.id);
-                          setLocalSnapshots(getStoredSnapshots());
+                        onClick={async () => {
+                          try { await recoveryService.remove(workspaceId, snap.id); setLocalSnapshots(await recoveryService.list(workspaceId)); }
+                          catch { setImportError('Checkpoint could not be removed. Please retry.'); }
                         }}
                         title="Delete snapshot"
                         className="p-1 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"

@@ -8,6 +8,10 @@ The public landing page is `/` (also `/welcome`). Continue to the planner at `/a
 
 See [V2 beta implementation and verification](docs/FLOWTASK_2_BETA.md) and [V3 product notes](docs/FLOWTASK_V3.md) for current behavior, limitations, and release status.
 
+The current production-readiness candidate adds account-scoped recovery, explicit device import, safer cloud delivery, single-writer tabs, headless focus and a focused visual redesign. See the [acceptance matrix, deployment configuration, recovery and incident runbook](docs/PRODUCTION_READINESS.md). Live cloud/device checks and the monitored beta remain required before broad release.
+
+For interrupted work, the [implementation checkpoint](docs/IMPLEMENTATION_STATUS.md) records milestone coverage, the latest fixes and the remaining release gates.
+
 Today supports a full-area, theme-tinted background across both daily and modular views. The local Copilot offers editable task breakdowns, scheduling previews, task-linked focus and daily summaries. See [responsive workspace and Copilot behavior](docs/WORKSPACE_RESPONSIVE_COPILOT.md) for supported commands and verification details.
 
 ## Run locally
@@ -15,7 +19,7 @@ Today supports a full-area, theme-tinted background across both daily and modula
 Requires Node.js 22 and npm.
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
@@ -24,14 +28,16 @@ Open `http://localhost:5173/` for the landing page or `http://localhost:5173/app
 ## Verify changes
 
 ```sh
-npm test
-npm run lint
-npm run build
-npm run test:security
-npm run test:rules
+npm run verify
+npx playwright install --with-deps chromium firefox webkit
+npm run test:e2e:release
+npm run test:performance
+npm audit --omit=dev --audit-level=moderate
 ```
 
-`npm run test:rules` uses a disposable local Firestore emulator at `127.0.0.1:8088`; it does not test production rules. Browser tests run with `npm run test:e2e` after installing the configured Playwright browsers.
+`verify` includes lint, TypeScript, unit/component tests, security tests, an automatically started disposable Firestore emulator, the production build and bundle budgets. The emulator uses `127.0.0.1:8088`; it does not test production rules. Release browser and performance checks use the production build. `npm run test:e2e` remains available for development-server checks.
+
+The isolated hosted acceptance runner is `npm run test:cloud:staging`, with `FLOWTASK_STAGING_URL`, ignored staging client configuration and an authenticated Vercel CLI session (or `VERCEL_TOKEN`). It refuses production targets and creates/deletes only disposable acceptance accounts. Current deployment, verified journeys and remaining release dependencies are recorded in [staging setup](docs/STAGING_SETUP.md) and the [implementation checkpoint](docs/IMPLEMENTATION_STATUS.md).
 
 ## Stack
 

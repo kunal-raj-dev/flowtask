@@ -53,8 +53,6 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
     tasks,
     calendarEvents = [],
     settings,
-    addTask,
-    showToast,
   } = useTaskContext();
 
   const today = useTodayStr();
@@ -67,14 +65,13 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   useEffect(() => {
     const element = frameRef.current;
     if (!element) return;
-    const measure = () => setWide(element.clientWidth >= 960);
+    const measure = () => setWide(element.clientWidth >= 1200);
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const [input, setInput] = useState('');
   const [completedOpen, setCompletedOpen] = useState(false);
   const [somedayOpen, setSomedayOpen] = useState(false);
 
@@ -89,12 +86,6 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   });
 
   const hours = (minutes: number) => `${Math.round(minutes / 6) / 10}h`;
-
-  // NLP task parser preview
-  const parsed = useMemo(
-    () => (settings?.enableSmartSyntaxParsing === false ? { cleanTitle: input.trim() } : parseTaskInput(input)),
-    [input, settings?.enableSmartSyntaxParsing]
-  );
 
   // Filter tasks
   const activeTodayTasks = useMemo(() => {
@@ -148,26 +139,6 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   const completedBatch = useMemo(() => {
     return tasks.filter((t) => !t.deletedAt && !t.archivedAt && (completedOn(t, today) || (t.status === 'done' && isTodayTask(t, today))));
   }, [tasks, today]);
-
-  const handleCaptureSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = input.trim();
-    if (!clean) return;
-
-    addTask(clean, {
-      plannedDate: parsed.plannedDate || today,
-      projectId: parsed.projectTag || 'inbox',
-      priority: parsed.priority,
-      dueDate: parsed.dueDate,
-      estimatedMinutes: parsed.estimatedMinutes,
-    });
-
-    if (parsed.plannedDate && parsed.plannedDate !== today) {
-      showToast(`Task captured for ${parsed.plannedDate}. Find it in Upcoming.`);
-    }
-
-    setInput('');
-  };
 
   const renderRow = (task: Task) => (
     <WorkspaceTaskRow
@@ -255,76 +226,8 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
         )}
 
         {/* Inline Task Capture */}
-        <section className="daily-capture" aria-label="Add a task">
-          <form className="desk-inline-capture relative" onSubmit={handleCaptureSubmit}>
-            <Plus size={16} className="text-[var(--text-muted)] shrink-0" />
-            <input
-              aria-label="Add a task to this list"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="What needs your attention today?"
-              className="w-full bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim()}
-              aria-label="Add task"
-              className="px-2 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 disabled:opacity-40"
-            >
-              ↵
-            </button>
-            {input.trim() && (parsed.plannedDate || parsed.dueDate || parsed.projectTag || parsed.estimatedMinutes || parsed.priority) && (
-              <div className="desk-capture-preview flex items-center gap-2 mt-2 text-[10px] text-[var(--text-muted)] font-mono" aria-label="Recognized task details">
-                {parsed.plannedDate && <span>Planned · {parsed.plannedDate}</span>}
-                {parsed.dueDate && <span>Deadline · {parsed.dueDate}</span>}
-                {parsed.projectTag && <span>Project · {parsed.projectTag}</span>}
-                {parsed.estimatedMinutes && <span>{parsed.estimatedMinutes}m</span>}
-                {parsed.priority && <span>{parsed.priority.toUpperCase()}</span>}
-              </div>
-            )}
-          </form>
-        </section>
+        <TodayTaskCapture />
 
-
-        {/* Daily Planning Budget Banner */}
-        <section
-          className="daily-planning-summary p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-          aria-label="Daily capacity budget"
-        >
-          <div>
-            <span className="daily-summary-label text-[10px] font-bold tracking-wider uppercase text-[var(--text-muted)] block mb-1">
-              A DAY THAT FITS
-            </span>
-            <p className="text-sm font-medium text-[var(--text-secondary)]">
-              <strong className="text-[var(--text-primary)] font-bold">{hours(summary.totalDemandMinutes)}</strong> planned{' '}
-              <span className="text-[var(--text-muted)]">·</span>{' '}
-              <strong className="text-[var(--text-primary)] font-bold">
-                {hours(Math.max(0, summary.availableTaskBudgetMinutes - summary.totalDemandMinutes))}
-              </strong>{' '}
-              available
-            </p>
-          </div>
-
-          <div className="daily-summary-actions flex items-center gap-3">
-            <section className="daily-progress flex items-center gap-2.5 text-xs text-[var(--text-secondary)] font-medium">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
-                <CheckCircle2 size={13} strokeWidth={2.5} />
-                {summary.completedTaskCount} completed
-              </span>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold">
-                <Sparkles size={13} strokeWidth={2} />
-                {formatSecondsToHumanReadable(focusedSeconds)} focused
-              </span>
-            </section>
-          </div>
-        </section>
-
-        {/* Overbooked Warning Banner */}
-        {summary.overbooked && (
-          <p className="daily-overload p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-700 dark:text-rose-300 text-xs font-semibold" role="status">
-            Overbooked by {summary.overbookedMinutes} minutes. Move a task or adjust your plan.
-          </p>
-        )}
 
         {/* Top 3 Priorities Deck */}
         <section className="daily-priorities space-y-2.5" aria-label="Top 3 Priorities">
@@ -378,7 +281,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
           {/* 1. Morning Focus Batch */}
           {morningBatch.length > 0 && (
             <section className="morning-focus-batch space-y-2" aria-label="Morning Focus">
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
                 <Sun size={15} />
                 <h3>Morning Focus</h3>
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300">
@@ -475,6 +378,47 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
             </section>
           )}
         </div>
+        {/* Daily Planning Budget Banner */}
+        <section
+          className="daily-planning-summary p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          aria-label="Daily capacity budget"
+        >
+          <div>
+            <span className="daily-summary-label text-[10px] font-bold tracking-wider uppercase text-[var(--text-muted)] block mb-1">
+              A DAY THAT FITS
+            </span>
+            <p className="text-sm font-medium text-[var(--text-secondary)]">
+              <strong className="text-[var(--text-primary)] font-bold">{hours(summary.totalDemandMinutes)}</strong> planned{' '}
+              <span className="text-[var(--text-muted)]">·</span>{' '}
+              <strong className="text-[var(--text-primary)] font-bold">
+                {hours(Math.max(0, summary.availableTaskBudgetMinutes - summary.totalDemandMinutes))}
+              </strong>{' '}
+              available
+            </p>
+          </div>
+
+          <div className="daily-summary-actions flex items-center gap-3">
+            <section className="daily-progress flex items-center gap-2.5 text-xs text-[var(--text-secondary)] font-medium">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-semibold">
+                <CheckCircle2 size={13} strokeWidth={2.5} />
+                {summary.completedTaskCount} completed
+              </span>
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-semibold">
+                <Sparkles size={13} strokeWidth={2} />
+                {formatSecondsToHumanReadable(focusedSeconds)} focused
+              </span>
+            </section>
+          </div>
+        </section>
+
+        {/* Overbooked Warning Banner */}
+        {summary.overbooked && (
+          <p className="daily-overload p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-700 dark:text-rose-300 text-xs font-semibold" role="status">
+            Overbooked by {summary.overbookedMinutes} minutes. Move a task or adjust your plan.
+          </p>
+        )}
+
+
       </div>
 
       {/* Embedded 24h Collapsible Timeline Rail */}
@@ -493,3 +437,68 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
     </div>
   );
 };
+
+// Keep typing local to the capture field; the day and timeline do not need to
+// recalculate or repaint on each keystroke. Submission still uses the same commands.
+function TodayTaskCapture() {
+  const { settings, addTask, showToast } = useTaskContext();
+  const today = useTodayStr();
+  const [input, setInput] = useState('');
+  // NLP task parser preview
+  const parsed = useMemo(
+    () => (settings?.enableSmartSyntaxParsing === false ? { cleanTitle: input.trim() } : parseTaskInput(input)),
+    [input, settings?.enableSmartSyntaxParsing]
+  );
+
+  const handleCaptureSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = input.trim();
+    if (!clean) return;
+
+    addTask(clean, {
+      plannedDate: parsed.plannedDate || today,
+      projectId: parsed.projectTag || 'inbox',
+      priority: parsed.priority,
+      dueDate: parsed.dueDate,
+      estimatedMinutes: parsed.estimatedMinutes,
+    });
+
+    if (parsed.plannedDate && parsed.plannedDate !== today) {
+      showToast(`Task captured for ${parsed.plannedDate}. Find it in Upcoming.`);
+    }
+
+    setInput('');
+  };
+
+  return (
+        <section className="daily-capture" aria-label="Add a task">
+          <form className="desk-inline-capture relative" onSubmit={handleCaptureSubmit}>
+            <Plus size={16} className="text-[var(--text-muted)] shrink-0" />
+            <input
+              aria-label="Add a task to this list"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="What needs your attention today?"
+              className="w-full bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              aria-label="Add task"
+              className="px-2 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 disabled:opacity-40"
+            >
+              ↵
+            </button>
+            {input.trim() && (parsed.plannedDate || parsed.dueDate || parsed.projectTag || parsed.estimatedMinutes || parsed.priority) && (
+              <div className="desk-capture-preview flex items-center gap-2 mt-2 text-[10px] text-[var(--text-muted)] font-mono" aria-label="Recognized task details">
+                {parsed.plannedDate && <span>Planned · {parsed.plannedDate}</span>}
+                {parsed.dueDate && <span>Deadline · {parsed.dueDate}</span>}
+                {parsed.projectTag && <span>Project · {parsed.projectTag}</span>}
+                {parsed.estimatedMinutes && <span>{parsed.estimatedMinutes}m</span>}
+                {parsed.priority && <span>{parsed.priority.toUpperCase()}</span>}
+              </div>
+            )}
+          </form>
+        </section>
+  );
+}

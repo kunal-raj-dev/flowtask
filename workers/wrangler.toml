@@ -1,0 +1,13 @@
+name = "flowtask-calendar"
+main = "calendar-proxy.js"
+compatibility_date = "2026-10-21"
+
+# Set the exact deployment origin before publishing this worker.
+[vars]
+ALLOWED_ORIGINS = "https://your-flowtask-domain.example"
+CALENDAR_HOSTS = "calendar.google.com,outlook.live.com,outlook.office365.com"
+
+[[ratelimits]]
+name = "CALENDAR_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }

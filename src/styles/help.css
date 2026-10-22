@@ -1,0 +1,14 @@
+.help-page { background: var(--bg-main); color: var(--text-primary); min-height: 100dvh; font-size: 16px; line-height: 1.7; }
+.help-page header,.help-page footer { max-width: 1120px; margin: auto; padding: 24px; display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+.help-page header > a,.help-page nav { display: flex; align-items: center; gap: 16px; }
+.help-page header > a { font-weight: 700; }
+.help-page nav { gap: 24px; font-size: 14px; flex-wrap: wrap; }
+.help-page a { color: var(--text-primary); text-decoration: underline; text-underline-offset: 4px; }
+.help-page main { max-width: 800px; padding: 56px 24px 72px; margin: auto; }
+.help-page h1 { font-size: clamp(32px,5vw,48px); letter-spacing: -.04em; line-height: 1.15; margin: 16px 0 40px; }
+.help-page section { padding: 24px 0; border-top: 1px solid var(--border-hairline); }
+.help-page h2 { font-size: 22px; line-height: 1.4; margin-bottom: 12px; }
+.help-page p { color: var(--text-secondary); }
+.help-page .help-eyebrow { color: var(--color-brand); font-size: 12px; font-weight: 700; letter-spacing: .12em; }
+.help-page footer { border-top: 1px solid var(--border-hairline); font-size: 14px; }
+.help-page a:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 5px; }

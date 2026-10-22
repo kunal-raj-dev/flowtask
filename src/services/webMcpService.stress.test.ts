@@ -18,6 +18,7 @@ describe('WebMCP Empirical Stress Harness', () => {
   const todayStr = formatLocalDate(new Date());
 
   beforeEach(async () => {
+    localStorage.clear();
     unregisterWebMcpTools();
     useFocusStore.getState().setFocusSession(null);
 
@@ -105,6 +106,7 @@ describe('WebMCP Empirical Stress Harness', () => {
       });
       expect(resNegative.session.targetDurationSec).toBe(1500);
       useFocusStore.getState().setFocusSession(null);
+      store.run('Finish fixture session', record => ({ ...record, preferences: { ...record.preferences, focusSession: null } }), false);
 
       // 0 duration should fall back to default
       const resZero = await startFocusSessionTool.execute({
@@ -112,6 +114,7 @@ describe('WebMCP Empirical Stress Harness', () => {
       });
       expect(resZero.session.targetDurationSec).toBe(1500);
       useFocusStore.getState().setFocusSession(null);
+      store.run('Finish fixture session', record => ({ ...record, preferences: { ...record.preferences, focusSession: null } }), false);
 
       // Fractional duration (e.g. 0.5 minutes = 30 seconds)
       const resFraction = await startFocusSessionTool.execute({
@@ -119,6 +122,7 @@ describe('WebMCP Empirical Stress Harness', () => {
       });
       expect(resFraction.session.targetDurationSec).toBe(30);
       useFocusStore.getState().setFocusSession(null);
+      store.run('Finish fixture session', record => ({ ...record, preferences: { ...record.preferences, focusSession: null } }), false);
 
       // Large duration (e.g. 180 minutes = 10800 seconds)
       const resLarge = await startFocusSessionTool.execute({

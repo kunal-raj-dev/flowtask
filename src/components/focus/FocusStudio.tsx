@@ -128,8 +128,8 @@ function Range({
 }
 
 /**
- * @deprecated Superseded in FlowTask V4 by FocusEngineModal. Retained for test backward compatibility.
- * Use FocusEngineModal from './FocusEngineModal' instead.
+ * Primary focus surface; the headless lifecycle owns persistence and completion.
+ * Sprint pacing remains available through FocusEngineModal.
  */
 export function FocusStudio({
   taskId,
@@ -1705,3 +1705,4 @@ export function FocusStudio({
     </div>
   );
 }
+import '../../styles/focus-studio.css';

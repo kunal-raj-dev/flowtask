@@ -1,7 +1,14 @@
+import { SyncFeedback } from '../components/workflow/SyncFeedback';
+import { WorkspaceReadOnly } from '../components/workflow/WorkspaceReadOnly';
+import { ownWorkspace } from '../services/workspaceOwnership';
+import { DeviceImportPrompt } from '../components/workflow/DeviceImportPrompt';
+import { WorkspaceRecovery } from '../components/workflow/WorkspaceRecovery';
+import { startWorkspaceFocus, finishWorkspaceFocus, changeWorkspaceFocusState } from '../services/focusLifecycle';
+import { commandService } from '../services/commandService';
+import { validateWorkspaceData } from '../utils/workspaceValidation';
 import { normalizeAppearance } from '../utils/appearance';
 import { THEMES, type AppTheme } from '../utils/themeRegistry';
-import { writeFocusCheckpoint } from '../services/focusCheckpoint';
-import { nextStudioPhase, pausedSeconds } from '../services/studioSessionEngine';
+
 import { type BackupExtras } from '../utils/workspaceBackup';
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import type { Task, SubTask, Project, ViewId, Priority, CalendarEvent, InterruptionStash, SmartFilterView, SmartFilterPredicate, FocusSession, FocusSessionMode, FocusLog } from '../types/task';
@@ -14,7 +21,6 @@ import { useAuth } from './AuthContext';
 import { type ParsedSession } from '../utils/sessionParser';
 import { WorkspaceStore, WorkspaceStoreContext } from '../services/workspaceStore';
 import { registerWebMcpTools } from '../services/webMcpService';
-import { focusSessionService } from '../services/focusSessionService';
 import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/settings';
 import { isActiveTask } from '../utils/taskSelectors';
 
@@ -226,6 +232,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 const WorkspaceProvider = ({ children, workspaceId, connected }: { children: ReactNode; workspaceId: string; connected: boolean }) => {
   const [store] = useState(() => new WorkspaceStore(workspaceId, connected));
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const ownership = useRef<ReturnType<typeof ownWorkspace> | null>(null);
 
   // Bind store to useTaskStore
   useEffect(() => {
@@ -247,8 +254,8 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const current = () => store.getSnapshot().record;
   const syncStatus = snapshot.sync;
   const lastSyncedAt = useMemo(
-    () => (syncStatus === 'synced' ? new Date(snapshot.record.updatedAt) : null),
-    [syncStatus, snapshot.record.updatedAt]
+    () => (snapshot.lastSyncedAt ? new Date(snapshot.lastSyncedAt) : null),
+    [snapshot.lastSyncedAt]
   );
 
   // Granular UI store hooks
@@ -327,59 +334,56 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   }, [preferences.focusSession, snapshot.ready, workspaceId]);
 
   useEffect(() => {
-    const abort = new AbortController();
-    let release: (() => void) | undefined;
-    if (navigator.locks) {
-      void navigator.locks.request('flowtask-workspace-' + workspaceId, { signal: abort.signal }, async () => {
-        await store.load();
-        if (abort.signal.aborted) return;
-        await new Promise<void>(resolve => { release = resolve; });
-        await store.settled().catch(() => {});
-      }).catch(() => {});
-    } else void store.load();
-    return () => { abort.abort(); release?.(); };
-  }, [store, workspaceId]);
+    const owner = ownWorkspace(store);
+    ownership.current = owner;
+    return () => { owner.close(); ownership.current = null; };
+  }, [store]);
 
   useEffect(() => {
-    if (!connected || !snapshot.ready) return;
+    if (!connected || !snapshot.ready || snapshot.readOnly) return;
     let cancelled = false;
     let stop: (() => void) | undefined;
-    void import('../services/cloudWorkspace').then(({ createCloudAdapter, watchCloud }) => {
-      if (cancelled) return;
-      store.connect(createCloudAdapter(workspaceId));
-      stop = watchCloud(workspaceId, (kind, data) => store.receive(kind, data), error => showToast(`Cloud connection interrupted: ${error.message}`));
-    }).catch(error => showToast(String(error.message || error)));
-    const retry = () => { void store.flush(); };
-    window.addEventListener('online', retry);
-    return () => { cancelled = true; stop?.(); store.disconnect(); window.removeEventListener('online', retry); };
-  }, [connected, snapshot.ready, store, workspaceId, showToast]);
-
-  // Seamless auto-migration: automatically merge local workspace tasks into cloud account on initial sign-in
-  useEffect(() => {
-    if (!connected || !snapshot.ready || workspaceId === 'local') return;
-    const migrationKey = `flowtask_auto_migrated_v1_${workspaceId}`;
-    if (typeof localStorage !== 'undefined' && localStorage.getItem(migrationKey)) return;
-
-    void (async () => {
+    let connecting = false;
+    const retry = async () => {
+      if (connecting || cancelled) return;
+      connecting = true;
       try {
-        const { dbService } = await import('../services/dbService');
-        const local = await dbService.loadWorkspace('local');
-        if (local && (local.tasks?.length > 0 || local.projects?.length > 0)) {
-          const currentTasks = store.getSnapshot().record.tasks || [];
-          const newTasks = (local.tasks || []).filter((lt: Task) => !currentTasks.some((ct: Task) => ct.id === lt.id));
-          if (newTasks.length > 0) {
-            await useTaskStore.getState().importTasks(local.tasks, local.projects);
-            showToast(`Merged ${newTasks.length} local tasks into your Google cloud workspace`);
-          }
-        }
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(migrationKey, 'true');
-        }
-      } catch (err) {
-        console.warn('[FlowTask] Auto-migration warning:', err);
-      }
-    })();
-  }, [connected, snapshot.ready, workspaceId, store, showToast]);
+        const { createCloudAdapter, watchCloud } = await import('../services/cloudWorkspace');
+        if (cancelled) return;
+        const adapter = createCloudAdapter(workspaceId);
+        store.prepareConnection();
+        const data = await adapter.read();
+        if (cancelled) return;
+        validateWorkspaceData(data.tasks, data.projects);
+        for (const kind of ['projects', 'tasks', 'dashboards', 'focusLogs', 'recipes', 'preferences'] as const) if (data[kind]) store.receive(kind, data[kind]!);
+        if (cancelled) return;
+        stop?.();
+        stop = watchCloud(workspaceId, (kind, values) => { if (!cancelled) store.receive(kind, values); }, error => { if (!cancelled) store.connectionFailed(error); });
+        store.connect(adapter);
+        await store.retry();
+      } catch (error) { if (!cancelled) store.connectionFailed(error); }
+      finally { connecting = false; }
+    };
+    void retry();
+    window.addEventListener('online', retry);
+    window.addEventListener('flowtask:retry-cloud', retry);
+    return () => { cancelled = true; stop?.(); store.disconnect(); window.removeEventListener('online', retry); window.removeEventListener('flowtask:retry-cloud', retry); };
+  }, [connected, snapshot.ready, snapshot.readOnly, store, workspaceId, showToast]);
+
+
+  useEffect(() => {
+    const toggle = (event: Event) => {
+      const id = (event as CustomEvent).detail;
+      if (typeof id !== 'string' || store.getSnapshot().readOnly) return;
+      const session = store.getSnapshot().record.preferences.focusSession as FocusSession | null;
+      if (session?.taskId === id) {
+        if (session.state === 'running') pauseFocusSession(); else resumeFocusSession();
+      } else if (!session) startFocusSession('stopwatch', id);
+      else showToast('Return to the current focus session before starting another task.');
+    };
+    window.addEventListener('flowtask:toggle-task-timer', toggle);
+    return () => window.removeEventListener('flowtask:toggle-task-timer', toggle);
+  });
 
   const setWorkspacePreference = (key: string, value: unknown) => {
     useTaskStore.getState().setWorkspacePreference(key, value);
@@ -396,27 +400,35 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const redoLastAction = () => useTaskStore.getState().redoLastAction();
 
   const addTask = (input: string, overrides?: Partial<Task>): Task => useTaskStore.getState().addTask(input, overrides);
-  const addTaskRef = useRef(addTask); addTaskRef.current = addTask;
   const showToastRef = useRef(showToast); showToastRef.current = showToast;
 
   // Real-time synchronization listener for Chrome Extension Quick Capture
   useEffect(() => {
     const handleExternalCaptureMessage = (event: MessageEvent) => {
+      if (event.source !== window || event.origin !== window.location.origin || store.getSnapshot().readOnly) return;
       if (event.data && event.data.type === 'FLOWTASK_EXTERNAL_CAPTURE' && event.data.task) {
         const { title, description, priority, projectId } = event.data.task;
-        if (title && typeof title === 'string') {
-          addTaskRef.current(title, {
-            description: typeof description === 'string' ? description : undefined,
-            priority: ['p1', 'p2', 'p3', 'p4'].includes(priority) ? priority : 'p2',
-            projectId: projectId || 'inbox',
+        if (title && typeof title === 'string' && title.trim() && title.length <= 10000 && (!description || typeof description === 'string' && description.length <= 20000)) {
+          const captureId = typeof event.data.task.id === 'string' ? event.data.task.id : '';
+          const captures = (store.getSnapshot().record.preferences._captureIds || []) as string[];
+          if (!captureId || captureId.length > 200) return;
+          if (captures.includes(captureId)) { window.postMessage({ type: 'FLOWTASK_CAPTURE_ACK', id: captureId }, window.location.origin); return; }
+          const receipt = store.run('Capture from extension', record => {
+            const result = commandService.createTask(record.tasks, title, {
+              description: typeof description === 'string' ? description : undefined,
+              priority: ['p1', 'p2', 'p3', 'p4'].includes(priority) ? priority : settings.defaultTaskPriority,
+              projectId: typeof projectId === 'string' && record.projects.some(p => p.id === projectId) ? projectId : 'inbox',
+            }, { enableParsing: false });
+            return { ...record, tasks: result.updatedTasks.map(t => t.id === result.createdTask.id ? { ...t, id: captureId } : t), preferences: { ...record.preferences, _captureIds: [...captures.slice(-999), captureId] } };
           });
+          void receipt?.persisted.then(() => window.postMessage({ type: 'FLOWTASK_CAPTURE_ACK', id: captureId }, window.location.origin)).catch(() => {});
           showToastRef.current(`Captured: "${title.slice(0, 32)}${title.length > 32 ? '...' : ''}"`);
         }
       }
     };
     window.addEventListener('message', handleExternalCaptureMessage);
     return () => window.removeEventListener('message', handleExternalCaptureMessage);
-  }, []);
+  }, [store, settings.defaultTaskPriority]);
 
   const addMultipleTasks = (lines: string[], overrides?: Partial<Task>) => useTaskStore.getState().addMultipleTasks(lines, overrides);
   const updateTask = (id: string, updates: Partial<Task>) => useTaskStore.getState().updateTask(id, updates);
@@ -445,126 +457,30 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const bulkRescheduleOverdue = (action: 'today' | 'someday' | 'dismiss') => useTaskStore.getState().bulkRescheduleOverdue(action);
 
   function stopFocusSession() {
-    const result = useFocusStore.getState().stopFocusSession();
-    const candidateSession = (current().preferences.focusSession as FocusSession | null) || result.session;
-    const pendingSession = candidateSession && (!candidateSession.workspaceId || candidateSession.workspaceId === workspaceId) ? candidateSession : null;
-    const pendingSeconds = pendingSession ? result.finalElapsedSeconds || focusSessionService.getElapsedSeconds(pendingSession) : 0;
-    const finishedAt = pendingSession?.finishedAt || Date.now();
-    const checkpointAt = writeFocusCheckpoint(workspaceId, pendingSession && pendingSeconds > 0 ? { ...pendingSession, finishedAt, state: 'completed', accumulatedElapsedMs: pendingSeconds * 1000, totalPausedMs: (pendingSession.totalPausedMs || 0) + (pendingSession.state === 'paused' ? Math.max(0, finishedAt - (pendingSession.pausedAt || finishedAt)) : 0) } : null, Boolean(pendingSession && pendingSeconds > 0));
-    store.run('Log focus session', r => {
-      const session = (r.preferences.focusSession as FocusSession | null) || result.session;
-      if (!session || (session.workspaceId && session.workspaceId !== workspaceId)) return { ...r, preferences: { ...r.preferences, focusSession: null } };
-      const logs = (r.preferences.focusLogs || []) as FocusLog[];
-      if (logs.some(log => log.id === session.id)) {
-        return { ...r, preferences: { ...r.preferences, focusSession: null } };
-      }
-      const seconds = result.finalElapsedSeconds || focusSessionService.getElapsedSeconds(session);
-      if (seconds <= 0) {
-        return { ...r, preferences: { ...r.preferences, focusSession: null } };
-      }
-      const newLog: FocusLog = {
-        id: session.id,
-        seconds,
-        taskId: session.taskId,
-        taskTitle: session.taskTitle,
-        subtaskId: session.subtaskId,
-        subtaskTitle: session.subtaskTitle,
-        mode: session.mode,
-        startedAt: session.originalStartedAt || session.startedAt,
-        endedAt: session.finishedAt || Date.now(),
-        phase: session.pomodoroPhase || 'focus',
-        recipeId: session.recipeId,
-        outcome: session.outcome || 'interrupted',
-        rating: session.rating,
-        pausedSeconds: pausedSeconds(session),
-      };
-      const minutesSpent = session.pomodoroPhase && session.pomodoroPhase !== 'focus' ? 0 : seconds / 60;
-      return {
-        ...r,
-        tasks: r.tasks.map(t => t.id === session.taskId
-          ? {
-              ...t,
-              timeSpentMinutes: (t.timeSpentMinutes || 0) + minutesSpent,
-              subtasks: session.subtaskId
-                ? t.subtasks.map(s => s.id === session.subtaskId ? { ...s, timeSpentMinutes: (s.timeSpentMinutes || 0) + minutesSpent } : s)
-                : t.subtasks
-            }
-          : t),
-        preferences: {
-          ...r.preferences,
-          focusSession: null,
-          focusCheckpointAt: checkpointAt,
-          focusLogs: [...logs, newLog],
-          ...(session.timerConfiguration ? { studioLastSession: { session: { ...session, outcome: session.outcome || 'interrupted' }, seconds, ...nextStudioPhase(session), finishedAt: session.finishedAt || Date.now() } } : {}),
-          ...(session.timerConfiguration && (r.preferences.studio as { shuffleAtBoundary?: boolean; favorites?: string[] })?.shuffleAtBoundary ? { studio: (()=>{const studio=r.preferences.studio as { sceneId: string; favorites: string[] }; const choices=(studio.favorites||[]).filter(id=>id!==studio.sceneId);return choices.length ? {...studio,sceneId:choices[Math.floor(Math.random()*choices.length)]} : studio;})() } : {})
-        }
-      };
-    }, false);
+    finishWorkspaceFocus(store);
+    useFocusStore.getState().setFocusSession(null);
   }
-
   function startFocusSession(
     mode: FocusSessionMode,
     taskId: string | null = null,
     title: string | null = null,
-    targetSec = mode === 'pomodoro' ? 1500 : 0,
+    targetSec = mode === 'stopwatch' ? 0 : 1500,
     subtaskId: string | null = null,
     subtaskTitle: string | null = null,
     pacingSec: number = 0
   ) {
     if (current().preferences.focusSession) { showToast('Return to your current focus session, or finish it before starting another.'); return; }
     const taskObj = taskId ? current().tasks.find(t => t.id === taskId) : null;
-    const session: FocusSession = {
-      id: crypto.randomUUID(),
-      mode,
-      taskId,
-      taskTitle: title || taskObj?.title || (taskId ? 'Active Task' : 'Focus session'),
-      subtaskId: subtaskId || undefined,
-      subtaskTitle: subtaskTitle || undefined,
-      startedAt: Date.now(),
-      originalStartedAt: Date.now(),
-      workspaceId,
-      accumulatedElapsedMs: 0,
-      targetDurationSec: targetSec,
-      state: 'running',
-      pomodoroCycle: 1,
-      pomodoroPhase: 'focus',
-      pacingSecondsPerUnit: pacingSec || undefined,
-      bankedSeconds: 0,
-      loggedSegments: [],
-    };
-    setWorkspacePreference('focusSession', session);
+    const session = startWorkspaceFocus(store, { mode, taskId, taskTitle: title || taskObj?.title, targetDurationSec: targetSec, subtaskId, subtaskTitle, pacingSecondsPerUnit: pacingSec });
     useFocusStore.getState().setFocusSession(session);
   }
 
   const pauseFocusSession = () => {
-    const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
-    if (session?.state === 'running') {
-      const updated: FocusSession = {
-        ...session,
-        accumulatedElapsedMs: session.accumulatedElapsedMs + Math.max(0, Date.now() - session.startedAt),
-        pausedAt: Date.now(),
-        state: 'paused',
-      };
-      setWorkspacePreference('focusSession', updated);
-      useFocusStore.getState().setFocusSession(updated);
-    }
+    useFocusStore.getState().setFocusSession(changeWorkspaceFocusState(store, 'paused'));
   };
-
   const resumeFocusSession = () => {
-    const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
-    if (session?.state === 'paused') {
-      const updated: FocusSession = {
-        ...session,
-        startedAt: Date.now(),
-        totalPausedMs: (session.totalPausedMs || 0) + Math.max(0, Date.now() - (session.pausedAt || Date.now())),
-        pausedAt: null,
-        state: 'running',
-      };
-      setWorkspacePreference('focusSession', updated);
-      useFocusStore.getState().setFocusSession(updated);
-    }
+    useFocusStore.getState().setFocusSession(changeWorkspaceFocusState(store, 'running'));
   };
-
   const updateFocusSession = (updates: Partial<FocusSession>) => {
     const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
     if (!session) return;
@@ -574,19 +490,11 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   };
 
   const switchFocusSubtask = (subtaskId: string, subtaskTitle: string, targetSec: number) => {
-    const session = (current().preferences.focusSession as FocusSession | null) || useFocusStore.getState().focusSession;
+    const session = current().preferences.focusSession as FocusSession | null;
     if (!session) return;
-    const now = Date.now();
-    const updated: FocusSession = {
-      ...session,
-      subtaskId,
-      subtaskTitle,
-      targetDurationSec: targetSec,
-      startedAt: now,
-      accumulatedElapsedMs: 0,
-    };
-    setWorkspacePreference('focusSession', updated);
-    useFocusStore.getState().setFocusSession(updated);
+    finishWorkspaceFocus(store);
+    const updated = startWorkspaceFocus(store, { mode: session.mode, taskId: session.taskId, taskTitle: session.taskTitle, subtaskId, subtaskTitle, targetDurationSec: targetSec, pacingSecondsPerUnit: targetSec, timerConfiguration: session.timerConfiguration });
+    useFocusStore.getState().setFocusSession(session.state === 'paused' ? changeWorkspaceFocusState(store, 'paused') : updated);
   };
 
   const logFocusSegment = (taskId: string | null, seconds: number, subtaskId?: string, subtaskTitle?: string) => {
@@ -837,13 +745,16 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
     isSmartFilterModalOpen, settings, refreshCalendarEvents, showToast, clearToast
   ]);
 
-  if (!snapshot.ready) return <div role="status" className="p-10"><p>{snapshot.error || 'Opening your saved workspace… If it is open in another tab, close that tab to continue here.'}</p>{snapshot.error && <button onClick={() => void store.load()}>Retry</button>}</div>;
+  if (!snapshot.ready) return <WorkspaceRecovery store={store} error={snapshot.error} />;
 
   return (
     <WorkspaceStoreContext.Provider value={store}>
       <TaskContext.Provider value={contextValue}>
-        {(snapshot.error || snapshot.sync === 'offline') && <div role="alert" className="fixed top-0 left-0 right-0 z-[1000] bg-amber-100 text-amber-950 p-3 flex gap-3 items-center"><span>{snapshot.error || 'Cloud unavailable. Changes are saved on this device and queued for retry.'}</span><button onClick={() => void store.retry().catch(error => showToast(error.message))}>Retry</button><button onClick={downloadWorkspaceBackup}>Download backup</button>{snapshot.sync === 'conflict' && <><button onClick={() => void resolveSyncConflict('local')}>Keep device changes</button><button onClick={() => void resolveSyncConflict('remote')}>Use account changes</button></>}</div>}
-        {children}
+        <SyncFeedback store={store} snapshot={snapshot} download={downloadWorkspaceBackup} />
+        {snapshot.readOnly && <div className="workspace-readonly-banner" role="status"><span>Read-only preview · This workspace is being edited in another tab.</span><button className="desk-button" onClick={() => void ownership.current?.takeOver()}>Use this tab</button></div>}
+        {snapshot.recoveryError && <div className="workspace-recovery-notice" role="status">{snapshot.recoveryError}<button className="desk-button" onClick={downloadWorkspaceBackup}>Download backup</button></div>}
+        <div className="workspace-provider-content" inert={snapshot.readOnly || undefined}>{snapshot.readOnly ? <WorkspaceReadOnly record={snapshot.record} /> : children}</div>
+        {!snapshot.readOnly && connected && <DeviceImportPrompt />}
       </TaskContext.Provider>
     </WorkspaceStoreContext.Provider>
   );

@@ -160,3 +160,4 @@ function Copilot({ onClose }: { onClose: () => void }) {
     <SchedulePlannerDialog isOpen={scheduleOpen} onClose={() => setScheduleOpen(false)} date={scheduleDate} />
   </>;
 }
+import '../../styles/copilot.css';

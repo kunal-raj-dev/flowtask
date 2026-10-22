@@ -1,12 +1,18 @@
+import { useTelemetryConsent } from '../../hooks/useTelemetryConsent';
+import { startTelemetry } from '../../services/telemetry';
 import { useEffect, useRef } from "react";
 import { useTaskContext } from "../../context/TaskContext";
 import { recordDiagnostic } from "../../services/diagnostics";
 export function DiagnosticsRuntime() {
   const ctx = useTaskContext();
-  const enabled = Boolean(
+  const consent = useTelemetryConsent(ctx.workspaceId);
+  const enabled = consent && Boolean(
     (ctx.workspacePreferences.profile as { diagnosticsEnabled?: boolean })
       ?.diagnosticsEnabled,
   );
+  const runtime = useRef({ view: ctx.activeView, enabled });
+  useEffect(() => { runtime.current = { view: ctx.activeView, enabled }; }, [ctx.activeView, enabled]);
+  useEffect(() => startTelemetry(() => runtime.current.view, () => runtime.current.enabled), [ctx.workspaceId, enabled]);
   const seen = useRef(new Set(ctx.focusLogs.map((log) => log.id)));
   useEffect(() => {
     recordDiagnostic(ctx.workspaceId, enabled, "return_visit");

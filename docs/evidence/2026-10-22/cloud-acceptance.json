@@ -1,0 +1,56 @@
+{
+  "project": "flowtask-kunal-staging",
+  "url": "https://flowtask-staging-9i20sn5er-kunal-rajs-projects-7518d379.vercel.app",
+  "deployment": "dpl_FuMeKe4FCM6H34poaiwHAEygAJQn",
+  "checks": [
+    {
+      "name": "protected Preview, deployed identity, server configuration and tightened CSP"
+    },
+    {
+      "name": "device import is explicit, correctly addressed, and declining preserves local data"
+    },
+    {
+      "name": "a second independent device hydrates the real account workspace"
+    },
+    {
+      "name": "offline delivery survives reconnect/reload exactly once alongside unrelated device edits"
+    },
+    {
+      "name": "same-record conflict review preserves both versions before an explicit account choice"
+    },
+    {
+      "name": "local/A/B switching and repeated login preserve account boundaries and import choice"
+    },
+    {
+      "name": "approved device import is repeatable without duplicate records"
+    },
+    {
+      "name": "deployed rules reject cross-account reads"
+    },
+    {
+      "name": "focus survives minimize/pause/reload and sends one completion log to the other device"
+    },
+    {
+      "name": "real App Check token exchange succeeds with hosted CSP and enforcement disabled"
+    },
+    {
+      "name": "disposable account deletion removes authentication and locks old tokens"
+    },
+    {
+      "name": "disposable account deletion removes authentication and locks old tokens"
+    }
+  ],
+  "appCheckExchangeStatuses": [
+    200,
+    200
+  ],
+  "exclusions": [
+    "Real Google provider interaction",
+    "physical devices",
+    "App Check enforcement",
+    "field Web Vitals",
+    "screen readers",
+    "monitored beta"
+  ],
+  "recordedCredentials": false
+}

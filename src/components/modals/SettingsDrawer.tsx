@@ -1356,3 +1356,4 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     </div>
   );
 };
+import '../../styles/settings-navigation.css';
