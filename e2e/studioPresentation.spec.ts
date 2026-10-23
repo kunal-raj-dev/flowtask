@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { seedPlanner } from './helpers/plannerWorkspace';
+import { seedPlanner, readPlanner } from './helpers/plannerWorkspace';
 import { STUDIO_THEME_IDS } from '../src/utils/studioAppearance';
 import { THEMES } from '../src/utils/themeRegistry';
 
@@ -26,6 +26,40 @@ async function assertSessionFits(studio: Locator) {
   });
   expect(layout).toEqual({ scrolls: false, outside: false, overlapping: false });
 }
+
+test('panel opacity previews live on surfaces, preserves clear text and survives reload', async ({ page }) => {
+  await page.setViewportSize({ width:390,height:844 });
+  await seedPlanner(page);
+  await openStudio(page);
+  const studio = page.getByRole('dialog', { name:'Focus Studio',exact:true });
+  await studio.getByRole('button', { name:'Style',exact:true }).click();
+  const slider = studio.getByRole('slider', { name:'Panel opacity',exact:true });
+  const surfaceAlpha = () => studio.evaluate(root => [...root.querySelectorAll('.studio-session-core,.studio-panel,.studio-dock')].map(el => {
+    const color = getComputedStyle(el).backgroundColor;
+    const match = color.match(/\/\s*([\d.]+)\)$/) || color.match(/rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)/);
+    return match ? Number(match[1]) : 1;
+  }));
+  await slider.fill('0.35');
+  await expect.poll(surfaceAlpha).toEqual([.35,.35,.35]);
+  expect(await studio.getByRole('timer').evaluate(el => getComputedStyle(el).opacity)).toBe('1');
+  await slider.dispatchEvent('pointerup');
+  await expect.poll(async () => (await readPlanner(page)).preferences.studio.panelOpacity).toBe(.35);
+  await slider.fill('0');
+  await expect.poll(surfaceAlpha).toEqual([0,0,0]);
+  await slider.dispatchEvent('pointerup');
+  await slider.fill('1');
+  await expect.poll(surfaceAlpha).toEqual([1,1,1]);
+  await slider.dispatchEvent('pointerup');
+  await slider.fill('0.35');
+  await slider.dispatchEvent('pointerup');
+  await studio.getByRole('button', { name:'Close customization panel' }).click();
+  await page.screenshot({ path:'screenshots/studio-panel-opacity-mobile.png' });
+  await page.reload();
+  await openStudio(page);
+  await studio.getByRole('button', { name:'Style',exact:true }).click();
+  await expect(slider).toHaveValue('0.35');
+  await expect.poll(surfaceAlpha).toEqual([.35,.35,.35]);
+});
 
 test('multi-hour clocks stay fully readable on a small phone', async ({ page }) => {
   await page.setViewportSize({ width:360,height:640 });

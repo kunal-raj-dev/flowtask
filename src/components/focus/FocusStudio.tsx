@@ -1,6 +1,7 @@
 import { shouldIgnoreShortcut, shortcutHintsEnabled } from '../../services/shortcutRegistry';
 import { useMotionPreference } from '../../hooks/useMotionPreference';
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -88,6 +89,8 @@ function Range({
   step = 0.01,
   onChange,
   onPreview,
+  onPreviewEnd,
+  disabled = false,
 }: {
   label: string;
   value: number;
@@ -96,6 +99,8 @@ function Range({
   step?: number;
   onChange: (v: number) => void;
   onPreview?: (v: number) => void;
+  onPreviewEnd?: () => void;
+  disabled?: boolean;
 }) {
   const [draft, setDraft] = useState<number | null>(null);
   const current = draft ?? value;
@@ -114,6 +119,7 @@ function Range({
         min={min}
         max={max}
         step={step}
+        disabled={disabled}
         value={current}
         onChange={(e) => {
           const v = Number(e.target.value);
@@ -123,14 +129,17 @@ function Range({
         onPointerUp={() => {
           onChange(current);
           setDraft(null);
+          onPreviewEnd?.();
         }}
         onKeyUp={() => {
           onChange(current);
           setDraft(null);
+          onPreviewEnd?.();
         }}
         onBlur={() => {
           if (draft !== null && draft !== value) onChange(draft);
           setDraft(null);
+          onPreviewEnd?.();
         }}
       />
     </label>
@@ -162,10 +171,16 @@ export function FocusStudio({
     saveRecipes,
   } = useStudioPreferences();
   const media = useMediaCatalog();
+  const [panelOpacityPreview, setPanelOpacityPreview] = useState<number | null>(null);
+  const highContrast = Boolean((ctx.workspacePreferences.appearance as Partial<AppearancePreferences> | undefined)?.highContrast);
   const session = useFocusStore((s) => s.focusSession);
   const elapsed = useFocusStore((s) => s.focusElapsedSeconds);
-  const [panel, setPanel] = useState<Panel>(initialPanel),
+  const [panel, setPanelState] = useState<Panel>(initialPanel),
     [category, setCategory] = useState("all");
+  const setPanel = useCallback((next: Panel) => {
+    setPanelOpacityPreview(null);
+    setPanelState(next);
+  }, []);
   const [clear, setClear] = useState(false),
     [motionPaused, setMotionPaused] = useState(false);
   const [loadedSceneId, setLoadedSceneId] = useState<string | null>(null);
@@ -610,6 +625,7 @@ export function FocusStudio({
   const canAnimate =
     scene?.kind === "video" && p.motionEnabled && !reduced && !dataSaving;
   const savedLobbyRecipes = recipes.filter(recipe => !recipe.builtIn || recipe.favorite).slice(0, 3);
+  const panelOpacity = highContrast ? 1 : panelOpacityPreview ?? p.panelOpacity;
   return (
     <div
       ref={root}
@@ -624,7 +640,9 @@ export function FocusStudio({
       style={
         {
           "--studio-overlay": p.overlay,
-          ...studioThemeTokens(p.interfaceTheme, Boolean((ctx.workspacePreferences.appearance as Partial<AppearancePreferences> | undefined)?.highContrast)),
+          "--studio-panel-opacity": `${panelOpacity * 100}%`,
+          "--studio-panel-blur": `${panelOpacity * 24}px`,
+          ...studioThemeTokens(p.interfaceTheme, highContrast),
           "--text-primary": "var(--studio-text)",
           "--text-secondary": "var(--studio-secondary)",
           colorScheme: THEMES[p.interfaceTheme].scheme,
@@ -996,6 +1014,10 @@ export function FocusStudio({
           </header>
           <div className="studio-panel-body">
             {panel === 'appearance' && <>
+              <div className="studio-opacity-control">
+                <Range label="Panel opacity" value={highContrast ? 1 : p.panelOpacity} disabled={highContrast} onPreview={setPanelOpacityPreview} onPreviewEnd={() => setPanelOpacityPreview(null)} onChange={panelOpacity => update({ panelOpacity })} />
+                <p className="studio-help">{highContrast ? 'Increased contrast keeps panels fully opaque.' : 'Adjust the timer card, side panels and bottom dock. 0% is clear; 100% is solid.'}</p>
+              </div>
               <p className="studio-help">A palette for your room. Your planner keeps its own theme.</p>
               <StudioThemePicker value={p.interfaceTheme} onChange={interfaceTheme => update({ interfaceTheme })} />
               <div className="studio-details">

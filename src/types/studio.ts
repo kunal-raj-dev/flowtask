@@ -82,6 +82,7 @@ export interface AppearancePreferences {
 }
 export interface StudioPreferences {
   interfaceTheme: import('../utils/studioAppearance').StudioThemeId;
+  panelOpacity: number;
   pipTheme: import('../utils/studioAppearance').FloatingThemeId;
   pipBackground: boolean;
   favoriteRecipes?: string[];
@@ -122,6 +123,7 @@ export const DEFAULT_TIMER: TimerConfiguration = {
 };
 export const DEFAULT_STUDIO: StudioPreferences = {
   interfaceTheme: 'graphite',
+  panelOpacity: .96,
   pipTheme: 'studio',
   pipBackground: true,
   recipeId: "library-reading",

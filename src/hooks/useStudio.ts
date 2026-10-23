@@ -3,13 +3,14 @@ import { useTaskContext } from '../context/TaskContext';
 import { DEFAULT_STUDIO, type FocusRecipe, type MediaAsset, type StudioPreferences } from '../types/studio';
 import { loadCatalog, BUILT_IN_RECIPES } from '../services/studioCatalog';
 import { mediaService } from '../services/mediaService';
-import { studioThemeId } from '../utils/studioAppearance';
+import { studioThemeId, normalizePanelOpacity } from '../utils/studioAppearance';
 
 export function useStudioPreferences() {
   const { workspacePreferences = {}, setWorkspacePreference } = useTaskContext();
   const saved = workspacePreferences?.studio as Partial<StudioPreferences> | undefined;
   const preferences = useMemo(() => ({ ...DEFAULT_STUDIO, ...saved,
     interfaceTheme: studioThemeId(saved?.interfaceTheme),
+    panelOpacity: normalizePanelOpacity(saved?.panelOpacity),
     pipTheme: saved?.pipTheme && saved.pipTheme !== 'studio' ? studioThemeId(saved.pipTheme) : 'studio' as const,
     pipBackground: saved?.pipBackground !== false,
     timer: { ...DEFAULT_STUDIO.timer, ...saved?.timer } }), [saved]);

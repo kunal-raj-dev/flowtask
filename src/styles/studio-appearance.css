@@ -1,10 +1,11 @@
 /* Studio palettes are independent of the planner and shared with the floating timer. */
 .focus-studio { background: #0b0e14; color: var(--studio-text); }
 .focus-studio :is(.studio-session-core, .studio-lobby-library, .studio-panel, .studio-dock, .studio-summary) {
-  background: var(--studio-panel); color: var(--studio-text); border-color: var(--studio-border);
+  background: color-mix(in srgb, var(--studio-panel) var(--studio-panel-opacity,96%), transparent); color: var(--studio-text); border-color: var(--studio-border);
   box-shadow: 0 18px 60px #00000026;
+  backdrop-filter: blur(var(--studio-panel-blur,24px));
+  -webkit-backdrop-filter: blur(var(--studio-panel-blur,24px));
 }
-.focus-studio :is(.studio-session-core, .studio-lobby-library) { background: color-mix(in srgb, var(--studio-panel) 96%, transparent); }
 .focus-studio .studio-shade, .focus-studio.is-lobby .studio-shade { background: linear-gradient(180deg, #070910a6, rgb(7 9 16 / var(--studio-overlay)) 30%, rgb(7 9 16 / var(--studio-overlay)) 70%, #070910b8); }
 .focus-studio :is(.studio-header, .studio-lobby-intro, .studio-scene-caption, .studio-shortcuts) { color: #f7f7fb; }
 .focus-studio :is(.studio-header-center, .studio-beta, .studio-lobby-intro p, .studio-lobby-intro .studio-eyebrow) { color: #e5e7ee; }
@@ -34,6 +35,9 @@
 .focus-studio .studio-summary :is(h2,p,.studio-eyebrow) { color: var(--studio-text); }
 .focus-studio .studio-summary :is(button,.studio-reflection > button) { color: var(--studio-text); background: var(--studio-raised); border-color: var(--studio-border); }
 .focus-studio .studio-reflection > button[aria-pressed="true"] { background: var(--studio-accent); color: var(--studio-on-accent); }
+.studio-opacity-control { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--studio-border); }
+.studio-opacity-control input { height: 32px; }
+.studio-opacity-control input:disabled { cursor: default; }
 .studio-theme-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 20px 0 28px; }
 .studio-theme-card { min-width: 0; padding: 9px; border: 1px solid var(--studio-border); border-radius: 12px; background: var(--studio-raised); text-align: left; }
 .studio-theme-card[aria-pressed="true"] { border-color: var(--studio-accent); box-shadow: 0 0 0 1px var(--studio-accent); }

@@ -8,6 +8,10 @@ export function studioThemeId(value: unknown): StudioThemeId {
   return STUDIO_THEME_IDS.includes(value as StudioThemeId) ? value as StudioThemeId : 'graphite';
 }
 
+export function normalizePanelOpacity(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : .96;
+}
+
 /** Studio and its floating timer share the same contrast-checked palette roles. */
 export function studioThemeTokens(id: StudioThemeId, highContrast = false): ThemeTokens {
   const definition = THEMES[id];
