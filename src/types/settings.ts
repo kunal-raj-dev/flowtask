@@ -10,7 +10,9 @@ export interface UserWorkflowSettings {
   autoSlotBufferMinutes: number; // default 10
   weekStartDay: 'sunday' | 'monday'; // default 'monday'
   onboardingCompleted: boolean;
-  keyboardHaloEnabled?: boolean;
+  keyboardShortcutsEnabled?: boolean; // default true
+  showShortcutHints?: boolean; // default true (replaces keyboardHalo preference)
+  keyboardHaloEnabled?: boolean; // legacy alias
   autoArchiveCompleted?: AutoArchiveCompleted;
   defaultTaskPriority?: DefaultTaskPriority;
   defaultLandingView?: DefaultLandingView;
@@ -26,6 +28,8 @@ export const DEFAULT_WORKFLOW_SETTINGS: UserWorkflowSettings = {
   autoSlotBufferMinutes: 10,
   weekStartDay: 'monday',
   onboardingCompleted: false,
+  keyboardShortcutsEnabled: true,
+  showShortcutHints: true,
   keyboardHaloEnabled: true,
   autoArchiveCompleted: 'never',
   defaultTaskPriority: 'p3',

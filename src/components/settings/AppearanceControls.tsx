@@ -51,7 +51,7 @@ export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }
       <p className="appearance-caption">A calmer place to plan. Your Focus Studio keeps its own scene and sound.</p>
     </section>
 
-    <section aria-labelledby="theme-library-title">
+    <section id="s-theme" aria-labelledby="theme-library-title">
       <div className="appearance-section-heading"><div><h3 id="theme-library-title">Theme library</h3><p>18 complete palettes. Choose the one that feels like you.</p></div></div>
       <div className="appearance-filters" role="group" aria-label="Filter themes">
         {(['Featured', 'All', 'Light', 'Dark'] as const).map(value => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{value}</button>)}
@@ -78,7 +78,7 @@ export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }
       <p className="appearance-caption">Choosing a theme above switches back to manual appearance.</p>
     </section>
 
-    <section className="appearance-section" aria-labelledby="atmosphere-title">
+    <section id="s-glow" className="appearance-section" aria-labelledby="atmosphere-title">
       <h3 id="atmosphere-title">Optional atmosphere</h3><p>A soft, static glow at the workspace edges. Your theme stays the same.</p>
       <label className="appearance-field">Atmosphere color<select value={prefs.atmosphere.preset} onChange={e => update({ atmosphere: { ...prefs.atmosphere, preset: e.target.value as 'off' | DiurnalPeriod } })}>
         <option value="off">Off</option>{Object.entries(DIURNAL_CONFIGS).map(([id, config]) => <option key={id} value={id}>{config.label}</option>)}
@@ -91,7 +91,7 @@ export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }
       <h3 id="appearance-comfort-title">Comfort & details</h3>
       <div className="appearance-comfort-grid">
         <label className="appearance-field">Layout density<select value={prefs.density} onChange={e => update({ density: e.target.value as AppearancePreferences['density'] })}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>
-        <div className="appearance-field">
+        <div id="s-accent" className="appearance-field">
           <label htmlFor="workspace-accent">Accent color</label>
           <div className="appearance-accent">
             <input id="workspace-accent" type="color" value={prefs.accent || current.tokens['--color-brand']} onChange={e => update({ accent: e.target.value })} />
@@ -122,9 +122,11 @@ export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }
         </div>
       </div>
       <p className="appearance-caption">Accent shades adjust for readable text, buttons and focus rings.</p>
-      <label className="appearance-check"><input type="checkbox" checked={prefs.reducedMotion} onChange={e => update({ reducedMotion: e.target.checked })} />Reduce motion</label>
-      <label className="appearance-check"><input type="checkbox" checked={prefs.highContrast} onChange={e => update({ highContrast: e.target.checked })} />Increase contrast</label>
-      <label className="appearance-check"><input type="checkbox" checked={Boolean(prefs.keyboardSounds)} onChange={e => update({ keyboardSounds: e.target.checked })} />Typing sounds (opt in)</label>
+      <div id="s-contrast">
+        <label className="appearance-check"><input type="checkbox" checked={prefs.reducedMotion} onChange={e => update({ reducedMotion: e.target.checked })} />Reduce motion</label>
+        <label className="appearance-check"><input type="checkbox" checked={prefs.highContrast} onChange={e => update({ highContrast: e.target.checked })} />Increase contrast</label>
+      </div>
+      <label id="s-typing" className="appearance-check"><input type="checkbox" checked={Boolean(prefs.keyboardSounds)} onChange={e => update({ keyboardSounds: e.target.checked })} />Typing sounds (opt in)</label>
     </section>
     <p className="appearance-credits">Pastel palettes adapted from <a href="https://catppuccin.com/palette/" target="_blank" rel="noreferrer">Catppuccin</a> · <a href="https://github.com/catppuccin/catppuccin/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT license</a>. Adjusted for FlowTask surfaces and contrast.</p>
   </div>;

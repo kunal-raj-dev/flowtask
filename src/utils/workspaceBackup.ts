@@ -1,3 +1,4 @@
+import { getEffectiveTaskEstimate } from './taskTimeSummary';
 import { normalizeAppearance } from './appearance';
 import { normalizePresentation } from './workspacePresentation';
 import type { FocusLog } from "../types/task";
@@ -17,7 +18,7 @@ export interface BackupExtras {
 export function createWorkspaceBackup(record: Pick<WorkspaceRecord, 'tasks' | 'projects' | 'preferences' | 'customViews' | 'dashboards'>) {
   const preferences = Object.fromEntries(Object.entries(record.preferences).filter(([key]) =>
     !key.startsWith('_') && !['focusSession', 'focusCheckpointAt', 'studioLastSession', 'studioSummaryDismissed'].includes(key)));
-  return { schemaVersion: 6, version: 6, tasks: record.tasks, projects: record.projects, dashboards: record.dashboards,
+  return { schemaVersion: 6, version: 6, tasks: record.tasks.map(task => { const estimate = getEffectiveTaskEstimate(task); return estimate ? { ...task, estimatedMinutes: estimate } : task; }), projects: record.projects, dashboards: record.dashboards,
     preferences, customViews: record.customViews,
     mediaNote: 'Personal image/audio files are excluded. Export them separately from Focus Studio.' };
 }

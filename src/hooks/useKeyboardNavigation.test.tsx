@@ -5,6 +5,7 @@ import React from 'react';
 import { useKeyboardNavigation } from './useKeyboardNavigation';
 import { useUIStore } from '../store/useUIStore';
 import { useModalStore } from '../store/useModalStore';
+import { useTaskStore } from '../store/useTaskStore';
 import type { Task } from '../types/task';
 
 const MultiSelectHarness: React.FC<{
@@ -93,7 +94,7 @@ describe('useKeyboardNavigation Multi-Select Choreography', () => {
     expect(useUIStore.getState().selectedTaskIds).toEqual([]);
   });
 
-  it('triggers batch delete on pressing D when tasks are selected', () => {
+  it('triggers batch delete on pressing Delete when tasks are selected', () => {
     const onBatchArchive = vi.fn();
     const onBatchUpdate = vi.fn();
     const onBatchDelete = vi.fn();
@@ -109,6 +110,8 @@ describe('useKeyboardNavigation Multi-Select Choreography', () => {
 
     useUIStore.getState().selectAllTasks(['t1', 't2']);
     fireEvent.keyDown(window, { key: 'd' });
+    expect(onBatchDelete).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: 'Delete' });
     expect(onBatchDelete).toHaveBeenCalledWith(['t1', 't2']);
     expect(useUIStore.getState().selectedTaskIds).toEqual([]);
   });
@@ -276,7 +279,7 @@ describe('useKeyboardNavigation Single-Key Popovers & Linear-Grade Interactions'
     expect(useUIStore.getState().isQuickAddOpen).toBe(true);
   });
 
-  it('selects task and dispatches flowtask:edit-task event on pressing Enter', () => {
+  it('opens details with Enter and reserves F2 for inline rename', () => {
     const onSelectTask = vi.fn();
     const editHandler = vi.fn();
     window.addEventListener('flowtask:edit-task', editHandler);
@@ -286,7 +289,9 @@ describe('useKeyboardNavigation Single-Key Popovers & Linear-Grade Interactions'
 
     fireEvent.keyDown(window, { key: 'Enter' });
     expect(onSelectTask).toHaveBeenCalledWith('task-1');
-    expect(editHandler).toHaveBeenCalled();
+    expect(editHandler).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: 'F2' });
+    expect(editHandler).toHaveBeenCalledTimes(1);
     window.removeEventListener('flowtask:edit-task', editHandler);
   });
 
@@ -367,5 +372,47 @@ describe('useKeyboardNavigation Single-Key Popovers & Linear-Grade Interactions'
     document.body.removeChild(input);
     document.body.removeChild(editable);
     document.body.removeChild(searchBox);
+  });
+
+  it('opens quickAdd modal on pressing c, C, n, or N', () => {
+    render(<SingleSelectHarness tasks={tasks} />);
+
+    // Test 'c'
+    useModalStore.getState().closeModal('quickAdd');
+    useUIStore.getState().setIsQuickAddOpen(false);
+    fireEvent.keyDown(window, { key: 'c' });
+    expect(useUIStore.getState().isQuickAddOpen).toBe(true);
+
+    // Test 'n'
+    useModalStore.getState().closeModal('quickAdd');
+    useUIStore.getState().setIsQuickAddOpen(false);
+    fireEvent.keyDown(window, { key: 'n' });
+    expect(useUIStore.getState().isQuickAddOpen).toBe(true);
+
+    // Test 'N'
+    useModalStore.getState().closeModal('quickAdd');
+    useUIStore.getState().setIsQuickAddOpen(false);
+    fireEvent.keyDown(window, { key: 'N' });
+    expect(useUIStore.getState().isQuickAddOpen).toBe(true);
+  });
+
+  it('disables shortcuts when settings.keyboardShortcutsEnabled is false', () => {
+    const origSettings = useTaskStore.getState().settings;
+    useTaskStore.setState({
+      settings: { ...origSettings, keyboardShortcutsEnabled: false },
+    });
+
+    render(<SingleSelectHarness tasks={tasks} />);
+
+    useModalStore.getState().closeModal('quickAdd');
+    useUIStore.getState().setIsQuickAddOpen(false);
+    fireEvent.keyDown(window, { key: 'n' });
+    expect(useUIStore.getState().isQuickAddOpen).toBe(false);
+
+    fireEvent.keyDown(window, { key: 'j' });
+    expect(useUIStore.getState().focusedTaskId).toBeNull();
+
+    // Restore
+    useTaskStore.setState({ settings: origSettings });
   });
 });

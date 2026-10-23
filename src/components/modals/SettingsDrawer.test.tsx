@@ -302,23 +302,16 @@ describe('SettingsDrawer Component', () => {
     expect(mockUpdateSettings).toHaveBeenCalledWith({ defaultTaskPriority: 'p1' });
   });
 
-  it('toggles smart syntax parsing and keyboard halo dock', () => {
+  it('keeps smart parsing in Workflow and moves keyboard controls to Shortcuts', () => {
     render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
-
-    const switches = screen.getAllByRole('switch');
-    expect(switches.length).toBeGreaterThanOrEqual(2);
-
-    // Toggle smart parsing
-    act(() => {
-      fireEvent.click(switches[0]);
-    });
+    fireEvent.click(screen.getByRole('switch', { name: 'Smart Natural Language Parsing' }));
     expect(mockUpdateSettings).toHaveBeenCalledWith({ enableSmartSyntaxParsing: false });
-
-    // Toggle keyboard halo
-    act(() => {
-      fireEvent.click(switches[1]);
-    });
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ keyboardHaloEnabled: false });
+    expect(screen.queryByRole('switch', { name: 'Show Shortcut Hints' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Shortcuts' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Show Shortcut Hints' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ showShortcutHints: false, keyboardHaloEnabled: false });
+    fireEvent.click(screen.getByRole('switch', { name: 'Enable Keyboard Shortcuts' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ keyboardShortcutsEnabled: false });
   });
 
   it('triggers in-drawer JSON backup download in Data tab', () => {
@@ -365,8 +358,9 @@ describe('SettingsDrawer Component', () => {
     expect(mockUpdateSettings).toHaveBeenCalledWith({ autoArchiveCompleted: '7_days' });
     fireEvent.click(screen.getByRole('switch', { name: 'Smart Natural Language Parsing' }));
     expect(mockUpdateSettings).toHaveBeenCalledWith({ enableSmartSyntaxParsing: false });
-    fireEvent.click(screen.getByRole('switch', { name: 'Keyboard Halo Dock' }));
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ keyboardHaloEnabled: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Shortcuts' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Show Shortcut Hints' }));
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ showShortcutHints: false, keyboardHaloEnabled: false });
   });
 
 });

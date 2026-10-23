@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
@@ -29,6 +30,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   // Hotkey navigation: '1', '2', '3' or 'h', 'j', 'k', 'l' or Arrow keys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" && !appShortcutAllowed(e)) return;
       if (document.querySelector('[aria-modal="true"], [data-overlay-open="true"]')) return;
       const target = e.target as HTMLElement | null;
       if (

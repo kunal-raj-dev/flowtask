@@ -1,5 +1,6 @@
 import type { Task, Project } from '../types/task';
 import { formatLocalDate } from './nlpParser';
+import { getEffectiveTaskEstimate } from './taskTimeSummary';
 
 /**
  * Downloads arbitrary text content as a file in the browser
@@ -46,7 +47,7 @@ export function downloadMarkdown(markdownContent: string, filename: string): voi
 }
 
 /**
- * Exports data to JSON (supports v1 and v2 versioned export)
+ * Exports data to JSON (supports v1 and v2 versioned export) with normalized estimates
  */
 export function exportToJSON(
   tasks: Task[],
@@ -54,11 +55,16 @@ export function exportToJSON(
   version: number = 1,
   options?: { customViews?: unknown[]; focusHistory?: unknown[] }
 ): string {
+  const normalizedTasks = tasks.map((t) => {
+    const effective = getEffectiveTaskEstimate(t);
+    return effective ? { ...t, estimatedMinutes: effective } : t;
+  });
+
   return JSON.stringify(
     {
       version,
       exportedAt: new Date().toISOString(),
-      tasks,
+      tasks: normalizedTasks,
       projects,
       customViews: options?.customViews || [],
       focusHistory: options?.focusHistory || [],
@@ -127,7 +133,7 @@ export function exportToCSV(tasks: Task[], projects: Project[]): string {
       escapeCSV(t.plannedDate || ''),
       escapeCSV(t.dueDate || ''),
       escapeCSV(t.dueTime || ''),
-      escapeCSV(t.estimatedMinutes ?? ''),
+      escapeCSV(getEffectiveTaskEstimate(t) || t.estimatedMinutes || ''),
       escapeCSV(t.timeSpentMinutes ?? ''),
       escapeCSV(tagsStr),
       escapeCSV(contextStr),
@@ -170,9 +176,10 @@ export function exportToMarkdown(tasks: Task[], projects: Project[]): string {
     for (const task of pTasks) {
       const checkbox = task.status === 'done' ? '[x]' : '[ ]';
       const meta: string[] = [];
+      const effectiveMinutes = getEffectiveTaskEstimate(task) || task.estimatedMinutes;
       if (task.priority !== 'p4') meta.push(`Priority: ${task.priority.toUpperCase()}`);
       if (task.dueDate) meta.push(`Due: ${task.dueDate}`);
-      if (task.estimatedMinutes) meta.push(`~${task.estimatedMinutes}m`);
+      if (effectiveMinutes) meta.push(`~${effectiveMinutes}m`);
 
       const metaStr = meta.length > 0 ? ` *(${meta.join(', ')})*` : '';
       lines.push(`- ${checkbox} **${task.title}**${metaStr}`);

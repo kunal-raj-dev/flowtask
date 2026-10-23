@@ -116,7 +116,7 @@ export const InterruptionModal: React.FC = () => {
                 className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white font-semibold text-xs transition-colors shadow-xs"
               >
                 <RotateCcw size={12} />
-                <span>Restore (Alt+R)</span>
+                <span>Restore</span>
               </button>
               <button
                 type="button"

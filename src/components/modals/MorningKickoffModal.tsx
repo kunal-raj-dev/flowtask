@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useTodayStr } from '../../hooks/useCurrentDate';
@@ -144,6 +145,7 @@ export const MorningKickoffModal: React.FC<MorningKickoffModalProps> = ({ onClos
         return;
       }
 
+      if (!appShortcutAllowed(e)) return;
       if (step === 1) {
         if (e.key === '1') {
           e.preventDefault();

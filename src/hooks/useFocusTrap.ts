@@ -43,6 +43,8 @@ export function useFocusTrap(
       )
         return;
       if (event.key === "Escape") {
+        const nestedOverlay = (event.target as Element | null)?.closest?.('[data-overlay-open="true"]');
+        if (nestedOverlay && nestedOverlay !== root.current && root.current?.contains(nestedOverlay)) return;
         event.preventDefault();
         event.stopImmediatePropagation();
         escape.current();

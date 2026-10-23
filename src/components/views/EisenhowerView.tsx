@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Priority } from '../../types/task';
@@ -73,6 +74,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   // Hotkey navigation: '1', '2', '3', '4' or ArrowLeft / ArrowRight to switch quadrants
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" && !appShortcutAllowed(e)) return;
       if (document.querySelector('[aria-modal="true"], [data-overlay-open="true"]')) return;
       const target = e.target as HTMLElement | null;
       if (

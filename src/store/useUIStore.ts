@@ -9,6 +9,8 @@ export interface ToastState {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 }
 
 export interface UIState {
@@ -54,7 +56,13 @@ export interface UIState {
   toggleTheme: () => void;
   toggleSound: () => void;
   setSoundProfile: (p: SoundProfile) => void;
-  showToast: (message: string, actionLabel?: string, onAction?: () => void) => void;
+  showToast: (
+    message: string,
+    actionLabel?: string,
+    onAction?: () => void,
+    secondaryActionLabel?: string,
+    onSecondaryAction?: () => void
+  ) => void;
   clearToast: () => void;
   setActivePopover: (popover: { type: 'priority' | 'date'; taskId: string } | null) => void;
 
@@ -75,7 +83,7 @@ const parseInitialView = (): ViewId => {
   if (typeof window === 'undefined') return 'today';
   try {
     const view = new URL(window.location.href).searchParams.get('view') || 'today';
-    return /^(today|inbox|upcoming|projects|study|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view)
+    return /^(dashboard|today|inbox|upcoming|projects|study|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view)
       ? (view as ViewId)
       : 'today';
   } catch {
@@ -179,12 +187,12 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ soundProfile: profile });
   },
 
-  showToast: (message, actionLabel, onAction) => {
+  showToast: (message, actionLabel, onAction, secondaryActionLabel, onSecondaryAction) => {
     if (toastTimeoutId) {
       clearTimeout(toastTimeoutId);
       toastTimeoutId = null;
     }
-    set({ toast: { message, actionLabel, onAction } });
+    set({ toast: { message, actionLabel, onAction, secondaryActionLabel, onSecondaryAction } });
     toastTimeoutId = setTimeout(() => {
       set({ toast: null });
       toastTimeoutId = null;

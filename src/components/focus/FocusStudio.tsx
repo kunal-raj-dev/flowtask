@@ -1,3 +1,4 @@
+import { shouldIgnoreShortcut, shortcutHintsEnabled } from '../../services/shortcutRegistry';
 import { useMotionPreference } from '../../hooks/useMotionPreference';
 import {
   useEffect,
@@ -57,6 +58,7 @@ import { ResetConfirmationDialog } from "./ResetConfirmationDialog";
 import { FEATURED_ROOMS, roomImage } from '../../services/featuredRooms';
 import type {
   FocusRecipe,
+  MediaAsset,
   TimerConfiguration,
 } from "../../types/studio";
 import type { FinishedStudioSession } from "../../services/studioSessionEngine";
@@ -145,6 +147,7 @@ export function FocusStudio({
   initialPhase?: Phase;
 }) {
   const ctx = useTaskContext();
+  const hints = shortcutHintsEnabled(ctx.settings);
   const { openModal } = useModal();
   const {
     preferences: p,
@@ -160,6 +163,7 @@ export function FocusStudio({
   const [clear, setClear] = useState(false),
     [motionPaused, setMotionPaused] = useState(false);
   const [loadedSceneId, setLoadedSceneId] = useState<string | null>(null);
+  const [lastReadyScene, setLastReadyScene] = useState<MediaAsset | null>(null);
   const [selectedTaskState, setSelectedTask] = useState<string | undefined>(
     taskId || session?.taskId || undefined,
   );
@@ -274,36 +278,6 @@ export function FocusStudio({
     return () => window.removeEventListener("flowtask:audio-error", listener);
   }, []);
 
-  // Focus Studio keyboard shortcuts: C (Clear Mode) and F (Fullscreen) (Requirement R5)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
-      const target = e.target as HTMLElement | null;
-      if (
-        target?.tagName === "INPUT" ||
-        target?.tagName === "TEXTAREA" ||
-        target?.isContentEditable || target?.tagName === 'SELECT'
-      ) {
-        return;
-      }
-
-      if (e.key === "c" || e.key === "C") {
-        e.preventDefault();
-        setClear((prev) => !prev);
-        setPanel(null);
-      } else if (e.key === "f" || e.key === "F") {
-        e.preventDefault();
-        if (!document.fullscreenElement) {
-          void root.current?.requestFullscreen?.().catch(() => setMessage('Fullscreen is unavailable. Studio still fills your browser.'));
-        } else {
-          void document.exitFullscreen?.();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
   const pendingNote = useRef({ note, save: ctx.setWorkspacePreference });
   useEffect(() => {
     pendingNote.current = { note, save: ctx.setWorkspacePreference };
@@ -427,8 +401,38 @@ export function FocusStudio({
     setResetConfirmMode("restartRound");
   };
 
+  const showPip = async () => {
+    if (!pictureInPictureService.isSupported()) {
+      setMessage(
+        "Floating windows are unavailable in this browser. Minimize Studio to use the in-app player.",
+      );
+      return;
+    }
+    try {
+      await pictureInPictureService.requestPipWindow({ width: 340, height: 220 });
+    } catch {
+      setMessage(
+        "The floating timer could not open. The in-app player is still available.",
+      );
+    }
+  };
+
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
+      // Escape dismissal is a native modal control and remains active when master shortcuts are off
+      if (event.code === "Escape") {
+        event.preventDefault();
+        if (panel) {
+          setPanel(null);
+        } else if (clear) {
+          setClear(false);
+        } else {
+          void transitionView(() => onClose());
+        }
+        return;
+      }
+
+      if (ctx.settings?.keyboardShortcutsEnabled === false || shouldIgnoreShortcut(event)) return;
       if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
       const target = event.target as HTMLElement;
       if (target.closest("input,textarea,select,button,[contenteditable=true]"))
@@ -443,22 +447,13 @@ export function FocusStudio({
         } else {
           void document.exitFullscreen?.().catch(() => {});
         }
-      } else if (event.code === "KeyZ") {
+      } else if (event.code === "KeyZ" || event.code === "KeyC") {
         event.preventDefault();
         setClear((prev) => !prev);
         setPanel(null);
       } else if (event.code === "KeyP") {
         event.preventDefault();
         void showPip();
-      } else if (event.code === "Escape") {
-        event.preventDefault();
-        if (panel) {
-          setPanel(null);
-        } else if (clear) {
-          setClear(false);
-        } else {
-          void transitionView(() => onClose());
-        }
       }
     };
     window.addEventListener("keydown", key);
@@ -574,21 +569,7 @@ export function FocusStudio({
       setDownloadProgress("");
     }
   };
-  const showPip = async () => {
-    if (!pictureInPictureService.isSupported()) {
-      setMessage(
-        "Floating windows are unavailable in this browser. Minimize Studio to use the in-app player.",
-      );
-      return;
-    }
-    try {
-      await pictureInPictureService.requestPipWindow({ width: 340, height: 220 });
-    } catch {
-      setMessage(
-        "The floating timer could not open. The in-app player is still available.",
-      );
-    }
-  };
+
   const updateTimer = (patch: Partial<TimerConfiguration>) => {
     if (active) {
       setMessage("Timer settings apply to your next session.");
@@ -641,6 +622,35 @@ export function FocusStudio({
       }
     >
       <div className="studio-backdrop" aria-hidden="true">
+        {lastReadyScene && scene && loadedSceneId !== scene.id && (
+          lastReadyScene.kind === "video" && canAnimate ? (
+            <video
+              key={`prev-${lastReadyScene.id}`}
+              className="is-ready"
+              src={lastReadyScene.src}
+              poster={lastReadyScene.poster || lastReadyScene.thumbnail}
+              autoPlay
+              muted
+              loop
+              playsInline
+              style={{
+                objectPosition: `${p.focalX}% ${p.focalY}%`,
+                filter: `brightness(${p.brightness}) blur(${p.blur}px)`,
+              }}
+            />
+          ) : (
+            <img
+              key={`prev-${lastReadyScene.id}`}
+              className="is-ready"
+              src={lastReadyScene.poster || lastReadyScene.src}
+              alt=""
+              style={{
+                objectPosition: `${p.focalX}% ${p.focalY}%`,
+                filter: `brightness(${p.brightness}) blur(${p.blur}px)`,
+              }}
+            />
+          )
+        )}
         {canAnimate ? (
           <video
             key={scene.id}
@@ -652,7 +662,10 @@ export function FocusStudio({
             muted
             loop
             playsInline
-            onCanPlay={() => setLoadedSceneId(scene.id)}
+            onCanPlay={() => {
+              setLoadedSceneId(scene.id);
+              setLastReadyScene(scene);
+            }}
             style={{
               objectPosition: `${p.focalX}% ${p.focalY}%`,
               filter: `brightness(${p.brightness}) blur(${p.blur}px)`,
@@ -675,7 +688,13 @@ export function FocusStudio({
               alt=""
               onLoad={() => {
                 setLoadedSceneId(scene.id);
-                setMessage(value => value === 'This background is unavailable. Your focus session is unaffected.' ? '' : value);
+                setLastReadyScene(scene);
+                setMessage((value) =>
+                  value ===
+                  "This background is unavailable. Your focus session is unaffected."
+                    ? ""
+                    : value,
+                );
               }}
               style={{
                 objectPosition: `${p.focalX}% ${p.focalY}%`,
@@ -707,7 +726,7 @@ export function FocusStudio({
               setPanel(null);
             }}
             aria-label={clear ? "Exit Zen view" : "Enter Zen view"}
-            title={clear ? "Exit Zen view (Z)" : "Zen view (Z)"}
+            title={(clear ? "Exit Zen view" : "Zen view") + (hints ? " (Z)" : "")}
           >
             <Sparkles size={18} />
           </button>
@@ -720,14 +739,14 @@ export function FocusStudio({
               }
             }}
             aria-label="Toggle fullscreen"
-            title="Fullscreen (F)"
+            title={hints ? "Fullscreen (F)" : "Fullscreen"}
           >
             {document.fullscreenElement ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
           </button>
           <button
             onClick={() => void showPip()}
             aria-label="Open floating timer"
-            title="Floating timer (P)"
+            title={hints ? "Floating timer (P)" : "Floating timer"}
           >
             <PictureInPicture2 size={18} />
           </button>
@@ -765,26 +784,28 @@ export function FocusStudio({
             </button>
           ))}
         </div>
-        <p className="studio-eyebrow">
-          {currentPhase !== "focus"
-            ? "A LITTLE BREATHING ROOM"
-            : running
-              ? "RIGHT HERE. ONE THING AT A TIME."
-              : active?.state === 'paused' ? 'PAUSED · RETURN WHEN YOU ARE READY'
-              : "MAKE ROOM FOR WHAT MATTERS"}
-        </p>
-        <h1>
-          {currentPhase !== "focus"
-            ? "Rest is part of the rhythm."
-            : task
-              ? task.title
-              : "One thing at a time."}
-        </h1>
-        {(task?.nextAction || p.nextAction) && (
-          <p className="studio-next-action">
-            Next step · {task?.nextAction || p.nextAction}
+        <div className="studio-title-slot">
+          <p className="studio-eyebrow">
+            {currentPhase !== "focus"
+              ? "A LITTLE BREATHING ROOM"
+              : running
+                ? "RIGHT HERE. ONE THING AT A TIME."
+                : active?.state === 'paused' ? 'PAUSED · RETURN WHEN YOU ARE READY'
+                : "MAKE ROOM FOR WHAT MATTERS"}
           </p>
-        )}
+          <h1>
+            {currentPhase !== "focus"
+              ? "Rest is part of the rhythm."
+              : task
+                ? task.title
+                : "One thing at a time."}
+          </h1>
+          {(task?.nextAction || p.nextAction) && (
+            <p className="studio-next-action">
+              Next step · {task?.nextAction || p.nextAction}
+            </p>
+          )}
+        </div>
         {lobby && <div className="studio-lobby-config"><label>Focus task<select aria-label="Focus task" value={selectedTask} onChange={e=>setSelectedTask(e.target.value)}><option value="">Open focus · no task</option>{availableTasks.map(t=><option value={t.id} key={t.id}>{t.title}</option>)}</select></label><label>Rhythm<select aria-label="Focus rhythm" value={timer.mode === 'pomodoro' && timer.focusMinutes === 25 && timer.shortBreakMinutes === 5 ? '25' : timer.mode === 'pomodoro' && timer.focusMinutes === 50 && timer.shortBreakMinutes === 10 ? '50' : timer.mode === 'stopwatch' ? 'open' : 'custom'} onChange={e=>{const v=e.target.value;if(v==='custom')setPanel('timer');else updateTimer(v==='open'?{mode:'stopwatch'}:{mode:'pomodoro',focusMinutes:Number(v),shortBreakMinutes:v==='50'?10:5});}}><option value="25">25 / 5 · A gentle start</option><option value="50">50 / 10 · Go deeper</option><option value="open">Open-ended · Your pace</option><option value="custom">Custom rhythm…</option></select></label></div>}
         <div
           className={`studio-clock ${p.timerStyle === "ring" ? "with-ring" : ""}`}
@@ -822,21 +843,6 @@ export function FocusStudio({
             <RotateCcw size={17} />
             <span>Reset</span>
           </button>
-
-          {timer.mode === "pomodoro" &&
-            Boolean(active && ((active.pomodoroCycle && active.pomodoroCycle > 1) || active.pomodoroPhase !== "focus")) && (
-              <button
-                type="button"
-                className="studio-control-btn studio-restart-round-btn"
-                disabled={!active}
-                onClick={handleRestartRoundClick}
-                aria-label="Restart Pomodoro round from cycle 1"
-                title="Restart Pomodoro round"
-              >
-                <RotateCcw size={15} />
-                <span>Restart round</span>
-              </button>
-            )}
 
           <button
             type="button"
@@ -880,11 +886,13 @@ export function FocusStudio({
           <ArrowRight size={14} />
         </button>
         <div className="studio-context-actions"><button onClick={()=>setPanel(panel==='notes'?null:'notes')}><FileText size={14}/>Notes</button><button onClick={()=>setPanel(panel==='queue'?null:'queue')}><ListTodo size={14}/>Queue{queue.length ? ` · ${queue.length}` : ''}</button></div>
-        {currentPhase !== "focus" && p.breakPrompts && (
-          <p className="studio-break-prompt">
-            <Coffee size={16} /> Look away, stretch a little, or get some water.
-          </p>
-        )}
+        <div className="studio-break-prompt-slot">
+          {currentPhase !== "focus" && p.breakPrompts && (
+            <p className="studio-break-prompt">
+              <Coffee size={16} /> Look away, stretch a little, or get some water.
+            </p>
+          )}
+        </div>
         </section>
         {lobby && <aside className="studio-lobby-library" aria-label="Choose your focus environment">
           <div className="studio-lobby-section-heading"><h3>A change of scene</h3><button onClick={()=>setPanel('scenes')}>Browse rooms<ArrowRight size={13}/></button></div>
@@ -1507,6 +1515,26 @@ export function FocusStudio({
                   />
                   Show progress ring
                 </label>
+                {timer.mode === "pomodoro" &&
+                  Boolean(active && ((active.pomodoroCycle && active.pomodoroCycle > 1) || active.pomodoroPhase !== "focus")) && (
+                    <div className="studio-restart-round-section" style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <button
+                        type="button"
+                        className="studio-secondary"
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                        disabled={!active}
+                        onClick={handleRestartRoundClick}
+                        aria-label="Restart Pomodoro round from cycle 1"
+                        title="Restart Pomodoro round"
+                      >
+                        <RotateCcw size={15} />
+                        <span>Restart round (Cycle 1)</span>
+                      </button>
+                      <p className="studio-help" style={{ marginTop: '0.25rem' }}>
+                        Resets your Pomodoro sequence back to cycle 1 of {timer.cyclesBeforeLongBreak}.
+                      </p>
+                    </div>
+                  )}
                 <button
                   className="studio-secondary"
                   onClick={() => {

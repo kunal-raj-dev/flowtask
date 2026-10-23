@@ -1,3 +1,4 @@
+import { getRemainingTaskEstimate } from '../../utils/taskTimeSummary';
 import { useState } from 'react';
 import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import { useTaskContext } from '../../context/TaskContext';
@@ -13,7 +14,7 @@ export function ProjectIntent({ project, visualAssets, mediaLoading = false, med
   const [outcome,setOutcome]=useState(project.outcome||''), [coverPickerOpen,setCoverPickerOpen]=useState(false);
   const tasks=ctx.tasks.filter(t=>t.projectId===project.id&&!t.deletedAt&&!t.archivedAt);
   const active=tasks.filter(t=>t.status!=='done'), done=tasks.length-active.length;
-  const remaining=active.reduce((n,t)=>n+Math.max(0,(t.estimatedMinutes||ctx.settings.defaultTaskDuration)-(t.timeSpentMinutes||0)),0);
+  const remaining=active.reduce((n,t)=>n+getRemainingTaskEstimate(t,ctx.settings.defaultTaskDuration),0);
   const cover=visualAssets.find(a=>a.id===project.coverAssetId);
   const visualContext={kind:'project' as const,projectName:project.name,outcome:project.outcome,taskTags:tasks.flatMap(task=>task.tags||[])};
   const save=(patch:Partial<Project>)=>ctx.updateProject(project.id,patch);

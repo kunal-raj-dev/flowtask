@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Play, Pause, Check, ExternalLink, MoreHorizontal, RotateCcw, Sparkles } from "lucide-react";
@@ -99,7 +100,7 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
   // Keyboard controls in floating window
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      if (e.code === 'Space' && appShortcutAllowed(e)) {
         e.preventDefault();
         handleToggle();
       } else if (e.code === 'Escape') {

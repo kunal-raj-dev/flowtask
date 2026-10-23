@@ -14,7 +14,7 @@
 .widget-heading h2 { font-size: 12px; font-weight: 650; line-height: 1.4; letter-spacing: -.01em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .widget-heading > svg { color: var(--desk-accent); opacity: .8; flex-shrink: 0; }
 .widget-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
-.widget-body { flex: 1; min-height: 0; padding: 0 14px 14px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
+.widget-body { flex: 1; min-height: 0; padding: 0 14px 14px; overflow-y: auto; overscroll-behavior: auto; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
 .widget-body[inert] { opacity: .52; pointer-events: none; user-select: none; }
 .widget-arrange-controls { display: flex; align-items: center; justify-content: flex-end; gap: 4px; padding: 0 12px 10px; flex-shrink: 0; }
 .widget-arrange-controls select { min-height: 30px; max-width: 96px; padding: 4px 6px; font-size: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-surface-l2); }
@@ -50,9 +50,8 @@
 .desk-template-grid > button:hover { border-color: var(--color-brand); }
 .desk-template-grid strong, .desk-template-grid small { display: block; font-size: 12px; margin-top: 8px; }
 .desk-template-grid small { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
-.desk-template-mini { display: grid; height: 54px; grid-template-columns: 1.5fr 1fr; gap: 5px; margin-bottom: 8px; }
-.desk-template-mini i { border-radius: 4px; background: var(--desk-accent-soft); border: 1px solid var(--color-brand-border); }
-.desk-template-mini i:first-child { grid-row: span 2; }
+.desk-template-mini { position: relative; height: 54px; width: 100%; display: block; background: var(--bg-surface-l2, rgba(255, 255, 255, 0.03)); border-radius: 6px; margin-bottom: 8px; overflow: hidden; border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08)); }
+.desk-template-mini i { position: absolute; border-radius: 2px; background: var(--desk-accent-soft, rgba(245, 201, 119, 0.2)); border: 1px solid var(--color-brand-border, rgba(245, 201, 119, 0.4)); box-sizing: border-box; }
 .desk-notepad { height: 100%; display: flex; flex-direction: column; }
 .desk-notepad-tabs { display: flex; justify-content: space-between; gap: 6px; align-items: center; margin-bottom: 10px; }
 .desk-notepad-tabs > div { display: flex; gap: 3px; }

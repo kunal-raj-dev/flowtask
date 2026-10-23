@@ -4,7 +4,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import { LogbookView } from './LogbookView';
 import { InsightsView } from './InsightsView';
 import { generateDailyStandup } from '../../utils/standupGenerator';
-import { exportToCSV, exportToJSON, exportToMarkdown, downloadFile } from '../../utils/fileExporter';
+import { exportToCSV, exportToMarkdown, downloadFile } from '../../utils/fileExporter';
 import { audioEngine } from '../../utils/audioEngine';
 import {
   Compass,
@@ -31,6 +31,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
     setIsWeeklyReviewOpen,
     setIsEveningShutdownOpen,
     showToast,
+    downloadWorkspaceBackup,
   } = useTaskContext();
 
   const [activeTab, setActiveTab] = useState<'logbook' | 'insights' | 'standup' | 'export'>(initialTab);
@@ -56,22 +57,23 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
 
     const timestamp = new Date().toISOString().split('T')[0];
 
+    if (type === 'json') {
+      downloadWorkspaceBackup();
+      showToast('Downloaded full workspace JSON backup');
+      return;
+    }
     if (type === 'csv') {
       content = exportToCSV(tasks, projects);
-      filename = `flowtask_export_${timestamp}.csv`;
+      filename = `flowtask_report_${timestamp}.csv`;
       mimeType = 'text/csv;charset=utf-8;';
-    } else if (type === 'json') {
-      content = exportToJSON(tasks, projects, 2);
-      filename = `flowtask_export_${timestamp}.json`;
-      mimeType = 'application/json;charset=utf-8;';
     } else {
       content = exportToMarkdown(tasks, projects);
-      filename = `flowtask_export_${timestamp}.md`;
+      filename = `flowtask_report_${timestamp}.md`;
       mimeType = 'text/markdown;charset=utf-8;';
     }
 
     downloadFile(content, filename, mimeType);
-    showToast(`Exported ${type.toUpperCase()} file`);
+    showToast(`Exported ${type.toUpperCase()} report`);
   };
 
   return (
@@ -172,7 +174,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)]/50 flex flex-col justify-between">
               <div>
-                <h3 className="font-bold text-sm text-[var(--text-primary)] mb-1">CSV Spreadsheet</h3>
+                <h3 className="font-bold text-sm text-[var(--text-primary)] mb-1">CSV Spreadsheet Report</h3>
                 <p className="text-xs text-[var(--text-muted)] mb-4">
                   RFC-4180 compliant with formula injection protection. Ideal for Excel and Google Sheets.
                 </p>
@@ -183,7 +185,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
                 leftIcon={<Download size={14} />}
                 onClick={() => handleDownloadExport('csv')}
               >
-                Download CSV
+                Download CSV Report
               </Button>
             </div>
 
@@ -200,13 +202,13 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
                 leftIcon={<Download size={14} />}
                 onClick={() => handleDownloadExport('json')}
               >
-                Download JSON (v2)
+                Download JSON Backup
               </Button>
             </div>
 
             <div className="p-4 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)]/50 flex flex-col justify-between">
               <div>
-                <h3 className="font-bold text-sm text-[var(--text-primary)] mb-1">Markdown Document</h3>
+                <h3 className="font-bold text-sm text-[var(--text-primary)] mb-1">Markdown Report</h3>
                 <p className="text-xs text-[var(--text-muted)] mb-4">
                   Formatted task outline organized by project for documentation or knowledge bases.
                 </p>
@@ -217,7 +219,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
                 leftIcon={<Download size={14} />}
                 onClick={() => handleDownloadExport('markdown')}
               >
-                Download Markdown
+                Download Markdown Report
               </Button>
             </div>
           </div>

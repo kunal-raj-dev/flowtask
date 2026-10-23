@@ -11,4 +11,4 @@ it('canonicalizes consumed root shortcuts without dropping the selected view or 
   expect(canonicalWorkspaceUrl('https://flowtask.example/app/?view=today').href).toBe('https://flowtask.example/app/?view=today');
 });
 
-it.each([['dashboard','today'],['inbox','inbox'],['upcoming','upcoming'],['timeline','timeline'],[undefined,'today'],['unknown','today']])('resolves the saved start view %s safely', (value, expected) => expect(resolveStartView(value)).toBe(expected));
+it.each([['dashboard','dashboard'],['inbox','inbox'],['upcoming','upcoming'],['timeline','timeline'],[undefined,'today'],['unknown','today']])('resolves the saved start view %s safely', (value, expected) => expect(resolveStartView(value)).toBe(expected));

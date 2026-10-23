@@ -34,6 +34,7 @@ import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/s
 import { isActiveTask } from '../utils/taskSelectors';
 
 import { useUIStore, useFocusStore, useTaskStore, useModalStore } from '../store';
+import type { ToastState } from '../store/useUIStore';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local' | 'conflict' | 'error';
 export type { AppTheme } from '../utils/themeRegistry';
@@ -78,7 +79,7 @@ export interface TaskContextType {
   soundProfile: SoundProfile;
   overdueTasks: Task[];
   isTriageDismissed: boolean;
-  toast: { message: string; actionLabel?: string; onAction?: () => void } | null;
+  toast: ToastState | null;
 
   // User Workflow Settings & Preferences
   settings: UserWorkflowSettings;
@@ -228,7 +229,13 @@ export interface TaskContextType {
   archiveProject: (id: string) => void;
 
   importTasks: (tasks: Task[], projects?: Project[], replace?: boolean, extras?: BackupExtras) => Promise<void>;
-  showToast: (message: string, actionLabel?: string, onAction?: () => void) => void;
+  showToast: (
+    message: string,
+    actionLabel?: string,
+    onAction?: () => void,
+    secondaryActionLabel?: string,
+    onSecondaryAction?: () => void
+  ) => void;
   clearToast: () => void;
 }
 
@@ -327,7 +334,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
   const todayStr = getTodayStr();
 
   const settings = useMemo<UserWorkflowSettings>(
-    () => ({ ...DEFAULT_WORKFLOW_SETTINGS, ...((preferences.settings as Partial<UserWorkflowSettings>) || {}) }),
+    () => { const saved = (preferences.settings as Partial<UserWorkflowSettings>) || {}; return { ...DEFAULT_WORKFLOW_SETTINGS, ...saved, showShortcutHints: saved.showShortcutHints ?? saved.keyboardHaloEnabled ?? true }; },
     [preferences.settings]
   );
   const focusLogs = useMemo<FocusLog[]>(

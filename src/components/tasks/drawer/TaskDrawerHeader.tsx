@@ -14,7 +14,9 @@ import {
   GitMerge,
   Archive,
   MoreHorizontal,
+  Folder,
 } from 'lucide-react';
+import { MoveToProjectPicker } from '../MoveToProjectPicker';
 
 interface TaskDrawerHeaderProps {
   task: Task;
@@ -42,9 +44,14 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
     toggleTaskStatus,
     toggleTaskPinToday,
     duplicateTask,
+    projects,
+    showToast,
+    undoLastAction,
+    setActiveView,
   } = useTaskContext();
 
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const isDone = task.status === 'done';
   const today = useTodayStr();
@@ -186,59 +193,92 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             </button>
 
             {isActionMenuOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-modal py-1 z-50 animate-fade-in text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsActionMenuOpen(false);
-                    duplicateTask(task.id);
-                    onClose();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
-                >
-                  <Copy size={14} className="text-[var(--text-muted)]" />
-                  <span>Duplicate Task</span>
-                </button>
+              <div data-overlay-open="true" onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setIsActionMenuOpen(false); setShowProjectPicker(false); } }} className="absolute right-0 top-full mt-1.5 w-52 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-modal p-1.5 z-50 animate-fade-in text-xs font-medium">
+                {showProjectPicker ? (
+                  <MoveToProjectPicker
+                    projects={projects}
+                    currentProjectId={task.projectId}
+                    onSelectProject={(newProjectId) => {
+                      const targetProject = projects.find((p) => p.id === newProjectId);
+                      updateTask(task.id, { projectId: newProjectId, milestoneId: undefined });
+                      showToast(
+                        `Moved "${task.title}" to ${targetProject?.name || 'project'}`,
+                        'Undo',
+                        undoLastAction,
+                        'View project',
+                        () => setActiveView(('project:' + newProjectId) as any)
+                      );
+                      setIsActionMenuOpen(false);
+                      setShowProjectPicker(false);
+                      onClose();
+                    }}
+                    onClose={() => setShowProjectPicker(false)}
+                  />
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowProjectPicker(true)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
+                    >
+                      <Folder size={14} className="text-blue-500" />
+                      <span>Move to Project…</span>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsActionMenuOpen(false);
-                    onOpenMergeModal();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
-                >
-                  <GitMerge size={14} className="text-[var(--text-muted)]" />
-                  <span>Merge with Task</span>
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsActionMenuOpen(false);
+                        duplicateTask(task.id);
+                        onClose();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
+                    >
+                      <Copy size={14} className="text-[var(--text-muted)]" />
+                      <span>Duplicate Task</span>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsActionMenuOpen(false);
-                    archiveTask(task.id);
-                    onClose();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
-                >
-                  <Archive size={14} className="text-[var(--text-muted)]" />
-                  <span>Archive Task</span>
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsActionMenuOpen(false);
+                        onOpenMergeModal();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
+                    >
+                      <GitMerge size={14} className="text-[var(--text-muted)]" />
+                      <span>Merge with Task</span>
+                    </button>
 
-                <div className="my-1 border-t border-[var(--border-hairline)]" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsActionMenuOpen(false);
+                        archiveTask(task.id);
+                        onClose();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
+                    >
+                      <Archive size={14} className="text-[var(--text-muted)]" />
+                      <span>Archive Task</span>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsActionMenuOpen(false);
-                    deleteTask(task.id);
-                    onClose();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
-                >
-                  <Trash2 size={14} />
-                  <span>Delete Task</span>
-                </button>
+                    <div className="my-1 border-t border-[var(--border-hairline)]" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsActionMenuOpen(false);
+                        deleteTask(task.id);
+                        onClose();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors text-left"
+                    >
+                      <Trash2 size={14} />
+                      <span>Delete Task</span>
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>

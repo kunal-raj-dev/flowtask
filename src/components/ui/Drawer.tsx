@@ -79,6 +79,8 @@ export const Drawer: React.FC<DrawerProps> = ({
       if (activeDialogs.at(-1) !== root) return;
 
       if (e.key === 'Escape') {
+        const nested = (e.target as Element | null)?.closest?.('[data-overlay-open="true"]');
+        if (nested && root?.contains(nested)) return;
         e.preventDefault();
         e.stopImmediatePropagation();
         closeRef.current();

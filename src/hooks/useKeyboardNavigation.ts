@@ -3,6 +3,8 @@ import type { Task, Priority } from '../types/task';
 import { formatLocalDate } from '../utils/nlpParser';
 import { useUIStore } from '../store/useUIStore';
 import { useModalStore } from '../store/useModalStore';
+import { useTaskStore } from '../store/useTaskStore';
+import { shouldIgnoreShortcut } from '../services/shortcutRegistry';
 
 interface UseKeyboardNavigationProps {
   tasks: Task[];
@@ -89,18 +91,20 @@ export function useKeyboardNavigation({
         return;
       }
       if (document.querySelector('[aria-modal="true"]:not([data-task-drawer="true"]), [data-overlay-open="true"], [data-layout-editing="true"]')) return;
-      if (!enabled) return;
-
-      // Ignore when user is actively typing in form inputs, textareas, contenteditables, or ARIA textboxes
-      const activeEl = document.activeElement;
-      const tag = (activeEl?.tagName || '').toLowerCase();
-      const isEditable =
-        (activeEl as HTMLElement)?.isContentEditable ||
-        activeEl?.getAttribute('contenteditable') === 'true';
-      const role = activeEl?.getAttribute('role');
-      if (tag === 'input' || tag === 'textarea' || tag === 'select' || isEditable || role === 'textbox' || role === 'searchbox') {
+      // Dismissal is native UI navigation and stays available with accelerators off.
+      if (e.key === 'Escape') {
+        setFocusedIndex(-1);
+        useUIStore.getState().clearTaskSelection();
         return;
       }
+      const shortcutsEnabled = useTaskStore.getState().settings?.keyboardShortcutsEnabled !== false;
+      if (!shortcutsEnabled || !enabled) return;
+
+      // Ignore when user is actively typing in form inputs, textareas, contenteditables, or ARIA textboxes
+      if (shouldIgnoreShortcut(e)) return;
+
+      const activeEl = document.activeElement;
+      const tag = (activeEl?.tagName || '').toLowerCase();
 
       // If user is focused on an interactive button or anchor, let Space/Enter activate natively
       if ((tag === 'button' || tag === 'a') && (e.key === ' ' || e.key === 'Enter')) {
@@ -112,8 +116,8 @@ export function useKeyboardNavigation({
         return;
       }
 
-      // Quick capture anywhere in list views (c / C)
-      if (e.key === 'c' || e.key === 'C') {
+      // Quick capture anywhere in list views (c / C / n / N)
+      if (e.key === 'c' || e.key === 'C' || e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         useModalStore.getState().openModal('quickAdd');
         useUIStore.getState().setIsQuickAddOpen(true);
@@ -133,7 +137,7 @@ export function useKeyboardNavigation({
           useUIStore.getState().clearTaskSelection();
           return;
         }
-        if (e.key === 'd' || e.key === 'D' || e.key === 'Delete') {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
           e.preventDefault();
           if (onBatchDelete) onBatchDelete(selectedTaskIds);
           else if (onDeleteTask) selectedTaskIds.forEach(id => onDeleteTask(id));
@@ -256,6 +260,14 @@ export function useKeyboardNavigation({
           break;
         }
 
+        case 'F2': {
+          if (focusedTaskId) {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('flowtask:edit-task', { detail: focusedTaskId }));
+          }
+          break;
+        }
+
         // Open Priority Picker Popover ('p')
         case 'p':
         case 'P': {
@@ -281,7 +293,6 @@ export function useKeyboardNavigation({
           if (focusedTaskId) {
             e.preventDefault();
             onSelectTask(focusedTaskId);
-            window.dispatchEvent(new CustomEvent('flowtask:edit-task', { detail: focusedTaskId }));
           }
           break;
         }
@@ -349,17 +360,13 @@ export function useKeyboardNavigation({
           break;
         }
 
-        // Archive focused task ('e')
+        // Archive exactly once, preferring the batch command when available.
         case 'e':
         case 'E': {
           if (focusedTaskId) {
             e.preventDefault();
-            if (onUpdateTask) {
-              onUpdateTask(focusedTaskId, { archivedAt: Date.now() });
-            }
-            if (onBatchArchive) {
-              onBatchArchive([focusedTaskId]);
-            }
+            if (onBatchArchive) onBatchArchive([focusedTaskId]);
+            else onUpdateTask?.(focusedTaskId, { archivedAt: Date.now() });
           }
           break;
         }

@@ -27,7 +27,8 @@ import {
   ListPlus,
   Timer,
 } from 'lucide-react';
-import { parseTimeToMinutes, minutesToTimeStr } from '../../utils/timelineUtils';
+import { parseTimeToMinutes } from '../../utils/timelineUtils';
+import { TaskSessionEditor, type SessionDraft } from './TaskSessionEditor';
 import { getVelocityCalibration } from '../../utils/velocityCalibrator';
 import { Kbd } from '../ui';
 
@@ -81,20 +82,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
   // Session Generator State
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [isEditingSession, setIsEditingSession] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState('08:00');
   const [sessionEndTime, setSessionEndTime] = useState('11:00');
   const [customSessionNumber, setCustomSessionNumber] = useState<number | null>(null);
-
-  // Compute next available session number for today
-  const defaultSessionNum = React.useMemo(() => {
-    const todaySessions = tasks.filter(
-      (t) => (t.plannedDate === todayStr || t.dueDate === todayStr) && t.sessionMetadata?.isSession
-    );
-    const nums = todaySessions.map((t) => t.sessionMetadata?.sessionNumber || 1);
-    return nums.length > 0 ? Math.max(...nums) + 1 : 1;
-  }, [tasks, todayStr]);
-
-  const activeSessionNum = customSessionNumber ?? defaultSessionNum;
 
   // Compute live duration
   const sessionDuration = React.useMemo(() => {
@@ -141,6 +132,37 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   const effectivePriority = explicitPriority || parsed.priority || settings?.defaultTaskPriority || 'p3';
   const effectiveDuration = explicitDuration !== null ? explicitDuration : parsed.estimatedMinutes;
   const effectiveRecurrence = explicitRecurrence || parsed.recurrence || 'none';
+
+  // Compute next available session number dynamically for effective planned date
+  const defaultSessionNum = React.useMemo(() => {
+    const targetDate = effectivePlannedDate || todayStr;
+    const targetSessions = tasks.filter(
+      (t) => !t.deletedAt && !t.archivedAt && (t.plannedDate || t.dueDate) === targetDate && t.sessionMetadata?.isSession
+    );
+    const nums = targetSessions.map((t) => t.sessionMetadata?.sessionNumber || 1);
+    return nums.length > 0 ? Math.max(...nums) + 1 : 1;
+  }, [tasks, effectivePlannedDate, todayStr]);
+
+  const activeSessionNum = customSessionNumber ?? defaultSessionNum;
+
+  const handleSessionChange = (draft: SessionDraft) => {
+    setSessionStartTime(draft.startTime);
+    setSessionEndTime(draft.endTime);
+    setCustomSessionNumber(draft.sessionNumber);
+    if (draft.plannedDate) {
+      setExplicitPlannedDate(draft.plannedDate);
+    }
+  };
+
+  const handleApplySessionDraft = (draft: SessionDraft) => {
+    handleSessionChange(draft);
+    setIsSessionActive(true);
+    setIsEditingSession(false);
+  };
+
+  const handleCancelSessionDraft = () => {
+    setIsEditingSession(false);
+  };
 
   // NLP Progressive Auto-Disclosure flags (BUG-18)
   const hasParsedProject = explicitProjectId === 'inbox' && !parsed.projectTag ? false : Boolean(parsed.projectTag || (explicitProjectId && explicitProjectId !== defaultProjectId));
@@ -230,20 +252,21 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
       const lines = input.split('\n').filter((l) => l.trim().length > 0);
       addMultipleTasks(lines);
     } else {
+      const isSessionIncluded = isSessionActive;
       addTask(parsed.cleanTitle || input, {
         projectId: projectObj.id,
-        dueTime: isSessionActive ? sessionEndTime : parsed.dueTime,
-        scheduledStart: isSessionActive ? sessionStartTime : undefined,
-        scheduledEnd: isSessionActive ? sessionEndTime : undefined,
+        dueTime: isSessionIncluded ? sessionEndTime : parsed.dueTime,
+        scheduledStart: isSessionIncluded ? sessionStartTime : undefined,
+        scheduledEnd: isSessionIncluded ? sessionEndTime : undefined,
         tags: parsed.tags,
         contextTags: parsed.contextTags,
         customRecurrence: parsed.customRecurrence,
-        plannedDate: isSessionActive ? (effectivePlannedDate || todayStr) : (effectivePlannedDate || undefined),
+        plannedDate: isSessionIncluded ? (effectivePlannedDate || todayStr) : (effectivePlannedDate || undefined),
         dueDate: effectiveDueDate || undefined,
         priority: effectivePriority,
-        estimatedMinutes: isSessionActive ? sessionDuration.minutes : effectiveDuration,
+        estimatedMinutes: effectiveDuration,
         recurrence: effectiveRecurrence,
-        sessionMetadata: isSessionActive
+        sessionMetadata: isSessionIncluded
           ? {
               isSession: true,
               sessionNumber: activeSessionNum,
@@ -263,6 +286,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
     setExplicitDuration(null);
     setExplicitRecurrence(null);
     setIsSessionActive(false);
+    setIsEditingSession(false);
     setCustomSessionNumber(null);
 
     if (onSuccess) onSuccess();
@@ -652,7 +676,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                 )}
 
                 {/* Session Chip */}
-                {(showDetails || isSessionActive) && (
+                {(showDetails || isSessionActive || isEditingSession) && (
                   <motion.div
                     key="chip-session"
                     layout="position"
@@ -664,18 +688,26 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   >
                     <button
                       type="button"
-                      onClick={() => setIsSessionActive((prev) => !prev)}
+                      onClick={() => {
+                        if (isSessionActive) {
+                          setIsEditingSession((prev) => !prev);
+                        } else {
+                          setIsEditingSession(true);
+                        }
+                      }}
                       className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer active:scale-95 ${
-                        isSessionActive
+                        isSessionActive || isEditingSession
                           ? 'bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30 font-semibold'
                           : 'bg-[var(--bg-surface-l2)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
-                      title={isSessionActive ? 'Click to toggle session off' : 'Click to configure custom session duration & timeline block'}
+                      title={isSessionActive ? 'Click to configure session' : 'Click to configure custom session duration & timeline block'}
                     >
-                      <Timer size={11} strokeWidth={1.75} className={isSessionActive ? 'text-teal-500' : ''} />
+                      <Timer size={11} strokeWidth={1.75} className={isSessionActive || isEditingSession ? 'text-teal-500' : ''} />
                       <span className="tabular-nums">
                         {isSessionActive
                           ? `Session ${activeSessionNum} (${sessionStartTime}–${sessionEndTime})`
+                          : isEditingSession
+                          ? 'Configuring Session…'
                           : '+ Session'}
                       </span>
                       {isSessionActive && (
@@ -683,6 +715,8 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                           onClick={(e) => {
                             e.stopPropagation();
                             setIsSessionActive(false);
+                            setIsEditingSession(false);
+                            setCustomSessionNumber(null);
                           }}
                           className="ml-0.5 hover:text-rose-500 cursor-pointer active:scale-90"
                           title="Remove session"
@@ -697,149 +731,60 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
             </div>
           )}
 
-          {/* Session Duration Generator Card */}
-          {!isMultiline && (showDetails || isSessionActive) && isSessionActive && (
-            <div className="mt-2.5 p-3 rounded-xl bg-teal-500/[0.07] dark:bg-teal-500/[0.1] border border-teal-500/25 space-y-2.5 animate-slide-down">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-teal-900 dark:text-teal-200">
-                      <Timer size={14} strokeWidth={1.75} className="text-teal-600 dark:text-teal-400" />
-                      <span>Session Duration Generator</span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded font-mono tabular-nums font-bold bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30">
-                        Session #{activeSessionNum}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono tabular-nums font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30">
-                        {sessionDuration.formatted}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsSessionActive(false)}
-                        className="text-[11px] text-[var(--text-muted)] hover:text-rose-500 p-0.5 rounded cursor-pointer active:scale-90"
-                        title="Remove session"
-                      >
-                        <X size={13} strokeWidth={1.75} />
-                      </button>
-                    </div>
-                  </div>
+          {/* Active Session Summary Card */}
+          {!isMultiline && isSessionActive && !isEditingSession && (
+            <div className="mt-2.5 p-2.5 rounded-xl bg-teal-500/[0.08] dark:bg-teal-500/[0.12] border border-teal-500/25 flex items-center justify-between text-xs animate-slide-down">
+              <div className="flex items-center gap-2">
+                <Timer size={14} className="text-teal-600 dark:text-teal-400" />
+                <span className="font-semibold text-teal-900 dark:text-teal-200">
+                  🎯 Session #{activeSessionNum}
+                </span>
+                <span className="font-mono text-[11px] text-[var(--text-secondary)]">
+                  {sessionStartTime} – {sessionEndTime}
+                </span>
+                <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-semibold bg-teal-500/20 text-teal-800 dark:text-teal-300">
+                  {sessionDuration.formatted}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingSession(true)}
+                  className="text-[11px] text-teal-700 dark:text-teal-300 font-semibold hover:underline cursor-pointer"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSessionActive(false);
+                    setCustomSessionNumber(null);
+                  }}
+                  className="text-[11px] text-rose-500 hover:text-rose-600 cursor-pointer p-0.5"
+                  title="Remove session"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            </div>
+          )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                    {/* Session Number */}
-                    <div className="flex items-center gap-1.5 bg-[var(--bg-surface-l1)] px-2.5 py-1.5 rounded-lg border border-[var(--border-hairline)]">
-                      <span className="text-[11px] text-[var(--text-secondary)]">Session:</span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="99"
-                        aria-label="Session number"
-                        value={activeSessionNum}
-                        onChange={(e) => setCustomSessionNumber(parseInt(e.target.value, 10) || 1)}
-                        className="w-12 bg-transparent text-[var(--text-primary)] font-bold outline-none text-center"
-                      />
-                    </div>
-
-                    {/* Start Time */}
-                    <div className="flex items-center gap-1.5 bg-[var(--bg-surface-l1)] px-2.5 py-1.5 rounded-lg border border-[var(--border-hairline)]">
-                      <span className="text-[11px] text-[var(--text-secondary)]">Start:</span>
-                      <input
-                        type="time"
-                        aria-label="Session start time"
-                        value={sessionStartTime}
-                        onChange={(e) => setSessionStartTime(e.target.value)}
-                        className="bg-transparent text-[var(--text-primary)] font-mono font-medium outline-none cursor-pointer"
-                      />
-                    </div>
-
-                    {/* End Time */}
-                    <div className="flex items-center gap-1.5 bg-[var(--bg-surface-l1)] px-2.5 py-1.5 rounded-lg border border-[var(--border-hairline)]">
-                      <span className="text-[11px] text-[var(--text-secondary)]">End:</span>
-                      <input
-                        type="time"
-                        aria-label="Session end time"
-                        value={sessionEndTime}
-                        onChange={(e) => setSessionEndTime(e.target.value)}
-                        className="bg-transparent text-[var(--text-primary)] font-mono font-medium outline-none cursor-pointer"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Presets Row */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-teal-500/15">
-                    <span className="text-[10px] font-semibold text-teal-800 dark:text-teal-300 mr-1">Quick Slots:</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSessionStartTime('08:00');
-                        setSessionEndTime('11:00');
-                      }}
-                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-                    >
-                      Morning 08:00–11:00 (3h)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSessionStartTime('11:30');
-                        setSessionEndTime('14:00');
-                      }}
-                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-                    >
-                      Midday 11:30–14:00 (2.5h)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSessionStartTime('14:30');
-                        setSessionEndTime('17:30');
-                      }}
-                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-                    >
-                      Afternoon 14:30–17:30 (3h)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSessionStartTime('18:00');
-                        setSessionEndTime('21:00');
-                      }}
-                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-                    >
-                      Evening 18:00–21:00 (3h)
-                    </button>
-                    <span className="text-[10px] text-teal-800/60 dark:text-teal-300/60 mx-1">|</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const startMin = parseTimeToMinutes(sessionStartTime) || 480;
-                        setSessionEndTime(minutesToTimeStr((startMin + 60) % 1440));
-                      }}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-                    >
-                      +1h
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const startMin = parseTimeToMinutes(sessionStartTime) || 480;
-                        setSessionEndTime(minutesToTimeStr((startMin + 120) % 1440));
-                      }}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-                    >
-                      +2h
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const startMin = parseTimeToMinutes(sessionStartTime) || 480;
-                        setSessionEndTime(minutesToTimeStr((startMin + 180) % 1440));
-                      }}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-                    >
-                      +3h
-                    </button>
-                  </div>
-                </div>
-              )}
+          {/* Reusable TaskSessionEditor in Draft Mode */}
+          {!isMultiline && isEditingSession && (
+            <div className="mt-2.5">
+              <TaskSessionEditor
+                initialSessionNumber={isSessionActive ? activeSessionNum : undefined}
+                initialPlannedDate={effectivePlannedDate || todayStr}
+                initialStartTime={sessionStartTime}
+                initialEndTime={sessionEndTime}
+                suggestedSessionNumber={defaultSessionNum}
+                tasks={tasks}
+                title="Session Duration Generator"
+                onApply={handleApplySessionDraft}
+                onCancel={handleCancelSessionDraft}
+              />
+            </div>
+          )}
 
               {/* Duplicate Warning Prompt */}
               {hasDuplicateWarning && (

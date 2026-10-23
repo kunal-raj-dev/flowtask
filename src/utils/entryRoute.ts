@@ -14,7 +14,7 @@ export function canonicalWorkspaceUrl(href: string): URL {
   return url;
 }
 
-/** The custom dashboard is part of Today, rather than a separate navigation route. */
-export function resolveStartView(value: unknown): 'today' | 'inbox' | 'upcoming' | 'timeline' {
-  return value === 'inbox' || value === 'upcoming' || value === 'timeline' ? value : 'today';
+/** Keep the configured dashboard start view distinct from the Daily Desk. */
+export function resolveStartView(value: unknown): 'today' | 'dashboard' | 'inbox' | 'upcoming' | 'timeline' {
+  return value === 'dashboard' || value === 'inbox' || value === 'upcoming' || value === 'timeline' ? value : 'today';
 }

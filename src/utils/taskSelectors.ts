@@ -12,3 +12,5 @@ export const isSomedayTask = (task: Task) => isActiveTask(task) && !!task.isSome
 export const isUpcomingTask = (task: Task, date = formatLocalDate(new Date())) => isActiveTask(task) && !task.isSomeday && (task.plannedDate || task.dueDate || '') > date;
 export const completedOn = (task: Task, date: string) => isVisibleTask(task) && task.status === 'done' && !!task.completedAt && formatLocalDate(new Date(task.completedAt)) === date;
 export const recordedMinutes = (task: Task) => Math.max(0, task.timeSpentMinutes || 0);
+
+export const isStudyTask = (task: Task) => Boolean(task.sessionMetadata?.isSession || task.tags?.includes('study') || task.tags?.includes('sprint') || task.projectId === 'study');

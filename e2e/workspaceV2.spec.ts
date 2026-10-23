@@ -13,7 +13,7 @@ async function seed(page: Page, count = 8, theme = 'light') {
     const tasks = Array.from({length:count},(_,i)=>({id:`workspace-${i}`,title:titles[i]||`Backlog task ${i+1}`,status:'todo',priority:i<3?'p1':'p3',projectId:i%2?'personal':'work',subtasks:[],createdAt:Date.now()+i,plannedDate:date,estimatedMinutes:25+(i%3)*10,...(i<3?{topThreeDate:date,isPinnedToday:true,nextAction:['Start with the resize controls','Solve the first recursive example','Walk through the keyboard flow'][i]}:{}),...(i===3?{scheduledStart:'10:30'}:{})}));
     localStorage.setItem('flowtask_tasks_v1',JSON.stringify(tasks));
   },{count,theme});
-  await page.goto('/?view=today');
+  await page.goto('/app?view=dashboard');
   await page.getByRole('heading',{name:'Today.',exact:true}).waitFor();
 }
 async function workspace(page:Page) {
@@ -68,7 +68,7 @@ test('unfinished layout recovers after navigation without changing the saved das
   await page.getByRole('button',{name:'Remove Continue Study',exact:true}).click();
   await page.getByRole('button',{name:'Inbox',exact:true}).click();
   await page.getByRole('heading',{name:'Inbox',exact:true}).waitFor();
-  await page.getByRole('button',{name:/^Today \d/}).click();
+  await page.goto('/app?view=dashboard');
   await page.getByRole('button',{name:'Resume Editing',exact:true}).click();
   await expect(page.locator('[data-widget-type="studyContinuation"]')).toHaveCount(0);
   expect((await workspace(page)).dashboards[0].widgets).toHaveLength(count);
@@ -89,7 +89,7 @@ test('dashboard selection survives reload and deletion has an undo',async({page}
 });
 
 test('quick notes flush on immediate navigation and stay shared with the notes panel',async({page})=>{
-  await seed(page); await page.locator('.daily-context-detail').filter({hasText:'Quick notes'}).locator('summary').click(); const note=page.getByRole('textbox',{name:'Workspace scratchpad',exact:true});
+  await seed(page); const note=page.getByRole('textbox',{name:'Workspace scratchpad',exact:true});
   await note.fill('Keep the resize handle accessible.\nReturn to this after lunch.');
   await page.getByRole('button',{name:'Inbox',exact:true}).click();
   await expect.poll(async()=> (await workspace(page)).preferences.scratchpad).toBe('Keep the resize handle accessible.\nReturn to this after lunch.');

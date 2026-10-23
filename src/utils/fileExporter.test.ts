@@ -74,6 +74,28 @@ describe('fileExporter Utility', () => {
       expect(parsed.projects).toHaveLength(2);
       expect(parsed.exportedAt).toBeDefined();
     });
+
+    it('exports normalized copies with subtask estimates taking precedence', () => {
+      const taskWithTimedSubs: Task = {
+        ...mockTasks[0],
+        id: 'task-timed',
+        estimatedMinutes: 20, // Stale parent estimate
+        subtasks: [
+          { id: 's1', title: 'Sub 1', completed: false, estimatedMinutes: 50 },
+          { id: 's2', title: 'Sub 2', completed: false, estimatedMinutes: 60 },
+        ],
+      };
+
+      const rawJson = exportToJSON([taskWithTimedSubs], mockProjects);
+      const parsed = JSON.parse(rawJson);
+      expect(parsed.tasks[0].estimatedMinutes).toBe(110); // 50 + 60
+
+      const csv = exportToCSV([taskWithTimedSubs], mockProjects);
+      expect(csv).toContain('110');
+
+      const md = exportToMarkdown([taskWithTimedSubs], mockProjects);
+      expect(md).toContain('~110m');
+    });
   });
 
   describe('exportToMarkdown', () => {

@@ -4,6 +4,7 @@ import type { UserWorkflowSettings } from "../types/settings";
 import { parseTimeToMinutes } from "./timelineUtils";
 import { isTodayTask } from "./taskSelectors";
 import { formatLocalDate } from "./nlpParser";
+import { calculateTaskTimeSummary } from "./taskTimeSummary";
 
 export interface DayPlanCalculationOptions {
   date: string; // YYYY-MM-DD
@@ -196,23 +197,20 @@ export function calculateDayPlanSummary(
       completedTaskCount++;
     }
 
-    const hasEstimate =
-      typeof task.estimatedMinutes === "number" &&
-      Number.isFinite(task.estimatedMinutes) &&
-      task.estimatedMinutes > 0;
+    const timeSummary = calculateTaskTimeSummary(task);
+    const hasEstimate = timeSummary.totalEstimateMinutes > 0;
 
     if (!hasEstimate) {
       missingEstimatesCount++;
     }
 
-    const estimate = hasEstimate ? task.estimatedMinutes! : defaultTaskDuration;
+    const estimate = hasEstimate ? timeSummary.totalEstimateMinutes : defaultTaskDuration;
     totalDemandMinutes += estimate;
 
     if (!isDone) {
-      remainingTaskWorkMinutes += Math.max(
-        0,
-        estimate - (task.timeSpentMinutes || 0),
-      );
+      remainingTaskWorkMinutes += hasEstimate
+        ? timeSummary.remainingWorkMinutes
+        : Math.max(0, defaultTaskDuration - (task.timeSpentMinutes || 0));
     }
 
     if (task.scheduledStart) {

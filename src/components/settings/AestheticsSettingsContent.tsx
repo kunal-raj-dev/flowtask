@@ -198,7 +198,7 @@ export const AestheticsSettingsContent: React.FC<
       {section !== "appearance" && (
         <>
           {/* SECTION 2: Tactile Audio Engine & Volume Control */}
-          <div className="pt-4 border-t border-[var(--border-hairline)] space-y-4">
+          <div id="s-audio-fx" className="pt-4 border-t border-[var(--border-hairline)] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div>
                 <div className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-2">
@@ -384,7 +384,7 @@ export const AestheticsSettingsContent: React.FC<
           </div>
 
           {/* SECTION 3: Ambient Focus Soundscape Generator */}
-          <div className="pt-4 border-t border-[var(--border-hairline)] space-y-4">
+          <div id="s-ambient" className="pt-4 border-t border-[var(--border-hairline)] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div>
                 <div className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-2">

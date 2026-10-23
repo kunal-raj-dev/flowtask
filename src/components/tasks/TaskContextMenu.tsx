@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Task, Priority } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
@@ -16,7 +16,9 @@ import {
   Circle,
   Copy,
   CheckSquare,
+  Folder,
 } from 'lucide-react';
+import { MoveToProjectPicker } from './MoveToProjectPicker';
 
 interface TaskContextMenuProps {
   task: Task;
@@ -41,8 +43,18 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
     duplicateTask,
     toggleTaskSelection,
     selectedTaskIds,
+    projects,
+    showToast,
+    undoLastAction,
+    setActiveView,
+    settings,
   } = useTaskContext();
 
+  const showHints =
+    settings?.keyboardShortcutsEnabled !== false &&
+    (settings?.showShortcutHints ?? settings?.keyboardHaloEnabled ?? true) !== false;
+
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const todayStr = useTodayStr();
@@ -65,6 +77,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (showProjectPicker) return;
       if (e.key === 'Escape') {
         e.preventDefault(); e.stopPropagation();
         onClose();
@@ -83,7 +96,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       document.removeEventListener('pointerdown', handleOutsideClick);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, showProjectPicker]);
 
   // Viewport bounds calculation: ensure menu doesn't overflow screen, clip items, or obstruct trigger button
   const menuWidth = 208;
@@ -122,10 +135,30 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       className="fixed z-50 w-52 max-h-[calc(100vh-32px)] overflow-y-auto bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] rounded-2xl shadow-modal p-1.5 text-xs text-[var(--text-primary)] card-surface animate-slide-down select-none"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Complete toggle */}
-      <button
-        type="button"
-        onClick={() => handleAction(() => toggleTaskStatus(task.id))}
+      {showProjectPicker ? (
+        <MoveToProjectPicker
+          projects={projects}
+          currentProjectId={task.projectId}
+          onSelectProject={(newProjectId) => {
+            const targetProject = projects.find((p) => p.id === newProjectId);
+            updateTask(task.id, { projectId: newProjectId, milestoneId: undefined });
+            showToast(
+              `Moved "${task.title}" to ${targetProject?.name || 'project'}`,
+              'Undo',
+              undoLastAction,
+              'View project',
+              () => setActiveView(('project:' + newProjectId) as any)
+            );
+            onClose();
+          }}
+          onClose={() => setShowProjectPicker(false)}
+        />
+      ) : (
+        <>
+          {/* Complete toggle */}
+          <button
+            type="button"
+            onClick={() => handleAction(() => toggleTaskStatus(task.id))}
         className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         {isDone ? (
@@ -163,7 +196,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <Copy size={14} className="text-indigo-500" />
           <span>Duplicate Task</span>
         </span>
-        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">Clone</kbd>
+        {showHints && <kbd className="text-[9px] text-[var(--text-muted)] font-mono">Copy</kbd>}
       </button>
 
       {/* Select task for batch actions */}
@@ -176,7 +209,19 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <CheckSquare size={14} className="text-[var(--color-brand)]" />
           <span>{selectedTaskIds.includes(task.id) ? 'Deselect Task' : 'Select for Batch'}</span>
         </span>
-        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">Space</kbd>
+        {showHints && <kbd className="text-[9px] text-[var(--text-muted)] font-mono">X</kbd>}
+      </button>
+
+      {/* Move to Project */}
+      <button
+        type="button"
+        onClick={() => setShowProjectPicker(true)}
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors text-left cursor-pointer active:scale-[0.98]"
+      >
+        <span className="flex items-center gap-2.5">
+          <Folder size={14} className="text-blue-500" />
+          <span>Move to Project…</span>
+        </span>
       </button>
 
       <div className="h-[1px] bg-[var(--border-hairline)] my-1" />
@@ -199,7 +244,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <Sun size={14} className="text-amber-500" />
           <span>Move to Today</span>
         </span>
-        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">t</kbd>
+        {showHints && <kbd className="text-[9px] text-[var(--text-muted)] font-mono">t</kbd>}
       </button>
 
       <button
@@ -219,7 +264,6 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <Moon size={14} className="text-indigo-500" />
           <span>{task.isEvening ? 'Move to Daytime' : 'This Evening'}</span>
         </span>
-        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">e</kbd>
       </button>
 
       <button
@@ -240,7 +284,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <Sunrise size={14} className="text-orange-500" />
           <span>Move to Tomorrow</span>
         </span>
-        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">m</kbd>
+        {showHints && <kbd className="text-[9px] text-[var(--text-muted)] font-mono">m</kbd>}
       </button>
 
       <button
@@ -261,7 +305,7 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <Lightbulb size={14} className="text-yellow-500" />
           <span>Move to Someday</span>
         </span>
-        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">s</kbd>
+        {showHints && <kbd className="text-[9px] text-[var(--text-muted)] font-mono">s</kbd>}
       </button>
 
       <div className="h-[1px] bg-[var(--border-hairline)] my-1" />
@@ -279,7 +323,6 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           />
           <span>{task.isPinnedToday ? 'Unpin from Top 3' : 'Pin to Top 3 Focus'}</span>
         </span>
-        <kbd className="text-[9px] text-[var(--text-muted)] font-mono">f</kbd>
       </button>
 
       {/* Focus Timer */}
@@ -334,8 +377,10 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
           <Trash2 size={14} />
           <span>Delete Task</span>
         </span>
-        <kbd className="text-[9px] text-rose-400 font-mono">Del</kbd>
+        {showHints && <kbd className="text-[9px] text-rose-400 font-mono">Del</kbd>}
       </button>
+        </>
+      )}
     </div>,
     document.body
   );

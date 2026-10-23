@@ -4,6 +4,7 @@ import type { Task } from '../../../types/task';
 import { suggestSubtasks, suggestDuration } from '../../../utils/aiCopilot';
 import { generateStarterAction } from '../../../utils/procrastinationSplitter';
 import { saveCustomTemplate } from '../../../utils/templateEngine';
+import { calculateTaskTimeSummary } from '../../../utils/taskTimeSummary';
 import {
   ListTodo,
   Zap,
@@ -71,12 +72,12 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
     setEditingEstimate(undefined);
   };
 
+  const timeSummary = calculateTaskTimeSummary(task);
   const completedSubs = task.subtasks?.filter((s) => s.completed).length || 0;
   const totalSubs = task.subtasks?.length || 0;
   const progressPercent = totalSubs > 0 ? Math.round((completedSubs / totalSubs) * 100) : 0;
-  const totalSubMinutes = task.subtasks?.reduce((acc, s) => acc + (s.estimatedMinutes || 0), 0) || 0;
-  const completedSubMinutes =
-    task.subtasks?.filter((s) => s.completed).reduce((acc, s) => acc + (s.estimatedMinutes || 0), 0) || 0;
+  const totalSubMinutes = timeSummary.totalEstimateMinutes;
+  const completedSubMinutes = timeSummary.completedSubtaskMinutes;
 
   const handleStarterStep = () => {
     const starter = generateStarterAction(task.title, task.description);
@@ -165,15 +166,10 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
               {completedSubs} of {totalSubs} steps completed
               {totalSubMinutes > 0 ? ` • ${completedSubMinutes}m / ${totalSubMinutes}m` : ''}
             </span>
-            {totalSubMinutes > 0 && task.estimatedMinutes !== totalSubMinutes && (
-              <button
-                type="button"
-                onClick={() => updateTask(task.id, { estimatedMinutes: totalSubMinutes })}
-                className="text-[10px] font-bold text-[var(--color-brand)] hover:underline"
-                title={`Update parent task estimate to sum of subtasks (${totalSubMinutes}m)`}
-              >
-                Sync to Task ({totalSubMinutes}m)
-              </button>
+            {timeSummary.untimedSubtaskIndicator && (
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                {timeSummary.untimedSubtaskIndicator}
+              </span>
             )}
           </div>
         </div>

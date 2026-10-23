@@ -1,3 +1,4 @@
+import { isStudyTask } from '../../utils/taskSelectors';
 import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useTodayStr } from '../../hooks/useCurrentDate';
@@ -91,25 +92,16 @@ export const StudyView: React.FC<StudyViewProps> = ({
   const continueSessions = useMemo(() => {
     return tasks.filter((t) => {
       if (t.deletedAt || t.archivedAt || t.status === 'done') return false;
-      const isStudy =
-        t.sessionMetadata?.isSession ||
-        t.tags?.includes('study') ||
-        t.tags?.includes('sprint') ||
-        t.projectId === 'study';
-      const hasUnfinishedSubs = t.subtasks?.some((s) => !s.completed);
-      return (isStudy && t.subtasks?.length) || (hasUnfinishedSubs && t.subtasks.length >= 2);
+      const isStudy = isStudyTask(t);
+      return Boolean(isStudy && t.subtasks?.some(sub => !sub.completed));
     });
   }, [tasks]);
 
-  // Planned sessions for today and upcoming
+  // Planned sessions include an explicit overdue label for past dates.
   const plannedSessions = useMemo(() => {
     return tasks.filter((t) => {
       if (t.deletedAt || t.archivedAt || t.status === 'done') return false;
-      const isStudy =
-        t.sessionMetadata?.isSession ||
-        t.tags?.includes('study') ||
-        t.tags?.includes('sprint') ||
-        t.projectId === 'study';
+      const isStudy = isStudyTask(t);
       return isStudy && (t.plannedDate || t.dueDate);
     });
   }, [tasks]);
@@ -120,7 +112,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
     const doneTasks = tasks.filter(
       (t) =>
         t.status === 'done' &&
-        (t.sessionMetadata?.isSession || t.tags?.includes('study') || t.tags?.includes('sprint'))
+        !t.deletedAt && !t.archivedAt && isStudyTask(t)
     );
     return { logs: sprintLogs, completed: doneTasks };
   }, [focusLogs, tasks]);
@@ -415,7 +407,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
                   </h3>
                   <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] mt-0.5">
                     <span className="font-mono text-emerald-700 dark:text-emerald-400">
-                      {t.plannedDate || t.dueDate}
+                      {(t.plannedDate || t.dueDate)! < todayStr ? 'Overdue · ' : ''}{t.plannedDate || t.dueDate}
                     </span>
                     {t.estimatedMinutes && <span>· {t.estimatedMinutes}m</span>}
                     {t.subtasks?.length ? (

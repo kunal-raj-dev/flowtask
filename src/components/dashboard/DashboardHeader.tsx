@@ -24,11 +24,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
   const { activeDashboard, dashboards, isEditing } = props;
   const media = useMediaCatalog();
   const cover = media.visuals.find(scene => scene.id === activeDashboard.coverImage);
+  const [failedCover, setFailedCover] = useState<string | null>(null);
   const [open, setOpen] = useState(false), [visualPickerOpen, setVisualPickerOpen] = useState(false), [renaming, setRenaming] = useState<string | null>(null), [name, setName] = useState('');
   const today = useTodayStr();
   const date = new Date(today + 'T12:00:00');
   const formatted = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(date);
   return <>
+    {cover && failedCover !== cover.id && <img className="desk-dashboard-cover" src={cover.poster || cover.src} alt="" width={cover.width || 1200} height={cover.height || 600} style={{ objectPosition: `${activeDashboard.coverFocalPoint?.x ?? cover.focalPoint?.x ?? 50}% ${activeDashboard.coverFocalPoint?.y ?? cover.focalPoint?.y ?? 50}%` }} onError={() => setFailedCover(cover.id)} />}
+    {activeDashboard.coverImage && ((!cover && !media.loading) || failedCover === cover?.id) && <div className="desk-dashboard-cover-missing" role="status"><span>Your saved desk image is unavailable on this device.</span><button type="button" className="desk-button" onClick={() => setVisualPickerOpen(true)}>Choose replacement</button></div>}
     <header className="desk-page-header">
       <div>
         <p className="desk-eyebrow">{formatted}</p>
@@ -50,7 +53,35 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
       <div className="desk-manager-tools"><button className="desk-button" onClick={() => { setOpen(false); props.onToggleEdit(); }}>Edit workspace</button><button className="desk-button" disabled={dashboards.length >= 20} onClick={() => { props.onCreateDashboard(); setOpen(false); }}><Plus size={16}/>Create New Dashboard</button><button className="desk-button" onClick={() => { props.onExport?.(); }}><Download size={16}/>Export layout</button><button className="desk-button" disabled={dashboards.length >= 20} onClick={() => { props.onImport?.(); setOpen(false); }}><Upload size={16}/>Import layout</button></div>
       <div className="desk-cover-select"><span>Background for {activeDashboard.name}</span>{activeDashboard.coverImage && !cover && !media.loading && <small role="status">Saved personal image is unavailable on this device.</small>}<button type="button" className="desk-button" onClick={() => { setOpen(false); setVisualPickerOpen(true); }}>{cover ? 'Change image' : activeDashboard.coverImage ? 'Choose replacement' : 'Choose an image'}</button></div>
       <div className="desk-template-heading"><LayoutTemplate size={17}/><h3>Start with a little structure</h3></div><p className="desk-muted">Preview a starter on your current desk. Save to apply it, or Cancel to keep your layout.</p>
-      <div className="desk-template-grid">{STARTER_DASHBOARDS.map(starter => <button key={starter.id} onClick={() => { props.onResetToStarter(starter.id); setOpen(false); }}><span className="desk-template-mini" aria-hidden="true"><i/><i/><i/></span><strong>{starter.name}</strong><small>{starter.widgets.length} widgets · Make it yours</small></button>)}</div>
+      <div className="desk-template-grid">{STARTER_DASHBOARDS.map(starter => {
+        const layout = starter.layouts.lg;
+        const maxY = Math.max(...layout.map(l => l.y + l.h), 1);
+        return (
+          <button key={starter.id} onClick={() => { props.onResetToStarter(starter.id); setOpen(false); }}>
+            <span className="desk-template-mini" aria-hidden="true">
+              {layout.map(item => {
+                const left = (item.x / 12) * 100;
+                const width = (item.w / 12) * 100;
+                const top = (item.y / maxY) * 100;
+                const height = (item.h / maxY) * 100;
+                return (
+                  <i
+                    key={item.i}
+                    style={{
+                      left: `calc(${left}% + 1px)`,
+                      width: `calc(${width}% - 2px)`,
+                      top: `calc(${top}% + 1px)`,
+                      height: `calc(${height}% - 2px)`,
+                    }}
+                  />
+                );
+              })}
+            </span>
+            <strong>{starter.name}</strong>
+            <small>{starter.widgets.length} widgets · {starter.name === 'Daily Desk' ? 'Plan a realistic day' : starter.name === 'Study Desk' ? 'Study, practice and keep references' : starter.name === 'Developer Desk' ? 'Projects, releases and weekly demand' : 'A quieter single-column workspace'}</small>
+          </button>
+        );
+      })}</div>
     </Dialog>
     {visualPickerOpen && <WorkspaceVisualPicker isOpen={visualPickerOpen} onClose={() => setVisualPickerOpen(false)} assets={media.visuals} loading={media.loading} catalogError={media.error} value={activeDashboard.coverImage} focalPoint={activeDashboard.coverFocalPoint} context={{ kind: 'dashboard' }} onSelect={(id, point) => props.onCoverChange?.(id, point)}/>}
   </>;

@@ -1,3 +1,4 @@
+import { getEffectiveTaskEstimate, getDerivedSubtaskEstimate } from '../utils/taskTimeSummary';
 import type { Task, CalendarEvent } from '../types/task';
 import { DEFAULT_WORKFLOW_SETTINGS, type UserWorkflowSettings } from '../types/settings';
 import { calculateDayPlanSummary } from '../utils/dayPlanSummary';
@@ -43,13 +44,13 @@ export function createSchedulePreview(input: SchedulePlannerInput) {
   const settings = { ...DEFAULT_WORKFLOW_SETTINGS, ...input.settings };
   const ids = input.selectedIds ?? input.tasks.filter(t => !t.isSomeday && belongsToPlanDay(t, input.date, today) && !scheduleExclusion(t, input.tasks)).map(t => t.id);
   const selected = new Set(ids);
-  const tasks = [...new Map(input.tasks.map(t => [t.id, t])).values()].map(t => ({ ...t, estimatedMinutes: input.estimates?.[t.id] ?? t.estimatedMinutes }));
+  const tasks = [...new Map(input.tasks.map(t => [t.id, t])).values()].map(t => ({ ...t, estimatedMinutes: getDerivedSubtaskEstimate(t.subtasks) ?? input.estimates?.[t.id] ?? t.estimatedMinutes }));
   const events = (input.calendarEvents ?? []).filter(e => e.date === input.date || (!e.date && input.date === today));
   const dayTasks = tasks.filter(t => !t.deletedAt && !t.archivedAt && belongsToPlanDay(t, input.date, today));
   const scheduled = dayTasks.flatMap(task => {
     const startMin = parseTimeToMinutes(task.scheduledStart);
     const endMin = parseTimeToMinutes(task.scheduledEnd);
-    return startMin === null ? [] : [{ task, startMin, duration: endMin !== null && endMin > startMin ? endMin - startMin : task.estimatedMinutes || settings.defaultTaskDuration }];
+    return startMin === null ? [] : [{ task, startMin, duration: endMin !== null && endMin > startMin ? endMin - startMin : getEffectiveTaskEstimate(task) || settings.defaultTaskDuration }];
   });
   const summary = calculateDayPlanSummary({ date: input.date, todayStr: today, tasks, calendarEvents: events, settings });
   const budget = Math.max(0, summary.availableTaskBudgetMinutes - summary.scheduledTaskMinutes);

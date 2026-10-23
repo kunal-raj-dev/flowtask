@@ -1,7 +1,12 @@
 import type { WorkspaceStore } from './workspaceStore';
 
+const lifetimes = new WeakMap<WorkspaceStore, Promise<void>>();
+
 /** One writer per workspace. Followers load durable records; broadcasts contain no user content. */
 export function ownWorkspace(store: WorkspaceStore) {
+  const previous = lifetimes.get(store) || Promise.resolve();
+  let finish!: () => void;
+  lifetimes.set(store, new Promise<void>(resolve => { finish = resolve; }));
   const abort = new AbortController();
   const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(`flowtask-workspace:${store.id}`) : null;
   let release: (() => void) | undefined;
@@ -21,7 +26,7 @@ export function ownWorkspace(store: WorkspaceStore) {
     await new Promise<void>(resolve => { release = resolve; if (closed) resolve(); });
     await store.settled().catch(() => {});
     owner = false;
-    store.setReadOnly(true);
+    if (!closed) store.setReadOnly(true);
   };
   const acquire = async (wait: boolean) => {
     if (acquiring || closed) return;
@@ -29,6 +34,7 @@ export function ownWorkspace(store: WorkspaceStore) {
     try {
       if (!navigator.locks) { await hold(); return; }
       await navigator.locks.request(`flowtask-workspace-${store.id}`, wait ? { signal: abort.signal } : { ifAvailable: true }, async lock => {
+        if (closed) return;
         if (lock) await hold();
         else { store.setReadOnly(true); await store.reload(); }
       });
@@ -52,13 +58,16 @@ export function ownWorkspace(store: WorkspaceStore) {
       });
     }
   };
-  void acquire(false);
+  let operation = previous.then(() => acquire(false));
   return {
     async takeOver() {
       if (owner || closed) return;
       channel?.postMessage({ type: 'takeover' });
-      await acquire(true);
+      await operation;
+      if (closed) return;
+      operation = acquire(true);
+      await operation;
     },
-    close() { closed = true; abort.abort(); release?.(); changed(); channel?.close(); store.disconnect(); },
+    close() { closed = true; abort.abort(); release?.(); changed(); channel?.close(); void operation.catch(() => {}).finally(finish); },
   };
 }

@@ -1,3 +1,4 @@
+import { shortcutHintsEnabled, MOD_KEY, ALT_KEY } from '../../services/shortcutRegistry';
 import { isTodayTask } from '../../utils/taskSelectors';
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -83,8 +84,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setIsAuthModalOpen,
     syncStatus,
     workspacePreferences,
+    settings,
   } = useTaskContext();
 
+  const hints = shortcutHintsEnabled(settings);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
 
@@ -268,7 +271,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
               onItemClick?.();
             }}
-            title="FlowTask — Click to expand sidebar ([)"
+            title={hints ? `FlowTask — Click to expand sidebar ([)` : 'FlowTask — Click to expand sidebar'}
             aria-label="FlowTask — Expand Sidebar"
             className="cursor-pointer active:scale-95 transition-transform"
           >
@@ -277,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              title="Expand Sidebar ([)"
+              title={hints ? `Expand Sidebar ([)` : 'Expand Sidebar'}
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors active:scale-90"
             >
               <PanelLeftOpen size={16} strokeWidth={1.75} />
@@ -347,7 +350,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               setIsWeeklyReviewOpen(true);
               onItemClick?.();
             }}
-            title="Weekly Review & Retrospective (Ctrl+Shift+W)"
+            title={hints ? `Weekly Review & Retrospective (${MOD_KEY}+Shift+W)` : 'Weekly Review & Retrospective'}
             className="p-1.5 text-[var(--text-secondary)] hover:text-indigo-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
           >
             <Compass size={16} />
@@ -364,7 +367,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {onOpenScratchpad && (
             <button
               onClick={onOpenScratchpad}
-              title="Sticky Scratchpad (Alt+N)"
+              title={hints ? `Sticky Scratchpad (${ALT_KEY}+N)` : 'Sticky Scratchpad'}
               className="p-1.5 text-[var(--text-secondary)] hover:text-amber-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
             >
               <FileEdit size={16} />
@@ -396,7 +399,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
               onItemClick?.();
             }}
-            title="Preferences & Settings (Ctrl+,)"
+            title={hints ? `Preferences & Settings (${MOD_KEY}+,)` : 'Preferences & Settings'}
             className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
           >
             <Settings size={16} />
@@ -500,7 +503,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {onToggleCollapse && !isMobileDrawer && (
             <button
               onClick={onToggleCollapse}
-              title="Collapse Sidebar ([)"
+              title={hints ? `Collapse Sidebar ([)` : 'Collapse Sidebar'}
               className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
             >
               <PanelLeftClose size={15} />
@@ -698,7 +701,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onOpenScratchpad();
               onItemClick?.();
             }}
-            title="Sticky Scratchpad (Alt+N)"
+            title={hints ? `Sticky Scratchpad (${ALT_KEY}+N)` : 'Sticky Scratchpad'}
             aria-label="Sticky Scratchpad"
             className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
           >
@@ -706,7 +709,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <FileEdit size={14} className="text-amber-600" />
               <span>Quick Notes</span>
             </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-mono">Alt+N</span>
+            {hints && <span className="text-[10px] text-[var(--text-muted)] font-mono">{ALT_KEY}+N</span>}
           </button>
         )}
 
@@ -717,7 +720,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             else onOpenExportImport();
             onItemClick?.();
           }}
-          title="Preferences & Settings (Ctrl+,)"
+          title={hints ? `Preferences & Settings (${MOD_KEY}+,)` : 'Preferences & Settings'}
           aria-label="Preferences and Settings"
           className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
         >
@@ -725,7 +728,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Settings size={14} />
             <span>Settings</span>
           </span>
-          <span className="text-[10px] text-[var(--text-muted)] font-mono">Ctrl+,</span>
+          {hints && <span className="text-[10px] text-[var(--text-muted)] font-mono">{MOD_KEY}+,</span>}
         </button>
 
         <button

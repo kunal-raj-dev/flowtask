@@ -367,10 +367,20 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           onClick={() => setEditingProject(null)}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-project-dialog-title"
+            tabIndex={-1}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation();
+                setEditingProject(null);
+              }
+            }}
             className="w-full max-w-md p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-2xl animate-scale-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4">Edit Project</h3>
+            <h3 id="edit-project-dialog-title" className="text-sm font-bold text-[var(--text-primary)] mb-4">Edit Project</h3>
             <form onSubmit={handleSaveEdit}>
               <div className="space-y-4">
                 <div>
@@ -426,12 +436,22 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           onClick={() => setDeletingProject(null)}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-project-dialog-title"
+            tabIndex={-1}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation();
+                setDeletingProject(null);
+              }
+            }}
             className="w-full max-w-md p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-rose-500/30 shadow-2xl animate-scale-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-3 text-rose-500">
               <AlertTriangle size={22} />
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">
+              <h3 id="delete-project-dialog-title" className="text-sm font-bold text-[var(--text-primary)]">
                 Delete Project "{deletingProject.name}"
               </h3>
             </div>

@@ -14,6 +14,7 @@ import {
   Flag,
   Inbox,
 } from 'lucide-react';
+import { MoveToProjectPicker } from './MoveToProjectPicker';
 
 export const BatchActionBar: React.FC = () => {
   const {
@@ -23,6 +24,10 @@ export const BatchActionBar: React.FC = () => {
     batchDeleteTasks,
     batchToggleStatus,
     projects,
+    tasks,
+    showToast,
+    undoLastAction,
+    setActiveView,
   } = useTaskContext();
 
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
@@ -57,8 +62,21 @@ export const BatchActionBar: React.FC = () => {
   };
 
   const handleSetProject = (projectId: string) => {
-    batchUpdateTasks(selectedTaskIds, { projectId });
+    const targetProject = projects.find((p) => p.id === projectId);
+    const selected = new Set(selectedTaskIds);
+    const moving = tasks.filter(task => selected.has(task.id) && task.projectId !== projectId).map(task => task.id);
+    const movedCount = moving.length;
+    if (movedCount > 0) batchUpdateTasks(moving, { projectId });
     setIsProjectDropdownOpen(false);
+    clearTaskSelection();
+    if (!movedCount) return;
+    showToast(
+      `Moved ${movedCount} task${movedCount > 1 ? 's' : ''} to ${targetProject?.name || 'project'}`,
+      'Undo',
+      undoLastAction,
+      'View project',
+      () => setActiveView(('project:' + projectId) as any)
+    );
   };
 
   const togglePriorityDropdown = () => {
@@ -78,7 +96,7 @@ export const BatchActionBar: React.FC = () => {
     if (!isProjectDropdownOpen) {
       const rect = projectBtnRef.current?.getBoundingClientRect();
       if (rect) {
-        setProjectPos({ x: Math.min(rect.left, window.innerWidth - 190), y: rect.top });
+        setProjectPos({ x: Math.min(rect.left, window.innerWidth - 268), y: rect.top });
       }
       setIsPriorityDropdownOpen(false);
       setIsProjectDropdownOpen(true);
@@ -298,25 +316,15 @@ export const BatchActionBar: React.FC = () => {
             left: `${Math.max(12, projectPos.x)}px`,
             bottom: `${Math.max(16, window.innerHeight - projectPos.y + 8)}px`,
           }}
-          className="fixed z-50 w-44 p-1.5 rounded-xl bg-[var(--bg-surface-l1)] border border-stone-200/90 dark:border-white/10 shadow-modal space-y-1 animate-scale-up max-h-48 overflow-y-auto card-surface"
+          className="fixed z-50 w-64 max-w-[calc(100vw-24px)] animate-scale-up"
           onClick={(e) => e.stopPropagation()}
         >
-          {projects.map((proj) => (
-            <button
-              key={proj.id}
-              type="button"
-              onClick={() => handleSetProject(proj.id)}
-              className="w-full text-left text-xs px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.08] flex items-center gap-2 truncate cursor-pointer active:scale-95 transition-all"
-            >
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ backgroundColor: proj.color }}
-              />
-              <span className="truncate text-[var(--text-primary)] font-medium">
-                {proj.name}
-              </span>
-            </button>
-          ))}
+          <MoveToProjectPicker
+            projects={projects}
+            onSelectProject={handleSetProject}
+            onClose={() => setIsProjectDropdownOpen(false)}
+            title="Move selected tasks"
+          />
         </div>,
         document.body
       )}

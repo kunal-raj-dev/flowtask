@@ -1,3 +1,4 @@
+import { normalizeTaskEstimates } from '../utils/taskTimeSummary';
 import { recoveryService } from '../services/recoveryService';
 import { create } from 'zustand';
 import type {
@@ -22,6 +23,7 @@ import { useModalStore } from './useModalStore';
 import { downloadJson } from '../utils/fileExporter';
 import { createWorkspaceBackup, validateBackupExtras, mergeBackupExtras, type BackupExtras } from '../utils/workspaceBackup';
 import { validateWorkspaceData } from '../utils/workspaceValidation';
+import { getDerivedSubtaskEstimate } from '../utils/taskTimeSummary';
 import { dbService, emptyWorkspace } from '../services/dbService';
 import { writeFocusCheckpoint } from '../services/focusCheckpoint';
 import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser';
@@ -163,12 +165,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const mergedSettings: UserWorkflowSettings = get().preferences.settings === record.preferences.settings ? get().settings : {
       ...DEFAULT_WORKFLOW_SETTINGS,
       ...prefSettings,
+      showShortcutHints: prefSettings.showShortcutHints ?? prefSettings.keyboardHaloEnabled ?? true,
     };
     const calendarUrl = (record.preferences.calendarUrl as string) || '';
 
     set({
       workspaceId: get().store?.id || get().workspaceId,
-      tasks: record.tasks,
+      tasks: normalizeTaskEstimates(record.tasks),
       projects: record.projects,
       customViews: record.customViews || [],
       dashboards: record.dashboards || [],
@@ -385,7 +388,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         const parent = r.tasks.find((t) => t.id === taskId);
         const sub = parent?.subtasks.find((s) => s.id === subtaskId);
         if (!parent || !sub) return r;
-        const list = r.tasks.map((t) => (t.id === taskId ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) } : t));
+        const remainingSubs = parent.subtasks.filter((s) => s.id !== subtaskId);
+        const derived = getDerivedSubtaskEstimate(remainingSubs);
+        const list = r.tasks.map((t) => (t.id === taskId ? {
+          ...t,
+          subtasks: remainingSubs,
+          estimatedMinutes: derived !== null ? derived : (getDerivedSubtaskEstimate(parent.subtasks) !== null ? undefined : parent.estimatedMinutes),
+        } : t));
         return {
           ...r,
           tasks: commandService.createTask(list, sub.title, {

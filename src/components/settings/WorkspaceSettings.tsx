@@ -62,7 +62,7 @@ export function WorkspaceSettings({ onClose, onSaveToast }: WorkspaceSettingsPro
 
       <section className="v2-settings-section"><h3>A starting point for your work</h3><p>Optional presets change your work budget and focus rhythm. Your tasks and layouts stay as they are.</p><div className="first-task-actions">{(['student', 'developer'] as const).map(audience => <button className="desk-button" key={audience} onClick={() => { ctx.setWorkspacePreference('profile', { ...(ctx.workspacePreferences.profile as object || {}), audience }); ctx.updateSettings({ targetWorkCapacityHours: audience === 'student' ? 4 : 6 }); const studio = ctx.workspacePreferences.studio as import('../../types/studio').StudioPreferences | undefined; ctx.setWorkspacePreference('studio', { ...studio, timer: { ...importTimer, ...(studio?.timer || {}), focusMinutes: audience === 'student' ? 25 : 50, shortBreakMinutes: audience === 'student' ? 5 : 10 } }); onSaveToast?.(); }}>{audience === 'student' ? 'Student · 25 / 5' : 'Developer · 50 / 10'}</button>)}</div></section>
       {/* Default Landing View */}
-      <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+      <div id="s-dash" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
@@ -145,7 +145,7 @@ export function WorkspaceSettings({ onClose, onSaveToast }: WorkspaceSettingsPro
       )}
 
       {/* Pinned Projects & Smart Views */}
-      <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+      <div id="s-pinned" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">

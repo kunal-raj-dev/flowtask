@@ -390,6 +390,35 @@ export function createStarterDashboards(now = Date.now()): WorkspaceDashboard[] 
     md: daily.widgets.map((w,i) => ({i:w.id,x:0,y:i*5,w:6,h:5})),
     sm: daily.widgets.map((w,i) => ({i:w.id,x:0,y:i*5,w:1,h:5})),
   };
+  const study = desks[1], developer = desks[2], minimal = desks[3];
+  study.layouts.lg = [
+    {i:'w-study-continuation',x:0,y:0,w:12,h:4},
+    {i:'w-study-notes',x:0,y:4,w:8,h:5},
+    {i:'w-study-resources',x:8,y:4,w:4,h:5},
+    {i:'w-study-tasks',x:0,y:9,w:8,h:7},
+    {i:'w-study-top3',x:8,y:9,w:4,h:4},
+    {i:'w-study-launchpad',x:8,y:13,w:4,h:4},
+    {i:'w-study-capacity',x:0,y:16,w:8,h:3},
+  ];
+  developer.layouts.lg = [
+    {i:'w-dev-top3',x:0,y:0,w:12,h:4},
+    {i:'w-dev-tasks',x:0,y:4,w:8,h:7},
+    {i:'w-dev-projects',x:8,y:4,w:4,h:7},
+    {i:'w-dev-workload',x:0,y:11,w:6,h:4},
+    {i:'w-dev-notes',x:6,y:11,w:6,h:4},
+    {i:'w-dev-agenda',x:0,y:15,w:6,h:5},
+    {i:'w-dev-activity',x:6,y:15,w:6,h:5},
+  ];
+  minimal.layouts.lg = minimal.widgets.map((widget, index) => ({ i: widget.id, x:0, y:index*6, w:12, h:widget.type === 'taskList' ? 6 : widget.type === 'quietScene' ? 3 : 4 }));
+  // Mobile reading order follows each template's visual hierarchy.
+  for (const desk of [study, developer, minimal]) {
+    desk.revision = 2;
+    const order = [...desk.layouts.lg].sort((a,b) => a.y-b.y || a.x-b.x);
+    for (const bp of ['md','sm'] as const) {
+      let y = 0;
+      desk.layouts[bp] = order.map(item => { const next = { ...item, x:0, y, w:bp === 'md' ? 6 : 1 }; y += item.h; return next; });
+    }
+  }
   return desks;
 }
 export const STARTER_DASHBOARDS: WorkspaceDashboard[] = createStarterDashboards(0);

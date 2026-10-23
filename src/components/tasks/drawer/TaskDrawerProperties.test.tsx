@@ -55,16 +55,18 @@ describe('TaskDrawerProperties Component', () => {
     expect(todayButtons.length).toBe(2);
   });
 
-  it('adds session duration block from 08:00 to 11:00 when + Add Session is clicked', () => {
+  it('opens session editor and applies duration block when Apply Session is clicked', () => {
     render(<TaskDrawerProperties task={sampleTask} />);
 
     const addSessionBtn = screen.getByRole('button', { name: /\+ Add Session/i });
     fireEvent.click(addSessionBtn);
 
+    const applyBtn = screen.getByRole('button', { name: /Apply Session/i });
+    fireEvent.click(applyBtn);
+
     expect(mockUpdateTask).toHaveBeenCalledWith('task-leet-1', expect.objectContaining({
       scheduledStart: '08:00',
       scheduledEnd: '11:00',
-      estimatedMinutes: 180,
       sessionMetadata: expect.objectContaining({
         isSession: true,
         sessionNumber: 1,

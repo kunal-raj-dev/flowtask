@@ -1,3 +1,5 @@
+import { isInboxTask } from '../../utils/taskSelectors';
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Inbox } from "lucide-react";
 import { useTaskContext } from "../../context/TaskContext";
@@ -13,12 +15,7 @@ export function InboxTriage() {
   const tasks = ctx.tasks
     .filter(
       (t) =>
-        t.projectId === "inbox" &&
-        t.status !== "done" &&
-        !t.deletedAt &&
-        !t.archivedAt &&
-        !t.isSomeday &&
-        !t.plannedDate &&
+        isInboxTask(t) &&
         !processed.includes(t.id),
     )
     .sort((a, b) => a.createdAt - b.createdAt);
@@ -45,6 +42,7 @@ export function InboxTriage() {
   useEffect(() => {
     if (!open) return;
     const key = (e: KeyboardEvent) => {
+      if (!appShortcutAllowed(e)) return;
       if (
         (e.target as HTMLElement)?.closest(
           "input,textarea,select,[contenteditable=true]",

@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../../services/shortcutRuntime';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, X, Sun, Moon, ArrowRight, Sparkles } from 'lucide-react';
@@ -115,6 +116,7 @@ export const DatePickerPopover: React.FC<DatePickerPopoverProps> = ({
         return;
       }
 
+      if (!appShortcutAllowed(e)) return;
       if (e.key === 't' || e.key === 'T') {
         e.preventDefault();
         e.stopPropagation();

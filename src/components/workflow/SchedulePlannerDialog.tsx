@@ -1,3 +1,4 @@
+import { getDerivedSubtaskEstimate, getEffectiveTaskEstimate } from '../../utils/taskTimeSummary';
 import { useEffect, useRef, useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useTodayStr } from '../../hooks/useCurrentDate';
@@ -65,7 +66,7 @@ function SchedulePlanner({ onClose, initialDate }: { onClose: () => void; initia
     <div className="planner-task-list">
       {tasks.map(task => { const reason = scheduleExclusion(task, ctx.tasks); return <div key={task.id} className="planner-task">
         <label className="planner-check"><input type="checkbox" checked={selected.includes(task.id)} disabled={!!reason} onChange={e => { setSelected(e.target.checked ? [...selected, task.id] : selected.filter(id => id !== task.id)); invalidate(); }} /><span>{task.title}{reason && <small>{reason}</small>}</span></label>
-        <label className="planner-duration"><span className="sr-only">Minutes for {task.title}</span><input aria-label={`Minutes for ${task.title}`} type="number" min="1" max="1440" value={Number.isNaN(estimates[task.id]) ? '' : estimates[task.id] ?? task.estimatedMinutes ?? ctx.settings.defaultTaskDuration} disabled={!!reason} onChange={e => { setEstimates({ ...estimates, [task.id]: e.target.valueAsNumber }); invalidate(); }} /><span>min</span></label>
+        <label className="planner-duration"><span className="sr-only">Minutes for {task.title}</span><input aria-label={`Minutes for ${task.title}`} type="number" min="1" max="1440" value={Number.isNaN(estimates[task.id]) ? '' : getDerivedSubtaskEstimate(task.subtasks) ?? estimates[task.id] ?? (getEffectiveTaskEstimate(task) || ctx.settings.defaultTaskDuration)} disabled={!!reason || getDerivedSubtaskEstimate(task.subtasks) !== null} title={getDerivedSubtaskEstimate(task.subtasks) !== null ? 'Synced from subtasks' : undefined} onChange={e => { setEstimates({ ...estimates, [task.id]: e.target.valueAsNumber }); invalidate(); }} /><span>min</span></label>
       </div>; })}
       {!tasks.length && <p className="planner-hint">No unscheduled tasks for this day. Add a task or show other unscheduled tasks.</p>}
     </div>

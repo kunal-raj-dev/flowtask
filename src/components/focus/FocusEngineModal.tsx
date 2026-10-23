@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import React, {
   useState,
   useEffect,
@@ -657,6 +658,7 @@ export const FocusEngineModal: React.FC<FocusEngineModalProps> = ({
   // Keyboard Shortcuts: Space (play/pause), Enter (next/complete), p (PiP), f (fullscreen), Esc (dismiss)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' && !appShortcutAllowed(e)) return;
       const target = e.target as HTMLElement | null;
       const isInput =
         target &&

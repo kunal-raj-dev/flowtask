@@ -379,11 +379,11 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
           {mode === 'focus' && (
             <button
               onClick={handleStash}
-              title="Stash focus session & park an interruption (Alt+S)"
+              title="Stash focus session & park an interruption"
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-all shadow-xs"
             >
               <Flame size={14} />
-              <span>Stash Focus & Park Interruption (Alt+S)</span>
+              <span>Stash Focus & Park Interruption</span>
             </button>
           )}
         </div>
@@ -556,11 +556,11 @@ export const PomodoroModal: React.FC<PomodoroModalProps> = ({ taskId, onClose })
           <div className="flex justify-center -mt-2 mb-4">
             <button
               onClick={handleStash}
-              title="Stash focus session & park an interruption (Alt+S)"
+              title="Stash focus session & park an interruption"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-all shadow-xs"
             >
               <Flame size={13} />
-              <span>Stash Focus & Park Interruption (Alt+S)</span>
+              <span>Stash Focus & Park Interruption</span>
             </button>
           </div>
         )}

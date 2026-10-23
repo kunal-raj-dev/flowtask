@@ -23,6 +23,7 @@ vi.mock('../../context/TaskContext', () => ({
 
 vi.mock('../../hooks/useCurrentDate', () => ({
   useTodayStr: () => '2026-10-04',
+  useTomorrowStr: () => '2026-10-05',
 }));
 
 vi.mock('../../utils/audioEngine', () => ({
@@ -76,6 +77,8 @@ describe('TaskComposer Session Duration Generator', () => {
     const sessionChip = screen.getByRole('button', { name: /\+ Session/i });
     fireEvent.click(sessionChip);
 
+    fireEvent.click(screen.getByRole('button', { name: /Apply Session/i }));
+
     // Submit task
     const addBtn = screen.getByRole('button', { name: /^add$/i });
     fireEvent.click(addBtn);
@@ -85,7 +88,7 @@ describe('TaskComposer Session Duration Generator', () => {
       expect.objectContaining({
         scheduledStart: '08:00',
         scheduledEnd: '11:00',
-        estimatedMinutes: 180,
+        estimatedMinutes: undefined,
         dueTime: '11:00',
         plannedDate: '2026-10-04',
         sessionMetadata: expect.objectContaining({
@@ -107,6 +110,7 @@ describe('TaskComposer Session Duration Generator', () => {
     // Click Afternoon preset
     const afternoonBtn = screen.getByRole('button', { name: /Afternoon/i });
     fireEvent.click(afternoonBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Apply Session/i }));
 
     // Input task title and submit
     const input = screen.getByPlaceholderText(/What needs to be done/i);
@@ -118,7 +122,7 @@ describe('TaskComposer Session Duration Generator', () => {
       expect.objectContaining({
         scheduledStart: '14:30',
         scheduledEnd: '17:30',
-        estimatedMinutes: 180,
+        estimatedMinutes: undefined,
       })
     );
   });
@@ -149,6 +153,29 @@ describe('TaskComposer Session Duration Generator', () => {
         dueTime: '15:00',
       })
     );
+  });
+  it('requires Apply, preserves a manual work estimate, and discards edited session drafts on Cancel', () => {
+    render(<TaskComposer />);
+    fireEvent.change(screen.getByPlaceholderText(/What needs to be done/i), { target: { value: 'Study arrays ~40m' } });
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+    fireEvent.click(screen.getByRole('button', { name: /\+ Session/i }));
+    fireEvent.change(screen.getByLabelText('Session start time'), { target: { value: '14:00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+    expect(mockAddTask).toHaveBeenCalledWith('Study arrays', expect.objectContaining({
+      scheduledStart: undefined, scheduledEnd: undefined, sessionMetadata: undefined, estimatedMinutes: 40,
+    }));
+  });
+
+  it('does not turn an unapplied open editor into a saved session', () => {
+    render(<TaskComposer />);
+    fireEvent.change(screen.getByPlaceholderText(/What needs to be done/i), { target: { value: 'Review notes ~20m' } });
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+    fireEvent.click(screen.getByRole('button', { name: /\+ Session/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+    expect(mockAddTask).toHaveBeenCalledWith('Review notes', expect.objectContaining({
+      scheduledStart: undefined, sessionMetadata: undefined, estimatedMinutes: 20,
+    }));
   });
 });
 

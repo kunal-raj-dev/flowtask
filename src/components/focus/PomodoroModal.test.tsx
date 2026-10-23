@@ -6,6 +6,8 @@ import { PomodoroModal } from './PomodoroModal';
 // Mock audio engine to avoid Web Audio errors in jsdom
 vi.mock('../../utils/audioEngine', () => ({
   audioEngine: {
+    getSoundEnabled: vi.fn(() => false),
+    getSoundProfile: vi.fn(() => 'soft'),
     startAmbientSound: vi.fn(),
     stopAmbientSound: vi.fn(),
     playPomodoroComplete: vi.fn(),

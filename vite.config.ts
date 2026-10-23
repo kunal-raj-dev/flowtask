@@ -74,6 +74,7 @@ export default defineConfig({
           '**/CommandPalette*.js',
           '**/standupGenerator*.js',
           '**/cloudWorkspace*.js',
+          '**/DashboardCanvasView*.{js,css}',
         ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [

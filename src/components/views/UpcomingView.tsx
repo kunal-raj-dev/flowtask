@@ -1,3 +1,5 @@
+import { isUpcomingTask, isActiveTask } from '../../utils/taskSelectors';
+import { calculateDayPlanSummary } from '../../utils/dayPlanSummary';
 import { WeeklyWorkload } from '../workflow/WeeklyWorkload';
 import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
@@ -30,7 +32,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
     toggleTaskStatus,
     toggleTaskPinToday,
     updateTask,
-    deleteTask,
+    deleteTask, settings, calendarEvents,
   } = useTaskContext();
 
   const [presentationMode, setPresentationMode] = useState<'list' | 'timeline'>('list');
@@ -41,9 +43,8 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   // Future incomplete tasks (plannedDate > todayStr or fallback dueDate > todayStr)
   const rawUpcomingTasks = useMemo(() => {
     return tasks.filter((t) => {
-      if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
-      const taskDate = t.plannedDate || t.dueDate;
-      return Boolean(taskDate && taskDate > todayStr);
+      if (!isActiveTask(t) || t.isSomeday) return false;
+      return isUpcomingTask(t, todayStr);
     });
   }, [tasks, todayStr]);
 
@@ -56,11 +57,10 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
       d.setDate(d.getDate() + (i + 1));
       const dateStr = formatLocalDate(d);
       const dayTasks = tasks.filter((t) => {
-        if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
-        const taskDate = t.plannedDate || t.dueDate;
-        return taskDate === dateStr;
+        if (!isActiveTask(t) || t.isSomeday) return false;
+        return (t.plannedDate || t.dueDate) === dateStr;
       });
-      const totalMinutes = dayTasks.reduce((acc, t) => acc + (t.estimatedMinutes || 25), 0);
+      const totalMinutes = calculateDayPlanSummary({ tasks, settings, calendarEvents, date: dateStr }).totalDemandMinutes;
       return {
         date: d,
         dateStr,
@@ -89,7 +89,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
       endOfWeekStr: eowStr,
       nextWeekEndStr: nweStr,
     };
-  }, [tasks, todayStr]);
+  }, [tasks, todayStr, settings, calendarEvents]);
 
   // Filter tasks based on selected horizon date or full list
   const activeTasksToDisplay = useMemo(() => {

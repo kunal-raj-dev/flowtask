@@ -118,6 +118,7 @@ export interface ProjectMilestone {
 }
 
 export type ViewId =
+  | 'dashboard'
   | 'today'
   | 'inbox'
   | 'upcoming'

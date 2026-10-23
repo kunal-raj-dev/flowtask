@@ -1,3 +1,4 @@
+import { getEffectiveTaskEstimate } from '../../../utils/taskTimeSummary';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, CalendarDays, CalendarClock } from 'lucide-react';
 import { useTaskContext } from '../../../context/TaskContext';
@@ -17,7 +18,7 @@ export const DayAgendaWidget: React.FC<WidgetComponentProps> = ({ widget, onSele
     if (widget.config.showScheduledTasks !== false) for (const t of tasks) {
       if (!isTodayTask(t,today) && !(t.status === 'done' && !t.deletedAt && !t.archivedAt && t.plannedDate === today)) continue;
       const start = parseTimeToMinutes(t.scheduledStart); if (start === null) continue;
-      const end = parseTimeToMinutes(t.scheduledEnd) ?? start + (t.estimatedMinutes || settings?.defaultTaskDuration || 30);
+      const end = parseTimeToMinutes(t.scheduledEnd) ?? start + (getEffectiveTaskEstimate(t) || settings?.defaultTaskDuration || 30);
       result.push({ id:t.id,title:t.title,start,end,task:true,done:t.status==='done' });
     }
     return result.sort((a,b) => a.start-b.start);

@@ -160,6 +160,13 @@
   color: #222d2c;
   font-weight: 700;
 }
+.studio-title-slot {
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 .studio-eyebrow {
   font-size: 12px;
   font-weight: 600;
@@ -317,6 +324,17 @@
   border-radius: 20px;
   background: #0d192066;
   border: 1px solid #ffffff24;
+}
+.studio-break-prompt-slot {
+  height: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+.studio-break-prompt-slot .studio-break-prompt {
+  margin-top: 0;
 }
 .studio-break-prompt {
   display: flex;
@@ -1869,6 +1887,11 @@ html[data-reduced-motion="true"] .focus-studio * {
 }
 
 @media (max-width: 600px) {
+  .studio-stage {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
   .is-lobby .studio-lobby-intro { display: none; }
   .is-lobby .studio-stage { padding: 8px 12px 14px; }
   .is-lobby .studio-lobby { gap: 14px; }
@@ -1939,4 +1962,20 @@ html[data-reduced-motion="true"] .is-session .studio-session-core { animation: n
 .studio-room-card { transition:background-color var(--flow-fast) var(--flow-ease), border-color var(--flow-fast) var(--flow-ease), box-shadow var(--flow-fast) var(--flow-ease), transform var(--flow-fast) var(--flow-ease); }
 @media(max-width:600px) {
   .studio-lobby-rooms { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+/* Session phase changes never resize/recenter the action frame. */
+.is-session .studio-title-slot { height: 164px; min-height: 164px; flex: 0 0 164px; gap: 8px; }
+.is-session .studio-title-slot > h1 { margin: 0; line-height: 1.35; max-height: 2.7em; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.is-session .studio-title-slot > .studio-eyebrow { margin: 0; min-height: 18px; }
+.is-session .studio-title-slot > .studio-next-action { margin: 0; max-height: 2.8em; overflow: hidden; line-height: 1.4; }
+.studio-session-core .studio-playback { display: grid; grid-template-columns: minmax(44px, 1fr) minmax(140px, 172px) minmax(44px, 1fr); gap: 12px; width: 100%; align-items: center; }
+.studio-playback .studio-start { min-width: 0; width: 100%; }
+.studio-playback .studio-control-btn { min-width: 44px; padding-inline: 10px; }
+@media (max-width: 600px) {
+ .studio-playback .studio-control-btn span { display: none; }
+ .is-session .studio-session-core { max-width: 100%; }
+ .is-session .studio-title-slot { height: 148px; min-height: 148px; flex-basis: 148px; }
+ .studio-title-slot { width: 100%; }
+ .studio-break-prompt-slot { min-height: 48px; height: 48px; flex-shrink: 0; font-size: 11px; }
 }

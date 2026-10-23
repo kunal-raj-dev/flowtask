@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import { WorkspaceStoreContext } from '../../services/workspaceStore';
 import { useTaskStore } from '../../store/useTaskStore';
 import React, { useId, useRef, useState, useEffect, useCallback, useContext, useMemo } from 'react';
@@ -11,6 +12,7 @@ import { useUIStore } from '../../store/useUIStore';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { isFocusTask } from '../../utils/taskSelectors';
 import { formatTimerClock } from '../../utils/focusTimeFormat';
+import { getEffectiveTaskEstimate } from '../../utils/taskTimeSummary';
 import { TaskContextMenu } from './TaskContextMenu';
 import celebrate from '../../utils/celebrate';
 import { PriorityPickerPopover, DatePickerPopover } from './popovers';
@@ -112,7 +114,8 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
   const running = isTimerRunning || (active && focusSession?.state === 'running');
   const fallbackSeconds = (context as unknown as { activeTimerSeconds?: number }).activeTimerSeconds ?? 0;
 
-  const duration = task.estimatedMinutes || context.settings?.defaultTaskDuration || 30;
+  const effectiveEstimate = getEffectiveTaskEstimate(task);
+  const duration = effectiveEstimate || context.settings?.defaultTaskDuration || 30;
   const durationLabel =
     duration >= 60
       ? Math.floor(duration / 60) + 'h' + (duration % 60 ? ' ' + (duration % 60) + 'm' : '')
@@ -156,12 +159,12 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
       data-featured={featured || undefined}
       data-done={done || undefined}
       data-selected={selected || undefined}
-      data-keyboard-focused={isKeyboardFocused || isKeyboardFocusedRow || undefined}
+      data-keyboard-focused={(context.settings?.keyboardShortcutsEnabled !== false && (isKeyboardFocused || isKeyboardFocusedRow)) || undefined}
       draggable={!task.scheduleLocked}
       onDragStart={(e) => {
         e.dataTransfer.setData(
           'application/json',
-          JSON.stringify({ taskId: task.id, duration: task.estimatedMinutes || 30 })
+          JSON.stringify({ taskId: task.id, duration: effectiveEstimate || 30 })
         );
         e.dataTransfer.effectAllowed = 'move';
       }}
@@ -222,7 +225,7 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
             onClick={open}
             onDoubleClick={beginEdit}
             onKeyDown={(e) => {
-              if (e.key === 'F2') {
+              if (e.key === 'F2' && appShortcutAllowed(e.nativeEvent)) {
                 e.preventDefault();
                 beginEdit();
               }

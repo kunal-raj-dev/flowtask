@@ -1,3 +1,4 @@
+import { getEffectiveTaskEstimate } from './taskTimeSummary';
 import type { Task, CalendarEvent, CognitiveIntensity } from '../types/task';
 
 export const TIMELINE_START_HOUR = 7;
@@ -43,7 +44,7 @@ export function calculateCapacityMetrics(
   targetWorkCapacityHours: number = 6.0
 ): CapacityMetrics {
   const totalPlannedMinutes = tasks.reduce(
-    (acc, t) => acc + (t.estimatedMinutes || 30),
+    (acc, t) => acc + (getEffectiveTaskEstimate(t) || 30),
     0
   );
   const totalPlannedHours = (totalPlannedMinutes / 60).toFixed(1);
@@ -125,7 +126,7 @@ export function analyzeCognitiveTopology(
   let adminMinutes = 0;
 
   tasks.forEach((t) => {
-    const duration = t.estimatedMinutes || 30;
+    const duration = getEffectiveTaskEstimate(t) || 30;
     const intensity = classifyTaskCognitiveIntensity(t);
     if (intensity === 'deep') deepWorkMinutes += duration;
     else if (intensity === 'admin') adminMinutes += duration;
@@ -153,7 +154,7 @@ export function analyzeCognitiveTopology(
     const timeStr = t.scheduledStart || t.dueTime;
     const start = parseTimeToMinutes(timeStr);
     if (start !== null) {
-      const dur = t.estimatedMinutes || 30;
+      const dur = getEffectiveTaskEstimate(t) || 30;
       const intensity = classifyTaskCognitiveIntensity(t);
       blocks.push({
         start,
@@ -274,7 +275,7 @@ export function findNextFreeGap(
     const timeStr = t.scheduledStart || t.dueTime;
     const s = parseTimeToMinutes(timeStr);
     if (s !== null) {
-      const dur = t.estimatedMinutes || 30;
+      const dur = getEffectiveTaskEstimate(t) || 30;
       occupied.push({ start: s, end: s + dur });
     }
   });
@@ -353,7 +354,7 @@ export function rippleScheduleGaps(
     .map((t) => {
       const s = parseTimeToMinutes(t.scheduledStart)!;
       const explicitEnd = parseTimeToMinutes(t.scheduledEnd);
-      const dur = explicitEnd !== null && explicitEnd > s ? explicitEnd - s : t.estimatedMinutes || 30;
+      const dur = explicitEnd !== null && explicitEnd > s ? explicitEnd - s : getEffectiveTaskEstimate(t) || 30;
       const buf = t.bufferMinutes !== undefined ? t.bufferMinutes : (dur >= 45 ? 15 : 0);
       return {
         task: t,

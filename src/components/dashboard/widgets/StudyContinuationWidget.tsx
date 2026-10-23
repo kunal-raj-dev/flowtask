@@ -1,3 +1,4 @@
+import { isStudyTask } from '../../../utils/taskSelectors';
 import React from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import { BookOpen, Play } from 'lucide-react';
@@ -18,24 +19,11 @@ export const StudyContinuationWidget: React.FC<WidgetComponentProps> = ({
         !t.archivedAt &&
         t.status !== 'done' &&
         t.subtasks.some((s) => !s.completed) &&
-        (t.sessionMetadata?.isSession || t.tags?.includes('study') || t.tags?.includes('sprint'))
+        isStudyTask(t)
     )
     .slice(0, 3);
 
-  // Fallback to any active task with subtasks if no study tags exist
-  const displaySessions =
-    studySessions.length > 0
-      ? studySessions
-      : tasks
-          .filter(
-            (t) =>
-              t.subtasks?.length &&
-              !t.deletedAt &&
-              !t.archivedAt &&
-              t.status !== 'done' &&
-              t.subtasks.some((s) => !s.completed)
-          )
-          .slice(0, 2);
+  const displaySessions = studySessions;
 
   return (
     <div className="flex flex-col h-full justify-between">

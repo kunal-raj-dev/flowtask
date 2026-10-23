@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../../services/shortcutRuntime';
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flag, X } from 'lucide-react';
@@ -97,6 +98,7 @@ export const PriorityPickerPopover: React.FC<PriorityPickerPopoverProps> = ({
         }
         return;
       }
+      if (!appShortcutAllowed(e)) return;
       if (['1', '2', '3', '4'].includes(e.key)) {
         e.preventDefault();
         e.stopPropagation();

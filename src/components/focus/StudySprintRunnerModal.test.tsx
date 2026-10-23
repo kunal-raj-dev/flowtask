@@ -7,6 +7,8 @@ import type { Task } from '../../types/task';
 
 vi.mock('../../utils/audioEngine', () => ({
   audioEngine: {
+    getSoundEnabled: vi.fn(() => false),
+    getSoundProfile: vi.fn(() => 'soft'),
     startAmbientSound: vi.fn(),
     stopAmbientSound: vi.fn(),
     playClickSound: vi.fn(),

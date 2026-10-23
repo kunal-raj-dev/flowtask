@@ -2,9 +2,11 @@ import React from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { X, Undo2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { MOD_KEY, shortcutHintsEnabled } from '../../services/shortcutRegistry';
 
 export const Toast: React.FC = () => {
-  const { toast, clearToast } = useTaskContext();
+  const { toast, clearToast, settings } = useTaskContext();
+  const hints = shortcutHintsEnabled(settings);
 
   return (
     <AnimatePresence>
@@ -17,21 +19,34 @@ export const Toast: React.FC = () => {
           transition={{ type: 'spring', damping: 26, stiffness: 360 }}
           role="status"
           aria-live="polite"
-          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex items-center gap-3 px-4 py-3 bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 rounded-2xl shadow-cute-modal border border-stone-800 dark:border-stone-200 text-sm font-medium"
+          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-wrap max-w-[calc(100vw-32px)] items-center gap-3 px-4 py-3 bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 rounded-2xl shadow-cute-modal border border-stone-800 dark:border-stone-200 text-sm font-medium"
         >
-          <span className="leading-snug">{toast.message}</span>
+          <span className="leading-snug min-w-0 break-words">{toast.message}</span>
           {toast.actionLabel && toast.onAction && (
             <button
               type="button"
+              aria-label={toast.actionLabel}
               onClick={() => {
                 toast.onAction?.();
                 clearToast();
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 text-amber-300 dark:text-amber-800 hover:bg-amber-500/30 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors active:scale-95"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 text-amber-300 dark:text-amber-800 hover:bg-amber-500/30 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors active:scale-95 cursor-pointer"
             >
               <Undo2 size={13} />
               <span>{toast.actionLabel}</span>
-              <span className="hidden sm:inline-block text-[10px] opacity-75 font-mono">(Ctrl+Z)</span>
+              {hints && toast.actionLabel === 'Undo' && <span className="hidden sm:inline-block text-[10px] opacity-75 font-mono">({MOD_KEY}+Z)</span>}
+            </button>
+          )}
+          {toast.secondaryActionLabel && toast.onSecondaryAction && (
+            <button
+              type="button"
+              onClick={() => {
+                toast.onSecondaryAction?.();
+                clearToast();
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 dark:bg-black/10 text-stone-200 dark:text-stone-800 hover:bg-white/20 dark:hover:bg-black/20 rounded-xl text-xs font-semibold focus:outline-none transition-colors active:scale-95 cursor-pointer"
+            >
+              <span>{toast.secondaryActionLabel}</span>
             </button>
           )}
           <button

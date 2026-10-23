@@ -64,7 +64,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
         ) : (
           <div className="space-y-4 pt-2">
             {/* Mode selection */}
-            <div className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
+            <div id="s-pom" className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
               <label htmlFor="timer-mode-select" className="text-xs font-semibold text-[var(--text-primary)]">
                 Timer mode
               </label>
@@ -126,7 +126,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
             </div>
 
             {/* Cycles before long break */}
-            <div className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
+            <div id="s-cycles" className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
               <div>
                 <span className="text-xs font-semibold text-[var(--text-primary)] block">
                   Pomodoro Long Break Interval
@@ -161,7 +161,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
             </div>
 
             {/* Timer Visual Style */}
-            <div className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
+            <div id="s-tstyle" className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
               <div>
                 <span className="text-xs font-semibold text-[var(--text-primary)] block">
                   Timer Display Presentation

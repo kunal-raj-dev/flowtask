@@ -39,8 +39,9 @@ import {
 } from '../../types/settings';
 import { exportToCSV, downloadCsv } from '../../utils/fileExporter';
 import { requestPersistentStorage } from '../../services/dbService';
+import { ShortcutsGuide } from '../common/ShortcutsGuide';
 
-export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account' | 'focus' | 'sound' | 'workspace' | 'about';
+export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account' | 'focus' | 'sound' | 'workspace' | 'shortcuts' | 'about';
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -153,6 +154,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     { id: 'focus', name: 'Focus', terms: 'timer pomodoro countdown stopwatch session break intervals wake lock pip', icon: Timer },
     { id: 'sound', name: 'Sound', terms: 'audio music mixer ambient volume chime mechanical click typing soundscape rain noise', icon: Volume2 },
     { id: 'workflow', name: 'Workflow', terms: 'capacity work hours default duration buffer week start priority auto-archive', icon: Sliders },
+    { id: 'shortcuts', name: 'Shortcuts', terms: 'keyboard hotkeys keys accelerators navigation shortcuts studio actions commands guide', icon: Keyboard },
     { id: 'calendar', name: 'Calendar', terms: 'ics feed import sync google outlook apple events', icon: Calendar },
     { id: 'data', name: 'Data', terms: 'backup export restore json csv storage quota local reset', icon: HardDrive },
     { id: 'account', name: 'Account', terms: 'privacy sync delete diagnostics firebase cloud profile identity', icon: ShieldCheck },
@@ -169,7 +171,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     { id: 's-archive', tabId: 'workflow', tabName: 'Workflow', title: 'Auto-Archive Completed Tasks', description: 'Automatic cleanup schedule for finished tasks', keywords: ['archive', 'cleanup', 'completed', 'done', 'auto-archive'] },
     { id: 's-priority', tabId: 'workflow', tabName: 'Workflow', title: 'Default Task Priority', description: 'Initial priority applied when creating new tasks (P1 - P4)', keywords: ['priority', 'p1', 'p2', 'p3', 'p4', 'urgent'] },
     { id: 's-nlp', tabId: 'workflow', tabName: 'Workflow', title: 'Smart Syntax Natural Language Parsing', description: 'Parse #project, @tag, ~duration, !priority in Task Composer', keywords: ['syntax', 'nlp', 'parser', 'natural language', 'composer', 'smart'] },
-    { id: 's-halo', tabId: 'workflow', tabName: 'Workflow', title: 'Keyboard Halo Navigation Dock', description: 'Display helper shortcut badges when tasks are keyboard-focused', keywords: ['halo', 'dock', 'keyboard', 'navigation', 'shortcuts'] },
+    { id: 's-shortcuts', tabId: 'shortcuts', tabName: 'Shortcuts', title: 'Master Keyboard Shortcuts', description: 'Enable or disable all keyboard shortcuts and hotkeys system-wide', keywords: ['shortcuts', 'keyboard', 'hotkeys', 'accelerators', 'master', 'enable'] },
+    { id: 's-hints', tabId: 'shortcuts', tabName: 'Shortcuts', title: 'Show Shortcut Hints', description: 'Display helper shortcut badges when tasks are keyboard-focused', keywords: ['halo', 'dock', 'hints', 'keyboard', 'navigation', 'shortcuts'] },
     { id: 's-dash', tabId: 'workspace', tabName: 'Workspace', title: 'Default Start View', description: 'Primary workspace view loaded on launch (Today, Upcoming, Timeline)', keywords: ['landing', 'start', 'view', 'today', 'upcoming', 'timeline', 'inbox'] },
     { id: 's-pinned', tabId: 'workspace', tabName: 'Workspace', title: 'Pinned Destinations', description: 'Pin active projects and smart views for quick switching', keywords: ['pin', 'pinned', 'projects', 'views', 'quick', 'sidebar'] },
     { id: 's-theme', tabId: 'aesthetics', tabName: 'Appearance', title: 'Theme Library', description: '18 complete palettes (Nordic Slate, Tokyo Night, Catppuccin, etc.)', keywords: ['theme', 'palette', 'dark', 'light', 'nord', 'tokyo', 'catppuccin'] },
@@ -452,6 +455,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       onClick={() => {
                         setActiveTab(res.tabId);
                         setSettingsSearch('');
+                        setTimeout(() => {
+                          const el = document.getElementById(res.id);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const focusable = el.querySelector<HTMLElement>('input, button, select, [tabindex="0"]') || el;
+                            focusable.focus();
+                          }
+                        }, 50);
                       }}
                       className="w-full text-left p-2 rounded-lg hover:bg-[var(--bg-surface-l1)] border border-transparent hover:border-[var(--border-hairline)] transition-all flex items-center justify-between group cursor-pointer"
                     >
@@ -525,7 +536,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           {activeTab === 'workflow' && (
             <div className="space-y-6 animate-fade-in">
               {/* Daily Target Capacity (Study & Work) */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+              <div id="s-cap" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <label htmlFor="daily-capacity-custom-input" className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
@@ -631,7 +642,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Default Task Duration */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+              <div id="s-dur" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div>
                   <span className="text-sm font-bold text-[var(--text-primary)] block">
                     Default Task Duration
@@ -699,7 +710,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Timeline Hours Config */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+              <div id="s-canvas" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div>
                   <span className="text-sm font-bold text-[var(--text-primary)] block">
                     Timeline Visual Canvas Hours
@@ -761,7 +772,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Timeline Auto-Schedule Buffer */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+              <div id="s-buf" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div>
                   <span className="text-sm font-bold text-[var(--text-primary)] block">
                     Timeline Auto-Schedule Buffer
@@ -794,7 +805,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Week Start Day */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+              <div id="s-week" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-sm font-bold text-[var(--text-primary)] block">
@@ -838,7 +849,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Auto-Archive Completed Tasks */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+              <div id="s-archive" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <span className="text-sm font-bold text-[var(--text-primary)] block">
@@ -867,7 +878,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Default Task Priority */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+              <div id="s-priority" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <span className="text-sm font-bold text-[var(--text-primary)] block">
@@ -908,7 +919,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Smart NLP Syntax Parsing Toggle */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
+              <div id="s-nlp" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
                 <div>
                   <span className="text-sm font-bold text-[var(--text-primary)] block">
                     Smart Natural Language Parsing
@@ -938,37 +949,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                 </button>
               </div>
 
-              {/* Keyboard Halo Toggle */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
-                <div>
-                  <span className="text-sm font-bold text-[var(--text-primary)] block">
-                    Keyboard Halo Dock
-                  </span>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    Show bottom navigation hint badge when navigating tasks via keyboard.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-label="Keyboard Halo Dock"
-                  aria-checked={settings.keyboardHaloEnabled !== false}
-                  onClick={() => {
-                    updateSettings({ keyboardHaloEnabled: settings.keyboardHaloEnabled === false });
-                    triggerSaveToast();
-                  }}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    settings.keyboardHaloEnabled !== false ? 'bg-amber-500' : 'bg-stone-300 dark:bg-stone-700'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                      settings.keyboardHaloEnabled !== false ? 'translate-x-4' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
               {/* Guided Onboarding Trigger */}
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-4">
                 <div>
@@ -993,6 +973,34 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
             </div>
           )}
 
+          {/* TAB: SHORTCUTS GUIDE */}
+          {activeTab === 'shortcuts' && (
+            <div className="space-y-6 animate-fade-in">
+              <div>
+                <h3 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
+                  Keyboard Shortcuts Guide
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)] font-medium">
+                  Dedicated searchable accelerator reference, context bindings, and master controls.
+                </p>
+              </div>
+
+              <ShortcutsGuide
+                showMasterToggle={true}
+                keyboardShortcutsEnabled={settings.keyboardShortcutsEnabled !== false}
+                showShortcutHints={(settings.showShortcutHints ?? settings.keyboardHaloEnabled) !== false}
+                onToggleMasterShortcuts={(enabled) => {
+                  updateSettings({ keyboardShortcutsEnabled: enabled });
+                  triggerSaveToast();
+                }}
+                onToggleShortcutHints={(enabled) => {
+                  updateSettings({ showShortcutHints: enabled, keyboardHaloEnabled: enabled });
+                  triggerSaveToast();
+                }}
+              />
+            </div>
+          )}
+
           {/* TAB 2: AESTHETICS & APPEARANCE */}
           {activeTab === 'aesthetics' && (
             <div className="space-y-6 animate-fade-in">
@@ -1008,7 +1016,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           {activeTab === 'calendar' && (
             <div className="space-y-6 animate-fade-in">
               {/* Feed Status Card */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
+              <div id="s-ical" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
@@ -1118,7 +1126,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
             <div className="space-y-6 animate-fade-in">
               {/* Storage Quota Meter */}
               {storageStats && (
-                <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+                <div id="s-storage" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
                       <HardDrive size={15} className="text-amber-500" />
@@ -1151,7 +1159,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               {!storageStats && <p className="p-3 rounded-xl border border-[var(--border-hairline)] text-[11px] text-[var(--text-secondary)]" role="status">This browser does not provide a storage estimate. Keep a downloaded JSON backup in a separate location.</p>}
 
               {/* Data Portability Card */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
+              <div id="s-export" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
                 <div>
                   <h4 className="text-xs font-bold text-[var(--text-primary)]">
                     Your data and backups
@@ -1242,7 +1250,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Reset Defaults */}
-              <div className="p-4 rounded-2xl border border-rose-500/20 bg-rose-500/5 flex items-center justify-between gap-4">
+              <div id="s-reset" className="p-4 rounded-2xl border border-rose-500/20 bg-rose-500/5 flex items-center justify-between gap-4">
                 <div>
                   <h4 className="text-xs font-bold text-rose-700 dark:text-rose-300">
                     Reset Settings to Default
@@ -1269,7 +1277,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           {activeTab === 'account' && (
             <div className="space-y-6 animate-fade-in">
               {/* Account Identity & Cloud Sync Card */}
-              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
+              <div id="s-cloud" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
@@ -1331,7 +1339,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Privacy Controls & Legal */}
-              <PrivacyControls />
+              <div id="s-privacy">
+                <PrivacyControls />
+              </div>
             </div>
           )}
         </div>

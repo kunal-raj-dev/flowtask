@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useUIStore } from '../../store/useUIStore';
@@ -574,7 +575,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       }
 
       // Single-key sub-palette accelerators (1-4, T, M, S, F, P, D)
-      if (level === 'task_actions') {
+      if (level === 'task_actions' && appShortcutAllowed(e)) {
         const keyUpper = e.key.toUpperCase();
         const subMatch = taskSubActions.find((a) => a.keyHint.toUpperCase() === keyUpper);
         if (subMatch) {

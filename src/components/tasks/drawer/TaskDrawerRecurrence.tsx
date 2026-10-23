@@ -1,3 +1,4 @@
+import { calculateTaskTimeSummary } from '../../../utils/taskTimeSummary';
 import React, { useState } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import { useFocusStore } from '../../../store/useFocusStore';
@@ -31,12 +32,15 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
 
   const [isRecurrenceExpanded, setIsRecurrenceExpanded] = useState(false);
 
+  const timeSummary = calculateTaskTimeSummary(task);
+  const estimate = timeSummary.totalEstimateMinutes;
+  const isDerived = timeSummary.isDerivedFromSubtasks;
   const isDone = task.status === 'done';
   const isActiveTimer = activeTimerTaskId === task.id;
   const isTimerRunning = isActiveTimer && focusSession?.state === 'running';
   const isTimerPaused = isActiveTimer && focusSession?.state === 'paused';
   const primaryTag = task.contextTags && task.contextTags.length > 0 ? task.contextTags[0] : undefined;
-  const calibration = getVelocityCalibration(tasks, task.estimatedMinutes, task.projectId, primaryTag);
+  const calibration = getVelocityCalibration(tasks, estimate, task.projectId, primaryTag);
 
   const currentProject = projects.find((p) => p.id === task.projectId);
   const domainLabel =
@@ -67,9 +71,9 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
               {task.recurrence}
             </Badge>
           )}
-          {task.estimatedMinutes && (
+          {estimate > 0 && (
             <span className="text-[10px] font-mono text-[var(--text-muted)]">
-              {task.estimatedMinutes}m est
+              {estimate}m est
             </span>
           )}
         </div>
@@ -194,7 +198,9 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
                   min="0"
                   step="5"
                   placeholder="e.g. 25"
-                  value={task.estimatedMinutes || ''}
+                  value={estimate || ''}
+                  disabled={isDerived}
+                  aria-describedby={isDerived ? 'derived-task-estimate' : undefined}
                   onChange={(e) =>
                     updateTask(task.id, {
                       estimatedMinutes: e.target.value ? parseInt(e.target.value, 10) : undefined,
@@ -207,6 +213,7 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
                     <button
                       key={mins}
                       type="button"
+                      disabled={isDerived}
                       onClick={() => updateTask(task.id, { estimatedMinutes: mins })}
                       className="px-2.5 py-1 text-[11px] rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-hairline)] shadow-xs card-surface transition-colors"
                     >
@@ -222,8 +229,9 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
               ) : null}
             </div>
 
+            {isDerived && <p id="derived-task-estimate" className="text-[11px] text-[var(--text-secondary)]">Synced from subtasks. Edit their times to update this estimate.</p>}
             {/* Velocity Calibrator */}
-            {calibration && (
+            {calibration && !isDerived && (
               <div className="mt-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs shadow-xs">
                 <div className="min-w-0 pr-1 flex items-start gap-2">
                   <span className="text-amber-500 font-bold shrink-0 mt-0.5">🎯</span>

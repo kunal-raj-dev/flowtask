@@ -1,3 +1,4 @@
+import { getEffectiveTaskEstimate } from './taskTimeSummary';
 import type { Task, CalendarEvent } from '../types/task';
 import {
   parseTimeToMinutes,
@@ -132,7 +133,7 @@ export function computeAutoSlotSchedule(
 
   // 3. Greedily find earliest free gap for each task
   for (const task of sortedTasks) {
-    const duration = task.estimatedMinutes || options.defaultTaskMinutes || 30;
+    const duration = getEffectiveTaskEstimate(task) || options.defaultTaskMinutes || 30;
     const deadline = options.date && task.dueDate === options.date ? parseTimeToMinutes(task.dueTime) : null;
     const taskEndMin = Math.min(dayEndMin, deadline ?? dayEndMin);
     if (!Number.isFinite(duration) || duration <= 0) {

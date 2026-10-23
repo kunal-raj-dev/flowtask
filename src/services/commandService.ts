@@ -2,6 +2,7 @@ import type { Task, Priority, Project } from '../types/task';
 import { calculateNextDueDate } from '../utils/storage';
 import { parseTaskInput } from '../utils/nlpParser';
 import { mergeTaskData, redirectDependencies } from '../utils/dependencyUtils';
+import { getDerivedSubtaskEstimate } from '../utils/taskTimeSummary';
 
 export interface CommandResult {
   checkpoint?: boolean;
@@ -54,6 +55,12 @@ export const commandService = {
     const priority: Priority =
       overrides?.priority || parsed.priority || currentContext?.defaultPriority || 'p4';
 
+    const subtasks = overrides?.subtasks || [];
+    const derivedSubEstimate = getDerivedSubtaskEstimate(subtasks);
+    const estimatedMinutes = derivedSubEstimate !== null
+      ? derivedSubEstimate
+      : (overrides?.estimatedMinutes ?? parsed.estimatedMinutes);
+
     const createdTask: Task = {
       id,
       title: overrides?.title || parsed.cleanTitle || input.trim(),
@@ -69,9 +76,9 @@ export const commandService = {
       scheduledEnd: overrides?.scheduledEnd,
       isEvening: overrides?.isEvening,
       sessionMetadata: overrides?.sessionMetadata,
-      estimatedMinutes: overrides?.estimatedMinutes ?? parsed.estimatedMinutes,
+      estimatedMinutes,
       timeSpentMinutes: 0,
-      subtasks: overrides?.subtasks || [],
+      subtasks,
       recurrence: overrides?.recurrence || parsed.recurrence || 'none',
       customRecurrence: overrides?.customRecurrence || parsed.customRecurrence,
       isPinnedToday: overrides?.isPinnedToday || false,
@@ -113,7 +120,15 @@ export const commandService = {
       };
     }
 
-    if (updates.projectId && updates.projectId !== original.projectId && !('milestoneId' in updates)) updates = { ...updates, milestoneId: undefined };
+    if (updates.projectId && updates.projectId !== original.projectId && !('milestoneId' in updates)) {
+      updates = { ...updates, milestoneId: undefined };
+    }
+
+    const derived = getDerivedSubtaskEstimate(updates.subtasks ?? original.subtasks);
+    if (derived !== null) updates = { ...updates, estimatedMinutes: derived };
+    else if (updates.subtasks !== undefined && getDerivedSubtaskEstimate(original.subtasks) !== null) {
+      updates = { ...updates, estimatedMinutes: undefined };
+    }
     const previousValues: Partial<Task> = {};
     for (const key of Object.keys(updates) as (keyof Task)[]) {
       previousValues[key] = original[key] as any;
@@ -457,39 +472,19 @@ export const commandService = {
    * Batch update multiple tasks
    */
   batchUpdate(tasks: Task[], taskIds: string[], updates: Partial<Task>): CommandResult {
-    if (updates.projectId && !('milestoneId' in updates)) updates = { ...updates, milestoneId: undefined };
     const idSet = new Set(taskIds);
-    const prevSnapshots = new Map<string, Partial<Task>>();
-
-    tasks.forEach((t) => {
-      if (idSet.has(t.id)) {
-        const snap: Partial<Task> = {};
-        for (const k of Object.keys(updates) as (keyof Task)[]) {
-          snap[k] = t[k] as any;
-        }
-        prevSnapshots.set(t.id, snap);
-      }
+    const operations = new Map(tasks.filter(task => idSet.has(task.id)).map(task =>
+      [task.id, commandService.updateTask([task], task.id, updates)]));
+    const apply = (current: Task[], direction: 'forward' | 'inverse') => current.map(task => {
+      const operation = operations.get(task.id);
+      return operation ? operation[direction]!([task])[0] : task;
     });
-
-    const now = Date.now();
-    const updatedTasks = tasks.map((t) =>
-      idSet.has(t.id)
-        ? { ...t, ...updates, revision: (t.revision || 1) + 1, updatedAt: now }
-        : t
-    );
-
+    const updatedTasks = tasks.map(task => operations.get(task.id)?.updatedTasks[0] || task);
     return {
       updatedTasks,
-      description: `Updated ${taskIds.length} tasks`,
-      inverse: (currentTasks: Task[]) =>
-        currentTasks.map((t) => {
-          const prev = prevSnapshots.get(t.id);
-          return prev ? { ...t, ...prev, updatedAt: Date.now() } : t;
-        }),
-      forward: (currentTasks: Task[]) =>
-        currentTasks.map((t) =>
-          idSet.has(t.id) ? { ...t, ...updates, revision: (t.revision || 1) + 1, updatedAt: Date.now() } : t
-        ),
+      description: `Updated ${operations.size} tasks`,
+      inverse: current => apply(current, 'inverse'),
+      forward: current => apply(current, 'forward'),
     };
   },
 

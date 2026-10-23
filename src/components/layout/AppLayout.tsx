@@ -1,4 +1,5 @@
 import { canonicalWorkspaceUrl, resolveStartView } from '../../utils/entryRoute';
+import { shouldIgnoreShortcut } from '../../services/shortcutRegistry';
 import { isTodayTask } from '../../utils/taskSelectors';
 import { RecoveryView } from '../views/RecoveryView';
 import React, { useState, useEffect, useRef, useMemo, useCallback, lazy } from 'react';
@@ -86,10 +87,15 @@ export const AppLayout: React.FC = () => {
   const startViewApplied = useRef(false);
   useEffect(() => {
     if (startViewApplied.current) return;
-    startViewApplied.current = true;
-    if (new URLSearchParams(window.location.search).has('view') || window.location.hash.startsWith('#snapshot=')) return;
+    if (new URLSearchParams(window.location.search).has('view') || window.location.hash.startsWith('#snapshot=')) {
+      startViewApplied.current = true;
+      return;
+    }
     const view = resolveStartView(settings.defaultLandingView);
     if (view !== activeView) setActiveView(view);
+    if (settings.defaultLandingView) {
+      startViewApplied.current = true;
+    }
   }, [settings.defaultLandingView, activeView, setActiveView]);
 
   const pendingQuickAdd = useRef(new URLSearchParams(window.location.search).get('action') === 'quickadd');
@@ -136,9 +142,8 @@ export const AppLayout: React.FC = () => {
   // Global Keyboard shortcuts with strict modal isolation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const tag = (target?.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+      if (settings?.keyboardShortcutsEnabled === false) return;
+      if (shouldIgnoreShortcut(e)) return;
 
       const isAnyModalActive =
         hasAnyModalOpen ||
@@ -149,6 +154,7 @@ export const AppLayout: React.FC = () => {
         isSmartFilterModalOpen;
 
       if (isAnyModalActive) return;
+      if (document.querySelector('[aria-modal="true"], [data-overlay-open="true"], [data-layout-editing="true"]')) return;
 
       if (selectedTaskId !== null && !e.ctrlKey && !e.metaKey && !e.altKey) {
         return;
@@ -179,7 +185,7 @@ export const AppLayout: React.FC = () => {
         } else {
           openModal('scratchpad');
         }
-      } else if (e.key === 'n' || e.key === 'N' || e.key === 'c') {
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && ['n', 'N', 'c', 'C'].includes(e.key)) {
         e.preventDefault();
         setIsQuickAddOpen(true);
       } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
@@ -213,6 +219,7 @@ export const AppLayout: React.FC = () => {
     openModal,
     closeModal,
     isModalOpen,
+    settings?.keyboardShortcutsEnabled,
   ]);
 
   const todayCount = useMemo(() => tasks.filter((t) => isTodayTask(t, todayStr)).length, [tasks, todayStr]);
@@ -237,7 +244,7 @@ export const AppLayout: React.FC = () => {
       tasks.filter((t) => {
         if (t.status === 'done' || t.deletedAt || t.archivedAt) return false;
         const taskDate = t.plannedDate || t.dueDate;
-        return taskDate && taskDate > todayStr;
+        return !t.isSomeday && taskDate && taskDate > todayStr;
       }).length,
     [tasks, todayStr]
   );
@@ -339,7 +346,7 @@ export const AppLayout: React.FC = () => {
     if (activeView === 'trash' || activeView === 'archive') return <RecoveryView mode={activeView} />;
     if (activeView === 'today') {
       return (
-        <TodayView
+        <TodayView key="daily"
           onSelectTask={handleSelectTask}
           onStartFocus={handleStartFocus}
           onOpenBrainDump={handleOpenBrainDump}
@@ -349,7 +356,7 @@ export const AppLayout: React.FC = () => {
       );
     }
     if ((activeView as string) === 'dashboard') {
-      return <TodayView initialViewMode="dashboard" onSelectTask={handleSelectTask} onStartFocus={handleStartFocus} onStartSprint={handleStartStudySprint} />;
+      return <TodayView key="dashboard" initialViewMode="dashboard" onSelectTask={handleSelectTask} onStartFocus={handleStartFocus} onStartSprint={handleStartStudySprint} />;
     }
     if (activeView === 'inbox') {
       return (

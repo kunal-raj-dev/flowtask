@@ -1,3 +1,4 @@
+import { getRemainingTaskEstimate } from '../../../utils/taskTimeSummary';
 import React, { useMemo } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import { Folder, Calendar, ArrowRight } from 'lucide-react';
@@ -10,7 +11,7 @@ interface ProjectsConfig {
 export const ProjectsWidget: React.FC<WidgetComponentProps<ProjectsConfig>> = ({
   widget,
 }) => {
-  const { projects, tasks, setActiveView } = useTaskContext();
+  const { projects, tasks, setActiveView, settings } = useTaskContext();
 
   const selectedProjects = useMemo(() => {
     const list = projects.filter(
@@ -36,13 +37,13 @@ export const ProjectsWidget: React.FC<WidgetComponentProps<ProjectsConfig>> = ({
       if (t.status === 'done') {
         stats.done++;
       } else {
-        stats.remainingMinutes += t.estimatedMinutes || 30;
+        stats.remainingMinutes += getRemainingTaskEstimate(t, settings?.defaultTaskDuration || 30);
       }
       map.set(t.projectId, stats);
     });
 
     return map;
-  }, [tasks]);
+  }, [tasks, settings?.defaultTaskDuration]);
 
   return (
     <div className="flex flex-col h-full">

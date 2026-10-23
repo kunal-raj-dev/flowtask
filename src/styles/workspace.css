@@ -62,11 +62,12 @@ html.dark .desk-button.primary { color: #101714; }
 .desk-icon-button.danger:hover { background: #b0413c12; color: #b0413c; }
 .desk-notice { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border: 1px solid var(--border-color); background: var(--bg-surface-l2); border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; font-size: 12px; color: var(--text-secondary); }
 .desk-notice > span { flex: 1; min-width: 160px; }
-.desk-notice > button:not(:last-child) { font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
-.desk-task-row { display: flex; align-items: flex-start; gap: 10px; padding: var(--desk-row-padding) 8px; border-bottom: 1px solid var(--border-hairline); position: relative; border-radius: 8px; }
+.desk-task-row { display: flex; align-items: flex-start; gap: 10px; padding: var(--desk-row-padding) 8px; border: 1px solid transparent; border-bottom: 1px solid var(--border-hairline); position: relative; border-radius: 12px; }
 .desk-task-row:last-child { border-bottom-color: transparent; }
-.desk-task-row:hover { background: var(--desk-accent-soft); }
-.desk-task-row[data-selected], .desk-task-row[data-keyboard-focused] { background: var(--desk-accent-soft); outline: 2px solid var(--color-brand-border); outline-offset: -2px; }
+.desk-task-row:hover { background: var(--desk-accent-soft); border-radius: 12px; }
+.desk-task-row[data-selected] { background: var(--desk-accent-soft); border: 1px solid var(--color-brand-border); border-radius: 12px; }
+.desk-task-row[data-keyboard-focused] { outline: 2px solid var(--color-brand); outline-offset: -2px; border-radius: 12px; }
+.desk-task-row[data-selected][data-keyboard-focused] { background: var(--desk-accent-soft); border: 1px solid var(--color-brand); outline: 2px solid var(--color-brand); outline-offset: -2px; border-radius: 12px; }
 .desk-task-check { margin-top: 2px; color: var(--border-strong); width: 23px; min-height: 24px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 6px; }
 .desk-task-check:hover { color: var(--color-brand); }
 .desk-task-check[aria-checked="true"] { background: var(--desk-accent-soft); color: var(--color-brand); border-radius: 50%; width: 20px; min-height: 20px; margin: 4px 1.5px 0; }
@@ -293,7 +294,7 @@ html.dark .desk-task-meta [data-priority="p1"], html.dark .desk-task-meta [data-
   min-height: 40px;
 }
 .desk-task-row {
-  border-radius: 0;
+  border-radius: 12px;
   border-bottom: 1px solid var(--border-hairline);
   padding: 14px 8px;
   box-shadow: none;
@@ -709,3 +710,6 @@ html[data-reduced-motion="true"] *, html[data-reduced-motion="true"] *::before, 
 .readonly-summary { display: flex; gap: 24px; padding-block: 24px; color: var(--text-secondary); }
 .workspace-readonly-preview article { display: flex; gap: 16px; padding: 16px 0; border-top: 1px solid var(--border-hairline); }
 .workspace-readonly-preview article small { display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+/* Keep actions discoverable for featured priorities as well as ordinary rows. */
+.desk-task-row[data-featured] .desk-row-reveal:last-child { display: inline-flex; }

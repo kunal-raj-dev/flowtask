@@ -1,3 +1,4 @@
+import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import { useEffect } from 'react';
 
 export interface UseFocusModalShortcutsOptions {
@@ -22,6 +23,7 @@ export function useFocusModalShortcuts({
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" && !appShortcutAllowed(e)) return;
       const target = e.target as HTMLElement | null;
       const tag = (target?.tagName || document.activeElement?.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;

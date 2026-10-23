@@ -1,9 +1,11 @@
+import { getEffectiveTaskEstimate } from '../../../utils/taskTimeSummary';
 import React, { useState } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import { useTodayStr, useTomorrowStr } from '../../../hooks/useCurrentDate';
 import type { Task, Priority } from '../../../types/task';
-import { Folder, Calendar, Clock, Flag, Timer, Plus, X } from 'lucide-react';
-import { parseTimeToMinutes, minutesToTimeStr } from '../../../utils/timelineUtils';
+import { Folder, Calendar, Clock, Flag, Timer, Plus, X, Pencil } from 'lucide-react';
+import { parseTimeToMinutes } from '../../../utils/timelineUtils';
+import { TaskSessionEditor, type SessionDraft } from '../TaskSessionEditor';
 
 interface TaskDrawerPropertiesProps {
   task: Task;
@@ -13,53 +15,54 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
   const { projects, updateTask, tasks } = useTaskContext();
   const todayStr = useTodayStr();
   const tomorrowStr = useTomorrowStr();
-  const [isSessionExpanded, setIsSessionExpanded] = useState(Boolean(task.scheduledStart || task.sessionMetadata?.isSession));
+  const [isEditingSession, setIsEditingSession] = useState(false);
 
-  // Compute next available session number for today
+  // Compute next available session number for target date
+  const workloadEstimate = getEffectiveTaskEstimate(task);
+  const targetDate = task.plannedDate || task.dueDate || todayStr;
   const nextSessionNum = React.useMemo(() => {
-    const todaySessions = tasks.filter(
-      (t) => (t.plannedDate === todayStr || t.dueDate === todayStr) && t.sessionMetadata?.isSession
+    const targetDateSessions = tasks.filter(
+      (t) => t.id !== task.id && !t.deletedAt && !t.archivedAt && (t.plannedDate || t.dueDate) === targetDate && t.sessionMetadata?.isSession
     );
-    const nums = todaySessions.map((t) => t.sessionMetadata?.sessionNumber || 1);
+    const nums = targetDateSessions.map((t) => t.sessionMetadata?.sessionNumber || 1);
     return nums.length > 0 ? Math.max(...nums) + 1 : 1;
-  }, [tasks, todayStr]);
+  }, [tasks, targetDate, task.id]);
+
+  const calendarDurationMinutes = React.useMemo(() => {
+    const startMin = parseTimeToMinutes(task.scheduledStart);
+    const endMin = parseTimeToMinutes(task.scheduledEnd);
+    if (startMin === null || endMin === null) return null;
+    let diff = endMin - startMin;
+    if (diff < 0) diff += 24 * 60;
+    return diff;
+  }, [task.scheduledStart, task.scheduledEnd]);
 
   const currentDuration = React.useMemo(() => {
     const startMin = parseTimeToMinutes(task.scheduledStart);
     const endMin = parseTimeToMinutes(task.scheduledEnd);
     if (startMin === null || endMin === null) {
-      return task.estimatedMinutes ? `${task.estimatedMinutes}m` : null;
+      return workloadEstimate ? `${workloadEstimate}m` : null;
     }
     let diff = endMin - startMin;
     if (diff < 0) diff += 24 * 60;
     const h = Math.floor(diff / 60);
     const m = diff % 60;
     return h > 0 ? (m > 0 ? `${h}h ${m}m (${diff}m)` : `${h}h (${diff}m)`) : `${m}m`;
-  }, [task.scheduledStart, task.scheduledEnd, task.estimatedMinutes]);
+  }, [task.scheduledStart, task.scheduledEnd, workloadEstimate]);
 
-  const handleApplySession = (startTime: string, endTime: string, sessionNum?: number) => {
-    const startMin = parseTimeToMinutes(startTime);
-    const endMin = parseTimeToMinutes(endTime);
-    let duration = 180;
-    if (startMin !== null && endMin !== null) {
-      duration = endMin - startMin;
-      if (duration < 0) duration += 24 * 60;
-    }
-
-    const sNum = sessionNum ?? task.sessionMetadata?.sessionNumber ?? nextSessionNum;
-
+  const handleApplySession = (draft: SessionDraft) => {
     updateTask(task.id, {
-      scheduledStart: startTime,
-      scheduledEnd: endTime,
-      estimatedMinutes: duration,
-      plannedDate: task.plannedDate || todayStr,
+      scheduledStart: draft.startTime,
+      scheduledEnd: draft.endTime,
+      plannedDate: draft.plannedDate || task.plannedDate || todayStr,
       sessionMetadata: {
         ...(task.sessionMetadata || {}),
         isSession: true,
-        sessionNumber: sNum,
+        sessionNumber: draft.sessionNumber,
         sessionTopic: task.title,
       },
     });
+    setIsEditingSession(false);
   };
 
   const handleRemoveSession = () => {
@@ -68,6 +71,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
       scheduledEnd: undefined,
       sessionMetadata: task.sessionMetadata ? { ...task.sessionMetadata, isSession: false } : undefined,
     });
+    setIsEditingSession(false);
   };
 
   return (
@@ -88,7 +92,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           onChange={(e) => updateTask(task.id, { projectId: e.target.value, milestoneId: undefined })}
           className="w-full bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg px-2.5 py-1.5 outline-none card-surface cursor-pointer"
         >
-          {projects.map((p) => (
+          {projects.filter(p => !p.isArchived || p.id === task.projectId).map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>
@@ -245,8 +249,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
         </div>
       </div>
 
-      <details className="desk-inspector-details sm:col-span-2"><summary>Time blocking and study session</summary>
-      {/* Session Duration Generator & Timeline Schedule */}
+      {/* Session & Timeline Schedule Section */}
       <div className="sm:col-span-2 pt-2.5 border-t border-[var(--border-hairline)] space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-primary)]">
@@ -258,148 +261,94 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
               </span>
             )}
           </div>
-          {task.scheduledStart ? (
-            <button
-              type="button"
-              onClick={handleRemoveSession}
-              className="text-[10px] font-medium text-rose-500 hover:underline flex items-center gap-0.5 cursor-pointer"
-            >
-              <X size={10} />
-              <span>Remove Session</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setIsSessionExpanded(true);
-                handleApplySession('08:00', '11:00');
-              }}
-              className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
-            >
-              <Plus size={11} />
-              <span>+ Add Session (08:00 – 11:00)</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {task.scheduledStart || task.sessionMetadata?.isSession ? (
+              <>
+                {!isEditingSession && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingSession(true)}
+                    className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <Pencil size={10} />
+                    <span>Edit Session</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleRemoveSession}
+                  className="text-[10px] font-medium text-rose-500 hover:underline flex items-center gap-0.5 cursor-pointer"
+                >
+                  <X size={10} />
+                  <span>Remove Session</span>
+                </button>
+              </>
+            ) : (
+              !isEditingSession && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingSession(true)}
+                  className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                >
+                  <Plus size={11} />
+                  <span>+ Add Session</span>
+                </button>
+              )
+            )}
+          </div>
         </div>
 
-        {(isSessionExpanded || task.scheduledStart) && (
-          <div className="p-2.5 rounded-lg bg-[var(--bg-surface-l1)] border border-teal-500/20 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Session Number */}
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-medium text-[var(--text-muted)]">Session #</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="99"
-                  aria-label="Session number"
-                  value={task.sessionMetadata?.sessionNumber ?? nextSessionNum}
-                  onChange={(e) => {
-                    const num = parseInt(e.target.value, 10) || 1;
-                    updateTask(task.id, {
-                      sessionMetadata: {
-                        ...(task.sessionMetadata || { isSession: true }),
-                        isSession: true,
-                        sessionNumber: num,
-                        sessionTopic: task.title,
-                      },
-                    });
-                  }}
-                  className="w-12 bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded px-1.5 py-1 text-xs text-center font-bold"
-                />
+        {/* Existing Session summary banner when not editing */}
+        {(task.scheduledStart || task.sessionMetadata?.isSession) && !isEditingSession && (
+          <div className="p-2.5 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-xs space-y-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-[var(--text-secondary)]">Calendar block:</span>
+                <span className="font-mono text-[11px] text-[var(--text-primary)] font-bold">
+                  {task.scheduledStart || '08:00'} – {task.scheduledEnd || '11:00'}
+                </span>
+                {currentDuration && (
+                  <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-semibold bg-teal-500/15 text-teal-700 dark:text-teal-300">
+                    {currentDuration}
+                  </span>
+                )}
               </div>
-
-              {/* Start Time */}
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-medium text-[var(--text-muted)]">Start</span>
-                <input
-                  type="time"
-                  aria-label="Scheduled start time"
-                  value={task.scheduledStart || '08:00'}
-                  onChange={(e) => {
-                    const newStart = e.target.value;
-                    const end = task.scheduledEnd || '11:00';
-                    handleApplySession(newStart, end);
-                  }}
-                  className="bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded px-1.5 py-1 text-xs font-mono font-medium cursor-pointer"
-                />
-              </div>
-
-              {/* End Time */}
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-medium text-[var(--text-muted)]">End</span>
-                <input
-                  type="time"
-                  aria-label="Scheduled end time"
-                  value={task.scheduledEnd || '11:00'}
-                  onChange={(e) => {
-                    const newEnd = e.target.value;
-                    const start = task.scheduledStart || '08:00';
-                    handleApplySession(start, newEnd);
-                  }}
-                  className="bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded px-1.5 py-1 text-xs font-mono font-medium cursor-pointer"
-                />
-              </div>
-
-              {/* Live Duration pill */}
-              {currentDuration && (
-                <div className="ml-auto px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-300 font-mono text-[10px] font-bold border border-teal-500/30">
-                  {currentDuration}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsEditingSession(true)}
+                className="text-[11px] text-teal-600 dark:text-teal-400 font-semibold hover:underline cursor-pointer"
+              >
+                Change
+              </button>
             </div>
 
-            {/* Quick Session Presets */}
-            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-[var(--border-hairline)]">
-              <span className="text-[10px] text-[var(--text-muted)] mr-1">Presets:</span>
-              <button
-                type="button"
-                onClick={() => handleApplySession('08:00', '11:00')}
-                className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l2)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-              >
-                Morning 08:00–11:00 (3h)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplySession('12:00', '14:30')}
-                className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l2)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-              >
-                Midday 12:00–14:30 (2.5h)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplySession('15:00', '18:00')}
-                className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l2)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-              >
-                Afternoon 15:00–18:00 (3h)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const startMin = parseTimeToMinutes(task.scheduledStart || '08:00') || 480;
-                  const newEnd = minutesToTimeStr((startMin + 60) % 1440);
-                  handleApplySession(task.scheduledStart || '08:00', newEnd);
-                }}
-                className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l2)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-              >
-                +1h
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const startMin = parseTimeToMinutes(task.scheduledStart || '08:00') || 480;
-                  const newEnd = minutesToTimeStr((startMin + 120) % 1440);
-                  handleApplySession(task.scheduledStart || '08:00', newEnd);
-                }}
-                className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-surface-l2)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border border-[var(--border-hairline)] transition-colors cursor-pointer"
-              >
-                +2h
-              </button>
+            {/* Separate Workload Estimate & Mismatch Explanation */}
+            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-[var(--border-hairline)] text-[var(--text-secondary)]">
+              <span>Workload estimate: <strong className="text-[var(--text-primary)] font-mono">{workloadEstimate ? `${workloadEstimate}m` : 'None'}</strong></span>
+              {calendarDurationMinutes !== null && workloadEstimate > 0 && calendarDurationMinutes !== workloadEstimate && (
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                  Note: Calendar slot ({calendarDurationMinutes}m) differs from workload ({workloadEstimate}m)
+                </span>
+              )}
             </div>
           </div>
         )}
+
+        {/* Draft Editor */}
+        {isEditingSession && (
+          <TaskSessionEditor
+            initialSessionNumber={task.sessionMetadata?.sessionNumber}
+            initialPlannedDate={targetDate}
+            initialStartTime={task.scheduledStart || '08:00'}
+            initialEndTime={task.scheduledEnd || '11:00'}
+            suggestedSessionNumber={nextSessionNum}
+            tasks={tasks}
+            excludeTaskId={task.id}
+            onApply={handleApplySession}
+            onCancel={() => setIsEditingSession(false)}
+          />
+        )}
       </div>
-      </details>
     </div>
   );
 };
