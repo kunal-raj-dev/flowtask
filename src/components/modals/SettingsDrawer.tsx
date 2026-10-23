@@ -3,7 +3,7 @@ import { FocusSettings } from '../settings/FocusSettings';
 import { BUILD_ID, BUILD_LABEL } from '../../utils/buildInfo';
 import { WorkspaceSettings } from '../settings/WorkspaceSettings';
 import { PrivacyControls } from '../settings/PrivacyControls';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Sliders,
@@ -20,7 +20,6 @@ import {
   HardDrive,
   FileSpreadsheet,
   CheckCircle2,
-  ChevronRight,
   Keyboard,
 } from 'lucide-react';
 import { useTodayStr } from '../../hooks/useCurrentDate';
@@ -59,15 +58,6 @@ const formatHourLabel = (h: number) => {
   return `${h - 12}:00 PM`;
 };
 
-interface SearchableSetting {
-  id: string;
-  tabId: SettingsTab;
-  tabName: string;
-  title: string;
-  description: string;
-  keywords: string[];
-}
-
 export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose, initialTab }) => {
   const dialogRoot = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRoot, onClose, isOpen);
@@ -95,7 +85,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   } = useTaskContext();
 
   const todayStr = useTodayStr();
-  const [settingsSearch, setSettingsSearch] = useState('');
   const [icsInput, setIcsInput] = useState(calendarIcsUrl || '');
   const [isRefreshingCalendar, setIsRefreshingCalendar] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
@@ -148,62 +137,18 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     }
   }, [activeTab]);
 
-  const groups: Array<{ id: SettingsTab; name: string; terms: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
-    { id: 'workspace', name: 'Workspace', terms: 'dashboard layout desk widgets pin project default home cover landing view', icon: LayoutGrid },
-    { id: 'aesthetics', name: 'Appearance', terms: 'theme accent color contrast motion density appearance visual aura sound dark light', icon: Palette },
-    { id: 'focus', name: 'Focus', terms: 'timer pomodoro countdown stopwatch session break intervals wake lock pip', icon: Timer },
-    { id: 'sound', name: 'Sound', terms: 'audio music mixer ambient volume chime mechanical click typing soundscape rain noise', icon: Volume2 },
-    { id: 'workflow', name: 'Workflow', terms: 'capacity work hours default duration buffer week start priority auto-archive', icon: Sliders },
-    { id: 'shortcuts', name: 'Shortcuts', terms: 'keyboard hotkeys keys accelerators navigation shortcuts studio actions commands guide', icon: Keyboard },
-    { id: 'calendar', name: 'Calendar', terms: 'ics feed import sync google outlook apple events', icon: Calendar },
-    { id: 'data', name: 'Data', terms: 'backup export restore json csv storage quota local reset', icon: HardDrive },
-    { id: 'account', name: 'Account', terms: 'privacy sync delete diagnostics firebase cloud profile identity', icon: ShieldCheck },
-    { id: 'about', name: 'About', terms: 'version build release update welcome home', icon: Sparkles },
+  const groups: Array<{ id: SettingsTab; name: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
+    { id: 'workspace', name: 'Workspace', icon: LayoutGrid },
+    { id: 'aesthetics', name: 'Appearance', icon: Palette },
+    { id: 'focus', name: 'Focus', icon: Timer },
+    { id: 'sound', name: 'Sound', icon: Volume2 },
+    { id: 'workflow', name: 'Workflow', icon: Sliders },
+    { id: 'shortcuts', name: 'Shortcuts', icon: Keyboard },
+    { id: 'calendar', name: 'Calendar', icon: Calendar },
+    { id: 'data', name: 'Data', icon: HardDrive },
+    { id: 'account', name: 'Account', icon: ShieldCheck },
+    { id: 'about', name: 'About', icon: Sparkles },
   ];
-
-  // Deep searchable settings index
-  const searchableIndex = useMemo<SearchableSetting[]>(() => [
-    { id: 's-cap', tabId: 'workflow', tabName: 'Workflow', title: 'Daily Planned Capacity Target', description: 'Calibrate your daily workload budget (4h to 14h+)', keywords: ['capacity', 'hours', 'target', 'workload', 'budget', 'study', 'marathon'] },
-    { id: 's-dur', tabId: 'workflow', tabName: 'Workflow', title: 'Default Task Duration', description: 'Fallback time allocated when no ~duration is parsed in composer', keywords: ['duration', 'minutes', 'default', 'time', 'composer'] },
-    { id: 's-canvas', tabId: 'workflow', tabName: 'Workflow', title: 'Timeline Visual Canvas Hours', description: 'Daily hourly boundaries for time-blocking in timeline view', keywords: ['timeline', 'start', 'end', 'hours', 'schedule', 'canvas'] },
-    { id: 's-buf', tabId: 'workflow', tabName: 'Workflow', title: 'Timeline Auto-Schedule Buffer', description: 'Breathing room placed between unscheduled tasks', keywords: ['buffer', 'gap', 'auto-schedule', 'breathing'] },
-    { id: 's-week', tabId: 'workflow', tabName: 'Workflow', title: 'Week Start Day', description: 'Configure calendar columns and weekly planning (Monday or Sunday)', keywords: ['week', 'monday', 'sunday', 'calendar', 'start'] },
-    { id: 's-archive', tabId: 'workflow', tabName: 'Workflow', title: 'Auto-Archive Completed Tasks', description: 'Automatic cleanup schedule for finished tasks', keywords: ['archive', 'cleanup', 'completed', 'done', 'auto-archive'] },
-    { id: 's-priority', tabId: 'workflow', tabName: 'Workflow', title: 'Default Task Priority', description: 'Initial priority applied when creating new tasks (P1 - P4)', keywords: ['priority', 'p1', 'p2', 'p3', 'p4', 'urgent'] },
-    { id: 's-nlp', tabId: 'workflow', tabName: 'Workflow', title: 'Smart Syntax Natural Language Parsing', description: 'Parse #project, @tag, ~duration, !priority in Task Composer', keywords: ['syntax', 'nlp', 'parser', 'natural language', 'composer', 'smart'] },
-    { id: 's-shortcuts', tabId: 'shortcuts', tabName: 'Shortcuts', title: 'Master Keyboard Shortcuts', description: 'Enable or disable all keyboard shortcuts and hotkeys system-wide', keywords: ['shortcuts', 'keyboard', 'hotkeys', 'accelerators', 'master', 'enable'] },
-    { id: 's-hints', tabId: 'shortcuts', tabName: 'Shortcuts', title: 'Show Shortcut Hints', description: 'Display helper shortcut badges when tasks are keyboard-focused', keywords: ['halo', 'dock', 'hints', 'keyboard', 'navigation', 'shortcuts'] },
-    { id: 's-dash', tabId: 'workspace', tabName: 'Workspace', title: 'Default Start View', description: 'Primary workspace view loaded on launch (Today, Upcoming, Timeline)', keywords: ['landing', 'start', 'view', 'today', 'upcoming', 'timeline', 'inbox'] },
-    { id: 's-pinned', tabId: 'workspace', tabName: 'Workspace', title: 'Pinned Destinations', description: 'Pin active projects and smart views for quick switching', keywords: ['pin', 'pinned', 'projects', 'views', 'quick', 'sidebar'] },
-    { id: 's-theme', tabId: 'aesthetics', tabName: 'Appearance', title: 'Theme Library', description: '18 complete palettes (Nordic Slate, Tokyo Night, Catppuccin, etc.)', keywords: ['theme', 'palette', 'dark', 'light', 'nord', 'tokyo', 'catppuccin'] },
-    { id: 's-accent', tabId: 'aesthetics', tabName: 'Appearance', title: 'Accent Color & Swatches', description: 'Custom brand tint for buttons, badges, and focus rings', keywords: ['accent', 'color', 'swatch', 'tint', 'amber', 'emerald', 'indigo'] },
-    { id: 's-glow', tabId: 'aesthetics', tabName: 'Appearance', title: 'Diurnal Atmosphere Glow', description: 'Soft subtle edge aura reflecting time of day (Aurora, Dusk, Dawn)', keywords: ['glow', 'atmosphere', 'aurora', 'dusk', 'dawn', 'diurnal', 'edge'] },
-    { id: 's-contrast', tabId: 'aesthetics', tabName: 'Appearance', title: 'High Contrast & Reduced Motion', description: 'Accessibility options for motion sensitivity and visual clarity', keywords: ['contrast', 'motion', 'accessibility', 'reduced motion'] },
-    { id: 's-pom', tabId: 'focus', tabName: 'Focus', title: 'Focus Rhythm & Timer Mode', description: 'Pomodoro intervals, Countdown, Stopwatch, or Study Sprint', keywords: ['pomodoro', 'timer', 'mode', 'countdown', 'stopwatch', 'sprint'] },
-    { id: 's-cycles', tabId: 'focus', tabName: 'Focus', title: 'Pomodoro Long Break Interval', description: 'Number of sessions before triggering a long rest', keywords: ['cycles', 'long break', 'interval', 'rest'] },
-    { id: 's-tstyle', tabId: 'focus', tabName: 'Focus', title: 'Timer Visual Style', description: 'Digital numerical display vs Minimalist progress ring', keywords: ['ring', 'digital', 'style', 'progress', 'display'] },
-    { id: 's-audio-fx', tabId: 'sound', tabName: 'Sound', title: 'Interface Sound Profiles', description: '8 tactile sound profiles: Zen Bowl, Mechanical, Pop, Retro Typewriter', keywords: ['interface', 'sound', 'profile', 'zen', 'mechanical', 'pop', 'typewriter', 'synth'] },
-    { id: 's-ambient', tabId: 'sound', tabName: 'Sound', title: 'Ambient Focus Soundscapes', description: 'Offline synthesized noise: Rain, Brown noise, Pink noise, Binaural', keywords: ['ambient', 'rain', 'brown noise', 'pink noise', 'binaural', 'soundscape', 'noise'] },
-    { id: 's-typing', tabId: 'sound', tabName: 'Sound', title: 'Typing & Keystroke Sounds', description: 'Opt-in realistic tactile typewriter clicks while composing', keywords: ['typing', 'keyboard', 'click', 'keystroke'] },
-    { id: 's-ical', tabId: 'calendar', tabName: 'Calendar', title: 'Private .ics Calendar Feed', description: 'Sync meetings from Google Calendar, Outlook, or Apple Calendar', keywords: ['ical', 'webcal', 'google calendar', 'outlook', 'apple', 'feed', 'url'] },
-    { id: 's-export', tabId: 'data', tabName: 'Data', title: 'Export JSON & CSV', description: 'Download raw snapshots, backups, or spreadsheet CSV tables', keywords: ['export', 'json', 'csv', 'spreadsheet', 'excel', 'backup', 'download'] },
-    { id: 's-storage', tabId: 'data', tabName: 'Data', title: 'Device Storage & Quota', description: 'Inspect browser IndexedDB space and persistent quota protection', keywords: ['storage', 'quota', 'indexeddb', 'persistent', 'space', 'mb'] },
-    { id: 's-reset', tabId: 'data', tabName: 'Data', title: 'Reset Settings & Defaults', description: 'Restore default preferences or wipe workspace', keywords: ['reset', 'defaults', 'restore', 'factory'] },
-    { id: 's-cloud', tabId: 'account', tabName: 'Account', title: 'Cloud Sync & Firebase Account', description: 'Sign in to synchronize tasks across devices with end-to-end sync', keywords: ['cloud', 'sync', 'account', 'firebase', 'login', 'google'] },
-    { id: 's-privacy', tabId: 'account', tabName: 'Account', title: 'Local-First Sovereignty & Diagnostics', description: 'Anonymous event counters and device privacy controls', keywords: ['privacy', 'diagnostics', 'telemetry', 'local-first', 'delete'] },
-  ], []);
-
-  // Filtered settings results
-  const searchResults = useMemo(() => {
-    const q = settingsSearch.trim().toLowerCase();
-    if (!q) return [];
-    return searchableIndex.filter(
-      (item) =>
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.keywords.some((k) => k.toLowerCase().includes(q))
-    );
-  }, [settingsSearch, searchableIndex]);
 
   // Sync activeTab when initialTab prop changes
   const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
@@ -371,7 +316,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
 
       {/* Slide-over Content Container */}
       <div
-        className="relative z-10 w-full max-w-xl sm:max-w-2xl md:max-w-3xl bg-[var(--bg-surface-l1)] border-l border-[var(--border-hairline)] shadow-2xl flex flex-col h-full transform transition-transform duration-300 ease-out animate-slide-left"
+        className="settings-drawer relative z-10 w-full max-w-xl sm:max-w-2xl md:max-w-3xl bg-[var(--bg-surface-l1)] border-l border-[var(--border-hairline)] shadow-2xl flex flex-col h-full transform transition-transform duration-300 ease-out animate-slide-left"
         ref={dialogRoot} tabIndex={-1}
         role="dialog"
         aria-modal="true"
@@ -380,7 +325,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-[var(--border-hairline)] flex items-center justify-between bg-[var(--bg-surface-l1)]/90 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <div className="p-2.5 rounded-xl bg-[var(--color-brand-subtle)] text-[var(--color-brand)] border border-[var(--color-brand-border)]">
               <Sliders size={20} />
             </div>
             <div>
@@ -409,85 +354,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           </div>
         </div>
 
-        {/* Global Deep Search Input */}
-        <div className="px-4 sm:px-5 py-3 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]">
-          <div className="relative">
-            <input
-              type="search"
-              aria-label="Search settings"
-              placeholder="Search settings: themes, timers, sound, calendar, backup…"
-              value={settingsSearch}
-              onChange={(e) => setSettingsSearch(e.target.value)}
-              className="w-full rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] px-3.5 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-amber-500 outline-none"
-            />
-          </div>
-
-          {/* Quick Group Jump Chips for filtered search */}
-          {settingsSearch && (
-            <div className="mt-3 space-y-2">
-              <div className="flex flex-wrap gap-1.5" aria-label="Settings search results">
-                {groups
-                  .filter((g) => (g.name + ' ' + g.terms).toLowerCase().includes(settingsSearch.toLowerCase()))
-                  .map((g) => (
-                    <button
-                      className="v2-action px-2.5 py-1 text-xs rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] text-[var(--text-primary)] hover:border-amber-500 cursor-pointer"
-                      key={g.id}
-                      onClick={() => {
-                        setActiveTab(g.id);
-                        setSettingsSearch('');
-                      }}
-                    >
-                      {g.name}
-                    </button>
-                  ))}
-              </div>
-
-              {/* Instant Deep Search Results Cards */}
-              {searchResults.length > 0 && (
-                <div className="mt-2 p-2 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] max-h-48 overflow-y-auto space-y-1.5">
-                  <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider px-2 py-0.5">
-                    Matching settings ({searchResults.length})
-                  </div>
-                  {searchResults.slice(0, 6).map((res) => (
-                    <button
-                      key={res.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveTab(res.tabId);
-                        setSettingsSearch('');
-                        setTimeout(() => {
-                          const el = document.getElementById(res.id);
-                          if (el) {
-                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            const focusable = el.querySelector<HTMLElement>('input, button, select, [tabindex="0"]') || el;
-                            focusable.focus();
-                          }
-                        }, 50);
-                      }}
-                      className="w-full text-left p-2 rounded-lg hover:bg-[var(--bg-surface-l1)] border border-transparent hover:border-[var(--border-hairline)] transition-all flex items-center justify-between group cursor-pointer"
-                    >
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold">
-                            {res.tabName}
-                          </span>
-                          <span className="text-xs font-bold text-[var(--text-primary)]">
-                            {res.title}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 truncate max-w-sm">
-                          {res.description}
-                        </p>
-                      </div>
-                      <ChevronRight size={14} className="text-[var(--text-muted)] group-hover:translate-x-0.5 transition-transform shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
         {/* Settings Groups Navigation Rail */}
         <nav className="desk-settings-nav" aria-label="Settings groups">
           {groups.map((group) => {
@@ -502,7 +368,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   isCurrent ? 'font-bold' : ''
                 }`}
               >
-                <Icon size={14} className={isCurrent ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text-muted)]'} />
+                <Icon size={14} className={isCurrent ? 'text-[var(--color-brand)]' : 'text-[var(--text-muted)]'} />
                 <span>{group.name}</span>
               </button>
             );

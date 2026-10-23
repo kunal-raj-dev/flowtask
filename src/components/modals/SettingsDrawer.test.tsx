@@ -331,24 +331,11 @@ describe('SettingsDrawer Component', () => {
     expect(mockDownloadWorkspaceBackup).toHaveBeenCalled();
   });
 
-  it('searches deep settings items and allows jumping to corresponding tab', () => {
+  it('opens settings without a search bar and keeps direct group navigation', () => {
     render(<SettingsDrawer isOpen={true} onClose={mockClose} />);
-
-    const searchInput = screen.getByLabelText(/Search settings/i);
-    act(() => {
-      fireEvent.change(searchInput, { target: { value: 'pomodoro' } });
-    });
-
-    // Should display matching settings
-    expect(screen.getByText(/Focus Rhythm & Timer Mode/i)).toBeDefined();
-
-    // Click matching item
-    const jumpBtn = screen.getByRole('button', { name: /Focus Rhythm & Timer Mode/i });
-    act(() => {
-      fireEvent.click(jumpBtn);
-    });
-
-    // Should have switched to Focus tab
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    expect(screen.queryByLabelText(/Search settings/i)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Focus' }));
     expect(screen.getByText(/Your focus rhythm/i)).toBeDefined();
   });
   it('names the archive and workflow switches and connects them to saved settings', () => {

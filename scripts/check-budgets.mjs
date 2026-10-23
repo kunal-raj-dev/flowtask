@@ -40,7 +40,9 @@ const urls = [...worker.matchAll(/url:"([^"]+)"/g)].map(match => match[1]).filte
 // A direct planner installation must be able to open both initial routes
 // offline. Runtime caching cannot catch requests made before SW activation.
 const precached = new Set(urls);
-for (const key of new Set([...landing, ...planner])) {
+// Preferences, including theme selection, must work on the first offline visit.
+const offlineSettings = graph(['src/components/modals/SettingsDrawer.tsx']);
+for (const key of new Set([...landing, ...planner, ...offlineSettings])) {
   const chunk = manifest[key];
   if (!chunk) continue;
   for (const file of [chunk.file, ...(chunk.css || [])]) {
@@ -50,4 +52,5 @@ for (const key of new Set([...landing, ...planner])) {
 let precacheBytes = 0;
 for (const url of urls) precacheBytes += (await readFile(`dist/${url}`)).length;
 console.log(`Core precache: ${precacheBytes} bytes (${urls.length} entries).`);
-assert(precacheBytes <= 1.5 * 1024 * 1024, 'Core precache exceeds 1.5 MiB.');
+// Allow the settings panel's ~94 KiB install cache; initial-route budgets stay fixed.
+assert(precacheBytes <= 1.6 * 1024 * 1024, 'Core precache exceeds 1.6 MiB.');

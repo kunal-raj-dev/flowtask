@@ -58,7 +58,6 @@ export default defineConfig({
           '**/brand/social-preview*',
           '**/brand/*.png',
           '**/*Modal*.js',
-          '**/SettingsDrawer*.{js,css}',
           '**/WorkspaceVisualPicker*.{js,css}',
           '**/CopilotOmnibar*.{js,css}',
           '**/velocityCalibrator*.js',

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { THEME_IDS } from '../src/utils/themeRegistry';
 
 test.describe('Aesthetics & Audio Unified Drawer Suite', () => {
   test.beforeEach(async ({ page }) => {
@@ -28,7 +29,7 @@ test.describe('Aesthetics & Audio Unified Drawer Suite', () => {
 
     // Verify the full theme library is available and clicking one changes the workspace directly
     await page.getByRole('button', { name: 'All', exact: true }).click();
-    await expect(page.locator('[data-theme-card]')).toHaveCount(18);
+    await expect(page.locator('[data-theme-card]')).toHaveCount(THEME_IDS.length);
     const tokyoThemeBtn = page.getByRole('button', { name: /Tokyo Night/i });
     await expect(tokyoThemeBtn).toBeVisible();
     await tokyoThemeBtn.click();

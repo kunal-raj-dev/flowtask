@@ -5,7 +5,8 @@ import { useTodayStr, useTomorrowStr } from '../../../hooks/useCurrentDate';
 import type { Task, Priority } from '../../../types/task';
 import { Folder, Calendar, Clock, Flag, Timer, Plus, X, Pencil } from 'lucide-react';
 import { parseTimeToMinutes } from '../../../utils/timelineUtils';
-import { TaskSessionEditor, type SessionDraft } from '../TaskSessionEditor';
+import { LazyTaskSessionEditor as TaskSessionEditor } from '../LazyTaskSessionEditor';
+import type { SessionDraft } from '../TaskSessionEditor';
 
 interface TaskDrawerPropertiesProps {
   task: Task;
@@ -250,9 +251,9 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
       </div>
 
       {/* Session & Timeline Schedule Section */}
-      <div className="sm:col-span-2 pt-2.5 border-t border-[var(--border-hairline)] space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-primary)]">
+      <div className="sm:col-span-2 min-w-0 pt-2.5 border-t border-[var(--border-hairline)] space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-[var(--text-primary)]">
             <Timer size={13} className="text-teal-500" />
             <span>Session & Timeline Schedule</span>
             {task.sessionMetadata?.isSession && (
@@ -301,8 +302,8 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
         {/* Existing Session summary banner when not editing */}
         {(task.scheduledStart || task.sessionMetadata?.isSession) && !isEditingSession && (
           <div className="p-2.5 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-xs space-y-1.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[11px] font-semibold text-[var(--text-secondary)]">Calendar block:</span>
                 <span className="font-mono text-[11px] text-[var(--text-primary)] font-bold">
                   {task.scheduledStart || '08:00'} – {task.scheduledEnd || '11:00'}
@@ -323,7 +324,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             </div>
 
             {/* Separate Workload Estimate & Mismatch Explanation */}
-            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-[var(--border-hairline)] text-[var(--text-secondary)]">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] pt-1 border-t border-[var(--border-hairline)] text-[var(--text-secondary)]">
               <span>Workload estimate: <strong className="text-[var(--text-primary)] font-mono">{workloadEstimate ? `${workloadEstimate}m` : 'None'}</strong></span>
               {calendarDurationMinutes !== null && workloadEstimate > 0 && calendarDurationMinutes !== workloadEstimate && (
                 <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">

@@ -43,27 +43,35 @@ export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }
   const current = isAppTheme(theme) ? THEMES[theme] : THEMES[prefs.theme];
   const status = scheduleStatus(now);
   const visible = THEME_IDS.filter(id => filter === 'All' || (filter === 'Featured' ? THEMES[id].featured || id === theme : THEMES[id].scheme === filter.toLowerCase()));
+  const collections = (['light', 'dark'] as const).map(scheme => ({ scheme, themes: visible.filter(id => THEMES[id].scheme === scheme) })).filter(collection => collection.themes.length > 0);
   return <div className="appearance-panel">
     <section className="appearance-current" aria-label="Current appearance">
-      <span className="appearance-eyebrow">YOUR WORKSPACE</span>
-      <div className="appearance-current-title"><h3>{current.label}</h3><span className="appearance-scheme">{current.scheme === 'dark' ? <Moon size={12} /> : <Sun size={12} />}{current.scheme}</span></div>
-      <p>{prefs.mode === 'schedule' ? `Time schedule · ${status.slot.label} until ${status.next}` : prefs.mode === 'system' ? 'Following your device appearance' : 'Your selected theme, all day'}</p>
-      <p className="appearance-caption">A calmer place to plan. Your Focus Studio keeps its own scene and sound.</p>
+      <div className="appearance-current-copy">
+        <span className="appearance-eyebrow">YOUR WORKSPACE</span>
+        <div className="appearance-current-title"><h3>{current.label}</h3><span className="appearance-scheme">{current.scheme === 'dark' ? <Moon size={12} /> : <Sun size={12} />}{current.scheme}</span></div>
+        <p>{prefs.mode === 'schedule' ? `Time schedule · ${status.slot.label} until ${status.next}` : prefs.mode === 'system' ? 'Following your device appearance' : 'Your selected theme, all day'}</p>
+        <p className="appearance-caption">{current.description}</p>
+      </div>
+      <div className="appearance-current-preview"><ThemePreview definition={current} /></div>
     </section>
 
     <section id="s-theme" aria-labelledby="theme-library-title">
-      <div className="appearance-section-heading"><div><h3 id="theme-library-title">Theme library</h3><p>18 complete palettes. Choose the one that feels like you.</p></div></div>
+      <div className="appearance-section-heading"><div><h3 id="theme-library-title">Theme library</h3><p>{THEME_IDS.length} carefully balanced palettes, from luminous paper to deep midnight.</p></div></div>
       <div className="appearance-filters" role="group" aria-label="Filter themes">
         {(['Featured', 'All', 'Light', 'Dark'] as const).map(value => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{value}</button>)}
       </div>
       <div className="appearance-feedback" role="status">{message}{undo && <button type="button" onClick={() => { setWorkspacePreference('appearance', undo); setUndo(null); setMessage('Previous appearance restored.'); }}><Undo2 size={13} /> Undo</button>}</div>
-      <div className="theme-library-grid">
-        {visible.map(id => <button type="button" key={id} className="theme-card" data-theme-card={id} aria-label={`Apply ${THEMES[id].label} theme`} aria-pressed={theme === id} onClick={() => select(id)}>
+      {collections.map(({ scheme, themes }) => <section className="theme-collection" key={scheme} aria-label={`${scheme === 'light' ? 'Light' : 'Dark'} themes`}>
+        <div className="theme-collection-heading"><h4>{scheme === 'light' ? <Sun size={15} /> : <Moon size={15} />}{scheme === 'light' ? 'Light collection' : 'Dark collection'}<span>{themes.length}</span></h4><p>{scheme === 'light' ? 'Light-filled surfaces. Clear, comfortable contrast.' : 'Rich, quiet surfaces. Soft, readable highlights.'}</p></div>
+        <div className="theme-library-grid">
+        {themes.map(id => <button type="button" key={id} className="theme-card" data-theme-card={id} aria-label={`Apply ${THEMES[id].label} theme`} aria-pressed={theme === id} onClick={() => select(id)}>
           <ThemePreview definition={THEMES[id]} />
           <span className="theme-card-title">{THEMES[id].label}{theme === id ? <Check size={16} /> : <span>{THEMES[id].scheme}</span>}</span>
           <span className="theme-card-description">{THEMES[id].description}</span>
+          <span className="theme-card-palette" aria-hidden="true">{['--bg-main', '--bg-surface-l2', '--bg-surface-l4', '--color-brand', '--text-primary'].map(token => <i key={token} style={{ backgroundColor: THEMES[id].tokens[token] }} />)}{theme === id && <span>Active theme</span>}</span>
         </button>)}
-      </div>
+        </div>
+      </section>)}
     </section>
 
     <section className="appearance-section" aria-labelledby="automatic-appearance-title">

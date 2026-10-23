@@ -28,7 +28,8 @@ import {
   Timer,
 } from 'lucide-react';
 import { parseTimeToMinutes } from '../../utils/timelineUtils';
-import { TaskSessionEditor, type SessionDraft } from './TaskSessionEditor';
+import { LazyTaskSessionEditor as TaskSessionEditor } from './LazyTaskSessionEditor';
+import type { SessionDraft } from './TaskSessionEditor';
 import { getVelocityCalibration } from '../../utils/velocityCalibrator';
 import { Kbd } from '../ui';
 

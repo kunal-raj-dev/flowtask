@@ -42,7 +42,7 @@ describe('TaskComposer Session Duration Generator', () => {
     vi.clearAllMocks();
   });
 
-  it('renders + Session chip and toggles the Session Duration Generator card', () => {
+  it('renders + Session chip and toggles the Session Duration Generator card', async () => {
     render(<TaskComposer />);
 
     // Expand properties
@@ -57,14 +57,14 @@ describe('TaskComposer Session Duration Generator', () => {
     fireEvent.click(sessionChip);
 
     // Generator card should now be rendered with default 08:00 to 11:00 and 3h duration
-    expect(screen.getByText('Session Duration Generator')).toBeDefined();
+    expect(await screen.findByText('Session Duration Generator')).toBeDefined();
     expect(screen.getByText(/3h \(180m\)/i)).toBeDefined();
     expect(screen.getByLabelText('Session number')).toBeDefined();
     expect(screen.getByLabelText('Session start time')).toBeDefined();
     expect(screen.getByLabelText('Session end time')).toBeDefined();
   });
 
-  it('submits task with scheduled start, end, duration and session metadata', () => {
+  it('submits task with scheduled start, end, duration and session metadata', async () => {
     render(<TaskComposer />);
 
     // Input task title
@@ -77,7 +77,7 @@ describe('TaskComposer Session Duration Generator', () => {
     const sessionChip = screen.getByRole('button', { name: /\+ Session/i });
     fireEvent.click(sessionChip);
 
-    fireEvent.click(screen.getByRole('button', { name: /Apply Session/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Apply Session/i }));
 
     // Submit task
     const addBtn = screen.getByRole('button', { name: /^add$/i });
@@ -100,7 +100,7 @@ describe('TaskComposer Session Duration Generator', () => {
     );
   });
 
-  it('applies quick session time presets (e.g. Afternoon 15:00–18:00)', () => {
+  it('applies quick session time presets (e.g. Afternoon 14:30–17:30)', async () => {
     render(<TaskComposer />);
 
     // Expand properties & enable session
@@ -108,7 +108,7 @@ describe('TaskComposer Session Duration Generator', () => {
     fireEvent.click(screen.getByRole('button', { name: /\+ Session/i }));
 
     // Click Afternoon preset
-    const afternoonBtn = screen.getByRole('button', { name: /Afternoon/i });
+    const afternoonBtn = await screen.findByRole('button', { name: /Afternoon/i });
     fireEvent.click(afternoonBtn);
     fireEvent.click(screen.getByRole('button', { name: /Apply Session/i }));
 
@@ -154,12 +154,12 @@ describe('TaskComposer Session Duration Generator', () => {
       })
     );
   });
-  it('requires Apply, preserves a manual work estimate, and discards edited session drafts on Cancel', () => {
+  it('requires Apply, preserves a manual work estimate, and discards edited session drafts on Cancel', async () => {
     render(<TaskComposer />);
     fireEvent.change(screen.getByPlaceholderText(/What needs to be done/i), { target: { value: 'Study arrays ~40m' } });
     fireEvent.click(screen.getByRole('button', { name: /more details/i }));
     fireEvent.click(screen.getByRole('button', { name: /\+ Session/i }));
-    fireEvent.change(screen.getByLabelText('Session start time'), { target: { value: '14:00' } });
+    fireEvent.change(await screen.findByLabelText('Session start time'), { target: { value: '14:00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
     expect(mockAddTask).toHaveBeenCalledWith('Study arrays', expect.objectContaining({

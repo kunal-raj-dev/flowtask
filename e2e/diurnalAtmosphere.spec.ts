@@ -16,7 +16,8 @@ async function colors(page: Page) {
     return Object.fromEntries(['--bg-main','--bg-surface-l1','--bg-surface-l2','--bg-surface-l3','--bg-surface-l4','--text-primary','--text-secondary','--text-muted','--color-brand','--border-strong','--text-on-brand'].map(key => [key,style.getPropertyValue(key).trim()]));
   });
 }
-test('all 18 themes change rendered workspace, controls and preview consistently', async ({ page }) => {
+test('all bundled themes change rendered workspace, controls and preview consistently', async ({ page }) => {
+  test.setTimeout(180000);
   await open(page);
   for (const id of THEME_IDS) {
     const button = page.getByRole('button', { name: `Apply ${THEMES[id].label} theme`, exact: true });
@@ -31,7 +32,7 @@ test('all 18 themes change rendered workspace, controls and preview consistently
       return {
         canvas: css(document.querySelector('.flowtask-workspace'),'backgroundColor'),
         sidebar: css(document.querySelector('aside[aria-label="Desktop navigation"]'),'backgroundColor'),
-        input: css(document.querySelector('input[aria-label="Search settings"]'),'backgroundColor'),
+        input: css(document.querySelector('.appearance-panel select'),'backgroundColor'),
         preview: css(document.querySelector(`[data-theme-card="${id}"] .theme-preview`),'backgroundColor'),
         previewCard: css(document.querySelector(`[data-theme-card="${id}"] .theme-preview-row`),'backgroundColor'),
         selected: css(document.querySelector(`[data-theme-card="${id}"] .theme-preview-row.selected`),'backgroundColor'),
@@ -167,7 +168,7 @@ test('the appearance picker opens on its first visit offline after app installat
   await context.setOffline(true); await page.reload(); await page.locator('main#main-content').waitFor();
   await page.keyboard.press('Control+,'); await page.getByRole('button',{name:'Appearance',exact:true}).click();
   await page.getByRole('button',{name:'All',exact:true}).click();
-  await expect(page.locator('[data-theme-card]')).toHaveCount(18);
+  await expect(page.locator('[data-theme-card]')).toHaveCount(THEME_IDS.length);
   await page.getByRole('button',{name:'Apply Catppuccin Mocha theme',exact:true}).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme','mocha');
   await context.setOffline(false);
