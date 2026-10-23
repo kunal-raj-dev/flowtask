@@ -81,6 +81,9 @@ export interface AppearancePreferences {
   highContrast: boolean;
 }
 export interface StudioPreferences {
+  interfaceTheme: import('../utils/studioAppearance').StudioThemeId;
+  pipTheme: import('../utils/studioAppearance').FloatingThemeId;
+  pipBackground: boolean;
   favoriteRecipes?: string[];
   missingPersonalScene?: boolean;
   missingPersonalMusic?: boolean;
@@ -118,6 +121,9 @@ export const DEFAULT_TIMER: TimerConfiguration = {
   autoStart: false,
 };
 export const DEFAULT_STUDIO: StudioPreferences = {
+  interfaceTheme: 'graphite',
+  pipTheme: 'studio',
+  pipBackground: true,
   recipeId: "library-reading",
   sceneId: "old-library",
   breakSceneId: "",

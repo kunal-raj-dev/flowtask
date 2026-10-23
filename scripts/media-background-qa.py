@@ -41,9 +41,10 @@ for item in assets:
         assert (PUBLIC/item['poster'].lstrip('/')).exists()
 counts=Counter(x['category'] for x in stills)
 if '--allow-incomplete' not in sys.argv:
-    assert len(stills)==48,f'Expected 48 stills, got {len(stills)}'
+    assert len(stills)==51,f'Expected 51 stills, got {len(stills)}'
     assert set(counts)=={'nature','mountains','cozy','anime','city','ocean','space','minimal'}
-    assert all(count==6 for count in counts.values()),counts
+    assert all(count>=6 for count in counts.values()),counts
+    assert {'kyoto-rain','dolomite-dawn','penthouse-noir'} <= {item['id'] for item in stills}
     assert len(videos)==6,f'Expected six videos, got {len(videos)}'
 sheet=Image.new('RGB',(1600,math_rows:=((len(assets)+3)//4)*256),(21,24,29))
 draw=ImageDraw.Draw(sheet)

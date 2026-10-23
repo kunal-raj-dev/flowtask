@@ -1,0 +1,153 @@
+/* Studio palettes are independent of the planner and shared with the floating timer. */
+.focus-studio { background: #0b0e14; color: var(--studio-text); }
+.focus-studio :is(.studio-session-core, .studio-lobby-library, .studio-panel, .studio-dock, .studio-summary) {
+  background: var(--studio-panel); color: var(--studio-text); border-color: var(--studio-border);
+  box-shadow: 0 18px 60px #00000026;
+}
+.focus-studio :is(.studio-session-core, .studio-lobby-library) { background: color-mix(in srgb, var(--studio-panel) 96%, transparent); }
+.focus-studio .studio-shade, .focus-studio.is-lobby .studio-shade { background: linear-gradient(180deg, #070910a6, rgb(7 9 16 / var(--studio-overlay)) 30%, rgb(7 9 16 / var(--studio-overlay)) 70%, #070910b8); }
+.focus-studio :is(.studio-header, .studio-lobby-intro, .studio-scene-caption, .studio-shortcuts) { color: #f7f7fb; }
+.focus-studio :is(.studio-header-center, .studio-beta, .studio-lobby-intro p, .studio-lobby-intro .studio-eyebrow) { color: #e5e7ee; }
+.focus-studio .studio-header-actions button { color: #f7f7fb; background: #10131b66; border-color: #ffffff38; }
+.focus-studio .studio-header-actions button:hover { background: #10131bb3; }
+.focus-studio :is(.studio-session-core, .studio-panel, .studio-lobby-library) :is(h1,h2,h3,h4,button,label,summary,input,textarea,select) { color: var(--studio-text); }
+.focus-studio :is(.studio-eyebrow, .studio-next-action, .studio-session-label, .studio-lobby-note, .studio-help, .studio-credit, .studio-range > span, .studio-check, .studio-field, .studio-lobby-config label) { color: var(--studio-secondary); }
+.focus-studio :is(.studio-lobby-rooms, .studio-lobby-recipes, .studio-track-list, .studio-queue, .studio-recipe-list) small { color: var(--studio-secondary); }
+.focus-studio :is(.studio-lobby-rooms > button, .studio-lobby-recipes > button, .studio-track-list > div, .studio-recipe-list article, .studio-queue > div, .studio-scene-card) { background: var(--studio-raised); border-color: var(--studio-border); }
+.focus-studio :is(.studio-lobby-rooms > button, .studio-lobby-recipes > button, .studio-theme-card):hover { border-color: var(--studio-control-border); }
+.focus-studio :is(.studio-lobby-rooms > button, .studio-lobby-recipes > button)[aria-pressed="true"], .focus-studio :is(.studio-track-list > div, .studio-recipe-list article, .studio-queue > div, .studio-scene-card).selected { border-color: var(--studio-accent); box-shadow: 0 0 0 1px var(--studio-accent); }
+.focus-studio :is(.studio-mode-switch, .studio-control-btn, .studio-task-link, .studio-secondary, .studio-chips button, .studio-session-tabs button) { background: var(--studio-raised); border-color: var(--studio-border); color: var(--studio-text); }
+.focus-studio :is(.studio-mode-switch button, .studio-dock button, .studio-context-actions button) { color: var(--studio-secondary); }
+.focus-studio :is(.studio-mode-switch button[aria-pressed="true"], .studio-session-tabs button[aria-pressed="true"], .studio-start) { background: var(--studio-accent); color: var(--studio-on-accent); border-color: transparent; }
+.focus-studio :is(.studio-dock button[aria-pressed="true"], .studio-chips button[aria-pressed="true"], .studio-sound-grid button[aria-pressed="true"], .studio-finish-btn) { background: var(--studio-accent-soft); color: var(--studio-accent); border-color: var(--studio-accent); }
+.focus-studio :is(.studio-control-btn, .studio-task-link, .studio-chips button, .studio-secondary, .studio-text-button):hover:not(:disabled) { background: var(--studio-hover); color: var(--studio-text); }
+.focus-studio :is(.studio-lobby-config select, .studio-field input, .studio-field select, .studio-field textarea, .studio-panel-body > select) { background: var(--studio-raised); color: var(--studio-text); border-color: var(--studio-control-border); }
+.focus-studio select option { background: var(--studio-raised); color: var(--studio-text); }
+.focus-studio :is(.studio-scene-select img, .studio-scene-select > small, .studio-favorite) { background: var(--studio-raised); color: var(--studio-text); }
+.focus-studio :is(.studio-details, .studio-panel > header, .studio-personal-file, .studio-controls) { border-color: var(--studio-border); }
+.focus-studio :is(.studio-range input, .studio-check input, .studio-queue input) { accent-color: var(--studio-accent); }
+.focus-studio :is(.studio-credit a, .studio-range small, .studio-layer button, .studio-recipe-actions button, .studio-recipe-list em) { color: var(--studio-accent); }
+.focus-studio :is(button,input,select,textarea,a):focus-visible { outline-color: var(--studio-accent); }
+.focus-studio .studio-clock { color: var(--studio-text); text-shadow: none; }
+.focus-studio .studio-clock svg circle:first-child { stroke: var(--studio-border); }
+.focus-studio .studio-clock svg circle:last-child { stroke: var(--studio-accent); }
+.focus-studio .studio-summary :is(h2,p,.studio-eyebrow) { color: var(--studio-text); }
+.focus-studio .studio-summary :is(button,.studio-reflection > button) { color: var(--studio-text); background: var(--studio-raised); border-color: var(--studio-border); }
+.focus-studio .studio-reflection > button[aria-pressed="true"] { background: var(--studio-accent); color: var(--studio-on-accent); }
+.studio-theme-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 20px 0 28px; }
+.studio-theme-card { min-width: 0; padding: 9px; border: 1px solid var(--studio-border); border-radius: 12px; background: var(--studio-raised); text-align: left; }
+.studio-theme-card[aria-pressed="true"] { border-color: var(--studio-accent); box-shadow: 0 0 0 1px var(--studio-accent); }
+.studio-theme-preview { display: grid; place-items: center; height: 85px; border: 1px solid; border-radius: 7px; }
+.studio-theme-preview > span { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 76%; height: 65px; border-radius: 6px; }
+.studio-theme-preview b { font: 400 23px/1 var(--font-sans); letter-spacing: -.04em; }
+.studio-theme-preview i { display: block; width: 34px; height: 7px; border-radius: 5px; }
+.studio-theme-card > span:last-child { display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 10px 2px 2px; font-size: 11px; line-height: 1.5; }
+.studio-theme-card svg { flex-shrink: 0; }
+
+/* The default view is a viewport-sized dashboard, with detail browsing in panels. */
+.focus-studio .studio-header { height: clamp(60px,8dvh,82px); flex-shrink: 0; padding-inline: clamp(18px,3vw,48px); }
+.focus-studio .studio-bottom { flex-shrink: 0; padding: 10px clamp(18px,3vw,48px) max(12px,env(safe-area-inset-bottom)); gap: 12px; }
+.focus-studio .studio-dock { padding: 5px 8px; border-radius: 18px; gap: 2px; }
+.focus-studio .studio-dock button { min-height: 48px; min-width: 62px; }
+.focus-studio .studio-stage, .focus-studio.is-lobby .studio-stage { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px clamp(18px,3vw,48px) 14px; gap: 14px; }
+.focus-studio .studio-lobby-intro { flex: 0 0 auto; width: 100%; max-width: 1440px; margin: 0 auto; padding: 0 4px; }
+.focus-studio .studio-lobby-intro h2 { font-size: clamp(23px,2.2vw,32px); margin: 6px 0 5px; }
+.focus-studio .studio-lobby-intro > .studio-eyebrow { font-size: 10px; }
+.focus-studio .studio-lobby { flex: 1; min-height: 0; width: 100%; max-width: 1440px; grid-template-columns: minmax(0,1fr) minmax(0,1.12fr); gap: 22px; align-items: stretch; }
+.focus-studio .studio-lobby .studio-session-core { justify-content: center; align-items: stretch; padding: clamp(18px,2vw,32px); min-height: 0; border-radius: 20px; }
+.focus-studio .studio-lobby .studio-mode-switch { margin-bottom: clamp(10px,2dvh,22px); }
+.focus-studio .studio-lobby .studio-title-slot { min-height: 64px; flex-shrink: 0; }
+.focus-studio .studio-lobby .studio-title-slot h1 { font-size: clamp(22px,2.3vw,32px); line-height: 1.25; max-height: 2.5em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.focus-studio .studio-lobby-config { margin-top: 14px; }
+.focus-studio .studio-lobby-config select { min-height: 42px; margin-top: 6px; }
+.focus-studio .studio-lobby .studio-clock { font-size: clamp(66px,9dvh,100px); margin: 10px 0 0; }
+.focus-studio .studio-lobby .studio-clock.with-ring { width: clamp(130px,20dvh,210px); height: clamp(130px,20dvh,210px); font-size: clamp(42px,6dvh,62px); }
+.focus-studio .studio-lobby .studio-playback { margin-top: 18px; }
+.focus-studio .studio-lobby .studio-context-actions { margin-top: 10px; }
+.focus-studio .studio-lobby .studio-start { min-width: 0; height: 48px; }
+.focus-studio .studio-lobby-library { min-height: 0; padding: clamp(16px,1.8vw,26px); overflow: hidden; }
+.focus-studio .studio-lobby-section-heading { margin-bottom: 10px; }
+.focus-studio .studio-lobby-rooms { gap: 9px; margin-bottom: 16px; }
+.focus-studio .studio-lobby-rooms img { height: clamp(58px,10dvh,110px); }
+.focus-studio .studio-lobby-rooms > button > span { padding: 8px 10px; font-size: 11px; }
+.focus-studio .studio-lobby-rooms small { font-size: 10px; }
+.focus-studio .studio-lobby-recipes { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.focus-studio .studio-lobby-recipes > button { min-height: 54px; padding: 8px; gap: 7px; }
+.focus-studio .studio-lobby-recipes img { width: 28px; height: 34px; }
+.focus-studio .studio-lobby-recipes > button > span { font-size: 10px; }
+.focus-studio .studio-lobby-recipes small { font-size: 10px; }
+.focus-studio .studio-lobby-note { margin-top: 14px; font-size: 11px; }
+.focus-studio .studio-session { display: flex; min-height: 0; height: 100%; width: min(860px,100%); max-height: 740px; margin: auto; }
+.focus-studio .studio-session > .studio-session-core { min-height: 0; justify-content: center; padding: clamp(18px,3dvh,34px) clamp(20px,3vw,44px); }
+.focus-studio.is-session .studio-title-slot { height: clamp(80px,14dvh,138px); min-height: 0; flex: 0 0 clamp(80px,14dvh,138px); }
+.focus-studio .studio-session .studio-clock { font-size: clamp(76px,16dvh,154px); line-height: 1.05; margin: 14px 0 10px; }
+.focus-studio .studio-clock.is-hour-clock { font-size: clamp(54px,11dvh,110px); white-space: nowrap; }
+.focus-studio .studio-session .studio-clock.with-ring { width: min(29dvh,260px); height: min(29dvh,260px); font-size: clamp(48px,9dvh,82px); }
+.focus-studio .studio-session-core .studio-mode-switch { margin-bottom: clamp(8px,2dvh,22px); }
+.focus-studio .studio-session .studio-session-core h1 { font-size: clamp(23px,3vw,38px); }
+.focus-studio .studio-session-core .studio-playback { margin-top: 18px; }
+.focus-studio .studio-session-core .studio-start { height: 50px; }
+.focus-studio .studio-session-core .studio-task-link { margin-top: 12px; }
+.focus-studio .studio-session-core .studio-context-actions { margin-top: 8px; }
+.focus-studio .studio-break-prompt-slot:empty { display: none; }
+.focus-studio .studio-lobby .studio-saved-heading { margin-top: 12px; margin-bottom: 8px; }
+.focus-studio.is-clear .studio-lobby { display: block; max-width: 680px; }
+.focus-studio.is-clear .studio-lobby-library { display: none; }
+@media (max-height: 850px) { .focus-studio.is-lobby .studio-lobby-intro { display: none; } }
+@media (max-height: 760px) { .focus-studio .studio-lobby-library.has-saved .studio-lobby-rooms img { height: 58px; } .focus-studio .studio-lobby-library.has-saved .studio-lobby-note { display: none; } }
+@media (min-width: 1100px) { .focus-studio.is-lobby .studio-stage.has-panel .studio-lobby { grid-template-columns: minmax(0,1fr); max-width: 680px; } .focus-studio.is-lobby .studio-stage.has-panel .studio-lobby-library { display: none; } }
+@media (max-width: 1099px) {
+  .focus-studio .studio-stage.has-panel { margin-right: 0; }
+  .focus-studio .studio-header-center, .focus-studio .studio-shortcuts { display: none; }
+  .focus-studio .studio-lobby { max-width: 680px; grid-template-columns: minmax(0,1fr); }
+  .focus-studio .studio-lobby-library { display: none; }
+  .focus-studio .studio-lobby .studio-session-core { align-items: center; }
+  .focus-studio .studio-lobby-config { width: 100%; }
+  .focus-studio .studio-bottom { grid-template-columns: 1fr; justify-items: center; gap: 0; }
+  .focus-studio .studio-scene-caption { display: none; }
+}
+@media (max-width: 600px) {
+  .focus-studio .studio-header { height: 62px; padding-inline: 14px; gap: 10px; }
+  .focus-studio .studio-header-actions { gap: 4px; }
+  .focus-studio .studio-header-actions button { min-width: 34px; height: 40px; }
+  .focus-studio .studio-header-actions .studio-exit { padding-inline: 10px; }
+  .focus-studio .studio-brand { font-size: 14px; gap: 7px; }
+  .focus-studio .studio-beta { display: none; }
+  .focus-studio .studio-stage, .focus-studio.is-lobby .studio-stage { padding: 8px 12px 10px; }
+  .focus-studio .studio-lobby-intro { display: none; }
+  .focus-studio .studio-lobby .studio-session-core { padding: 18px 16px; }
+  .focus-studio .studio-session { width: 100%; }
+  .focus-studio .studio-session > .studio-session-core { padding: 18px 16px; }
+  .focus-studio .studio-session-core .studio-mode-switch button { padding: 7px 10px; min-height: 36px; font-size: 11px; }
+  .focus-studio .studio-session-core .studio-playback { grid-template-columns: 44px minmax(100px,1fr) 44px; gap: 10px; }
+  .focus-studio .studio-playback .studio-control-btn span { display: none; }
+  .focus-studio .studio-bottom, .focus-studio.is-lobby .studio-bottom { padding: 0 10px max(8px,env(safe-area-inset-bottom)); }
+  .focus-studio .studio-dock button { min-width: 60px; min-height: 48px; }
+  .focus-studio .studio-lobby-config select { font-size: 12px; }
+  .focus-studio .studio-title-slot > .studio-eyebrow { font-size: 10px; letter-spacing: .12em; }
+  .focus-studio .studio-session .studio-clock.is-hour-clock { font-size: clamp(48px,15vw,75px); }
+}
+@media (max-height: 520px) {
+  .focus-studio .studio-header { height: 48px; }
+  .focus-studio .studio-header-center, .focus-studio .studio-scene-caption, .focus-studio .studio-shortcuts { display: none; }
+  .focus-studio .studio-bottom { padding: 0 10px 5px; grid-template-columns: 1fr; justify-items: center; }
+  .focus-studio .studio-dock { padding: 2px 8px; }
+  .focus-studio .studio-dock button { min-height: 38px; }
+  .focus-studio .studio-dock button svg { width: 15px; height: 15px; }
+  .focus-studio .studio-dock button span { font-size: 10px; }
+  .focus-studio .studio-stage { padding: 3px 12px 6px; }
+  .focus-studio :is(.studio-session-core,.studio-lobby .studio-session-core,.studio-session > .studio-session-core) { padding: 8px 18px; }
+  .focus-studio .studio-lobby .studio-title-slot, .focus-studio.is-session .studio-title-slot { flex: 0 0 36px; min-height: 36px; height: 36px; }
+  .focus-studio :is(.studio-title-slot > .studio-eyebrow,.studio-next-action,.studio-context-actions,.studio-task-link,.studio-session-label,.studio-lobby-library,.studio-break-prompt-slot) { display: none; }
+  .focus-studio .studio-session .studio-session-core h1, .focus-studio .studio-lobby .studio-title-slot h1 { font-size: 18px; line-height: 1.25; max-height: 1.25em; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .focus-studio .studio-session-core .studio-mode-switch { margin-bottom: 4px; padding: 3px; }
+  .focus-studio .studio-session-core .studio-mode-switch button { min-height: 28px; padding: 4px 12px; }
+  .focus-studio .studio-lobby-config { margin-top: 3px; gap: 8px; }
+  .focus-studio .studio-lobby-config label { font-size: 10px; }
+  .focus-studio .studio-lobby-config select { min-height: 30px; margin-top: 2px; padding: 4px 7px; font-size: 11px; }
+  .focus-studio .studio-lobby .studio-clock, .focus-studio .studio-session .studio-clock { font-size: 52px; margin: 4px 0; }
+  .focus-studio .studio-clock.with-ring { width: 80px; height: 80px; font-size: 29px; }
+  .focus-studio .studio-session-core .studio-playback { margin-top: 4px; }
+  .focus-studio .studio-session-core .studio-start { min-height: 40px; height: 40px; }
+  .focus-studio .studio-session { max-width: 720px; }
+}

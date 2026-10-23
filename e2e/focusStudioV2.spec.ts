@@ -24,7 +24,7 @@ test('task-linked session survives minimize, pause and reload without duplicate 
 });
 test('backgrounds, four-layer limit, recipes and accessible desktop Studio',async({page})=>{
   await seed(page);await open(page);const s=page.getByRole('dialog',{name:'Focus Studio',exact:true});
-  await s.getByRole('button',{name:'Room',exact:true}).click();await expect(s.getByRole('button',{name:/^Use .+ background$/})).toHaveCount(54);
+  await s.getByRole('button',{name:'Room',exact:true}).click();await expect(s.getByRole('button',{name:/^Use .+ background$/})).toHaveCount(57);
   await s.getByRole('button',{name:'Use Rainy Desk background',exact:true}).click();await s.getByRole('button',{name:'Close customization panel'}).click();
   await s.getByRole('button',{name:'Sound',exact:true}).click();for(const name of ['Brown noise','Gentle rain','Distant thunder','Forest air']) await s.getByRole('button',{name,exact:true}).click();
   await s.getByRole('button',{name:'Morning birds',exact:true}).click();await expect(s.getByText(/up to four ambient layers/)).toBeVisible();await s.getByRole('button',{name:'Dismiss message',exact:true}).click();

@@ -33,6 +33,7 @@ import {
   Settings2,
   Coffee,
   Sparkles,
+  Palette,
 } from "lucide-react";
 import { useTaskContext } from "../../context/TaskContext";
 import { useModal } from "../../context/ModalContext";
@@ -56,15 +57,19 @@ import { transitionView } from "../../utils/viewTransitions";
 import { FocusAudioPanel } from "./FocusAudioPanel";
 import { ResetConfirmationDialog } from "./ResetConfirmationDialog";
 import { FEATURED_ROOMS, roomImage } from '../../services/featuredRooms';
+import { StudioThemePicker } from './StudioThemePicker';
+import { STUDIO_THEME_IDS, studioThemeTokens } from '../../utils/studioAppearance';
+import { THEMES } from '../../utils/themeRegistry';
 import type {
   FocusRecipe,
   MediaAsset,
   TimerConfiguration,
+  AppearancePreferences,
 } from "../../types/studio";
 import type { FinishedStudioSession } from "../../services/studioSessionEngine";
 
 type Panel =
-  "scenes" | "sound" | "recipes" | "notes" | "timer" | "queue" | null;
+  "scenes" | "sound" | "recipes" | "notes" | "timer" | "queue" | "appearance" | null;
 type Phase = "focus" | "short_break" | "long_break";
 const labels: Record<NonNullable<Panel>, string> = {
   scenes: "Find your somewhere",
@@ -73,6 +78,7 @@ const labels: Record<NonNullable<Panel>, string> = {
   notes: "A little space for thoughts",
   timer: "Find your rhythm",
   queue: "One thing, then the next",
+  appearance: "Make it your space",
 };
 function Range({
   label,
@@ -603,12 +609,14 @@ export function FocusStudio({
     !resolveAsset(p.musicId, media.audio);
   const canAnimate =
     scene?.kind === "video" && p.motionEnabled && !reduced && !dataSaving;
+  const savedLobbyRecipes = recipes.filter(recipe => !recipe.builtIn || recipe.favorite).slice(0, 3);
   return (
     <div
       ref={root}
       className={`focus-studio ${clear ? "is-clear" : ""} ${lobby ? 'is-lobby' : 'is-session'}`}
       data-session-state={active?.state || (showSummary ? 'finished' : 'ready')}
       data-phase={currentPhase}
+      data-studio-theme={p.interfaceTheme}
       role="dialog"
       aria-modal="true"
       aria-label="Focus Studio"
@@ -616,8 +624,10 @@ export function FocusStudio({
       style={
         {
           "--studio-overlay": p.overlay,
-          "--text-primary": "#f8f5ee",
-          "--text-secondary": "#dedbd4",
+          ...studioThemeTokens(p.interfaceTheme, Boolean((ctx.workspacePreferences.appearance as Partial<AppearancePreferences> | undefined)?.highContrast)),
+          "--text-primary": "var(--studio-text)",
+          "--text-secondary": "var(--studio-secondary)",
+          colorScheme: THEMES[p.interfaceTheme].scheme,
         } as CSSProperties
       }
     >
@@ -793,7 +803,7 @@ export function FocusStudio({
                 : active?.state === 'paused' ? 'PAUSED · RETURN WHEN YOU ARE READY'
                 : "MAKE ROOM FOR WHAT MATTERS"}
           </p>
-          <h1>
+          <h1 title={currentPhase === 'focus' ? task?.title : undefined}>
             {currentPhase !== "focus"
               ? "Rest is part of the rhythm."
               : task
@@ -808,7 +818,7 @@ export function FocusStudio({
         </div>
         {lobby && <div className="studio-lobby-config"><label>Focus task<select aria-label="Focus task" value={selectedTask} onChange={e=>setSelectedTask(e.target.value)}><option value="">Open focus · no task</option>{availableTasks.map(t=><option value={t.id} key={t.id}>{t.title}</option>)}</select></label><label>Rhythm<select aria-label="Focus rhythm" value={timer.mode === 'pomodoro' && timer.focusMinutes === 25 && timer.shortBreakMinutes === 5 ? '25' : timer.mode === 'pomodoro' && timer.focusMinutes === 50 && timer.shortBreakMinutes === 10 ? '50' : timer.mode === 'stopwatch' ? 'open' : 'custom'} onChange={e=>{const v=e.target.value;if(v==='custom')setPanel('timer');else updateTimer(v==='open'?{mode:'stopwatch'}:{mode:'pomodoro',focusMinutes:Number(v),shortBreakMinutes:v==='50'?10:5});}}><option value="25">25 / 5 · A gentle start</option><option value="50">50 / 10 · Go deeper</option><option value="open">Open-ended · Your pace</option><option value="custom">Custom rhythm…</option></select></label></div>}
         <div
-          className={`studio-clock ${p.timerStyle === "ring" ? "with-ring" : ""}`}
+          className={`studio-clock ${p.timerStyle === "ring" ? "with-ring" : ""} ${seconds >= 3600 ? 'is-hour-clock' : ''}`}
           role="timer"
           aria-label={`${Math.floor(seconds / 60)} minutes ${seconds % 60} seconds ${(active ? active.targetDurationSec > 0 : timer.mode !== "stopwatch" || currentPhase !== "focus") ? "remaining" : "elapsed"}`}
         >
@@ -894,12 +904,12 @@ export function FocusStudio({
           )}
         </div>
         </section>
-        {lobby && <aside className="studio-lobby-library" aria-label="Choose your focus environment">
+        {lobby && <aside className={`studio-lobby-library ${savedLobbyRecipes.length ? "has-saved" : ""}`} aria-label="Choose your focus environment">
           <div className="studio-lobby-section-heading"><h3>A change of scene</h3><button onClick={()=>setPanel('scenes')}>Browse rooms<ArrowRight size={13}/></button></div>
           <div className="studio-lobby-rooms">{FEATURED_ROOMS.map(r=><button key={r.id} aria-label={`Choose ${r.title} room`} aria-pressed={p.sceneId===r.id} onClick={()=>update({sceneId:r.id})}><img src={roomImage(r.id,true)} alt="" loading="lazy"/><span>{r.title}<small>{r.category}</small></span>{p.sceneId===r.id&&<Check size={14}/>}</button>)}</div>
           <div className="studio-lobby-section-heading"><h3>Start with a ritual</h3><button onClick={()=>setPanel('recipes')}>Your recipes<ArrowRight size={13}/></button></div>
-          <div className="studio-lobby-recipes">{recipes.filter(r=>r.builtIn).map(r=>{const cover=resolveAsset(r.sceneId,media.scenes);return <button key={r.id} aria-pressed={p.recipeId===r.id} onClick={()=>selectRecipe(r)}>{cover&&<img src={cover.thumbnail||cover.poster||cover.src} alt="" loading="lazy"/>}<span>{r.name}<small>{r.timer.mode==='stopwatch'?'Open-ended':`${r.timer.focusMinutes}/${r.timer.shortBreakMinutes}`} · {r.layers.length||r.musicId?'Sound recipe':'Silence'}</small></span>{p.recipeId===r.id&&<Check size={13}/>}</button>;})}</div>
-          {recipes.some(r=>!r.builtIn||r.favorite)&&<><div className="studio-lobby-section-heading studio-saved-heading"><h3>Saved for your flow</h3></div><div className="studio-lobby-recipes">{recipes.filter(r=>!r.builtIn||r.favorite).map(r=><button key={r.id} aria-pressed={p.recipeId===r.id} onClick={()=>selectRecipe(r)}><span>{r.name}<small>{r.timer.mode==='stopwatch'?'Open-ended':`${r.timer.focusMinutes}/${r.timer.shortBreakMinutes}`}</small></span></button>)}</div></>}
+          <div className="studio-lobby-recipes">{recipes.filter(r=>r.builtIn).slice(0, savedLobbyRecipes.length ? 3 : 6).map(r=>{const cover=resolveAsset(r.sceneId,media.scenes);return <button key={r.id} aria-pressed={p.recipeId===r.id} onClick={()=>selectRecipe(r)}>{cover&&<img src={cover.thumbnail||cover.poster||cover.src} alt="" loading="lazy"/>}<span>{r.name}<small>{r.timer.mode==='stopwatch'?'Open-ended':`${r.timer.focusMinutes}/${r.timer.shortBreakMinutes}`} · {r.layers.length||r.musicId?'Sound recipe':'Silence'}</small></span>{p.recipeId===r.id&&<Check size={13}/>}</button>;})}</div>
+          {savedLobbyRecipes.length > 0&&<><div className="studio-lobby-section-heading studio-saved-heading"><h3>Saved for your flow</h3></div><div className="studio-lobby-recipes">{savedLobbyRecipes.map(r=><button key={r.id} aria-pressed={p.recipeId===r.id} onClick={()=>selectRecipe(r)}><span>{r.name}<small>{r.timer.mode==='stopwatch'?'Open-ended':`${r.timer.focusMinutes}/${r.timer.shortBreakMinutes}`}</small></span></button>)}</div></>}
           <p className="studio-lobby-note"><Headphones size={13}/>Sound starts only when you start your session.</p>
         </aside>}
         </div>
@@ -940,6 +950,7 @@ export function FocusStudio({
               { id: "scenes", icon: Image, name: "Room" },
               { id: "sound", icon: Headphones, name: "Sound" },
               { id: "timer", icon: Timer, name: "Session" },
+              { id: "appearance", icon: Palette, name: "Style" },
             ] as const
           ).map((item) => (
             <button
@@ -984,6 +995,16 @@ export function FocusStudio({
             </button>
           </header>
           <div className="studio-panel-body">
+            {panel === 'appearance' && <>
+              <p className="studio-help">A palette for your room. Your planner keeps its own theme.</p>
+              <StudioThemePicker value={p.interfaceTheme} onChange={interfaceTheme => update({ interfaceTheme })} />
+              <div className="studio-details">
+                <h3>Floating timer</h3>
+                <label className="studio-check"><input type="checkbox" checked={p.pipBackground} onChange={e => update({ pipBackground: e.target.checked })} />Use the current Studio background</label>
+                <label className="studio-field">Floating timer theme<select aria-label="Floating timer theme" value={p.pipTheme} onChange={e => update({ pipTheme: e.target.value as typeof p.pipTheme })}><option value="studio">Match Studio</option>{STUDIO_THEME_IDS.map(id => <option key={id} value={id}>{THEMES[id].label}</option>)}</select></label>
+                <p className="studio-help">Theme and background changes stay in sync, even while the timer is floating.</p>
+              </div>
+            </>}
             {['timer','recipes','queue'].includes(panel) && <nav className="studio-session-tabs" aria-label="Session tools">{(['timer','recipes','queue'] as const).map(tab=><button key={tab} aria-pressed={panel===tab} onClick={()=>setPanel(tab)}>{tab==='timer'?'Timer':tab==='recipes'?'Recipes':'Task queue'}</button>)}</nav>}
             {panel === "scenes" && (
               <>
@@ -1866,3 +1887,4 @@ export function FocusStudio({
   );
 }
 import '../../styles/focus-studio.css';
+import '../../styles/studio-appearance.css';

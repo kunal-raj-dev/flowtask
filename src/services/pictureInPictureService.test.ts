@@ -105,7 +105,7 @@ describe('pictureInPictureService', () => {
 
     const win = await pictureInPictureService.requestPipWindow();
     expect(win).toBe(mockPipWindow);
-    expect(mockPipApi.requestWindow).toHaveBeenCalledWith({ width: 340, height: 200 });
+    expect(mockPipApi.requestWindow).toHaveBeenCalledWith({ width: 340, height: 200, disallowReturnToOpener: true });
     expect(pictureInPictureService.isOpen()).toBe(true);
     expect(pictureInPictureService.getPipWindow()).toBe(mockPipWindow);
     expect(subscriber).toHaveBeenCalledWith(true);

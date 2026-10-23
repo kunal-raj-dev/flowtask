@@ -1468,5 +1468,92 @@
     "provenance": "Original generated still with original procedural atmospheric motion; not live-action footage.",
     "sourceAssetId": "violet-nebula",
     "motionTechnique": "stars"
+  },
+  {
+    "id": "kyoto-rain",
+    "title": "Kyoto Rain",
+    "category": "cozy",
+    "src": "/media/backgrounds/v1/kyoto-rain.webp",
+    "thumbnail": "/media/backgrounds/v1/kyoto-rain-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/kyoto-rain-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/kyoto-rain.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 271384,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-23",
+    "altText": "Kyoto Rain \u2014 a calm cinematic focus background",
+    "provenance": "Created for FlowTask with the built-in OpenAI image generation tool. Prompt documented in docs/studio-artwork-v2.json."
+  },
+  {
+    "id": "dolomite-dawn",
+    "title": "Dolomite Dawn",
+    "category": "mountains",
+    "src": "/media/backgrounds/v1/dolomite-dawn.webp",
+    "thumbnail": "/media/backgrounds/v1/dolomite-dawn-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/dolomite-dawn-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/dolomite-dawn.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 321102,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-23",
+    "altText": "Dolomite Dawn \u2014 a calm cinematic focus background",
+    "provenance": "Created for FlowTask with the built-in OpenAI image generation tool. Prompt documented in docs/studio-artwork-v2.json."
+  },
+  {
+    "id": "penthouse-noir",
+    "title": "Penthouse Noir",
+    "category": "city",
+    "src": "/media/backgrounds/v1/penthouse-noir.webp",
+    "thumbnail": "/media/backgrounds/v1/penthouse-noir-thumb.webp",
+    "variants": [
+      {
+        "src": "/media/backgrounds/v1/penthouse-noir-960.webp",
+        "width": 959,
+        "height": 540
+      },
+      {
+        "src": "/media/backgrounds/v1/penthouse-noir.webp",
+        "width": 1672,
+        "height": 941
+      }
+    ],
+    "width": 1672,
+    "height": 941,
+    "kind": "image",
+    "bytes": 288394,
+    "license": "Original AI-generated artwork; project use",
+    "creator": "FlowTask / OpenAI image generation",
+    "sourceUrl": null,
+    "verifiedAt": "2026-10-23",
+    "altText": "Penthouse Noir \u2014 a calm cinematic focus background",
+    "provenance": "Created for FlowTask with the built-in OpenAI image generation tool. Prompt documented in docs/studio-artwork-v2.json."
   }
 ]

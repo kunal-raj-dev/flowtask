@@ -48,7 +48,8 @@ def package(source_path):
         })
     catalog_path = OUT.parent / 'catalog.json'
     if catalog_path.exists():
-        catalog.extend(x for x in json.loads(catalog_path.read_text(encoding='utf-8')) if x['kind']=='video')
+        packaged_ids = {item['id'] for item in sources}
+        catalog.extend(x for x in json.loads(catalog_path.read_text(encoding='utf-8')) if x['id'] not in packaged_ids)
     catalog_path.write_text(json.dumps(catalog, indent=2) + '\n', encoding='utf-8')
     print(f'Packaged {len(sources)} original stills; {sum(x["bytes"] for x in catalog if x["kind"]=="image")/1024/1024:.2f} MiB primary images')
 

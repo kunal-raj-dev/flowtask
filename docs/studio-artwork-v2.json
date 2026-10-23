@@ -1,0 +1,39 @@
+{
+  "generationMode": "Built-in image_gen",
+  "createdAt": "2026-10-23",
+  "assets": [
+    {
+      "id": "kyoto-rain",
+      "title": "Kyoto Rain",
+      "prompt": "Use case: photorealistic-natural. Asset type: high-resolution widescreen background for a premium focus timer application. Create one 16:9 cinematic architectural photograph of a quiet Japanese reading room on a rainy blue-hour evening, dark walnut desk at the lower edge, warm paper lantern on the left, shoji frames at the side and a floor-to-ceiling view of a small rain-soaked courtyard and subtle city lights in the distance. Spacious, restrained, believable materials, calm slate-blue rain and warm amber light, beautifully detailed wood and glass. Keep the central half uncluttered and a little darker for white timer text. Professional architectural photography, wide lens, natural dynamic range, no people, no text, no branding, no watermarks. Deliver a single full-bleed landscape image, ideally 2560x1440 or higher.",
+      "category": "cozy",
+      "files": [
+        "public/media/backgrounds/v1/kyoto-rain.webp",
+        "public/media/backgrounds/v1/kyoto-rain-960.webp",
+        "public/media/backgrounds/v1/kyoto-rain-thumb.webp"
+      ]
+    },
+    {
+      "id": "dolomite-dawn",
+      "title": "Dolomite Dawn",
+      "prompt": "Use case: photorealistic-natural. Asset type: premium widescreen full-screen focus app background. Create one exquisitely detailed cinematic landscape photograph of an alpine lake in the Dolomites at first light, quiet glassy water reflecting pale peach clouds and dramatic distant limestone peaks. A small timber pier enters from the lower left edge, delicate mist and a few larch trees at the outer edges. Refined cool graphite-blue and soft champagne color palette, gentle directional sunlight on peaks, serene realistic composition with ample calm dark blue water in the center for a white timer overlay. Fine natural texture and clear depth, sophisticated travel editorial photography, not oversaturated or artificial HDR. No people, no text, no logos or watermark. Single 16:9 full-bleed landscape, ideally 2560x1440 or higher.",
+      "category": "mountains",
+      "files": [
+        "public/media/backgrounds/v1/dolomite-dawn.webp",
+        "public/media/backgrounds/v1/dolomite-dawn-960.webp",
+        "public/media/backgrounds/v1/dolomite-dawn-thumb.webp"
+      ]
+    },
+    {
+      "id": "penthouse-noir",
+      "title": "Penthouse Noir",
+      "prompt": "Use case: photorealistic-natural. Asset type: high quality 16:9 widescreen background for a focus studio. Create a sophisticated cinematic architectural photograph of a serene midnight penthouse study above a rainlit modern city. Charcoal plaster, smoked oak desk along the lower right edge, one sculptural warm brass lamp, deep cobalt night sky and softly glowing skyline seen through tall windows, a few natural rain streaks on the glass. Minimal and luxurious, uncluttered central dark window region for a large white timer, realistic lighting and rich soft detail, restrained amber and ink palette, professionally photographed rather than a computer game. No people, text, logos or watermarks. Single full-bleed widescreen image, ideally 2560x1440 or higher.",
+      "category": "city",
+      "files": [
+        "public/media/backgrounds/v1/penthouse-noir.webp",
+        "public/media/backgrounds/v1/penthouse-noir-960.webp",
+        "public/media/backgrounds/v1/penthouse-noir-thumb.webp"
+      ]
+    }
+  ]
+}

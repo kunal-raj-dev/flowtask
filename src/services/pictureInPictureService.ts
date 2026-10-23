@@ -308,6 +308,35 @@ body {
   gap: 12px;
   padding: 16px;
 }
+
+/* Compact, independently themed HUD; the selected Studio still stays live. */
+.pip-container { position: relative; isolation: isolate; overflow: hidden; gap: 8px; }
+.pip-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: var(--pip-scene-opacity,.24); z-index: -1; pointer-events: none; }
+.pip-header { min-height: 42px; }
+.pip-header-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.pip-header-actions .pip-icon-button { width: 32px; min-width: 32px; height: 36px; min-height: 36px; background: transparent; border: 0; }
+.pip-header-info { min-width: 0; }
+.pip-task-title { -webkit-line-clamp: 2; line-clamp: 2; font-size: 12px; }
+.pip-clock { font-family: var(--font-sans,system-ui,sans-serif); font-weight: 500; font-size: clamp(42px,17vw,70px); line-height: 1; letter-spacing: -.055em; text-shadow: none; }
+.pip-clock.running { color: var(--pip-text-primary); }
+.pip-container[data-pip-background]:not([data-pip-background="off"]) .pip-cycle-badge { color: var(--pip-text-primary); }
+.pip-btn-primary { color: var(--pip-on-accent,#1c1917); }
+.pip-btn, .pip-icon-button, .pip-menu-item { transition: background-color .15s ease, color .15s ease; }
+button, input { font: inherit; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--pip-amber); outline-offset: 2px; }
+.pip-appearance { position: absolute; z-index: 60; inset: 8px 8px auto; max-height: calc(100dvh - 16px); overflow-y: auto; padding: 10px 12px; border: 1px solid var(--pip-border); border-radius: 12px; background: var(--pip-surface); color: var(--pip-text-primary); box-shadow: 0 12px 40px #0006; }
+.pip-appearance-heading { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.pip-appearance-heading .pip-icon-button { width: 28px; min-width: 28px; height: 28px; min-height: 28px; border: 0; }
+.pip-match-studio { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 28px; margin: 3px 0 6px; padding: 4px 7px; border: 1px solid var(--pip-border); border-radius: 6px; background: var(--pip-bg); color: var(--pip-text-primary); font-size: 10px; cursor: pointer; }
+.pip-match-studio[aria-pressed="true"] { border-color: var(--pip-amber); }
+.pip-theme-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
+.pip-theme-grid button { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; min-width: 0; min-height: 51px; padding: 5px 2px; border: 1px solid var(--pip-border); border-radius: 6px; background: var(--pip-bg); color: var(--pip-text-primary); font-size: 10px; line-height: 1.35; cursor: pointer; }
+.pip-theme-grid button[aria-pressed="true"] { border-color: var(--pip-amber); }
+.pip-theme-grid i { display: block; width: 17px; height: 17px; border: 2px solid; border-radius: 50%; }
+.pip-background-toggle { display: flex; align-items: center; gap: 7px; min-height: 30px; margin-top: 5px; font-size: 11px; cursor: pointer; }
+.pip-background-toggle input { width: 14px; height: 14px; accent-color: var(--pip-amber); }
+@media (max-height: 240px) { .pip-container { padding: 9px 10px; gap: 4px; } .pip-header { min-height: 38px; } .pip-clock { font-size: 44px; } .pip-clock-area { margin: 0; } .pip-controls { padding-top: 5px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 `;
 
 let activeThemeObserver: MutationObserver | null = null;
@@ -363,8 +392,10 @@ export function syncStylesToPipWindow(pipWindow: Window): void {
       } else {
         pipDoc.documentElement.classList?.remove?.("dark");
       }
-      if (mainHtml.getAttribute?.("data-contrast") === "high") {
-        pipDoc.documentElement.setAttribute?.("data-contrast", "high");
+      for (const attribute of ['data-contrast', 'data-high-contrast', 'data-reduced-motion']) {
+        const value = mainHtml.getAttribute?.(attribute);
+        if (value) pipDoc.documentElement.setAttribute?.(attribute, value);
+        else pipDoc.documentElement.removeAttribute?.(attribute);
       }
     };
 
@@ -382,7 +413,7 @@ export function syncStylesToPipWindow(pipWindow: Window): void {
       activeThemeObserver = new MutationObserver(syncTheme);
       activeThemeObserver.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ["class", "data-theme", "data-contrast"],
+        attributeFilter: ["class", "data-theme", "data-contrast", "data-high-contrast", "data-reduced-motion"],
       });
 
       const cleanup = () => {
@@ -443,6 +474,7 @@ class PictureInPictureCoordinator implements PipService {
           requestWindow: (opts: {
             width: number;
             height: number;
+            disallowReturnToOpener?: boolean;
           }) => Promise<Window>;
         };
       }
@@ -450,7 +482,7 @@ class PictureInPictureCoordinator implements PipService {
 
     const generation = this.generation;
     const request = pipApi
-      .requestWindow({ width, height })
+      .requestWindow({ width, height, disallowReturnToOpener: true })
       .then((win) => {
         if (generation !== this.generation) {
           win.close();

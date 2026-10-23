@@ -1,7 +1,7 @@
 import { appShortcutAllowed } from '../../services/shortcutRuntime';
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Play, Pause, Check, ExternalLink, MoreHorizontal, RotateCcw, Sparkles } from "lucide-react";
+import { Play, Pause, Check, ExternalLink, MoreHorizontal, RotateCcw, Sparkles, Palette, X } from "lucide-react";
 import { pictureInPictureService } from "../../services/pictureInPictureService";
 import {
   useFocusStore,
@@ -10,6 +10,11 @@ import {
 import { formatTimerClock, formatSecondsToHumanReadable } from "../../utils/focusTimeFormat";
 import { useTaskContext } from "../../context/TaskContext";
 import { useModal } from "../../context/ModalContext";
+import { useStudioPreferences, useMediaCatalog } from '../../hooks/useStudio';
+import { resolveAsset } from '../../services/studioCatalog';
+import { STUDIO_THEME_IDS, studioThemeId, floatingThemeTokens } from '../../utils/studioAppearance';
+import { THEMES } from '../../utils/themeRegistry';
+import type { AppearancePreferences } from '../../types/studio';
 
 interface FocusPipHUDProps {
   onReturnToApp: () => void;
@@ -22,14 +27,37 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
     stopFocusSession,
     resetFocusSession,
     restartFocusRound,
+    workspacePreferences = {},
   } = useTaskContext();
+  const { preferences, update } = useStudioPreferences();
+  const media = useMediaCatalog();
 
   const focusSession = useFocusStore((s) => s.focusSession);
   const elapsed = useFocusElapsedSeconds();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [resetConfirming, setResetConfirming] = useState<'reset' | 'restart' | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const appearanceRef = useRef<HTMLDivElement | null>(null);
+  const themeId = preferences.pipTheme === 'studio' ? preferences.interfaceTheme : studioThemeId(preferences.pipTheme);
+  const isBreak = focusSession?.pomodoroPhase === 'short_break' || focusSession?.pomodoroPhase === 'long_break';
+  const selectedScene = resolveAsset(isBreak ? preferences.breakSceneId || preferences.sceneId : preferences.sceneId, media.scenes);
+  const highContrast = Boolean((workspacePreferences.appearance as Partial<AppearancePreferences> | undefined)?.highContrast);
+  const sceneSource = (preferences.pipBackground && !highContrast && selectedScene ? selectedScene.poster || (selectedScene.kind === 'video' ? selectedScene.thumbnail : selectedScene.variants?.find(variant => variant.width >= 640)?.src || selectedScene.src) : '') || '';
+  const [failedScene, setFailedScene] = useState('');
+  const showScene = Boolean(sceneSource && failedScene !== sceneSource);
+  const surfaceProps = {
+    className: 'pip-container',
+    'data-pip-theme': themeId,
+    'data-pip-background': showScene ? selectedScene?.id : 'off',
+    style: {
+      ...floatingThemeTokens(themeId, highContrast),
+      colorScheme: THEMES[themeId].scheme,
+    } as CSSProperties,
+  };
+  const sceneBackdrop = showScene && <img className="pip-scene" src={sceneSource} alt="" aria-hidden="true" style={{ objectPosition: `${preferences.focalX}% ${preferences.focalY}%` }} onError={() => setFailedScene(sceneSource)} />;
 
   const isRunning = focusSession?.state === "running";
   const isReady = focusSession?.state === "ready";
@@ -71,6 +99,7 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
 
   const handleTriggerReset = (type: 'reset' | 'restart') => {
     setMenuOpen(false);
+    setAppearanceOpen(false);
     if (elapsed <= 0) {
       if (type === 'restart') {
         restartFocusRound('discard');
@@ -109,19 +138,35 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
           handleCancelReset();
         } else if (menuOpen) {
           setMenuOpen(false);
+        } else if (appearanceOpen) {
+          setAppearanceOpen(false);
         } else {
           onReturnToApp();
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const ownerWindow = surfaceRef.current?.ownerDocument.defaultView || window;
+    ownerWindow.addEventListener('keydown', handleKeyDown);
+    return () => ownerWindow.removeEventListener('keydown', handleKeyDown);
   });
+
+  useEffect(() => {
+    if (!menuOpen && !appearanceOpen) return;
+    const ownerDocument = surfaceRef.current?.ownerDocument || document;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!menuRef.current?.contains(target) && !appearanceRef.current?.contains(target) && !(target as Element).closest?.('[data-pip-menu-toggle]')) {
+        setMenuOpen(false); setAppearanceOpen(false);
+      }
+    };
+    ownerDocument.addEventListener('pointerdown', dismiss);
+    return () => ownerDocument.removeEventListener('pointerdown', dismiss);
+  }, [menuOpen, appearanceOpen]);
 
   // Empty state
   if (!focusSession) {
     return (
-      <div className="pip-container">
+      <div ref={surfaceRef} {...surfaceProps}>
         <div className="pip-completion">
           <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pip-text-secondary)' }}>
             No active focus session
@@ -144,7 +189,8 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
   if (focusSession.state === 'completed') {
     const timeSummary = formatSecondsToHumanReadable(elapsed) || `${elapsed}s`;
     return (
-      <div className="pip-container">
+      <div ref={surfaceRef} {...surfaceProps}>
+        {sceneBackdrop}
         <div className="pip-completion">
           <div style={{ color: 'var(--pip-amber)' }}>
             <Sparkles size={28} />
@@ -176,7 +222,7 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
     const timeFormatted = formatSecondsToHumanReadable(elapsed) || `${elapsed}s`;
     const isRestart = resetConfirming === 'restart';
     return (
-      <div className="pip-container" style={{ justifyContent: 'center', textAlign: 'center', gap: '10px' }}>
+      <div ref={surfaceRef} {...surfaceProps} style={{ ...surfaceProps.style, justifyContent: 'center', textAlign: 'center', gap: '10px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pip-text-primary)' }}>
             {isRestart ? 'Restart Pomodoro Round?' : 'Reset Current Timer?'}
@@ -219,7 +265,8 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
   }
 
   return (
-    <div className="pip-container">
+    <div ref={surfaceRef} {...surfaceProps}>
+      {sceneBackdrop}
       {/* Top Header: Phase, Cycle, Task Title, Return */}
       <div className="pip-header">
         <div className="pip-header-info">
@@ -244,6 +291,8 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
           </h1>
         </div>
 
+        <div className="pip-header-actions">
+        <button type="button" data-pip-menu-toggle aria-label="Floating timer appearance" aria-expanded={appearanceOpen} onClick={() => { setAppearanceOpen(!appearanceOpen); setMenuOpen(false); }} className="pip-icon-button" title="Theme and background"><Palette size={17} /></button>
         <button
           type="button"
           onClick={onReturnToApp}
@@ -253,7 +302,17 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
         >
           <ExternalLink size={18} />
         </button>
+        </div>
       </div>
+
+      {appearanceOpen && <div ref={appearanceRef} className="pip-appearance" role="region" aria-label="Floating timer appearance options">
+        <div className="pip-appearance-heading"><strong>Make it yours</strong><button type="button" aria-label="Close floating timer appearance" onClick={() => setAppearanceOpen(false)} className="pip-icon-button"><X size={15} /></button></div>
+        <button type="button" className="pip-match-studio" aria-pressed={preferences.pipTheme === 'studio'} onClick={() => update({ pipTheme: 'studio' })}>Match Studio{preferences.pipTheme === 'studio' && <Check size={13} />}</button>
+        <div className="pip-theme-grid" role="group" aria-label="Floating timer themes">{STUDIO_THEME_IDS.map(id => <button type="button" key={id} aria-label={`Use ${THEMES[id].label} floating theme`} aria-pressed={preferences.pipTheme === id} onClick={() => update({ pipTheme: id })}>
+          <i style={{ background: THEMES[id].tokens['--bg-main'], borderColor: THEMES[id].tokens['--color-brand'] }} aria-hidden="true" />{THEMES[id].label}
+        </button>)}</div>
+        <label className="pip-background-toggle"><input type="checkbox" checked={preferences.pipBackground} onChange={e => update({ pipBackground: e.target.checked })} />Studio background</label>
+      </div>}
 
       {/* Center: Live Timer Clock */}
       <div className="pip-clock-area">
@@ -303,7 +362,9 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
         {/* More Menu Button (min 44px) */}
         <button
           type="button"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => { setMenuOpen(!menuOpen); setAppearanceOpen(false); }}
+          data-pip-menu-toggle
+          aria-expanded={menuOpen}
           aria-label="More session actions"
           title="More actions"
           className="pip-icon-button"

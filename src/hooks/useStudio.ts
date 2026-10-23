@@ -3,11 +3,16 @@ import { useTaskContext } from '../context/TaskContext';
 import { DEFAULT_STUDIO, type FocusRecipe, type MediaAsset, type StudioPreferences } from '../types/studio';
 import { loadCatalog, BUILT_IN_RECIPES } from '../services/studioCatalog';
 import { mediaService } from '../services/mediaService';
+import { studioThemeId } from '../utils/studioAppearance';
 
 export function useStudioPreferences() {
   const { workspacePreferences = {}, setWorkspacePreference } = useTaskContext();
   const saved = workspacePreferences?.studio as Partial<StudioPreferences> | undefined;
-  const preferences = useMemo(() => ({ ...DEFAULT_STUDIO, ...saved, timer: { ...DEFAULT_STUDIO.timer, ...saved?.timer } }), [saved]);
+  const preferences = useMemo(() => ({ ...DEFAULT_STUDIO, ...saved,
+    interfaceTheme: studioThemeId(saved?.interfaceTheme),
+    pipTheme: saved?.pipTheme && saved.pipTheme !== 'studio' ? studioThemeId(saved.pipTheme) : 'studio' as const,
+    pipBackground: saved?.pipBackground !== false,
+    timer: { ...DEFAULT_STUDIO.timer, ...saved?.timer } }), [saved]);
   const recipes = useMemo(() => [...BUILT_IN_RECIPES.map(r => ({...r, favorite: saved?.favoriteRecipes?.includes(r.id) || false})), ...((workspacePreferences?.focusRecipes || []) as FocusRecipe[])], [workspacePreferences?.focusRecipes, saved?.favoriteRecipes]);
   const update = (patch: Partial<StudioPreferences>) => setWorkspacePreference?.('studio', { ...preferences, ...patch });
   return { preferences, update, recipes, saveRecipes: (values: FocusRecipe[]) => {

@@ -1,20 +1,20 @@
 /** Stable bundled stills shared by marketing and the Studio lobby. */
 export const FEATURED_ROOMS = [
   {
-    id: "rainy-desk",
-    title: "Rainy Desk",
+    id: "kyoto-rain",
+    title: "Kyoto Rain",
     mood: "A warm place to think",
     category: "Cozy study",
   },
   {
-    id: "alpine-mirror",
-    title: "Alpine Mirror",
+    id: "dolomite-dawn",
+    title: "Dolomite Dawn",
     mood: "A little perspective",
     category: "Mountains",
   },
   {
-    id: "rainy-skyline",
-    title: "Rainy Skyline",
+    id: "penthouse-noir",
+    title: "Penthouse Noir",
     mood: "The city can wait",
     category: "City & night",
   },
