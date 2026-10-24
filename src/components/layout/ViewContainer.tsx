@@ -4,6 +4,7 @@ import { FeatureBoundary } from '../ui/FeatureBoundary';
 import { ViewSkeleton } from '../ui';
 import { Share2, X } from 'lucide-react';
 import type { SnapshotPayload } from '../../utils/snapshotShare';
+import { WorkspaceBackground } from '../workspace/WorkspaceBackground';
 
 export interface ViewContainerProps {
   activeView: string;
@@ -34,6 +35,7 @@ export const ViewContainer: React.FC<ViewContainerProps> = ({
   }, [activeView]);
 
   return (
+    <WorkspaceBackground>
     <div
       ref={mainScrollRef}
       className={`desk-view-host flex-1 min-h-0 min-w-0 ${activeView === 'today' || activeView === 'dashboard' ? 'desk-view-host-contained' : 'overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-0'}`}
@@ -92,5 +94,6 @@ export const ViewContainer: React.FC<ViewContainerProps> = ({
         </Suspense>
       </FeatureBoundary>
     </div>
+    </WorkspaceBackground>
   );
 };

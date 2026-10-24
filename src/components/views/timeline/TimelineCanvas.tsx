@@ -365,7 +365,7 @@ export const TimelineCanvas: React.FC<TimelineCanvasProps> = ({
   };
 
   return (
-    <div className="lg:col-span-8 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-xl p-4 sm:p-6 card-surface overflow-hidden relative">
+    <div className="workspace-timeline-canvas lg:col-span-8 bg-[var(--bg-surface-l1)] border border-stone-200/80 dark:border-white/10 rounded-xl p-4 sm:p-6 card-surface overflow-hidden relative">
       {/* All-Day Calendar Events if present */}
       {calendarEvents.some((e) => e.isAllDay) && (
         <div className="mb-4 p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex flex-wrap items-center gap-2">

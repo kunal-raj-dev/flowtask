@@ -121,13 +121,13 @@ export function WorkspaceSettings({ onClose, onSaveToast }: WorkspaceSettingsPro
             <div className="flex items-center gap-2">
               <Eye size={14} className="text-[var(--text-muted)]" />
               <span className="text-xs font-medium text-[var(--text-secondary)]">
-                Display dashboard header covers
+                Display workspace backgrounds
               </span>
             </div>
             <button
               type="button"
               role="switch"
-              aria-label="Display dashboard header covers"
+              aria-label="Display workspace backgrounds"
               aria-checked={prefs.showCovers !== false}
               onClick={() => update({ showCovers: prefs.showCovers === false })}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${

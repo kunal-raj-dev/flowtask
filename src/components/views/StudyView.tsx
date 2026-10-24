@@ -153,7 +153,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-20">
       {/* Study Hub Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border-subtle)] mb-6">
+      <div className="workspace-page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border-subtle)] mb-6">
         <div className="flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
             <BookOpen size={22} />
@@ -217,7 +217,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
       <div
         role="tablist"
         aria-label="Study Hub navigation"
-        className="flex items-center gap-2 border-b border-[var(--border-subtle)] pb-2 mb-6 overflow-x-auto scrollbar-none"
+        className="workspace-tabs flex items-center gap-2 border-b border-[var(--border-subtle)] pb-2 mb-6 overflow-x-auto scrollbar-none"
       >
         <button
           type="button"
@@ -294,7 +294,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
       {activeTab === 'continue' && (
         <div className="flex flex-col gap-4">
           {continueSessions.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface-l1)]/40">
+            <div className="workspace-panel p-8 text-center rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface-l1)]/40">
               <Sparkles size={28} className="text-amber-500 mx-auto mb-2.5 opacity-80" />
               <h3 className="text-sm font-bold text-[var(--text-primary)]">
                 No active study sprints

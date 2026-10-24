@@ -242,7 +242,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-3.5 sm:px-4 py-4 sm:py-6 h-full flex flex-col min-h-0">
-      <div className="flex items-center justify-between mb-4 sm:mb-6 shrink-0">
+      <div className="workspace-page-header flex items-center justify-between mb-4 sm:mb-6 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
             <Kanban size={20} className="stroke-[2.2]" />

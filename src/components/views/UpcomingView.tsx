@@ -135,7 +135,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   const renderSection = (title: string, sectionTasks: typeof activeTasksToDisplay, subtitle?: string) => {
     if (sectionTasks.length === 0) return null;
     return (
-      <div className="mb-7">
+      <div className="workspace-task-section mb-7">
         <div className="flex items-baseline justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -170,7 +170,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
       {/* View Header with Presentation Toggle */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
+      <div className="workspace-page-header mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
             <CalendarDays size={20} className="stroke-[2.2]" />

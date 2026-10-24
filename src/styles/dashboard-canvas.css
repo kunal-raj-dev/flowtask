@@ -405,8 +405,8 @@
 .flowtask-workspace .widget-arrange-controls { flex-wrap: wrap; }
 .flowtask-workspace .desk-grid { width: 100%; min-width: 0; }
 .flowtask-workspace .widget-card { min-width: 0; }
-.today-surface:has(.today-background) :is(.daily-planning-summary,.daily-priorities,.today-task-batches,.daily-tasks,.daily-next,.daily-context) { background: var(--bg-surface-l1); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; }
-.today-surface:has(.today-background) .dashboard-workspace > .desk-page-header { margin-bottom: 24px; }
+.workspace-surface[data-has-workspace-background] :is(.daily-planning-summary,.daily-priorities,.today-task-batches,.daily-tasks,.daily-next,.daily-context) { background: var(--workspace-panel); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; }
+.workspace-surface[data-has-workspace-background] .dashboard-workspace > .desk-page-header { margin-bottom: 24px; }
 .today-main :is(.daily-capture,.daily-priorities) { margin: 0; }
 .today-main .daily-section-heading { gap: 12px; flex-wrap: wrap; }
 .today-main .daily-section-heading > span { white-space: normal; }

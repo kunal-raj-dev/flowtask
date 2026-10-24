@@ -112,7 +112,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     return (
       <div className="max-w-5xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
         {/* Workspace Top Horizon Bar */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
+        <div className="workspace-page-header mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -221,7 +221,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   return (
     <div className="max-w-5xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
       {/* Header */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
+      <div className="workspace-page-header mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
             <Folder size={20} className="stroke-[2.2]" />

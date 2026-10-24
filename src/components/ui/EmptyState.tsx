@@ -147,7 +147,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <div
       data-testid={`empty-state-${variant}`}
-      className={`w-full flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 bg-[var(--bg-surface-l1)]/30 ${
+      className={`workspace-empty-state w-full flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 bg-[var(--bg-surface-l1)]/30 ${
         compact ? 'py-8 px-4' : 'py-12 px-6'
       } ${className}`}
     >

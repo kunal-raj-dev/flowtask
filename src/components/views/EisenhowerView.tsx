@@ -285,7 +285,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
   return (
     <div className="max-w-6xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 h-full flex flex-col">
       {/* Top Header & Multi-Factor Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
+      <div className="workspace-page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
         <div className="flex items-center gap-3">
           <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 shadow-xs flex-shrink-0">
             <Grid2X2 size={20} className="stroke-[2.2]" />

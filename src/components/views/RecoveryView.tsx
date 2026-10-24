@@ -129,7 +129,7 @@ export const RecoveryView: React.FC<RecoveryViewProps> = ({ mode }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface">
+      <div className="workspace-page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface">
         <div className="flex items-center gap-3.5">
           <div
             className={`p-2.5 rounded-xl border shadow-xs flex-shrink-0 ${

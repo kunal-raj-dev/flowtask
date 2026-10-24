@@ -536,15 +536,31 @@ html[data-reduced-motion="true"] *, html[data-reduced-motion="true"] *::before, 
 .flowtask-workspace .desk-toolbar-group { flex-wrap: wrap; }
 .flowtask-workspace > main > header { flex-shrink: 0; }
 
-/* Full Today backdrop spans both views; no image is baked into theme colors. */
-.today-surface { position: relative; isolation: isolate; display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; background: var(--bg-main); }
-.today-background { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-.today-background img { width: 100%; height: 100%; object-fit: cover; }
-.today-background-tint { position: absolute; inset: 0; background: color-mix(in srgb, var(--bg-main) 48%, transparent); }
+/* One viewport-sized scene beneath every workspace view, outside its scroller. */
+.workspace-surface { position: relative; isolation: isolate; display: flex; flex: 1; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; background: var(--bg-main); }
+.workspace-background { position: absolute; inset: 0; z-index: -1; pointer-events: none; user-select: none; }
+.workspace-background img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.workspace-background-tint { position: absolute; inset: 0; background: color-mix(in srgb, var(--bg-main) 58%, transparent); }
+html.dark .workspace-background-tint { background: color-mix(in srgb, var(--bg-main) 48%, transparent); }
+.workspace-surface[data-has-workspace-background] { --workspace-panel: color-mix(in srgb, var(--bg-surface-l1) 88%, transparent); --workspace-panel-strong: color-mix(in srgb, var(--bg-surface-l2) 96%, transparent); }
+.workspace-surface[data-has-workspace-background] :is(.workspace-page-header,.desk-page-header) { padding: 20px; background: var(--workspace-panel-strong); border: 1px solid var(--border-color); border-radius: 16px; }
+.workspace-surface[data-has-workspace-background] :is(.workspace-panel,.desk-plan-budget,.v2-inbox-card,.workspace-empty-state) { background: var(--workspace-panel); border-color: var(--border-color); }
+.workspace-surface[data-has-workspace-background] :is(.timeline-backlog,.workspace-timeline-canvas,.desk-task-group) { background: var(--workspace-panel-strong); }
+.workspace-surface[data-has-workspace-background] .desk-plan-date { width: fit-content; max-width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 14px; background: var(--workspace-panel-strong); }
+.workspace-surface[data-has-workspace-background] :is(.workspace-tabs,.workspace-task-section) { padding: 12px; border: 1px solid var(--border-color); border-radius: 14px; background: var(--workspace-panel-strong); }
+.workspace-surface[data-has-workspace-background] .daily-summary-label { color: var(--text-secondary); }
+.workspace-image-notice { flex-shrink: 0; margin: 8px 16px; background: var(--bg-surface-l2); }
+@media (max-width: 1023px) {
+  .workspace-image-notice { margin-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+html[data-high-contrast="true"] .workspace-background { display: none; }
+html[data-high-contrast="true"] .workspace-surface[data-has-workspace-background] { --workspace-panel: var(--bg-surface-l1); --workspace-panel-strong: var(--bg-surface-l2); }
+@media (max-width: 640px) {
+  .workspace-surface .v2-inbox-card > div:nth-child(2) { flex: 1 1 calc(100% - 51px); min-width: 0; }
+  .workspace-surface .v2-inbox-card > button { margin-left: 51px; }
+}
+.today-surface { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; background: transparent; }
 .today-content { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
-.today-image-notice { position: absolute; bottom: 16px; left: 16px; right: 16px; z-index: 3; margin: 0; background: var(--bg-surface-l2); }
-.today-surface:has(.today-background) .desk-page-header { padding: 20px; background: var(--bg-surface-l1); border: 1px solid var(--border-color); border-radius: 16px; }
-.today-surface:has(.today-background) .daily-summary-label { color: var(--text-secondary); }
 .today-customize-actions { display: flex; flex-direction: column; gap: 12px; }
 .today-customize-actions .desk-button { justify-content: flex-start; min-height: 48px; }
 
@@ -609,7 +625,7 @@ html[data-reduced-motion="true"] *, html[data-reduced-motion="true"] *::before, 
   .today-main .desk-header-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
   .today-main .desk-header-actions .desk-button { white-space: nowrap; }
   .today-main .desk-header-actions .primary { grid-column: 1 / -1; grid-row: 1; }
-  .today-surface:has(.today-background) .desk-page-header { padding: 16px; }
+  .workspace-surface[data-has-workspace-background] :is(.workspace-page-header,.desk-page-header) { padding: 16px; }
   .flowtask-workspace :is(.desk-button,.desk-icon-button,.desk-switcher) { min-height: 44px; }
   .flowtask-workspace .desk-icon-button { min-width: 36px; }
   .flowtask-workspace .desk-task-check > button::after { width: 44px; height: 44px; }
