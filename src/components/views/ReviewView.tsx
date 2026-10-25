@@ -6,6 +6,9 @@ import { InsightsView } from './InsightsView';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { exportToCSV, exportToMarkdown, downloadFile } from '../../utils/fileExporter';
 import { audioEngine } from '../../utils/audioEngine';
+import { calculateEstimationBiasRatio } from '../../services/workBlockService';
+import { useModal } from '../../context/ModalContext';
+import { Sparkles } from 'lucide-react';
 import {
   Compass,
   CheckCircle2,
@@ -34,6 +37,8 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
     downloadWorkspaceBackup,
   } = useTaskContext();
 
+  const { openModal } = useModal();
+  const bias = React.useMemo(() => calculateEstimationBiasRatio(tasks), [tasks]);
   const [activeTab, setActiveTab] = useState<'logbook' | 'insights' | 'standup' | 'export'>(initialTab);
   const [copiedStandup, setCopiedStandup] = useState(false);
 
@@ -100,6 +105,15 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
             type="button"
             variant="secondary"
             size="sm"
+            leftIcon={<Sparkles size={14} className="text-amber-500" />}
+            onClick={() => openModal('cleanSlate')}
+          >
+            Clean Slate
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
             leftIcon={<Sunset size={14} className="text-amber-500" />}
             onClick={() => setIsEveningShutdownOpen(true)}
           >
@@ -116,6 +130,29 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
           </Button>
         </div>
       </div>
+
+      {/* Estimation Bias Calibration Card */}
+      {bias.completedCount >= 1 && (
+        <div className="mb-6 p-4 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+              <TrendingUp size={16} />
+            </div>
+            <div>
+              <p className="font-semibold text-[var(--text-primary)]">
+                Estimation Bias Ratio: {bias.ratio.toFixed(2)}x ({bias.completedCount} calibrated {bias.completedCount === 1 ? 'task' : 'tasks'})
+              </p>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                {bias.ratio > 1.15
+                  ? `You typically take ${Math.round((bias.ratio - 1) * 100)}% longer than planned. Adding small buffer blocks will keep your schedule resilient.`
+                  : bias.ratio < 0.85
+                  ? 'You often finish faster than planned! Excellent momentum.'
+                  : 'Your time estimates are accurately calibrated within 15% of actual duration.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs Switcher */}
       <div className="mb-6 overflow-x-auto no-scrollbar py-0.5">

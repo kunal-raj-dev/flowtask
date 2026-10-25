@@ -373,7 +373,7 @@ const WorkspaceProvider = ({ children, workspaceId, connected }: { children: Rea
         const data = await adapter.read();
         if (cancelled) return;
         validateWorkspaceData(data.tasks, data.projects);
-        for (const kind of ['projects', 'tasks', 'dashboards', 'focusLogs', 'recipes', 'preferences'] as const) if (data[kind]) store.receive(kind, data[kind]!);
+        for (const kind of ['projects', 'tasks', 'dashboards', 'focusLogs', 'recipes', 'preferences', 'notes'] as const) if (data[kind]) store.receive(kind, data[kind]!);
         if (cancelled) return;
         stop?.();
         stop = watchCloud(workspaceId, (kind, values) => { if (!cancelled) store.receive(kind, values); }, error => { if (!cancelled) store.connectionFailed(error); });

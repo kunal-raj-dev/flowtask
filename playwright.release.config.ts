@@ -7,7 +7,7 @@ process.env.FLOWTASK_PRODUCTION = 'true';
 export default defineConfig({
   testDir: './e2e',
   outputDir: 'test-results-release-candidate',
-  testMatch: ['productionReadiness.spec.ts', 'entryFlow.spec.ts', 'auditRegression.spec.ts', 'releasePolish.spec.ts', 'accessibilityAudit.spec.ts', 'focusStudioV2.spec.ts'],
+  testMatch: ['productionReadiness.spec.ts', 'entryFlow.spec.ts', 'auditRegression.spec.ts', 'releasePolish.spec.ts', 'accessibilityAudit.spec.ts', 'focusStudioV2.spec.ts', 'connectedNotes.spec.ts'],
   fullyParallel: false,
   forbidOnly: true,
   retries: process.env.CI ? 1 : 0,

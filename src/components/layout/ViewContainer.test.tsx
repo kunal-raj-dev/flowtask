@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ViewContainer } from './ViewContainer';
 import type { SnapshotPayload } from '../../utils/snapshotShare';
+import type { ReactNode } from 'react';
+
+// Background selection has its own provider-backed tests. This suite exercises the view host.
+vi.mock('../workspace/WorkspaceBackground', () => ({ WorkspaceBackground: ({ children }: { children: ReactNode }) => <div className="workspace-surface">{children}</div> }));
 
 describe('ViewContainer', () => {
   const defaultProps = {

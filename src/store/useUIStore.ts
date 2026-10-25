@@ -17,6 +17,8 @@ export interface UIState {
   activeView: ViewId;
   viewLayout: 'list' | 'kanban' | 'matrix';
   selectedTaskId: string | null;
+  selectedNoteId: string | null;
+  setSelectedNoteId: (id: string | null) => void;
   focusedTaskId: string | null;
   selectedTaskIds: string[];
   searchQuery: string;
@@ -25,6 +27,8 @@ export interface UIState {
   theme: AppTheme;
   soundEnabled: boolean;
   soundProfile: SoundProfile;
+  densityMode: 'compact' | 'default' | 'spacious';
+  isCalendarDrawerOpen: boolean;
   toast: ToastState | null;
   activePopover: { type: 'priority' | 'date'; taskId: string } | null;
 
@@ -56,6 +60,10 @@ export interface UIState {
   toggleTheme: () => void;
   toggleSound: () => void;
   setSoundProfile: (p: SoundProfile) => void;
+  setDensityMode: (mode: 'compact' | 'default' | 'spacious') => void;
+  toggleDensityMode: () => void;
+  setIsCalendarDrawerOpen: (open: boolean) => void;
+  toggleCalendarDrawer: () => void;
   showToast: (
     message: string,
     actionLabel?: string,
@@ -79,11 +87,11 @@ export interface UIState {
   setIsTriageDismissed: (dismissed: boolean) => void;
 }
 
-const parseInitialView = (): ViewId => {
+export const parseInitialView = (): ViewId => {
   if (typeof window === 'undefined') return 'today';
   try {
     const view = new URL(window.location.href).searchParams.get('view') || 'today';
-    return /^(dashboard|today|inbox|upcoming|projects|study|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view)
+    return /^(dashboard|today|inbox|upcoming|projects|notes|study|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view)
       ? (view as ViewId)
       : 'today';
   } catch {
@@ -101,12 +109,27 @@ const getInitialTheme = (): AppTheme => {
   }
 };
 
+const getInitialDensityMode = (): 'compact' | 'default' | 'spacious' => {
+  if (typeof localStorage === 'undefined') return 'default';
+  try {
+    const saved = localStorage.getItem('flowtask_density_mode');
+    if (saved === 'compact' || saved === 'spacious' || saved === 'default') {
+      return saved;
+    }
+    return 'default';
+  } catch {
+    return 'default';
+  }
+};
+
 let toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 export const useUIStore = create<UIState>((set, get) => ({
   activeView: parseInitialView(),
   viewLayout: 'list',
   selectedTaskId: null,
+  selectedNoteId: typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('note'),
+  setSelectedNoteId: (id) => set({ selectedNoteId: id }),
   focusedTaskId: null,
   selectedTaskIds: [],
   searchQuery: '',
@@ -115,6 +138,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   theme: getInitialTheme(),
   soundEnabled: audioEngine.getSoundEnabled(),
   soundProfile: audioEngine.getSoundProfile(),
+  densityMode: getInitialDensityMode(),
+  isCalendarDrawerOpen: false,
   toast: null,
   activePopover: null,
   setActivePopover: (popover) => set({ activePopover: popover }),
@@ -136,6 +161,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       try {
         const url = new URL(window.location.href);
         url.searchParams.set('view', view);
+        if (view !== 'notes') { url.searchParams.delete('note'); url.searchParams.delete('noteProject'); }
         window.history.pushState({}, '', url);
       } catch {}
     }
@@ -186,6 +212,29 @@ export const useUIStore = create<UIState>((set, get) => ({
     audioEngine.setSoundProfile(profile);
     set({ soundProfile: profile });
   },
+
+  setDensityMode: (mode) => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('flowtask_density_mode', mode);
+      }
+      if (typeof document !== 'undefined') {
+        document.documentElement.dataset.densityMode = mode;
+        document.documentElement.dataset.density = mode === 'spacious' ? 'comfortable' : mode;
+      }
+    } catch {}
+    set({ densityMode: mode });
+  },
+
+  toggleDensityMode: () => {
+    const current = get().densityMode;
+    const next: 'compact' | 'default' | 'spacious' =
+      current === 'compact' ? 'default' : current === 'default' ? 'spacious' : 'compact';
+    get().setDensityMode(next);
+  },
+
+  setIsCalendarDrawerOpen: (open) => set({ isCalendarDrawerOpen: open }),
+  toggleCalendarDrawer: () => set((state) => ({ isCalendarDrawerOpen: !state.isCalendarDrawerOpen })),
 
   showToast: (message, actionLabel, onAction, secondaryActionLabel, onSecondaryAction) => {
     if (toastTimeoutId) {

@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-25",
+  "sourceHead": "b2e8726b5a353f4a2ee3ebfb6faba74f2654d88c",
+  "includesExistingUncommittedWork": true,
+  "applicationCodeChangedByAudit": false,
+  "billingExcluded": true,
+  "runtime": "Node 22.23.4",
+  "unitTests": {
+    "passed": 1280,
+    "files": 161
+  },
+  "securityTests": {
+    "passed": 15
+  },
+  "build": "passed",
+  "plannerCssGzipBytes": 36920,
+  "plannerCssLimitBytes": 35840,
+  "precacheBytes": 1748017,
+  "precacheLimitBytes": 1677721.6,
+  "sourceHashes": {
+    "src/components/views/LifeAreasView.tsx": "83f92f3f23e31be1f7f789d26b30ef5848fd71e06cd424767767602123624237",
+    "src/components/views/GoalsView.tsx": "5174cef44f4b0af3e191bda634b01e0e94b7c5915759b9c802daf4255f88dd3c",
+    "src/services/workspaceEntities.ts": "c772b75a6c4e02595f7487a1305b691d32674f8e516c9008276d59db97ad3722",
+    "src/services/workspaceStore.ts": "40f411e0a6c54a8275b57764bda4960772f48a93fc42a6e4e15f024e3f6e23ca",
+    "src/components/views/CalendarTimeGrid.tsx": "db68088c3e73e4efc8f0f46a35300b41a60998072e7779dd721f6b67b043f83b",
+    "src/services/reminderService.ts": "2637f1d246ba6449b4b544d9aa611994837bc8c9d3d24a30aa755a341bbc75da",
+    "firestore.rules": "6796dfe6f130d572a7832c831395a09177bc55c594d18be3b0de67dfacbf7573"
+  }
+}

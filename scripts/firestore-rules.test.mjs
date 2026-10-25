@@ -7,6 +7,21 @@ before(async()=>{env=await initializeTestEnvironment({projectId:'demo-flowtask',
 beforeEach(async()=>env.clearFirestore());after(async()=>env?.cleanup());
 const task={id:'t',title:'One small thing',status:'todo',priority:'p2',projectId:'inbox',subtasks:[],revision:1,updatedAt:1};
 
+test('notes enforce ownership, revision, supported shape and bounded history', async () => {
+  const owner = env.authenticatedContext('a').firestore();
+  const note = { id:'n', title:'A private note', body:'Text', formatVersion:1, createdAt:1, updatedAt:1, revision:1, tags:[], favorite:false, versions:[], linkedTasks:[] };
+  const ref = doc(owner, 'users/a/notes/n');
+  await assertSucceeds(setDoc(ref, note));
+  await assertFails(getDoc(doc(env.authenticatedContext('b').firestore(), 'users/a/notes/n')));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'users/a/notes/n')));
+  await assertFails(setDoc(ref, { ...note, body:'Stale revision' }));
+  await assertSucceeds(setDoc(ref, { ...note, revision:2, body:'Next text', versions:[{ id:'v', title:note.title, body:note.body, savedAt:1 }] }));
+  await assertFails(setDoc(ref, { ...note, revision:3, body:'x'.repeat(40001) }));
+  await assertFails(setDoc(ref, { ...note, revision:3, versions:Array(5).fill({ id:'v', title:'Version', body:'Text', savedAt:1 }) }));
+  await assertFails(setDoc(ref, { ...note, revision:3, versions:[{ body:123 }] }));
+  await assertFails(setDoc(ref, { ...note, revision:3, extra:'unexpected' }));
+});
+
 test('preference hydration and listeners require the same allowed-ID query as the cloud adapter', async () => {
   const owner = env.authenticatedContext('a').firestore();
   const keys = ['settings', 'appearance', 'studio', 'templates', 'customViews', 'profile', 'workspace'];
@@ -79,4 +94,57 @@ test('dashboard validation covers the 24-widget boundary, known types, private m
   await assertFails(setDoc(ref,{...dashboard,revision:3,coverFocalPoint:{x:101,y:50}}));
   await assertFails(setDoc(ref,{...dashboard,revision:3,coverFocalPoint:{x:50,y:'center'}}));
   await assertFails(getDoc(doc(env.authenticatedContext('b').firestore(),'users/a/dashboards/boundary')));
+});
+
+test('tasks with reminders and workBlocks and projects with areaId pass schema validation', async () => {
+  const db = env.authenticatedContext('a').firestore();
+  const taskRef = doc(db, 'users/a/tasks/t_rem');
+  const validTaskWithReminders = {
+    ...task,
+    id: 't_rem',
+    reminders: [
+      {
+        id: 'rem1',
+        taskId: 't_rem',
+        remindAt: 1700000000000,
+        channel: 'browser_notification',
+        status: 'scheduled',
+        createdAt: 1700000000000,
+      },
+    ],
+    workBlocks: [
+      {
+        id: 'wb1',
+        taskId: 't_rem',
+        date: '2026-10-25',
+        durationMinutes: 45,
+      },
+    ],
+  };
+  await assertSucceeds(setDoc(taskRef, validTaskWithReminders));
+
+  // Over limit reminders (>50) fails
+  const overReminders = {
+    ...validTaskWithReminders,
+    revision: 2,
+    reminders: Array(51).fill({ id: 'rem', taskId: 't_rem', remindAt: 1, channel: 'sound', status: 'scheduled', createdAt: 1 }),
+  };
+  await assertFails(setDoc(taskRef, overReminders));
+
+  // Over limit workBlocks (>100) fails
+  const overWorkBlocks = {
+    ...validTaskWithReminders,
+    revision: 2,
+    workBlocks: Array(101).fill({ id: 'wb', taskId: 't_rem', date: '2026-10-25', durationMinutes: 30 }),
+  };
+  await assertFails(setDoc(taskRef, overWorkBlocks));
+
+  // Project with areaId succeeds
+  const projRef = doc(db, 'users/a/projects/p_area');
+  const validProj = { id: 'p_area', name: 'Work Project', color: '#10b981', areaId: 'area-work-123', revision: 1, updatedAt: 1 };
+  await assertSucceeds(setDoc(projRef, validProj));
+
+  // Project with areaId exceeding 200 chars fails
+  const overAreaIdProj = { ...validProj, id: 'p_area2', areaId: 'x'.repeat(201) };
+  await assertFails(setDoc(doc(db, 'users/a/projects/p_area2'), overAreaIdProj));
 });

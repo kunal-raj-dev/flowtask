@@ -1,4 +1,5 @@
 import { useStudioPreferences } from '../../hooks/useStudio';
+import { DailyNoteButton } from '../notes/DailyNoteButton';
 import { useEffect, useState } from "react";
 import { Play, ArrowRight, CalendarDays, Check } from "lucide-react";
 import { useTaskContext } from "../../context/TaskContext";
@@ -181,6 +182,7 @@ export function DailyDesk({
           </p>
         </div>
         <div className="daily-summary-actions">
+          <DailyNoteButton/>
           {narrow && <button className="desk-button" onClick={() => setContextOpen(true)}><CalendarDays size={15} />Day context</button>}
         </div>
       </div>

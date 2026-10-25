@@ -1,12 +1,14 @@
 # FlowTask
 
-FlowTask is a local-first day planner for students and developers. Plan a realistic day, connect a task to a focus session, and review what you completed. The app includes an optional account and cloud sync; without an account, workspace data stays in this browser profile. Browser storage can be cleared or evicted, so download a JSON backup regularly.
+FlowTask is a local-first planner for personal life and work. Plan a realistic day, connect a task to a focus session, and review what you completed. The app includes an optional account and cloud sync; without an account, workspace data stays in this browser profile. Browser storage can be cleared or evicted, so download a JSON backup regularly.
 
 Start with one task in the optional inline introduction, then choose a 25-minute focus session or keep planning. Student/developer presets, work budgets, and appearance are available later in Settings. Today keeps task capture near the top and resumes existing focus sessions. Automatic scheduling uses the time left in the selected day and previews changes before applying them.
 
 The public landing page is `/` (also `/welcome`). Continue to the planner at `/app`. Existing links such as `/?view=today` continue to open their requested workspace view. The workspace includes Daily Desk, projects, milestones, planning, notes, study tools, review, Focus Studio, and 18 complete appearance themes. Focus media is loaded as needed; personal image and audio files stay on this device and are excluded from JSON backups.
 
 See [V2 beta implementation and verification](docs/FLOWTASK_2_BETA.md) and [V3 product notes](docs/FLOWTASK_V3.md) for current behavior, limitations, and release status.
+
+The first competitive-upgrade milestone adds a searchable Notes library, project context, daily notes, linked tasks, backlinks, Markdown import/export and recent version recovery. Notes use the existing local save and optional account-sync pipeline. Scratchpad import stays explicit. See [Connected Notes behavior, limits and deployment requirements](docs/CONNECTED_NOTES.md); updated Firestore rules must precede the upgraded frontend.
 
 The current production-readiness candidate adds account-scoped recovery, explicit device import, safer cloud delivery, single-writer tabs, headless focus and a focused visual redesign. See the [acceptance matrix, deployment configuration, recovery and incident runbook](docs/PRODUCTION_READINESS.md). Live cloud/device checks and the monitored beta remain required before broad release.
 

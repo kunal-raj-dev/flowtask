@@ -98,4 +98,72 @@ describe('calendarService - fetchICSFeed', () => {
       'Use an HTTP or HTTPS calendar URL.'
     );
   });
+
+  it('skips disabled calendar sources in fetchMultipleCalendarFeeds', async () => {
+    const { fetchMultipleCalendarFeeds } = await import('./calendarService');
+    const result = await fetchMultipleCalendarFeeds([
+      {
+        id: 'cal-1',
+        name: 'Work',
+        url: 'https://example.com/cal.ics',
+        enabled: false,
+      },
+    ]);
+    expect(result.events).toEqual([]);
+    expect(result.updatedSources[0].enabled).toBe(false);
+  });
 });
+
+describe('calendarService - Privacy Shield', () => {
+  it('masks confidential details and anonymizes title to Busy', async () => {
+    const { createPrivacyShieldEvent } = await import('./calendarService');
+    const privateTask = {
+      id: 'task-medical',
+      title: 'Therapy Appointment with Dr. Stone',
+      date: '2026-10-25',
+      scheduledStart: '14:00',
+      scheduledEnd: '15:00',
+      description: 'Confidential therapy session notes',
+      location: '123 Health Ave, Suite 400',
+    };
+
+    const shielded = createPrivacyShieldEvent(privateTask, { accountType: 'work' });
+    expect(shielded.id).toBe('shield-task-medical');
+    expect(shielded.title).toBe('Busy');
+    expect(shielded.startTime).toBe('14:00');
+    expect(shielded.endTime).toBe('15:00');
+    expect(shielded.description).toBe('[Shielded work block]');
+    expect(shielded.location).toBeUndefined();
+  });
+
+  it('supports custom maskTitle and preserves location if requested', async () => {
+    const { createPrivacyShieldEvent } = await import('./calendarService');
+    const shielded = createPrivacyShieldEvent(
+      {
+        id: 'ev-1',
+        title: 'Confidential Client Architecture Review',
+        date: '2026-10-25',
+        startTime: '10:00',
+        endTime: '11:30',
+        location: 'Virtual Room A',
+      },
+      { maskTitle: 'Focus Time (Hold)', keepLocation: true }
+    );
+
+    expect(shielded.title).toBe('Focus Time (Hold)');
+    expect(shielded.location).toBe('Virtual Room A');
+  });
+
+  it('batch shields events with shieldEventsForExport', async () => {
+    const { shieldEventsForExport } = await import('./calendarService');
+    const events = [
+      { id: '1', title: 'Public Sync', date: '2026-10-25', startTime: '09:00', endTime: '10:00' },
+      { id: '2', title: 'Private Doctor', date: '2026-10-25', startTime: '11:00', endTime: '12:00' },
+    ];
+
+    const result = shieldEventsForExport(events, (ev) => ev.id === '2');
+    expect(result[0].title).toBe('Public Sync');
+    expect(result[1].title).toBe('Busy');
+  });
+});
+

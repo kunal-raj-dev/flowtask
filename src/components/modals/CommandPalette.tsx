@@ -2,6 +2,7 @@ import { appShortcutAllowed } from '../../services/shortcutRuntime';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useUIStore } from '../../store/useUIStore';
+import { useModalStore } from '../../store/useModalStore';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { formatLocalDate } from '../../utils/nlpParser';
 import {
@@ -34,11 +35,15 @@ import {
   Sunrise,
   ChevronRight,
   Clock,
+  Target,
 } from 'lucide-react';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from '../../utils/celebrate';
 import { parseSearchDSL } from '../../utils/searchDSL';
+import { useWorkspaceSelector } from '../../services/workspaceStore';
+import { findNotes } from '../../utils/noteModel';
+import { openNote } from '../../hooks/useNotes';
 import { searchTasksFuzzy, calculateFuzzyScore } from '../../utils/fuzzySearch';
 
 interface CommandPaletteProps {
@@ -85,6 +90,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   } = useTaskContext();
 
   const setIsMorningKickoffOpen = useUIStore((s) => s.setIsMorningKickoffOpen);
+  const toggleCalendarDrawer = useUIStore((s) => s.toggleCalendarDrawer);
+  const toggleDensityMode = useUIStore((s) => s.toggleDensityMode);
 
   const [query, setQuery] = useState('');
   const [level, setLevel] = useState<PaletteLevel>('root');
@@ -115,7 +122,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const todayStr = useTodayStr();
-  const dsl = parseSearchDSL(query);
+  const notes = useWorkspaceSelector(snapshot => snapshot.record.notes);
+  const searchScope = query.match(/\btype:(note|task|project)\b/i)?.[1].toLowerCase() || '';
+  const dsl = parseSearchDSL(query.replace(/\btype:(note|task|project)\b/gi, ''));
   const hasFilterActive = Boolean(
     dsl.text ||
     dsl.priority ||
@@ -129,6 +138,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   // Filter and rank tasks using Query DSL + Fuzzy Search Engine
   const matchedTasks = useMemo(() => {
+    if (searchScope && searchScope !== 'task') return [];
     if (!hasFilterActive && !query.trim()) return [];
 
     let pool = tasks.filter((t) => !t.deletedAt);
@@ -161,7 +171,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         projectName: proj?.name,
       };
     });
-  }, [tasks, projects, dsl, hasFilterActive, query, todayStr]);
+  }, [tasks, projects, dsl, hasFilterActive, query, todayStr, searchScope]);
 
   const handleAppendQueryToken = (token: string) => {
     setQuery((prev) => {
@@ -208,6 +218,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       icon: Inbox,
       run: () => setActiveView('inbox'),
     },
+    { id: 'notes', title: 'Go to Notes', icon: FileEdit, run: () => setActiveView('notes') },
     {
       id: 'upcoming',
       title: 'Go to Upcoming',
@@ -225,6 +236,72 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       title: 'Go to Kanban Board',
       icon: Kanban,
       run: () => setActiveView('kanban'),
+    },
+    {
+      id: 'procrastination-wizard',
+      title: 'Overcome Resistance & Procrastination Wizard (✨ 10m / Micro-steps)',
+      icon: Sparkles,
+      run: () => {
+        onClose();
+        useModalStore.getState().openModal('procrastinationWizard');
+      },
+    },
+    {
+      id: 'clean-slate',
+      title: 'Clean Slate Protocol (Quarantine Overdue Backlog)',
+      icon: Sparkles,
+      run: () => {
+        onClose();
+        useModalStore.getState().openModal('cleanSlate');
+      },
+    },
+    {
+      id: 'routine-runner',
+      title: 'Launch Routine Sequence (Paced Step-by-Step Runner)',
+      icon: Sparkles,
+      run: () => {
+        onClose();
+        useModalStore.getState().openModal('routineRunner');
+      },
+    },
+    {
+      id: 'capture-hud',
+      title: 'Open Quick-Capture HUD (Alt+Space)',
+      icon: Sparkles,
+      run: () => {
+        onClose();
+        useModalStore.getState().openModal('captureHUD');
+      },
+    },
+    {
+      id: 'areas',
+      title: 'Go to Life Areas (Horizon of Focus)',
+      icon: Compass,
+      run: () => setActiveView('areas' as any),
+    },
+    {
+      id: 'goals',
+      title: 'Go to Vision & Goals',
+      icon: Target,
+      run: () => setActiveView('goals' as any),
+    },
+    {
+      id: 'calendar-drawer',
+      title: 'Toggle Calendar Companion Drawer (Alt+C)',
+      icon: Clock,
+      run: () => {
+        onClose();
+        toggleCalendarDrawer();
+      },
+    },
+    {
+      id: 'toggle-density',
+      title: 'Toggle Density Mode (Compact / Default / Spacious)',
+      icon: Grid2X2,
+      run: () => {
+        onClose();
+        toggleDensityMode();
+      },
     },
     {
       id: 'insights',
@@ -352,18 +429,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setIsSmartFilterModalOpen,
     theme,
     toggleTheme,
+    toggleDensityMode,
+    toggleCalendarDrawer,
     tasks,
     projects,
   ]);
 
   const filteredActions = useMemo(() => {
+    const taskOnlyFilters = Boolean(dsl.priority || dsl.status || dsl.isOverdue || dsl.isPinned || dsl.isRecurring || dsl.contextTag);
+    const results = [
+      ...(!taskOnlyFilters && (!searchScope || searchScope === 'note') ? (query.trim() ? findNotes(notes || [], dsl.text).filter(note => !dsl.tag || note.tags.some(tag => tag.toLowerCase().includes(dsl.tag!))).slice(0, 6) : []).map(note => ({ id: `note:${note.id}`, title: `Note: ${note.title}`, icon: FileEdit, run: () => openNote(note.id) })) : []),
+      ...(!taskOnlyFilters && !dsl.tag && (!searchScope || searchScope === 'project') ? (query.trim() ? projects.filter(project => !project.isArchived && project.name.toLowerCase().includes(dsl.text.toLowerCase())).slice(0, 6) : []).map(project => ({ id: `project:${project.id}`, title: `Project: ${project.name}`, icon: Compass, run: () => setActiveView(`project:${project.id}`) })) : []),
+    ];
+    if (searchScope) return results;
     if (!dsl.text) return actions;
-    return actions
+    return [...results, ...actions
       .map((a) => ({ action: a, match: calculateFuzzyScore(dsl.text, a.title) }))
       .filter(({ match }) => match.isMatch)
       .sort((a, b) => b.match.score - a.match.score)
-      .map(({ action }) => action);
-  }, [actions, dsl.text]);
+      .map(({ action }) => action)];
+  }, [actions, dsl, notes, projects, query, searchScope, setActiveView]);
 
   // Sub-palette active task and its contextual actions
   const activeTask = useMemo(
@@ -600,6 +685,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   ]);
 
   const dslChips = [
+    { label: 'type:note', desc: 'Notes' },
+    { label: 'type:project', desc: 'Projects' },
     { label: 'p:p1', desc: 'Priority P1' },
     { label: 'status:todo', desc: 'Incomplete' },
     { label: 'is:overdue', desc: 'Overdue' },
@@ -634,7 +721,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Type a command, task title, or DSL: p:p1, @focus, #tag, is:overdue..."
+              placeholder="Search tasks, notes, projects, or commands…"
               className="w-full bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none"
             />
             <kbd className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-md bg-[var(--bg-surface-l1)] text-[var(--text-muted)] border border-[var(--border-subtle)]">

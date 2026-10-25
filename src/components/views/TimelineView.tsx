@@ -16,6 +16,7 @@ import {
   TimelineCanvas,
   TimelineCalendarModal,
 } from './timeline';
+import { CalendarTimeGrid } from './CalendarTimeGrid';
 
 interface TimelineViewProps {
   onSelectTask: (taskId: string) => void;
@@ -64,6 +65,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   useEffect(() => {
     void refreshCalendarEvents(effectiveDateStr);
   }, [effectiveDateStr, refreshCalendarEvents]);
+
+  const [viewMode, setViewMode] = useState<'canvas' | 'grid'>('canvas');
 
   const {
     todayTasks,
@@ -205,42 +208,74 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         onRefreshCalendar={handleRefreshCalendar}
       />
 
-      {/* Main Grid: Unscheduled Sidebar + Hourly Canvas */}
-      {!selectedDateStr && <div className="desk-plan-date"><button className="desk-button" aria-label="Previous day" onClick={()=>{const d=new Date(planDate+'T12:00:00');d.setDate(d.getDate()-1);setPlanDate(formatLocalDate(d));}}>←</button><label>Planning date<input aria-label="Planning date" type="date" value={planDate} onChange={e=>{if(e.target.value)setPlanDate(e.target.value);}}/></label><button className="desk-button" aria-label="Next day" onClick={()=>{const d=new Date(planDate+'T12:00:00');d.setDate(d.getDate()+1);setPlanDate(formatLocalDate(d));}}>→</button><button className="desk-button" onClick={()=>setPlanDate(todayStr)}>Today</button></div>}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Unscheduled Tasks Tray */}
-        <TimelineUnscheduledSidebar
-          unscheduledTasks={unscheduledTasks}
-          scheduledTasksCount={scheduledTasks.length}
-          projects={projects}
-          startHour={START_HOUR}
-          totalHours={TOTAL_HOURS}
-          onSelectTask={onSelectTask}
-          onAutoSlotDay={handleAutoSlotDay}
-          autoSlotDisabled={effectiveDateStr < todayStr}
-          onClearAllScheduledTimes={handleClearAllScheduledTimes}
-          onScheduleUnscheduled={handleScheduleUnscheduled}
-        />
-
-        {/* Right: Hourly Timeline Canvas */}
-        <TimelineCanvas
-          startHour={START_HOUR}
-          endHour={END_HOUR}
-          hourHeightPx={HOUR_HEIGHT_PX}
-          isToday={effectiveDateStr === todayStr}
-          calendarEvents={calendarEvents}
-          scheduledTasks={scheduledTasks}
-          todayTasks={todayTasks}
-          projects={projects}
-          onSelectTask={onSelectTask}
-          onToggleTaskStatus={toggleTaskStatus}
-          onUpdateTask={updateTask}
-          onApplyBatchChanges={applyTaskChanges}
-          onStartFocus={onStartFocus}
-          onStartSprint={onStartSprint}
-          onQuickAdd={handleQuickAdd}
-        />
+      {/* Mode switcher and planning date */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        {!selectedDateStr && viewMode === 'canvas' && (
+          <div className="desk-plan-date">
+            <button className="desk-button" aria-label="Previous day" onClick={()=>{const d=new Date(planDate+'T12:00:00');d.setDate(d.getDate()-1);setPlanDate(formatLocalDate(d));}}>←</button>
+            <label>Planning date<input aria-label="Planning date" type="date" value={planDate} onChange={e=>{if(e.target.value)setPlanDate(e.target.value);}}/></label>
+            <button className="desk-button" aria-label="Next day" onClick={()=>{const d=new Date(planDate+'T12:00:00');d.setDate(d.getDate()+1);setPlanDate(formatLocalDate(d));}}>→</button>
+            <button className="desk-button" onClick={()=>setPlanDate(todayStr)}>Today</button>
+          </div>
+        )}
+        <div className="flex items-center rounded-lg border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface-l2)] text-xs ml-auto">
+          <button
+            onClick={() => setViewMode('canvas')}
+            className={`px-3 py-1 rounded font-medium ${viewMode === 'canvas' ? 'bg-[var(--color-brand)] text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          >
+            Canvas
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-3 py-1 rounded font-medium ${viewMode === 'grid' ? 'bg-[var(--color-brand)] text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          >
+            Multi-Day Grid
+          </button>
+        </div>
       </div>
+
+      {viewMode === 'grid' ? (
+        <CalendarTimeGrid
+          initialDate={effectiveDateStr}
+          onSelectTask={onSelectTask}
+          onStartFocus={onStartFocus}
+        />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left: Unscheduled Tasks Tray */}
+          <TimelineUnscheduledSidebar
+            unscheduledTasks={unscheduledTasks}
+            scheduledTasksCount={scheduledTasks.length}
+            projects={projects}
+            startHour={START_HOUR}
+            totalHours={TOTAL_HOURS}
+            onSelectTask={onSelectTask}
+            onAutoSlotDay={handleAutoSlotDay}
+            autoSlotDisabled={effectiveDateStr < todayStr}
+            onClearAllScheduledTimes={handleClearAllScheduledTimes}
+            onScheduleUnscheduled={handleScheduleUnscheduled}
+          />
+
+          {/* Right: Hourly Timeline Canvas */}
+          <TimelineCanvas
+            startHour={START_HOUR}
+            endHour={END_HOUR}
+            hourHeightPx={HOUR_HEIGHT_PX}
+            isToday={effectiveDateStr === todayStr}
+            calendarEvents={calendarEvents}
+            scheduledTasks={scheduledTasks}
+            todayTasks={todayTasks}
+            projects={projects}
+            onSelectTask={onSelectTask}
+            onToggleTaskStatus={toggleTaskStatus}
+            onUpdateTask={updateTask}
+            onApplyBatchChanges={applyTaskChanges}
+            onStartFocus={onStartFocus}
+            onStartSprint={onStartSprint}
+            onQuickAdd={handleQuickAdd}
+          />
+        </div>
+      )}
 
       {/* External Calendar Overlay Modal */}
       <TimelineCalendarModal

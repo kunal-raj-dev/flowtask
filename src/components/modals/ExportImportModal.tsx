@@ -1,8 +1,11 @@
 import { createWorkspaceBackup, validateBackupExtras } from '../../utils/workspaceBackup';
+import { makeNote } from '../../utils/noteModel';
+import { useWorkspaceSelector } from '../../services/workspaceStore';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useTaskContext } from '../../context/TaskContext';
 import { exportToMarkdown, exportToCSV, downloadFile } from '../../utils/fileExporter';
+import { parseCSVToTasks, parseMarkdownToNotes } from '../../utils/csvMapper';
 import { generateDailyStandup } from '../../utils/standupGenerator';
 import { generateSnapshotShareUrl } from '../../utils/snapshotShare';
 import { validateWorkspaceData } from '../../utils/workspaceValidation';
@@ -38,6 +41,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   initialTab = 'standup',
 }) => {
   const root = useRef<HTMLDivElement>(null);
+  const notes = useWorkspaceSelector(snapshot => snapshot.record.notes);
   useFocusTrap(root, onClose);
   const { workspaceId, tasks, projects, importTasks, showToast, workspacePreferences = {}, smartViews = [], dashboards = [] } = useTaskContext();
   const [activeTab, setActiveTab] = useState<'standup' | 'markdown' | 'csv' | 'share' | 'json' | 'import' | 'snapshots'>(
@@ -46,7 +50,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   const [localSnapshots, setLocalSnapshots] = useState<RecoverySnapshot[]>([]);
   const [snapshotBusy, setSnapshotBusy] = useState(false);
   const [legacyCount, setLegacyCount] = useState(0);
-  const checkpointRecord = () => ({ tasks, projects, preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn), dashboards });
+  const checkpointRecord = () => ({ tasks, projects, notes, preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn), dashboards });
   const [copied, setCopied] = useState(false);
   const [standupFormat, setStandupFormat] = useState<'slack' | 'markdown' | 'plain'>('slack');
   const [importJsonText, setImportJsonText] = useState('');
@@ -61,29 +65,80 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   }, [workspaceId]);
 
   const validationPreview = useMemo(() => {
-    if (!importJsonText.trim()) return null;
-    try {
-      const parsed = JSON.parse(importJsonText);
-      const rawTasks = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
-      const rawProjects = Array.isArray(parsed) ? [] : (parsed.projects || []);
-      if (!Array.isArray(rawTasks)) {
-        return { valid: false as const, error: 'Backup JSON must contain a tasks array.' };
+    const text = importJsonText.trim();
+    if (!text) return null;
+    // Check if JSON
+    if (text.startsWith('{') || text.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(text);
+        const rawTasks = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
+        const rawProjects = Array.isArray(parsed) ? [] : (parsed.projects || []);
+        if (!Array.isArray(rawTasks)) {
+          return { valid: false as const, error: 'Backup JSON must contain a tasks array.' };
+        }
+        const validated = validateWorkspaceData(rawTasks, rawProjects);
+        return {
+          valid: true as const,
+          format: 'json' as const,
+          tasksCount: validated.tasks.length,
+          projectsCount: validated.projects.length,
+          notesCount: validateBackupExtras(parsed)?.notes?.length || 0,
+          unmappedHeaders: [] as string[],
+          data: { ...validated, extras: validateBackupExtras(parsed) },
+        };
+      } catch (err: any) {
+        return { valid: false as const, error: err.message || 'Invalid JSON format or schema.' };
       }
-      const validated = validateWorkspaceData(rawTasks, rawProjects);
-      return {
-        valid: true as const,
-        tasksCount: validated.tasks.length,
-        projectsCount: validated.projects.length,
-        data: { ...validated, extras: validateBackupExtras(parsed) },
-      };
-    } catch (err: any) {
-      return { valid: false as const, error: err.message || 'Invalid JSON format or schema.' };
     }
+
+    // Check if CSV
+    if (text.toLowerCase().includes('title') || text.toLowerCase().includes('task') || text.includes(',')) {
+      const csvResult = parseCSVToTasks(text);
+      if (csvResult.tasks.length > 0) {
+        const validated = validateWorkspaceData(csvResult.tasks, []);
+        return {
+          valid: true as const,
+          format: 'csv' as const,
+          tasksCount: validated.tasks.length,
+          projectsCount: 0,
+          notesCount: 0,
+          unmappedHeaders: csvResult.unmappedHeaders,
+          data: { tasks: validated.tasks, projects: [], extras: undefined },
+        };
+      }
+    }
+
+    // Check if Markdown notes
+    if (text.startsWith('#') || text.includes('---')) {
+      const mdResult = parseMarkdownToNotes(text);
+      if (mdResult.notes.length > 0) {
+        return {
+          valid: true as const,
+          format: 'markdown' as const,
+          tasksCount: 0,
+          projectsCount: 0,
+          notesCount: mdResult.notes.length,
+          unmappedHeaders: [] as string[],
+          data: {
+            tasks: [],
+            projects: [],
+            extras: {
+              preferences: {},
+              notes: mdResult.notes.map((n) =>
+                makeNote(n.title, n.body, { tags: n.tags || [] })
+              ),
+            },
+          },
+        };
+      }
+    }
+
+    return { valid: false as const, error: 'Unrecognized format. Paste JSON backup, CSV tasks, or Markdown notes.' };
   }, [importJsonText]);
 
   const markdownContent = exportToMarkdown(tasks, projects);
   const csvContent = exportToCSV(tasks, projects);
-  const jsonContent = JSON.stringify(createWorkspaceBackup({ tasks, projects, dashboards, preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn) }), null, 2);
+  const jsonContent = JSON.stringify(createWorkspaceBackup({ tasks, projects, notes, dashboards, preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn) }), null, 2);
   const standupContent = generateDailyStandup(tasks, projects, { format: standupFormat });
   const shareUrl = generateSnapshotShareUrl(
     tasks.filter((t) => t.status !== 'done'),
@@ -111,18 +166,40 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
     }
 
     try {
+      const before = {
+        tasks: [...tasks],
+        projects: [...projects],
+        notes: [...(notes || [])],
+        preferences: workspacePreferences,
+        customViews: smartViews.filter((v) => !v.isBuiltIn),
+        dashboards: [...dashboards],
+      };
 
-      const before = { tasks: [...tasks], projects: [...projects], preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn), dashboards: [...dashboards] };
+      const isMarkdownImport = validationPreview.format === 'markdown';
+      const importTasksPayload = isMarkdownImport ? tasks : validationPreview.data.tasks;
+      const importProjectsPayload = isMarkdownImport ? projects : validationPreview.data.projects;
+      const isReplace = importMode === 'replace' && !isMarkdownImport;
 
-      await importTasks(validationPreview.data.tasks, validationPreview.data.projects, importMode === 'replace', validationPreview.data.extras);
+      await importTasks(importTasksPayload, importProjectsPayload, isReplace, validationPreview.data.extras);
       audioEngine.playCompletionChime();
       confetti({ particleCount: 40, spread: 50 });
 
+      const toastMessage = isMarkdownImport
+        ? `Imported ${validationPreview.notesCount} notes`
+        : isReplace
+          ? 'Workspace replaced from backup'
+          : `Imported ${validationPreview.data.tasks.length} tasks`;
+
       showToast(
-        importMode === 'replace' ? 'Workspace replaced from backup' : `Imported ${validationPreview.data.tasks.length} tasks`,
+        toastMessage,
         'Undo',
         () => {
-          void importTasks(before.tasks, before.projects, true, { preferences: before.preferences, customViews: before.customViews, dashboards: before.dashboards }).catch((err: Error) => showToast(err.message));
+          void importTasks(before.tasks, before.projects, true, {
+            preferences: before.preferences,
+            customViews: before.customViews,
+            dashboards: before.dashboards,
+            notes: before.notes,
+          }).catch((err: Error) => showToast(err.message));
         }
       );
       onClose();
@@ -435,7 +512,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                 setImportJsonText(e.target.value);
                 setImportError('');
               }}
-              placeholder="Paste your JSON backup data here..."
+              placeholder="Paste your JSON backup data, CSV tasks, or Markdown notes here..."
               className="w-full text-xs p-3.5 bg-stone-50/70 dark:bg-[#0E1118] border border-stone-200/80 dark:border-white/10 rounded-lg outline-none font-mono text-stone-800 dark:text-stone-200 resize-none leading-relaxed focus:border-[var(--color-brand)]"
             />
 
@@ -446,9 +523,19 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                   <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                     <Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span className="font-semibold">
-                      Validated: {validationPreview.tasksCount} task{validationPreview.tasksCount === 1 ? '' : 's'} and {validationPreview.projectsCount} project{validationPreview.projectsCount === 1 ? '' : 's'} ready
+                      {validationPreview.format === 'csv'
+                        ? `Validated: ${validationPreview.tasksCount} tasks ready from CSV`
+                        : validationPreview.format === 'markdown'
+                        ? `Validated: ${validationPreview.notesCount} notes ready from Markdown`
+                        : `Validated: ${validationPreview.tasksCount} tasks, ${validationPreview.projectsCount} projects, and ${validationPreview.notesCount} notes ready`}
                     </span>
                   </div>
+
+                  {validationPreview.unmappedHeaders && validationPreview.unmappedHeaders.length > 0 && (
+                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300">
+                      Unmapped columns ignored: {validationPreview.unmappedHeaders.join(', ')}
+                    </div>
+                  )}
 
                   <div className="p-3 rounded-lg bg-stone-50 dark:bg-white/[0.03] border border-stone-200/70 dark:border-white/5 space-y-2 text-xs">
                     <span className="font-bold text-stone-900 dark:text-stone-100 block">Restore Strategy:</span>
@@ -462,9 +549,9 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                         className="mt-0.5 accent-amber-600"
                       />
                       <div>
-                        <span className="font-semibold text-stone-900 dark:text-stone-100">Merge with existing tasks</span>
+                        <span className="font-semibold text-stone-900 dark:text-stone-100">Merge with existing workspace</span>
                         <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                          Adds backup tasks alongside your current workspace without removing existing items.
+                          Adds tasks, projects and notes without removing existing items. Different note text with the same ID is kept as a recovered copy.
                         </p>
                       </div>
                     </label>
@@ -482,7 +569,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                           Replace workspace (pre-action safety snapshot created automatically)
                         </span>
                         <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                          Replaces current tasks and projects. A safety rollback snapshot is automatically captured first.
+                          Replaces tasks, projects, notes, and supported workspace settings. Older backups without notes restore an empty Notes library. A safety rollback checkpoint is captured first.
                         </p>
                       </div>
                     </label>

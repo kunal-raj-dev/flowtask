@@ -5,6 +5,7 @@ import { validateWorkspaceData } from '../utils/workspaceValidation';
 import { formatLocalDate } from '../utils/nlpParser';
 import { createStarterDashboards } from './starterDashboards';
 import { validateDashboards } from '../utils/dashboardModel';
+import { validateNotes } from '../utils/noteModel';
 export type { WorkspaceRecord } from '../types/workspace';
 
 /** Requests persistent storage only after an informed user action. */
@@ -61,7 +62,14 @@ export function getDatabase() {
 }
 export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
   return {
-    schemaVersion: 8,
+    schemaVersion: 9,
+    notes: [],
+    areas: [],
+    goals: [],
+    routines: [],
+    habits: [],
+    workBlocks: [],
+    reminders: [],
     workspaceId,
     tasks: [],
     projects: DEFAULT_PROJECTS.filter(p => p.id !== 'ideas'),
@@ -74,7 +82,7 @@ export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
   };
 }
 function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
-  if (typeof raw.schemaVersion === 'number' && raw.schemaVersion > 8) throw new Error('This workspace requires a newer FlowTask version. Export the original data before updating.');
+  if (typeof raw.schemaVersion === 'number' && raw.schemaVersion > 10) throw new Error('This workspace requires a newer FlowTask version. Export the original data before updating.');
   const data = validateWorkspaceData(raw.tasks || [], raw.projects || DEFAULT_PROJECTS);
   const date = formatLocalDate(new Date());
   const starters = createStarterDashboards();
@@ -91,7 +99,12 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
     ...data,
     dashboards,
     workspaceId: id,
-    schemaVersion: 8,
+    schemaVersion: (raw.schemaVersion === 10 ? 10 : 9),
+    notes: validateNotes(raw.notes),
+    areas: raw.areas || [],
+    goals: raw.goals || [],
+    routines: raw.routines || [],
+    habits: raw.habits || [],
     preferences: {
       ...raw.preferences,
       ...(dashboardRecovery ? { _dashboardRecovery: true } : {}),
@@ -106,6 +119,9 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
       lastRolledOverAt: t.lastRolledOverAt,
       bufferMinutes: t.bufferMinutes,
       isAutoTriaged: t.isAutoTriaged,
+      deferUntil: (t as any).deferUntil,
+      predecessorTaskId: (t as any).predecessorTaskId,
+      cognitiveLoad: (t as any).cognitiveLoad,
     })),
   };
 }
@@ -128,6 +144,7 @@ export const dbService = {
       const db = await getDatabase();
       const record = await db.get('workspaces', id);
       if (record) {
+        if ((record.schemaVersion || 0) < 9 && !await db.get('legacy_backups', `v8:${id}`)) await db.put('legacy_backups', { id: `v8:${id}`, workspaceId: id, savedAt: Date.now(), record });
         try { if (record.dashboards) validateDashboards(record.dashboards); }
         catch { if (!await db.get('legacy_backups', `dashboard-repair:${id}`)) await db.put('legacy_backups', { id: `dashboard-repair:${id}`, workspaceId: id, savedAt: Date.now(), record }); }
         if ((record.schemaVersion || 0) < 4 && !await db.get('legacy_backups', `v3:${id}`)) {
@@ -148,7 +165,14 @@ export const dbService = {
     }
     const raw = localStorage.getItem(`flowtask_ws_${id}`);
     if (!raw) return null;
-    return normalize(JSON.parse(raw), id);
+    const parsed = JSON.parse(raw);
+    if ((parsed.schemaVersion || 0) < 9) {
+      if (typeof indexedDB !== 'undefined') {
+        const db = await getDatabase();
+        if (!await db.get('legacy_backups', `v8:${id}`)) await db.put('legacy_backups', { id: `v8:${id}`, workspaceId: id, savedAt: Date.now(), record: parsed });
+      } else if (!localStorage.getItem(`flowtask_pre_v9_${id}`)) localStorage.setItem(`flowtask_pre_v9_${id}`, raw);
+    }
+    return normalize(parsed, id);
   },
   async ensureLegacyMigrated(id = 'local'): Promise<WorkspaceRecord> {
     const existing = await this.loadWorkspace(id);
@@ -222,6 +246,7 @@ export const dbService = {
       await tx.done;
     }
     localStorage.removeItem(`flowtask_ws_${id}`);
+    localStorage.removeItem(`flowtask_pre_v9_${id}`);
     for (const key of Object.keys(localStorage)) if (key.startsWith(`flowtask-dashboard-draft:${id}:`) || key.startsWith(`flowtask-dashboard-mobile:${id}:`)) localStorage.removeItem(key);
     for (const key of [`flowtask_pre_import_${id}`,`flowtask_conflict_backup_${id}`,`flowtask-diagnostics:${id}`,`flowtask-telemetry-consent:${id}`,`flowtask-focus-checkpoint:${id}`,`flowtask_device_import_choice:${id}`,`flowtask_auto_migrated_v1_${id}`]) localStorage.removeItem(key);
   },

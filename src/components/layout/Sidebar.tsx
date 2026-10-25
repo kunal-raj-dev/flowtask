@@ -8,8 +8,6 @@ import {
   Sun,
   Inbox,
   Calendar,
-  Grid2X2,
-  Kanban,
   Lightbulb,
   CheckCircle2,
   Plus,
@@ -33,6 +31,7 @@ import {
   DownloadCloud,
   ChevronDown,
   ChevronRight,
+  Target,
   BookOpen,
   Cloud,
   Headphones as HeadphonesIcon,
@@ -212,8 +211,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const primaryNavItems: SidebarNavItem[] = [
     { id: 'today', label: 'Today', icon: Sun, count: todayCount, color: 'text-amber-500' },
     { id: 'inbox', label: 'Inbox', icon: Inbox, count: inboxCount, color: 'text-blue-500' },
-    { id: 'timeline', label: 'Plan', icon: Clock, count: null, color: 'text-teal-500' },
+    { id: 'timeline', label: 'Calendar & Plan', icon: Clock, count: null, color: 'text-teal-500' },
     { id: 'projects', label: 'Projects', icon: Folder, count: activeProjectCount, color: 'text-indigo-500' },
+    { id: 'notes', label: 'Notes', icon: FileEdit, count: null, color: 'text-[var(--color-brand)]' },
   ];
 
   // Dedicated Tools Group: Study & Review
@@ -223,10 +223,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'review', label: 'Review', icon: TrendingUp, count: null, color: 'text-teal-500' },
   ];
 
+  // Life Architecture: Areas & Goals
+  const lifeNavItems: SidebarNavItem[] = [
+    { id: 'areas', label: 'Life Areas', icon: Compass, count: null, color: 'text-amber-500' },
+    { id: 'goals', label: 'Vision & Goals', icon: Target, count: null, color: 'text-rose-500' },
+  ];
+
   // Expandable Perspectives: Board, Matrix, All Tasks, Someday, Archive, Trash
   const perspectiveNavItems: SidebarNavItem[] = [
-    { id: 'kanban', label: 'Board', icon: Kanban, count: null, color: 'text-indigo-500' },
-    { id: 'matrix', label: 'Matrix', icon: Grid2X2, count: null, color: 'text-emerald-500' },
     { id: 'all', label: 'All Tasks', icon: CheckCircle2, count: allCount, color: 'text-stone-400' },
     { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-amber-500' },
     { id: 'archive', label: 'Archive', icon: Archive, count: null, color: 'text-stone-400' },
@@ -239,7 +243,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     ...projects.filter(p => !p.isArchived && pinnedIds.includes(`project:${p.id}`)).map(p => ({id:`project:${p.id}`,label:p.name,icon:Folder,count:null,color:'text-[var(--color-brand)]'})),
     ...smartViews.filter(v => pinnedIds.includes(`smart:${v.id}`)).map(v => ({id:`smart:${v.id}`,label:v.name,icon:Filter,count:null,color:'text-[var(--color-brand)]'})),
   ];
-  const allNavItems: SidebarNavItem[] = [...primaryNavItems, ...toolsNavItems, ...pinnedItems, ...perspectiveNavItems];
+  const allNavItems: SidebarNavItem[] = [...primaryNavItems, ...lifeNavItems, ...toolsNavItems, ...pinnedItems, ...perspectiveNavItems];
 
   const getSmartViewIcon = (iconName: string) => {
     switch (iconName) {
@@ -521,6 +525,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           {primaryNavItems.map(renderNavItem)}
           <button className="sidebar-studio-entry" onClick={()=>{onOpenPomodoro();onItemClick?.();}}><HeadphonesIcon/><span>Focus Studio<small>A place for your best work</small></span><ChevronRight size={14}/></button>
+        </div>
+
+        {/* Life Architecture */}
+        <div className="space-y-0.5 pt-2">
+          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
+            Life Architecture
+          </div>
+          {lifeNavItems.map(renderNavItem)}
         </div>
 
         {/* Dedicated Tools Group */}

@@ -655,7 +655,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   importLocalWorkspace: async () => {
     const local = await dbService.loadWorkspace('local');
     if (local) {
-      await get().importTasks(local.tasks, local.projects);
+      await get().importTasks(local.tasks, local.projects, false, { preferences: {}, notes: local.notes || [] });
     }
   },
 

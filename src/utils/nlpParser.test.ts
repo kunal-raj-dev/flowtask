@@ -144,4 +144,20 @@ describe('nlpParser', () => {
     expect(res.projectTag).toBe('work');
     expect(res.priority).toBe('p1');
   });
+
+  it('extracts cognitiveLoad tokens correctly (~deep, ~shallow, load:medium)', () => {
+    const deepRes = parseTaskInput('Architect AST parser ~deep #compiler');
+    expect(deepRes.cleanTitle).toBe('Architect AST parser');
+    expect(deepRes.cognitiveLoad).toBe('deep_work');
+    expect(deepRes.projectTag).toBe('compiler');
+
+    const shallowRes = parseTaskInput('Clear email inbox ~shallow');
+    expect(shallowRes.cleanTitle).toBe('Clear email inbox');
+    expect(shallowRes.cognitiveLoad).toBe('shallow');
+
+    const medRes = parseTaskInput('Write team status report load:medium');
+    expect(medRes.cleanTitle).toBe('Write team status report');
+    expect(medRes.cognitiveLoad).toBe('medium');
+  });
 });
+

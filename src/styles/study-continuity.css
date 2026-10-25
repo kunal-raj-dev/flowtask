@@ -1,0 +1,20 @@
+.v2-study-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  font-size: 12px;
+}
+.v2-study-progress p {
+  font-size: 10px;
+  margin-top: 5px;
+  color: var(--text-secondary);
+}
+.v2-study-progress button {
+  white-space: nowrap;
+  font-size: 10px;
+  border: 1px solid var(--border-hairline);
+  padding: 9px;
+  border-radius: 9px;
+}

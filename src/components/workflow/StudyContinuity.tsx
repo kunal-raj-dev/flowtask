@@ -1,4 +1,5 @@
 import { useTaskContext } from "../../context/TaskContext";
+import '../../styles/study-continuity.css';
 export function StudyContinuity({
   onResume,
 }: {

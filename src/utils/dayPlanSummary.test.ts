@@ -169,4 +169,39 @@ describe('calculateDayPlanSummary', () => {
     expect(summary.overbooked).toBe(true);
     expect(summary.overbookedMinutes).toBe(100);
   });
+
+  it('accurately incorporates multiple independent work blocks across days', () => {
+    const multiBlockTask: Task = {
+      id: 'mb1',
+      title: 'Split project work',
+      status: 'todo',
+      priority: 'p1',
+      projectId: 'inbox',
+      subtasks: [],
+      createdAt: 1000,
+      dueDate: '2026-10-31',
+      plannedDate: '2026-10-20',
+      estimatedMinutes: 180,
+      workBlocks: [
+        {
+          id: 'wb1',
+          taskId: 'mb1',
+          date: baseDate,
+          durationMinutes: 90,
+          createdAt: '2026-10-17T00:00:00Z',
+          updatedAt: '2026-10-17T00:00:00Z',
+        },
+      ],
+    };
+
+    const summary = calculateDayPlanSummary({
+      date: baseDate,
+      tasks: [multiBlockTask],
+      todayStr: '2026-10-16',
+    });
+
+    expect(summary.totalTaskCount).toBe(1);
+    expect(summary.scheduledTaskMinutes).toBe(90);
+  });
 });
+

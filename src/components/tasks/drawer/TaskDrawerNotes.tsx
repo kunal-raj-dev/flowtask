@@ -1,18 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
+import { WorkspaceStoreContext } from '../../../services/workspaceStore';
+import { noteFromTaskDescription } from '../../../services/notesService';
+import { openNote } from '../../../hooks/useNotes';
 import type { Task } from '../../../types/task';
-import { Eye, Edit3 } from 'lucide-react';
+import { Eye, Edit3, BookOpen, ExternalLink } from 'lucide-react';
 
 interface TaskDrawerNotesProps {
   task: Task;
 }
 
 export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
-  const { updateTask } = useTaskContext();
+  const { updateTask, showToast } = useTaskContext();
+  const store = useContext(WorkspaceStoreContext);
   const [isMarkdownPreview, setIsMarkdownPreview] = useState(false);
   const [localNotes, setLocalNotes] = useState(task.description || '');
   const lastTaskIdRef = useRef(task.id);
   const lastCommittedRef = useRef(task.description || '');
+
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync if task changes or external update happens
@@ -271,6 +276,40 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
           className="w-full text-xs p-3.5 bg-[var(--bg-surface-l1)]/50 text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-xl outline-none focus:border-stone-400 dark:focus:border-stone-600 resize-none leading-relaxed card-surface font-mono"
         />
       )}
+
+      {task.originNoteId ? (
+        <div className="flex items-center justify-between text-xs pt-1 px-1">
+          <span className="text-[var(--text-secondary)] font-medium">Linked to source Note</span>
+          <button
+            type="button"
+            onClick={() => openNote(task.originNoteId!)}
+            className="flex items-center gap-1 text-[var(--color-brand)] hover:underline font-semibold"
+          >
+            <span>Open Note</span>
+            <ExternalLink size={12} />
+          </button>
+        </div>
+      ) : localNotes.trim().length > 0 && store ? (
+        <div className="flex justify-end pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const noteId = noteFromTaskDescription(store, task.id);
+                showToast?.('Converted task description to linked Note.');
+                openNote(noteId);
+              } catch (e) {
+                showToast?.((e as Error).message);
+              }
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] hover:border-amber-500/40 transition-colors"
+          >
+            <BookOpen size={12} />
+            <span>Extract to Note</span>
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 };
+

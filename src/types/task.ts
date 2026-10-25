@@ -47,13 +47,45 @@ export interface SessionMetadata {
   sprintTargetProblems?: number;
 }
 
+export interface TaskReminder {
+  id: string;
+  taskId: string;
+  remindAt: number; // UTC timestamp
+  offsetMinutes?: number; // e.g. 0, 15, 60, 1440
+  channel: 'browser_notification' | 'sound';
+  status: 'scheduled' | 'triggered' | 'snoozed' | 'dismissed';
+  snoozedUntil?: number;
+  createdAt: number;
+}
+
+export interface WorkBlock {
+  id: string;
+  taskId: string;
+  date: string; // YYYY-MM-DD
+  startTime?: string; // HH:mm
+  endTime?: string; // HH:mm
+  durationMinutes: number;
+  title?: string;
+  isLocked?: boolean;
+  completedAt?: number;
+  externalEventId?: string;
+  createdAt?: number | string;
+  updatedAt?: number | string;
+}
+
+export type CognitiveLoad = 'deep_work' | 'medium' | 'shallow';
+
 export interface Task {
+  originNoteId?: string;
   milestoneId?: string;
   scheduleLocked?: boolean;
   nextAction?: string;
   recurrenceSourceId?: string;
+  reminders?: TaskReminder[];
+  workBlocks?: WorkBlock[];
   id: string;
   title: string;
+
   description?: string;
   status: TaskStatus;
   priority: Priority;
@@ -80,6 +112,13 @@ export interface Task {
   tags?: string[]; // Flexible custom hashtags/labels, e.g. ['frontend', 'v2']
   contextTags?: string[]; // GTD context tags, e.g. ['calls', 'computer', 'errands']
   blockedBy?: string[]; // IDs of tasks that block this task
+  deferUntil?: string; // ISO 8601 UTC or YYYY-MM-DD (Temporal hide threshold)
+  areaId?: string; // Link to high-level Life Area
+  goalId?: string; // Link to Vision/Quarterly Goal
+  isLifeAdmin?: boolean; // Life admin classification
+  cleanSlateQuarantinedAt?: number; // Quarantine timestamp for opacity decay
+  predecessorTaskId?: string; // Sequential DAG predecessor dependency
+  cognitiveLoad?: CognitiveLoad; // Cognitive load classification
   sessionMetadata?: SessionMetadata; // Study/Sprint Session configuration & pacing
   rolloverCount?: number; // Number of times pushed forward
   lastRolledOverAt?: number; // Timestamp of last rollover
@@ -98,10 +137,13 @@ export interface Project {
   focusRecipeId?: string;
   wipLimit?: number;
   revision?: number;
+  isSequential?: boolean; // Sequential DAG execution mode
   id: string;
   name: string;
   color: string; // hex or tailwind color class
   icon?: string;
+  areaId?: string;
+  goalId?: string;
   isArchived?: boolean;
   archivedAt?: number;
   createdAt?: number;
@@ -118,6 +160,7 @@ export interface ProjectMilestone {
 }
 
 export type ViewId =
+  | 'notes'
   | 'dashboard'
   | 'today'
   | 'inbox'
@@ -135,6 +178,9 @@ export type ViewId =
   | 'trash'
   | 'archive'
   | 'settings'
+  | 'areas'
+  | 'goals'
+  | 'life_admin'
   | `project:${string}`
   | `smart:${string}`;
 
@@ -148,6 +194,7 @@ export interface ParsedTaskInput {
   tags?: string[];
   contextTags?: string[];
   estimatedMinutes?: number;
+  cognitiveLoad?: CognitiveLoad;
   recurrence?: RecurrenceFrequency;
   customRecurrence?: CustomRecurrenceRule;
 }
@@ -161,6 +208,9 @@ export interface CalendarEvent {
   description?: string;
   location?: string;
   isAllDay?: boolean;
+  sourceId?: string;
+  sourceName?: string;
+  color?: string;
 }
 
 export type CognitiveIntensity = 'deep' | 'medium' | 'admin';

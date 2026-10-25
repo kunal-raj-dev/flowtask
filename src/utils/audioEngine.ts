@@ -15,7 +15,7 @@ export type SoundProfile =
 
 export type AmbientSoundType = 'none' | 'brown' | 'pink' | 'white' | 'rain' | 'binaural';
 
-class AudioEngine {
+export class AudioEngine {
   private ctx: AudioContext | null = null;
   private isSoundEnabled: boolean = true;
   private soundProfile: SoundProfile = 'zen';
@@ -88,6 +88,14 @@ class AudioEngine {
     if (!enabled && this.ambientGain) {
       this.stopAmbientSound();
     }
+  }
+
+  public setEnabled(enabled: boolean) {
+    this.setSoundEnabled(enabled);
+  }
+
+  public getEnabled(): boolean {
+    return this.getSoundEnabled();
   }
 
   public getSoundEnabled(): boolean {
@@ -316,6 +324,91 @@ class AudioEngine {
    */
   public playTaskComplete() {
     this.playCompletionChime();
+  }
+
+  /**
+   * Soft felt mallet chime (D5 -> B4) with 750Hz bandpass filter.
+   */
+  public playDeferWoodblock(forcePlay = false) {
+    if ((!this.isSoundEnabled && !forcePlay) || this.soundProfile === 'mute') return;
+    this.notifyMajorSound();
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const startTime = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(587.33, startTime); // D5
+    osc.frequency.exponentialRampToValueAtTime(493.88, startTime + 0.08); // B4
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(750, startTime);
+    filter.Q.setValueAtTime(1.4, startTime);
+
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.22 * this.tactileVolume, startTime + 0.016);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.18);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + 0.19);
+  }
+
+  /**
+   * Tibetan singing bowl fundamental mode (F#4, 369.99Hz) with tau = 2.4s resonance tail.
+   */
+  public playTimerChime(forcePlay = false) {
+    if ((!this.isSoundEnabled && !forcePlay) || this.soundProfile === 'mute') return;
+    this.notifyMajorSound();
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const startTime = ctx.currentTime;
+    const vol = this.tactileVolume;
+    const frequencies = [369.99, 739.98, 1109.97];
+
+    frequencies.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = idx === 0 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(freq, startTime);
+      const amp = (0.2 / (idx + 1)) * vol;
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(amp, startTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 2.45);
+    });
+  }
+
+  /**
+   * 800 Hz micro-haptic tick (30ms) on calendar grid slot alignment.
+   */
+  public playMagneticSnap(forcePlay = false) {
+    if ((!this.isSoundEnabled && !forcePlay) || this.soundProfile === 'mute') return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const startTime = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, startTime);
+    osc.frequency.exponentialRampToValueAtTime(400, startTime + 0.03);
+
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.08 * this.tactileVolume, startTime + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.03);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + 0.031);
   }
 
   /**

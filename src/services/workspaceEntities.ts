@@ -1,4 +1,5 @@
 import { normalizeAppearance } from '../utils/appearance';
+import { validateNotes } from '../utils/noteModel';
 import type {
   WorkspaceRecord,
   SyncCollection,
@@ -18,6 +19,7 @@ export const SYNC_COLLECTIONS: SyncCollection[] = [
   "focusLogs",
   "recipes",
   "preferences",
+  "notes",
 ];
 export const SYNC_PREFERENCE_KEYS = [
   "settings",
@@ -66,7 +68,7 @@ export function workspaceEntities(
   record: WorkspaceRecord,
   collection: SyncCollection,
 ): SyncedEntity[] {
-  if (collection === "tasks" || collection === "projects")
+  if (collection === "tasks" || collection === "projects" || collection === "notes")
     return record[collection] || [];
   if (collection === "dashboards")
     return (record.dashboards || []).map(d => { const { sm: _mobile, ...layouts } = d.layouts; return { ...d, layouts }; });
@@ -105,6 +107,7 @@ export function replaceEntities(
   collection: SyncCollection,
   values: SyncedEntity[],
 ): WorkspaceRecord {
+  if (collection === 'notes') return { ...record, notes: validateNotes(values) };
   if (collection === "tasks")
     return { ...record, tasks: values as WorkspaceRecord["tasks"] };
   if (collection === "projects")

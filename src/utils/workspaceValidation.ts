@@ -45,6 +45,7 @@ export function validateWorkspaceData(rawTasks: unknown, rawProjects: unknown): 
     if (!object(t) || !idValid(t.id) || typeof t.title !== 'string' || !t.title.trim() || t.title.length > 10000) fail(`${label}: valid ID and title required.`);
     if (taskIds.has(t.id)) fail(`Duplicate task ID: ${t.id}`);
     taskIds.add(t.id);
+    if (t.originNoteId !== undefined && !idValid(t.originNoteId)) fail(`${label}: invalid source note.`);
     if (!['todo', 'in_progress', 'done'].includes(String(t.status)) || !['p1', 'p2', 'p3', 'p4'].includes(String(t.priority))) fail(`${label}: invalid status or priority.`);
     let projectId = typeof t.projectId === 'string' && t.projectId ? t.projectId : 'inbox';
     let isSomeday = Boolean(t.isSomeday);

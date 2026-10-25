@@ -1,5 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { DailyNoteButton } from '../../notes/DailyNoteButton';
 import { useTaskContext } from '../../../context/TaskContext';
+import { useModal } from '../../../context/ModalContext';
+import { getOverdueTasks } from '../../../services/cleanSlateService';
 import { useTodayStr } from '../../../hooks/useCurrentDate';
 import { isFocusTask, isTodayTask, isSomedayTask, completedOn } from '../../../utils/taskSelectors';
 import { parseTaskInput } from '../../../utils/nlpParser';
@@ -55,7 +58,9 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
     settings,
   } = useTaskContext();
 
+  const { openModal } = useModal();
   const today = useTodayStr();
+  const overdueTasks = useMemo(() => getOverdueTasks(tasks), [tasks]);
   const focusedSeconds = useTotalFocusedTodaySeconds();
   const [planning, setPlanning] = useState(false);
   const [railOpen, setRailOpen] = useState(true);
@@ -206,6 +211,15 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
             )}
             <button
               type="button"
+              onClick={() => openModal('routineRunner')}
+              className="desk-button text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-secondary)] transition-colors"
+              title="Launch Morning Routine Sequence"
+            >
+              <Sparkles size={14} className="text-amber-500" />
+              <span>Launch Routine</span>
+            </button>
+            <button
+              type="button"
               className="desk-button primary text-xs font-semibold flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-900 font-bold shadow-xs transition-all active:scale-95"
               onClick={() => setPlanning(true)}
               aria-label="Plan my day"
@@ -227,6 +241,30 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
 
         {/* Inline Task Capture */}
         <TodayTaskCapture />
+
+        {/* Clean Slate Backlog De-escalation Prompt */}
+        {overdueTasks.length > 0 && (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+            <div className="flex items-center gap-2.5">
+              <Sparkles size={16} className="text-amber-500 shrink-0" />
+              <div>
+                <p className="font-semibold text-[var(--text-primary)]">
+                  {overdueTasks.length} overdue {overdueTasks.length === 1 ? 'task needs' : 'tasks need'} attention
+                </p>
+                <p className="text-[11px] text-[var(--text-secondary)]">
+                  Take a fresh breath. Quarantine stale tasks to Someday without losing anything.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => openModal('cleanSlate')}
+              className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-stone-900 font-bold text-xs transition cursor-pointer shrink-0"
+            >
+              Clean Slate
+            </button>
+          </div>
+        )}
 
 
         {/* Top 3 Priorities Deck */}
@@ -398,6 +436,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
           </div>
 
           <div className="daily-summary-actions flex items-center gap-3">
+            <DailyNoteButton/>
             <section className="daily-progress flex items-center gap-2.5 text-xs text-[var(--text-secondary)] font-medium">
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-semibold">
                 <CheckCircle2 size={13} strokeWidth={2.5} />

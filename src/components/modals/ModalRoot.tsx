@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
 import { useTaskContext } from '../../context/TaskContext';
+import { useTaskStore } from '../../store/useTaskStore';
 import { ModalSkeleton } from '../ui';
 import { FeatureBoundary } from '../ui/FeatureBoundary';
 
@@ -22,6 +23,10 @@ const FocusEngineModal = lazy(() => import('../focus/FocusEngineModal').then(m =
 const FocusStudio = lazy(() => import('../focus/FocusStudio').then(m => ({ default: m.FocusStudio })));
 const SettingsDrawer = lazy(() => import('./SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
 const CopilotOmnibar = lazy(() => import('./CopilotOmnibar').then(m => ({ default: m.CopilotOmnibar })));
+const GlobalCaptureHUD = lazy(() => import('../capture/GlobalCaptureHUD').then(m => ({ default: m.GlobalCaptureHUD })));
+const ProcrastinationWizardModal = lazy(() => import('./ProcrastinationWizardModal').then(m => ({ default: m.ProcrastinationWizardModal })));
+const CleanSlateModal = lazy(() => import('./CleanSlateModal').then(m => ({ default: m.CleanSlateModal })));
+const RoutineRunner = lazy(() => import('../workflow/RoutineRunner').then(m => ({ default: m.RoutineRunner })));
 import { OnboardingFlow } from './OnboardingFlow';
 
 import type { SettingsTab } from './SettingsDrawer';
@@ -33,7 +38,7 @@ interface ModalRootProps {
 
 export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudySprint }) => {
   const { isModalOpen, closeModal, openModal, getModalProps, activeModals, closeAllModals } = useModal();
-  const { setSelectedTaskId } = useTaskContext();
+  const { setSelectedTaskId, tasks, applyTaskChanges, showToast } = useTaskContext();
 
   const handleSelectTask = onSelectTask || ((id: string) => setSelectedTaskId(id));
 
@@ -224,6 +229,77 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
             onClose={() => closeModal('copilotOmnibar')}
           />
         )}
+
+        {/* Omnichannel Quick-Capture HUD */}
+        {isModalOpen('captureHUD') && (
+          <GlobalCaptureHUD
+            isOpen={true}
+            onClose={() => closeModal('captureHUD')}
+          />
+        )}
+
+        {/* Procrastination Diagnostic Wizard */}
+        {isModalOpen('procrastinationWizard') && (() => {
+          const props = getModalProps<{ taskId?: string; task?: any }>('procrastinationWizard');
+          const targetTask = props?.task || tasks.find((t: any) => t.id === props?.taskId) || tasks[0];
+          if (!targetTask) return null;
+          return (
+            <ProcrastinationWizardModal
+              isOpen={true}
+              task={targetTask}
+              onClose={() => closeModal('procrastinationWizard')}
+              onAddSubtasks={(taskId: string, subtaskTitles: string[]) => {
+                useTaskStore.getState().addSubTasks(taskId, subtaskTitles.map((t: string) => ({ title: t })));
+                showToast(`Added ${subtaskTitles.length} micro-steps to overcome resistance.`);
+              }}
+              onStartSprint={(taskId: string) => {
+                closeModal('procrastinationWizard');
+                openModal('pomodoro', { taskId });
+              }}
+            />
+          );
+        })()}
+
+        {/* Clean Slate Backlog Quarantine */}
+        {isModalOpen('cleanSlate') && (
+          <CleanSlateModal
+            isOpen={true}
+            tasks={tasks}
+            onClose={() => closeModal('cleanSlate')}
+            onApplyQuarantine={(updatedTasks: any[], count: number) => {
+              applyTaskChanges(
+                updatedTasks.map((t: any) => ({ id: t.id, updates: { isSomeday: t.isSomeday, cleanSlateQuarantinedAt: t.cleanSlateQuarantinedAt } })),
+                'Quarantine overdue tasks'
+              );
+              showToast(`Clean Slate activated: ${count} overdue tasks quarantined.`);
+            }}
+          />
+        )}
+
+        {/* Paced Routine Runner */}
+        {isModalOpen('routineRunner') && (() => {
+          const routineProps = getModalProps<{ routine?: any }>('routineRunner');
+          const routine = routineProps?.routine || {
+            id: 'routine-morning-launch',
+            title: 'Morning Launch Sequence',
+            cadence: 'morning',
+            steps: [
+              { id: 'step-1', title: 'Hydrate & 5 deep breaths', durationMinutes: 2 },
+              { id: 'step-2', title: 'Review Top 3 Focus priorities', durationMinutes: 3 },
+              { id: 'step-3', title: 'Clear clutter from workspace', durationMinutes: 5 },
+            ],
+          };
+          return (
+            <RoutineRunner
+              isOpen={true}
+              routine={routine}
+              onClose={() => closeModal('routineRunner')}
+              onCompleteRoutine={() => {
+                showToast('Launch routine complete! You have built calm momentum.');
+              }}
+            />
+          );
+        })()}
       </Suspense>
     </FeatureBoundary>
   );

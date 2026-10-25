@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTaskContext } from "../../context/TaskContext";
 import { calculateWeekPlanSummary } from "../../utils/dayPlanSummary";
 import { useTodayStr } from "../../hooks/useCurrentDate";
+import { formatCapacitySummary } from "../../services/workBlockService";
 
 export function WeeklyWorkload() {
   const { tasks, settings, calendarEvents } = useTaskContext();
@@ -17,6 +18,7 @@ export function WeeklyWorkload() {
     }).map(({ key, date, summary, deadlinesCount }) => ({
       key,
       date,
+      summary,
       minutes: summary.totalDemandMinutes,
       capacity: summary.availableTaskBudgetMinutes,
       overbooked: summary.overbooked,
@@ -39,11 +41,11 @@ export function WeeklyWorkload() {
       </div>
       <div className="v2-week-bars">
         {days.map(
-          ({ key, date, minutes, capacity, overbooked, deadlinesCount }) => {
+          ({ key, date, summary, minutes, capacity, overbooked, deadlinesCount }) => {
             return (
               <div
                 key={key}
-                title={`${key}: ${minutes} minutes planned, ${capacity} available, ${deadlinesCount} deadlines`}
+                title={`${key}: ${formatCapacitySummary(minutes, capacity, summary.timedCalendarMinutes, summary.missingEstimatesCount)} · ${deadlinesCount} deadlines`}
               >
                 <small>
                   {date.toLocaleDateString("en", { weekday: "short" })}

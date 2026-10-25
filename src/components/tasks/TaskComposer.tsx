@@ -1,7 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TACTILE } from '../../utils/springPhysics';
 import { useTaskContext } from '../../context/TaskContext';
+import { WorkspaceStoreContext } from '../../services/workspaceStore';
+import { createNote, appendDailyNote } from '../../services/notesService';
+
 import { parseTaskInput } from '../../utils/nlpParser';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import type { Priority, RecurrenceFrequency } from '../../types/task';
@@ -26,12 +29,14 @@ import {
   X,
   ListPlus,
   Timer,
+  FileText,
 } from 'lucide-react';
 import { parseTimeToMinutes } from '../../utils/timelineUtils';
 import { LazyTaskSessionEditor as TaskSessionEditor } from './LazyTaskSessionEditor';
 import type { SessionDraft } from './TaskSessionEditor';
 import { getVelocityCalibration } from '../../utils/velocityCalibrator';
 import { Kbd } from '../ui';
+
 
 interface TaskComposerProps {
   initialDraft?: string;
@@ -58,6 +63,11 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
     setIsTemplatePickerOpen,
     settings,
   } = useTaskContext();
+  const store = useContext(WorkspaceStoreContext);
+
+  const [captureMode, setCaptureMode] = useState<'task' | 'note'>('task');
+  const [noteDestination, setNoteDestination] = useState<'standalone' | 'daily'>('standalone');
+  const [noteTitle, setNoteTitle] = useState('');
 
   const [input, setInput] = useState(initialDraft);
   const [showDetails, setShowDetails] = useState(false);
@@ -65,6 +75,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
 
   // Manual Chip Overrides (Explicit selection overrides parsed values)
   const [explicitProjectId, setExplicitProjectId] = useState<string | null>(null);
@@ -247,7 +258,34 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (captureMode === 'note') {
+      if (!input.trim() && !noteTitle.trim()) return;
+      if (store) {
+        if (noteDestination === 'daily') {
+          const contentToAppend = noteTitle.trim() ? `**${noteTitle.trim()}**\n${input.trim()}` : input.trim();
+          appendDailyNote(store, todayStr, contentToAppend);
+          showToast?.("Appended to Today's Daily Note.");
+        } else {
+          const title = noteTitle.trim() || input.trim().split('\n')[0].slice(0, 80) || 'Untitled Note';
+          const body = noteTitle.trim() ? input.trim() : input.trim();
+          const note = createNote(store, {
+            title,
+            body,
+            projectId: projectObj.id !== 'inbox' ? projectObj.id : undefined,
+          });
+          showToast?.('Note created in library.');
+          import('../../hooks/useNotes').then(({ openNote }) => openNote(note.id));
+        }
+      }
+      setInput('');
+      setNoteTitle('');
+      if (onDraftChange) onDraftChange('');
+      if (onSuccess) onSuccess();
+      return;
+    }
+
     if (!input.trim()) return;
+
 
     if (isMultiline) {
       const lines = input.split('\n').filter((l) => l.trim().length > 0);
@@ -313,14 +351,111 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
         }`}
       >
         <div className="p-3.5 sm:p-4">
+          {/* Mode Switcher: Task / Note */}
+          <div className="flex items-center justify-between gap-2 mb-2.5">
+            <div className="flex items-center p-0.5 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)]" role="tablist" aria-label="Capture mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={captureMode === 'task'}
+                onClick={() => setCaptureMode('task')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                  captureMode === 'task'
+                    ? 'bg-[var(--bg-surface-l1)] text-[var(--text-primary)] shadow-xs'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                Task
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={captureMode === 'note'}
+                onClick={() => setCaptureMode('note')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                  captureMode === 'note'
+                    ? 'bg-[var(--bg-surface-l1)] text-[var(--text-primary)] shadow-xs'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                Note
+              </button>
+            </div>
+
+            {captureMode === 'note' && (
+              <div className="flex items-center p-0.5 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-xs">
+                <button
+                  type="button"
+                  onClick={() => setNoteDestination('standalone')}
+                  className={`px-2 py-0.5 text-[11px] rounded transition-all ${
+                    noteDestination === 'standalone'
+                      ? 'bg-[var(--bg-surface-l1)] text-[var(--text-primary)] font-semibold shadow-xs'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  Standalone
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNoteDestination('daily')}
+                  className={`px-2 py-0.5 text-[11px] rounded transition-all ${
+                    noteDestination === 'daily'
+                      ? 'bg-[var(--bg-surface-l1)] text-[var(--text-primary)] font-semibold shadow-xs'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  Daily Note
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-start gap-2.5 sm:gap-3">
             <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
               <div className="text-[var(--text-muted)] mt-1 flex-shrink-0">
-                <Plus size={18} strokeWidth={1.75} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
+                {captureMode === 'note' ? (
+                  <FileText size={18} strokeWidth={1.75} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
+                ) : (
+                  <Plus size={18} strokeWidth={1.75} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
-                {isMultiline ? (
+                {captureMode === 'note' ? (
+                  <div className="space-y-1.5">
+                    {noteDestination === 'standalone' && (
+                      <input
+                        type="text"
+                        value={noteTitle}
+                        onChange={(e) => setNoteTitle(e.target.value)}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        placeholder="Note title (optional, auto-extracts from body)"
+                        className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm font-semibold focus:outline-none focus-visible:outline-none outline-none font-sans"
+                      />
+                    )}
+                    <textarea
+                      ref={textareaRef}
+                      value={input}
+                      onChange={(e) => handleInputChange(e.target.value)}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setIsFocused(false)}
+                      onKeyDown={(e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSubmit();
+                        }
+                      }}
+                      rows={3}
+                      placeholder={
+                        noteDestination === 'daily'
+                          ? "Write a reflection or thought to append to Today's Daily Note..."
+                          : "Write note content, thoughts, markdown, or meeting takeaways..."
+                      }
+                      className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none focus-visible:outline-none outline-none resize-none font-sans"
+                    />
+                  </div>
+                ) : isMultiline ? (
                   <textarea
                     ref={textareaRef}
                     value={input}
@@ -376,58 +511,65 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => setIsMultiline((prev) => !prev)}
-                  title={isMultiline ? 'Switch to Single Task mode' : 'Switch to Multi-line Brain Dump'}
-                  className={`p-2 rounded-xl transition-colors active:scale-95 ${
-                    isMultiline
-                      ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
-                  }`}
-                >
-                  <ListPlus size={16} strokeWidth={1.75} />
-                </button>
+                {captureMode === 'task' && (
+                  <button
+                    type="button"
+                    onClick={() => setIsMultiline((prev) => !prev)}
+                    title={isMultiline ? 'Switch to Single Task mode' : 'Switch to Multi-line Brain Dump'}
+                    className={`p-2 rounded-xl transition-colors active:scale-95 ${
+                      isMultiline
+                        ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    <ListPlus size={16} strokeWidth={1.75} />
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => setIsTemplatePickerOpen(true)}
-                  title="Browse Templates"
-                  className="p-2 text-[var(--text-muted)] hover:text-indigo-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
-                >
-                  <Sparkles size={16} strokeWidth={1.75} />
-                </button>
+                {captureMode === 'task' && (
+                  <button
+                    type="button"
+                    onClick={() => setIsTemplatePickerOpen(true)}
+                    title="Browse Templates"
+                    className="p-2 text-[var(--text-muted)] hover:text-indigo-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+                  >
+                    <Sparkles size={16} strokeWidth={1.75} />
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-2 py-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] cursor-pointer"
-                  aria-expanded={showDetails}
-                  onClick={() => setShowDetails(!showDetails)}
-                >
-                  <span>{showDetails ? '▾ Hide properties' : '▸ More details'}</span>
-                  {!showDetails && hasAnyParsedTokens && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30" title="Parsed parameters active">
-                      Parsed
-                    </span>
-                  )}
-                </button>
+                {captureMode === 'task' && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-2 py-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] cursor-pointer"
+                    aria-expanded={showDetails}
+                    onClick={() => setShowDetails(!showDetails)}
+                  >
+                    <span>{showDetails ? '▾ Hide properties' : '▸ More details'}</span>
+                    {!showDetails && hasAnyParsedTokens && (
+                      <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30" title="Parsed parameters active">
+                        Parsed
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
 
               <button
                 type="button"
                 onClick={() => handleSubmit()}
-                disabled={!input.trim()}
-                aria-label="Add"
+                disabled={captureMode === 'note' ? (!input.trim() && !noteTitle.trim()) : !input.trim()}
+                aria-label={captureMode === 'note' ? (noteDestination === 'daily' ? 'Append note' : 'Save note') : 'Add'}
                 className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-35 disabled:active:scale-100 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-amber-500/50 outline-none"
               >
-                <span>Add</span>
+                <span>{captureMode === 'note' ? (noteDestination === 'daily' ? 'Append' : 'Save Note') : 'Add'}</span>
                 <Kbd size="xs" className="hidden sm:inline-block text-[10px] py-0 px-1 border-white/20 bg-black/20 text-white shadow-none">↵</Kbd>
               </button>
             </div>
           </div>
 
-          {/* Editable Chips Bar (Only in Single Task mode: auto-reveals on parsed NLP tokens or manual toggle) */}
-          {!isMultiline && (showDetails || hasAnyParsedTokens) && (
+          {/* Editable Chips Bar (Only in Task mode: auto-reveals on parsed NLP tokens or manual toggle) */}
+          {captureMode === 'task' && !isMultiline && (showDetails || hasAnyParsedTokens) && (
+
             <div className="overflow-x-auto no-scrollbar flex items-center gap-1.5 mt-3 pt-2.5 border-t border-[var(--border-hairline)] text-xs py-1">
               <AnimatePresence mode="popLayout">
                 {/* Project Chip */}

@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { WorkspaceStoreContext } from '../../services/workspaceStore';
+import { importScratchpad } from '../../services/notesService';
 import { parseTaskInput } from '../../utils/nlpParser';
 import { audioEngine } from '../../utils/audioEngine';
 import confetti from '../../utils/celebrate';
@@ -18,7 +20,9 @@ import {
   Calendar,
   Clock,
   ArrowRight,
+  BookOpen,
 } from 'lucide-react';
+
 
 export interface ScratchpadModalProps {
   isOpen: boolean;
@@ -49,6 +53,7 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
     addMultipleTasks,
     showToast,
   } = useTaskContext();
+  const store = useContext(WorkspaceStoreContext);
 
   const [activeTab, setActiveTab] = useState<'scratchpad' | 'staging'>(initialTab);
   const [content, setContent] = useState<string>(() => {
@@ -56,6 +61,19 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
   });
   const [copied, setCopied] = useState(false);
   const [extractedCount, setExtractedCount] = useState<number | null>(null);
+
+  const handleSaveAsNote = () => {
+    if (!content.trim() || !store) return;
+    try {
+      const note = importScratchpad(store);
+      showToast('Saved scratchpad to Notes library (synced)');
+      onClose();
+      import('../../hooks/useNotes').then(({ openNote }) => openNote(note.id));
+    } catch (err) {
+      showToast((err as Error).message);
+    }
+  };
+
 
   // Staging tab state
   const [stagingText, setStagingText] = useState(content);
@@ -304,6 +322,18 @@ export const ScratchpadModal: React.FC<ScratchpadModalProps> = ({
                   {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
                   <span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveAsNote}
+                  disabled={!content.trim()}
+                  title="Import into your Notes library and enable cloud sync"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200/70 dark:border-white/10 hover:bg-stone-100 dark:hover:bg-white/5 text-stone-700 dark:text-stone-300 font-medium transition-colors disabled:opacity-30"
+                >
+                  <BookOpen size={13} />
+                  <span>Save as Note</span>
+                </button>
+
 
                 <button
                   type="button"

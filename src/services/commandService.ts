@@ -62,6 +62,7 @@ export const commandService = {
       : (overrides?.estimatedMinutes ?? parsed.estimatedMinutes);
 
     const createdTask: Task = {
+      ...(overrides?.originNoteId ? { originNoteId: overrides.originNoteId } : {}),
       id,
       title: overrides?.title || parsed.cleanTitle || input.trim(),
       description: overrides?.description || undefined,

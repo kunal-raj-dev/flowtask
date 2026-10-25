@@ -101,3 +101,112 @@ export async function fetchICSFeed(
   if (!content.includes('BEGIN:VCALENDAR')) throw new Error('The URL did not return an iCalendar feed.');
   return parseICSFeed(content, targetDateStr);
 }
+
+export interface CalendarSource {
+  id: string;
+  name: string;
+  url: string;
+  color?: string;
+  enabled?: boolean;
+  lastSyncedAt?: number;
+  error?: string;
+}
+
+export async function fetchMultipleCalendarFeeds(
+  sources: CalendarSource[],
+  targetDateStr = formatLocalDate(new Date()),
+  customProxyUrl?: string
+): Promise<{
+  events: CalendarEvent[];
+  updatedSources: CalendarSource[];
+}> {
+  const allEvents: CalendarEvent[] = [];
+  const updatedSources: CalendarSource[] = [];
+
+  for (const source of sources) {
+    if (source.enabled === false) {
+      updatedSources.push(source);
+      continue;
+    }
+
+    try {
+      const events = await fetchICSFeed(source.url, targetDateStr, customProxyUrl);
+      const tagged = events.map((ev) => ({
+        ...ev,
+        sourceId: source.id,
+        sourceName: source.name,
+        color: source.color || '#6366f1',
+      }));
+      allEvents.push(...tagged);
+      updatedSources.push({
+        ...source,
+        lastSyncedAt: Date.now(),
+        error: undefined,
+      });
+    } catch (err) {
+      updatedSources.push({
+        ...source,
+        error: (err as Error).message,
+      });
+    }
+  }
+
+  return {
+    events: allEvents.sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    updatedSources,
+  };
+}
+
+export interface PrivacyShieldOptions {
+  maskTitle?: string;
+  keepLocation?: boolean;
+  accountType?: 'work' | 'personal' | 'client';
+}
+
+export function createPrivacyShieldEvent(
+  eventOrTask: {
+    id: string;
+    title: string;
+    date?: string;
+    plannedDate?: string;
+    scheduledStart?: string;
+    scheduledEnd?: string;
+    startTime?: string;
+    endTime?: string;
+    description?: string;
+    notes?: string;
+    location?: string;
+    isPrivate?: boolean;
+  },
+  options: PrivacyShieldOptions = {}
+): CalendarEvent {
+  const maskTitle = options.maskTitle || 'Busy';
+  const startTime = eventOrTask.startTime || eventOrTask.scheduledStart || '09:00';
+  const endTime = eventOrTask.endTime || eventOrTask.scheduledEnd || '10:00';
+  const date = eventOrTask.date || eventOrTask.plannedDate || formatLocalDate(new Date());
+
+  return {
+    id: `shield-${eventOrTask.id}`,
+    title: maskTitle,
+    date,
+    startTime,
+    endTime,
+    isAllDay: false,
+    description: options.accountType ? `[Shielded ${options.accountType} block]` : '[Shielded calendar block]',
+    location: options.keepLocation ? eventOrTask.location : undefined,
+  };
+}
+
+export function shieldEventsForExport(
+  events: CalendarEvent[],
+  filterPrivate: (ev: CalendarEvent) => boolean = () => true,
+  options: PrivacyShieldOptions = {}
+): CalendarEvent[] {
+  return events.map((ev) => {
+    if (filterPrivate(ev)) {
+      return createPrivacyShieldEvent(ev, options);
+    }
+    return ev;
+  });
+}
+

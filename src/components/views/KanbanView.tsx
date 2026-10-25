@@ -1,4 +1,5 @@
 import { appShortcutAllowed } from '../../services/shortcutRuntime';
+import '../../styles/kanban.css';
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';

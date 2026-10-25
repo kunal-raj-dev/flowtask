@@ -930,7 +930,7 @@ export const FocusEngineModal: React.FC<FocusEngineModalProps> = ({
             </div>
 
             {/* Countdown Clock */}
-            <div className="my-4">
+            <div className="my-8 flex flex-col items-center">
               <span
                 role="timer"
                 aria-live="polite"

@@ -1,0 +1,80 @@
+{
+  "capturedAt": "2026-10-24T22:48:02.287Z",
+  "base": "http://127.0.0.1:5185",
+  "syntheticData": true,
+  "errors": [],
+  "observations": [
+    {
+      "name": "today-desktop",
+      "headings": [
+        "Today.",
+        "Your Top 3",
+        "Morning Focus",
+        "Daytime Flow"
+      ],
+      "text": "FlowTask\n/\nToday\nSearch tasks & actions\nCtrl K\nFocus\nNew task\nOn this device\n\nSUNDAY, OCTOBER 25\n\nToday.\nHorizon View\n\nYour priorities, with room to breathe.\n\nCustomize\nPlan my day\n↵\nYOUR TOP 3\n1/3 · Keep it intentional\n01\nFinish algorithms assignment\n\nWrite the binary search invariant\n\nP1\nDue Oct 28\n45m\nFocus\n\n2 spaces left. Leave room for what matters.\n\nMORNING FOCUS\n1\nBuild project settings screen\nP2\n1h\nDAYTIME FLOW\n1\nRead a chapter and take notes\nP3\n30m\nA DAY THAT FITS\n\n2.3h planned · 3.8h available\n\n0 completed\n0m focused\nToday Timeline\n24h\nAuto-Slot Day\n00:00\n01:00\n02:00\n03:00\n04:00\n05:00\n06:00\n07:00\n08:00\n09:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\n22:00\n23:00\n04:17\nBuild project settings screen\n11:00 – 12:00\nDeep",
+      "overflow": false
+    },
+    {
+      "name": "plan-desktop",
+      "headings": [
+        "Plan.",
+        "Unscheduled (2)"
+      ],
+      "text": "FlowTask\n/\nPlan\nSearch tasks & actions\nCtrl K\nFocus\nNew task\nOn this device\n\nA realistic rhythm\n\nPlan.\n\nMake space for your priorities, one block at a time.\n\nStudy session\nCalendar overlay (.ics)\n2.3h\nplanned / 6h capacity\n\n1 scheduled tasks\n\nRoom to adjust your day\n←\nPlanning date\n→\nToday\nUNSCHEDULED (2)\nAuto-Slot Day\nFinish algorithms assignment\n~45m\nP1\n+ Time\n07:00\n08:00\n09:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\nRead a chapter and take notes\n~30m\nP3\n+ Time\n07:00\n08:00\n09:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\n07:00\nSchedule at 07:00\n08:00\nSchedule at 08:00\n09:00\nSchedule at 09:00\n10:00\nSchedule at 10:00\n11:00\nSchedule at 11:00\n12:00\nSchedule at 12:00\n13:00\nSchedule at 13:00\n14:00\nSchedule at 14:00\n15:00\nSchedule at 15:00\n16:00\nSchedule at 16:00\n17:00\nSchedule at 17:00\n18:00\nSchedule at 18:00\n19:00\nSchedule at 19:00\n20:00\nSchedule at 20:00\n21:00\nSchedule at 21:00\nBuild project settings screen\n🧠 Deep\n11:00 – 12:00\n(60m)\n-15m\n+15m\n✕\n☕ Rest Buffer (+15m)\nCognitive recovery",
+      "overflow": false
+    },
+    {
+      "name": "projects-desktop",
+      "headings": [
+        "Projects",
+        "Inbox",
+        "Work",
+        "Personal",
+        "Ideas & Someday"
+      ],
+      "text": "FlowTask\n/\nProjects\nSearch tasks & actions\nCtrl K\nFocus\nNew task\nOn this device\nProjects\n\nManage work streams and dedicated workspaces\n\nNew Project\nInbox\n3 active tasks\nWork\n0 active tasks\nPersonal\n0 active tasks\nIdeas & Someday\n0 active tasks",
+      "overflow": false
+    },
+    {
+      "name": "today-mobile",
+      "headings": [
+        "Today.",
+        "Your Top 3",
+        "Morning Focus",
+        "Daytime Flow"
+      ],
+      "text": "Today\n\nSUNDAY, OCTOBER 25\n\nToday.\nHorizon View\n\nYour priorities, with room to breathe.\n\nTimeline\nCustomize\nPlan my day\n↵\nYOUR TOP 3\n1/3 · Keep it intentional\nFinish algorithms assignment\n\nWrite the binary search invariant\n\nP1\nDue Oct 28\n45m\n\n2 spaces left. Leave room for what matters.\n\nMORNING FOCUS\n1\nBuild project settings screen\nP2\n1h\nDAYTIME FLOW\n1\nRead a chapter and take notes\nP3\n30m\nA DAY THAT FITS\n\n2.3h planned · 3.8h available\n\n0 completed\n0m focused",
+      "overflow": false
+    },
+    {
+      "name": "task-detail-desktop",
+      "text": "Active Task\nNext small action\nTime blocking\nProject\nInbox\nWork\nPersonal\nIdeas & Someday\nPriority\nP1 Urgent\nP2 High\nP3 Medium\nP4 Normal / Low\nPlanned Date\nClear\nToday\nTomorrow\nDeadline\nClear\nToday\nTomorrow\nSession & Timeline Schedule\n+ Add Session\nSUBTASKS\nFind a 5-minute start\nSuggest steps\nNOTES & DESCRIPTION\nPreview\nRepeat and schedule\nDependencies and related tasks\nTags and context\nStudy tools\nActivity and history",
+      "layout": {
+        "rect": {
+          "x": 900,
+          "y": 0,
+          "width": 540,
+          "height": 1000,
+          "top": 0,
+          "right": 1440,
+          "bottom": 1000,
+          "left": 900
+        },
+        "opacity": "1",
+        "transform": "none",
+        "parentOpacity": "1",
+        "parentRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 1000,
+          "top": 0,
+          "right": 1440,
+          "bottom": 1000,
+          "left": 0
+        }
+      }
+    }
+  ]
+}

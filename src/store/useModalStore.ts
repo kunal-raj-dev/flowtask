@@ -21,7 +21,11 @@ export type ModalId =
   | 'settings'
   | 'onboarding'
   | 'focusEngine'
-  | 'copilotOmnibar';
+  | 'captureHUD'
+  | 'copilotOmnibar'
+  | 'procrastinationWizard'
+  | 'cleanSlate'
+  | 'routineRunner';
 
 export interface ModalState {
   activeModals: ModalId[];

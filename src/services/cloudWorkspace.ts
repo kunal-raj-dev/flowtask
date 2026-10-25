@@ -21,6 +21,7 @@ import type { CloudAdapter } from './workspaceStore';
 import type { Task, Project } from '../types/task';
 
 const OPTIONAL_TASK_FIELDS: (keyof Task)[] = [
+  'originNoteId',
   'plannedDate',
   'dueDate',
   'dueTime',
@@ -47,6 +48,12 @@ const OPTIONAL_TASK_FIELDS: (keyof Task)[] = [
   'scheduleLocked',
   'nextAction',
   'milestoneId',
+  'reminders',
+  'workBlocks',
+  'bufferMinutes',
+  'isAutoTriaged',
+  'rolloverCount',
+  'lastRolledOverAt',
 ];
 
 /**
@@ -131,7 +138,7 @@ export function createCloudAdapter(uid: string): CloudAdapter {
   return {
     async read() {
       const snapshots = await Promise.all(SYNC_COLLECTIONS.map(name => getDocsFromServer(workspaceCollection(database, uid, name))));
-      const [tasks, projects, dashboards, focusLogs, recipes, preferences] = snapshots;
+      const [tasks, projects, dashboards, focusLogs, recipes, preferences, notes] = snapshots;
       return {
         tasks: tasks.docs.map((d) => ({ ...d.data(), id: d.id })) as Task[],
         projects: projects.docs.map((d) => ({ ...d.data(), id: d.id })) as Project[],
@@ -139,6 +146,7 @@ export function createCloudAdapter(uid: string): CloudAdapter {
         focusLogs: focusLogs.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
         recipes: recipes.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
         preferences: preferences.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
+        notes: notes.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
       };
     },
     async apply(operation) {

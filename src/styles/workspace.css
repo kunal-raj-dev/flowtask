@@ -28,7 +28,39 @@ html:not(.dark):not([class*="theme-"]) {
   --border-hairline: rgba(43,63,48,.08);
   --border-subtle: rgba(43,63,48,.08);
 }
-html[data-density="compact"] { --desk-row-padding: 8px; }
+:root, html[data-density-mode="default"] {
+  --density-row-height: 38px;
+  --density-font-size: 14px;
+  --density-tap-target: 38px;
+}
+html[data-density-mode="compact"], html[data-density="compact"] {
+  --desk-row-padding: 8px;
+  --density-row-height: 28px;
+  --density-font-size: 12px;
+  --density-tap-target: 28px;
+}
+html[data-density-mode="spacious"] {
+  --desk-row-padding: 18px;
+  --density-row-height: 52px;
+  --density-font-size: 16px;
+  --density-tap-target: 48px;
+}
+
+/* Spring physics curves for task checkmarks, elevation, and tactile interactions */
+.desk-task-check, .task-card-spring, .desk-task-row {
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 150ms ease;
+}
+.desk-task-check:active {
+  transform: scale(0.85);
+}
+.desk-task-check[aria-checked="true"] {
+  animation: spring-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes spring-pop {
+  0% { transform: scale(0.7); }
+  60% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
 .workspace-aurora > * { animation: none !important; }
 .flowtask-workspace { font-size: 14px; }
 .flowtask-workspace > main { min-width: 0; }

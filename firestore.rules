@@ -18,6 +18,34 @@ service cloud.firestore {
         && w.type.matches('^(top3|taskList|dayAgenda|capacityProgress|focusLaunchpad|projects|studyContinuation|quickNotes|weeklyWorkload|recentActivity|resources|quietScene)$')
         && w.config is map;
     }
+    function validNoteVersion(v) {
+      return v is map && v.keys().hasOnly(['id','title','body','savedAt'])
+        && v.id is string && v.id.size() <= 200
+        && v.title is string && v.title.size() <= 200
+        && v.body is string && v.body.size() <= 40000
+        && v.savedAt is number && v.savedAt >= 0;
+    }
+    function validNote() {
+      let n = request.resource.data;
+      let count = n.versions.size();
+      return n.keys().hasOnly(['id','title','body','formatVersion','createdAt','updatedAt','revision','projectId','dailyDate','tags','favorite','archivedAt','deletedAt','versions','linkedTasks','relatedNoteIds','importedFrom'])
+        && n.title is string && n.title.size() > 0 && n.title.size() <= 200
+        && n.body is string && n.body.size() <= 40000 && n.formatVersion == 1
+        && n.createdAt is number && n.createdAt >= 0 && n.updatedAt >= 0
+        && n.favorite is bool && n.tags is list && n.tags.size() <= 20
+        && n.linkedTasks is list && n.linkedTasks.size() <= 30
+        && (!('relatedNoteIds' in n) || (n.relatedNoteIds is list && n.relatedNoteIds.size() <= 200))
+        && n.versions is list && count <= 4
+        && (count < 1 || validNoteVersion(n.versions[0]))
+        && (count < 2 || validNoteVersion(n.versions[1]))
+        && (count < 3 || validNoteVersion(n.versions[2]))
+        && (count < 4 || validNoteVersion(n.versions[3]))
+        && (!('projectId' in n) || (n.projectId is string && n.projectId.size() <= 200))
+        && (!('dailyDate' in n) || (n.dailyDate is string && n.dailyDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+        && (!('deletedAt' in n) || (n.deletedAt is number && n.deletedAt >= 0))
+        && (!('archivedAt' in n) || (n.archivedAt is number && n.archivedAt >= 0))
+        && (!('importedFrom' in n) || n.importedFrom == 'scratchpad');
+    }
     function validDashboard() {
       let d = request.resource.data;
       let widgets = d.widgets;
@@ -63,20 +91,28 @@ service cloud.firestore {
       match /tasks/{id} {
         allow read, delete: if owner(uid);
         allow create, update: if owner(uid) && revision() && request.resource.data.id == id
-          && request.resource.data.keys().hasOnly(['milestoneId','scheduleLocked','nextAction','recurrenceSourceId','id','title','description','status','priority','projectId','plannedDate','dueDate','dueTime','topThreeDate','isPinnedToday','isSomeday','isEvening','archivedAt','deletedAt','revision','updatedAt','estimatedMinutes','timeSpentMinutes','subtasks','recurrence','customRecurrence','scheduledStart','scheduledEnd','timezone','tags','contextTags','blockedBy','sessionMetadata','rolloverCount','lastRolledOverAt','bufferMinutes','isAutoTriaged','createdAt','completedAt'])
+          && request.resource.data.keys().hasOnly(['reminders','workBlocks','originNoteId','milestoneId','scheduleLocked','nextAction','recurrenceSourceId','id','title','description','status','priority','projectId','plannedDate','dueDate','dueTime','topThreeDate','isPinnedToday','isSomeday','isEvening','archivedAt','deletedAt','revision','updatedAt','estimatedMinutes','timeSpentMinutes','subtasks','recurrence','customRecurrence','scheduledStart','scheduledEnd','timezone','tags','contextTags','blockedBy','sessionMetadata','rolloverCount','lastRolledOverAt','bufferMinutes','isAutoTriaged','createdAt','completedAt'])
           && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 10000
           && request.resource.data.status in ['todo','in_progress','done'] && request.resource.data.priority in ['p1','p2','p3','p4']
           && request.resource.data.projectId is string && request.resource.data.subtasks is list && request.resource.data.subtasks.size() <= 1000
           && (!('description' in request.resource.data) || (request.resource.data.description is string && request.resource.data.description.size() <= 100000))
-          && (!('blockedBy' in request.resource.data) || (request.resource.data.blockedBy is list && request.resource.data.blockedBy.size() <= 1000));
+          && (!('originNoteId' in request.resource.data) || (request.resource.data.originNoteId is string && request.resource.data.originNoteId.size() <= 200))
+          && (!('blockedBy' in request.resource.data) || (request.resource.data.blockedBy is list && request.resource.data.blockedBy.size() <= 1000))
+          && (!('reminders' in request.resource.data) || (request.resource.data.reminders is list && request.resource.data.reminders.size() <= 50))
+          && (!('workBlocks' in request.resource.data) || (request.resource.data.workBlocks is list && request.resource.data.workBlocks.size() <= 100));
       }
       match /projects/{id} {
         allow read, delete: if owner(uid);
         allow create, update: if owner(uid) && revision() && request.resource.data.id == id
-          && request.resource.data.keys().hasOnly(['milestones','outcome','targetDate','coverAssetId','coverFocalPoint','focusRecipeId','wipLimit','revision','id','name','color','icon','isArchived','archivedAt','createdAt','updatedAt'])
+          && request.resource.data.keys().hasOnly(['areaId','milestones','outcome','targetDate','coverAssetId','coverFocalPoint','focusRecipeId','wipLimit','revision','id','name','color','icon','isArchived','archivedAt','createdAt','updatedAt'])
           && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
           && request.resource.data.color is string
+          && (!('areaId' in request.resource.data) || (request.resource.data.areaId is string && request.resource.data.areaId.size() <= 200))
           && (!('milestones' in request.resource.data) || (request.resource.data.milestones is list && request.resource.data.milestones.size() <= 100));
+      }
+      match /notes/{id} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid) && revision() && request.resource.data.id == id && validNote();
       }
       match /dashboards/{id} {
         allow read, delete: if owner(uid);

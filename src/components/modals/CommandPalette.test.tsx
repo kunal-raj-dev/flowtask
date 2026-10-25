@@ -175,7 +175,7 @@ describe('CommandPalette 2.0 Keyboard Choreography & Sub-Palettes', () => {
     renderPalette({ onSelectTask, onClose });
 
     // Type query matching task
-    const input = screen.getByPlaceholderText(/Type a command/i);
+    const input = screen.getByRole('textbox', { name: 'Command palette query' });
     fireEvent.change(input, { target: { value: 'auth' } });
 
     expect(screen.getByText('Fix auth race condition')).toBeTruthy();
@@ -189,7 +189,7 @@ describe('CommandPalette 2.0 Keyboard Choreography & Sub-Palettes', () => {
   it('drills into sub-palette with Tab and returns with Escape', () => {
     renderPalette();
 
-    const input = screen.getByPlaceholderText(/Type a command/i);
+    const input = screen.getByRole('textbox', { name: 'Command palette query' });
     fireEvent.change(input, { target: { value: 'auth' } });
 
     // Press Tab on the highlighted task
@@ -202,13 +202,13 @@ describe('CommandPalette 2.0 Keyboard Choreography & Sub-Palettes', () => {
     // Press Escape to return to root
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByText(/Priority 1: Urgent & Important/i)).toBeNull();
-    expect(screen.getByPlaceholderText(/Type a command/i)).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Command palette query' })).toBeTruthy();
   });
 
   it('drills into sub-palette with Tab and returns with Backspace even when query is non-empty', () => {
     renderPalette();
 
-    const input = screen.getByPlaceholderText(/Type a command/i);
+    const input = screen.getByRole('textbox', { name: 'Command palette query' });
     fireEvent.change(input, { target: { value: 'auth' } });
 
     // Drill in
@@ -218,13 +218,13 @@ describe('CommandPalette 2.0 Keyboard Choreography & Sub-Palettes', () => {
     // Press Backspace - should return to root level
     fireEvent.keyDown(window, { key: 'Backspace' });
     expect(screen.queryByText(/Priority 1: Urgent & Important/i)).toBeNull();
-    expect(screen.getByPlaceholderText(/Type a command/i)).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Command palette query' })).toBeTruthy();
   });
 
   it('executes action in sub-palette with single-key accelerator (e.g. 1 for P1)', () => {
     renderPalette();
 
-    const input = screen.getByPlaceholderText(/Type a command/i);
+    const input = screen.getByRole('textbox', { name: 'Command palette query' });
     fireEvent.change(input, { target: { value: 'auth' } });
 
     // Drill in
@@ -235,4 +235,17 @@ describe('CommandPalette 2.0 Keyboard Choreography & Sub-Palettes', () => {
     fireEvent.keyDown(window, { key: '1' });
     expect(defaultContextValue.updateTask).toHaveBeenCalledWith('task-1', { priority: 'p1' });
   });
+
+  it('navigates to Life Areas and Goals from command palette actions', () => {
+    renderPalette();
+
+    const input = screen.getByRole('textbox', { name: 'Command palette query' });
+    fireEvent.change(input, { target: { value: 'Life Areas' } });
+
+    const areasAction = screen.getByText(/Go to Life Areas/i);
+    expect(areasAction).toBeTruthy();
+    fireEvent.click(areasAction);
+    expect(defaultContextValue.setActiveView).toHaveBeenCalledWith('areas');
+  });
 });
+

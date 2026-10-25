@@ -169,6 +169,8 @@ export function calculateDayPlanSummary(
   const isDateToday = date === todayStr;
   const dayTasks = tasks.filter((t) => {
     if (t.deletedAt || t.archivedAt) return false;
+    const hasBlockForDate = Boolean(t.workBlocks && t.workBlocks.some((b) => b.date === date));
+    if (hasBlockForDate) return true;
     if (t.status === "done") {
       if (t.completedAt) {
         return formatLocalDate(new Date(t.completedAt)) === date;
@@ -213,7 +215,11 @@ export function calculateDayPlanSummary(
         : Math.max(0, defaultTaskDuration - (task.timeSpentMinutes || 0));
     }
 
-    if (task.scheduledStart) {
+    const blocksOnDay = (task.workBlocks || []).filter((b) => b.date === date);
+    if (blocksOnDay.length > 0) {
+      const blockMinutes = blocksOnDay.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
+      scheduledTaskMinutes += blockMinutes;
+    } else if (task.scheduledStart) {
       const s = parseTimeToMinutes(task.scheduledStart);
       const e =
         parseTimeToMinutes(task.scheduledEnd) ??

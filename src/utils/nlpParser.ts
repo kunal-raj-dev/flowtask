@@ -87,6 +87,18 @@ export function parseTaskInput(input: string): ParsedTaskInput {
     workingText = workingText.replace(durationRegex, ' ');
   }
 
+  // 3b. Extract Cognitive Load (e.g. ~deep, ~deep_work, ~shallow, ~medium, or load:deep)
+  let cognitiveLoad: import('../types/task').CognitiveLoad | undefined;
+  const cognitiveRegex = /(?:^|\s)(?:~|load:)(deep(?:_work)?|shallow|medium)(?=\s|$)/i;
+  const cognitiveMatch = workingText.match(cognitiveRegex);
+  if (cognitiveMatch) {
+    const rawLoad = cognitiveMatch[1].toLowerCase();
+    if (rawLoad.startsWith('deep')) cognitiveLoad = 'deep_work';
+    else if (rawLoad === 'shallow') cognitiveLoad = 'shallow';
+    else if (rawLoad === 'medium') cognitiveLoad = 'medium';
+    workingText = workingText.replace(cognitiveRegex, ' ');
+  }
+
   // 4. Extract Recurrence (e.g. daily, every day, weekdays, weekly, every week, biweekly, monthly, yearly)
   const recurrenceRules: [RegExp, RecurrenceFrequency][] = [
     [/(?:^|\s)(every\s+other\s+week|every\s+2\s+weeks|bi-?weekly)(?=\s|$)/i, 'biweekly'],
@@ -205,6 +217,7 @@ export function parseTaskInput(input: string): ParsedTaskInput {
     tags,
     contextTags,
     estimatedMinutes,
+    cognitiveLoad,
     recurrence,
   };
 }

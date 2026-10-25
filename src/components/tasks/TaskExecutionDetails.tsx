@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { Task } from "../../types/task";
 import { useTaskContext } from "../../context/TaskContext";
+import { openNote } from '../../hooks/useNotes';
+import { useWorkspaceSelector } from '../../services/workspaceStore';
 
 export function TaskExecutionDetails({ task }: { task: Task }) {
+  const sourceNote = useWorkspaceSelector(snapshot => snapshot.record.notes?.find(note => note.id === task.originNoteId && !note.deletedAt));
   const ctx = useTaskContext();
   const [draft, setDraft] = useState<string | null>(null);
   const pending = useRef<(() => void) | null>(null);
@@ -28,6 +31,7 @@ export function TaskExecutionDetails({ task }: { task: Task }) {
     .reverse();
   return (
     <section className="v2-task-execution">
+      {task.originNoteId && <div className="flex items-center gap-2 flex-wrap text-xs mb-4"><span>From note</span>{sourceNote ? <button className="desk-button" onClick={() => openNote(sourceNote.id)}>{sourceNote.title}</button> : <span>Source note unavailable or in Trash</span>}</div>}
       <label>
         Next small action
         <input

@@ -1,4 +1,6 @@
 import { ProjectIntent } from '../workflow/ProjectIntent';
+import { ProjectNotes } from '../notes/ProjectNotes';
+import { useWorkspaceSelector } from '../../services/workspaceStore';
 import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useMediaCatalog } from '../../hooks/useStudio';
@@ -47,6 +49,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     deleteProject,
   } = useTaskContext();
 
+  const rawAreas = useWorkspaceSelector((s) => s.record.areas);
+  const areas = rawAreas || [];
   const [presentation, setPresentation] = useState<'list' | 'board' | 'matrix'>('list');
   const media = useMediaCatalog();
   const [isAddingProject, setIsAddingProject] = useState(false);
@@ -57,6 +61,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('');
+  const [editAreaId, setEditAreaId] = useState('');
 
   // Delete project with reassignment dialog state
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
@@ -88,7 +93,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject || !editName.trim()) return;
-    updateProject(editingProject.id, { name: editName.trim(), color: editColor });
+    updateProject(editingProject.id, {
+      name: editName.trim(),
+      color: editColor,
+      areaId: editAreaId || undefined,
+    });
     setEditingProject(null);
   };
 
@@ -159,6 +168,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         </div>
 
         <ProjectIntent key={currentProject.id} project={currentProject} visualAssets={media.visuals} mediaLoading={media.loading} mediaError={media.error}/>
+        <ProjectNotes projectId={currentProject.id}/>
         {/* Presentation Body */}
         {presentation === 'board' ? (
           <KanbanView projectId={selectedProjectId} onSelectTask={onSelectTask} />
@@ -231,7 +241,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               Projects
             </h1>
             <p className="text-xs text-[var(--text-secondary)] font-medium">
-              Manage work streams and dedicated workspaces
+              Manage work streams, outcomes, and ongoing responsibilities
             </p>
           </div>
         </div>
@@ -325,6 +335,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         setEditingProject(project);
                         setEditName(project.name);
                         setEditColor(project.color);
+                        setEditAreaId(project.areaId || '');
                       }}
                       className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06]"
                       title="Edit Project"
@@ -347,6 +358,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 <h3 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-blue-500 transition-colors">
                   <button type="button" aria-label={`Open project ${project.name}`}>{project.name}</button>
                 </h3>
+                {project.areaId && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-stone-100 dark:bg-white/10 text-[var(--text-secondary)] inline-block mt-1">
+                    {areas.find((a) => a.id === project.areaId)?.name || 'Area'}
+                  </span>
+                )}
                 {project.outcome && <p className="desk-muted mt-2">{project.outcome}</p>}
                 {project.targetDate && <p className="desk-muted mt-2">Target · {new Date(project.targetDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</p>}
               </div>
@@ -414,6 +430,27 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {areas.length > 0 && (
+                  <div>
+                    <label className="text-xs font-semibold text-[var(--text-secondary)] mb-1 block">
+                      Life Area
+                    </label>
+                    <select
+                      aria-label="Assign to life area"
+                      value={editAreaId}
+                      onChange={(e) => setEditAreaId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none"
+                    >
+                      <option value="">No Area (General)</option>
+                      {areas.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 mt-6">

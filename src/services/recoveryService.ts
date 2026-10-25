@@ -12,6 +12,7 @@ export interface RecoverySnapshot {
   day: string;
   label: string;
   taskCount: number;
+  noteCount?: number;
   projectCount: number;
   trigger: 'manual' | 'auto_daily' | 'pre_batch';
   backup: PortableWorkspace;
@@ -24,7 +25,7 @@ function scope(workspaceId: string) {
   if (!workspaceId || typeof workspaceId !== 'string') throw new Error('Choose a workspace before managing recovery checkpoints.');
 }
 function validate(backup: PortableWorkspace) {
-  if (backup.schemaVersion > 6) throw new Error('This backup requires a newer FlowTask version.');
+  if (backup.schemaVersion > 7) throw new Error('This backup requires a newer FlowTask version.');
   validateWorkspaceData(backup.tasks, backup.projects);
   validateBackupExtras(backup);
 }
@@ -38,7 +39,7 @@ export const recoveryService = {
     return records.filter((value): value is RecoverySnapshot => value.version === 2 && value.workspaceId === workspaceId)
       .sort((a, b) => b.timestamp - a.timestamp || b.id.localeCompare(a.id));
   },
-  async create(workspaceId: string, record: Pick<WorkspaceRecord, 'tasks' | 'projects' | 'preferences' | 'customViews' | 'dashboards'>,
+  async create(workspaceId: string, record: Pick<WorkspaceRecord, 'tasks' | 'projects' | 'preferences' | 'customViews' | 'dashboards' | 'notes'>,
     trigger: RecoverySnapshot['trigger'] = 'manual', label?: string): Promise<RecoverySnapshot> {
     scope(workspaceId);
     const backup = structuredClone(createWorkspaceBackup(record));
@@ -47,7 +48,7 @@ export const recoveryService = {
     const snapshot: RecoverySnapshot = {
       version: 2, id: crypto.randomUUID(), workspaceId, timestamp, day: dayKey(timestamp),
       label: label || (trigger === 'auto_daily' ? 'Daily checkpoint' : trigger === 'pre_batch' ? 'Before changes' : 'Manual checkpoint'),
-      taskCount: backup.tasks.length, projectCount: backup.projects.length, trigger, backup,
+      taskCount: backup.tasks.length, noteCount: backup.notes.length, projectCount: backup.projects.length, trigger, backup,
     };
     const db = await getDatabase();
     const tx = db.transaction('snapshots', 'readwrite');

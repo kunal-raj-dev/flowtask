@@ -1,4 +1,5 @@
 import { getEffectiveTaskEstimate } from './taskTimeSummary';
+import { validateNotes, recoveredNote } from './noteModel';
 import { normalizeAppearance } from './appearance';
 import { normalizePresentation } from './workspacePresentation';
 import type { FocusLog } from "../types/task";
@@ -9,26 +10,43 @@ import { parseRecipe } from "../services/studioCatalog";
 import { DEFAULT_STUDIO, DEFAULT_TIMER } from "../types/studio";
 
 export interface BackupExtras {
+  notes?: WorkspaceRecord['notes'];
+  areas?: WorkspaceRecord['areas'];
+  goals?: WorkspaceRecord['goals'];
+  routines?: WorkspaceRecord['routines'];
+  habits?: WorkspaceRecord['habits'];
   preferences: Record<string, unknown>;
   customViews?: WorkspaceRecord["customViews"];
   dashboards?: WorkspaceDashboard[];
 }
 
 /** Portable user data only: active timers, checkpoints and sync operations must never replay on restore. */
-export function createWorkspaceBackup(record: Pick<WorkspaceRecord, 'tasks' | 'projects' | 'preferences' | 'customViews' | 'dashboards'>) {
-  const preferences = Object.fromEntries(Object.entries(record.preferences).filter(([key]) =>
+export function createWorkspaceBackup(record: Pick<WorkspaceRecord, 'tasks' | 'projects' | 'preferences' | 'customViews' | 'dashboards' | 'notes'> & Partial<Pick<WorkspaceRecord, 'areas' | 'goals' | 'routines' | 'habits'>>) {
+  const preferences = Object.fromEntries(Object.entries(record?.preferences && typeof record.preferences === 'object' ? record.preferences : {}).filter(([key]) =>
     !key.startsWith('_') && !['focusSession', 'focusCheckpointAt', 'studioLastSession', 'studioSummaryDismissed'].includes(key)));
-  return { schemaVersion: 6, version: 6, tasks: record.tasks.map(task => { const estimate = getEffectiveTaskEstimate(task); return estimate ? { ...task, estimatedMinutes: estimate } : task; }), projects: record.projects, dashboards: record.dashboards,
-    preferences, customViews: record.customViews,
-    mediaNote: 'Personal image/audio files are excluded. Export them separately from Focus Studio.' };
+  return {
+    schemaVersion: 7,
+    version: 7,
+    notes: validateNotes(record?.notes || []),
+    areas: record.areas || [],
+    goals: record.goals || [],
+    routines: record.routines || [],
+    habits: record.habits || [],
+    tasks: (record?.tasks || []).map(task => { const estimate = getEffectiveTaskEstimate(task); return estimate ? { ...task, estimatedMinutes: estimate } : task; }),
+    projects: record?.projects || [],
+    dashboards: record?.dashboards || [],
+    preferences,
+    customViews: record?.customViews || [],
+    mediaNote: 'Personal image/audio files are excluded. Export them separately from Focus Studio.',
+  };
 }
 const object = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 /** A backup may contain private device preferences, but never restore a running timer or sync queue. */
 export function validateBackupExtras(raw: unknown): BackupExtras | undefined {
-  if (!object(raw) || (!("preferences" in raw) && !("customViews" in raw) && !("dashboards" in raw)))
+  if (!object(raw) || (!("preferences" in raw) && !("customViews" in raw) && !("dashboards" in raw) && !("notes" in raw) && !("areas" in raw) && !("goals" in raw) && !("routines" in raw) && !("habits" in raw)))
     return undefined;
-  if ((typeof raw.schemaVersion === 'number' && raw.schemaVersion > 6) || (typeof raw.version === 'number' && raw.version > 6)) throw new Error('This backup requires a newer FlowTask version.');
+  if ((typeof raw.schemaVersion === 'number' && raw.schemaVersion > 7) || (typeof raw.version === 'number' && raw.version > 7)) throw new Error('This backup requires a newer FlowTask version.');
   const prefs = raw.preferences;
   if (prefs !== undefined && !object(prefs))
     throw new Error("Backup preferences must be an object.");
@@ -184,7 +202,17 @@ export function validateBackupExtras(raw: unknown): BackupExtras | undefined {
     });
   }
 
+  const areas = Array.isArray(raw.areas) ? (raw.areas as WorkspaceRecord['areas']) : undefined;
+  const goals = Array.isArray(raw.goals) ? (raw.goals as WorkspaceRecord['goals']) : undefined;
+  const routines = Array.isArray(raw.routines) ? (raw.routines as WorkspaceRecord['routines']) : undefined;
+  const habits = Array.isArray(raw.habits) ? (raw.habits as WorkspaceRecord['habits']) : undefined;
+
   return {
+    notes: validateNotes(raw.notes),
+    areas,
+    goals,
+    routines,
+    habits,
     preferences,
     customViews: (raw.customViews || []) as WorkspaceRecord["customViews"],
     dashboards,
@@ -208,10 +236,41 @@ export function mergeBackupExtras(
     preferences[key] = [...map.values()];
   }
   const dashboardMap = new Map<string, WorkspaceDashboard>();
+  const notes = new Map((before.notes || []).map(note => [note.id, note]));
+  for (const note of incoming.notes || []) {
+    const existing = notes.get(note.id);
+    if (!existing) notes.set(note.id, note);
+    else if (existing.body !== note.body || existing.title !== note.title) {
+      // An import never overwrites a different local text with the same ID.
+      const copy = recoveredNote(note);
+      if (![...notes.values()].some(n => n.title === copy.title && n.body === copy.body)) notes.set(copy.id, copy);
+    }
+  }
+  const areas = new Map((before.areas || []).map(a => [a.id, a]));
+  for (const a of incoming.areas || []) {
+    if (!areas.has(a.id)) areas.set(a.id, a);
+  }
+  const goals = new Map((before.goals || []).map(g => [g.id, g]));
+  for (const g of incoming.goals || []) {
+    if (!goals.has(g.id)) goals.set(g.id, g);
+  }
+  const routines = new Map((before.routines || []).map(r => [r.id, r]));
+  for (const r of incoming.routines || []) {
+    if (!routines.has(r.id)) routines.set(r.id, r);
+  }
+  const habits = new Map((before.habits || []).map(h => [h.id, h]));
+  for (const h of incoming.habits || []) {
+    if (!habits.has(h.id)) habits.set(h.id, h);
+  }
   for (const d of [...(before.dashboards || []), ...(incoming.dashboards || [])]) {
     if (!dashboardMap.has(d.id)) dashboardMap.set(d.id, d);
   }
   return {
+    notes: [...notes.values()],
+    areas: [...areas.values()],
+    goals: [...goals.values()],
+    routines: [...routines.values()],
+    habits: [...habits.values()],
     preferences,
     customViews: [
       ...(before.customViews || []),

@@ -1,7 +1,10 @@
 import { canonicalWorkspaceUrl, resolveStartView } from '../../utils/entryRoute';
+import { parseInitialView, useUIStore } from '../../store/useUIStore';
 import { shouldIgnoreShortcut } from '../../services/shortcutRegistry';
 import { isTodayTask } from '../../utils/taskSelectors';
 import { RecoveryView } from '../views/RecoveryView';
+import { snoozeReminder, syncRemindersWithStore } from '../../services/reminderService';
+import { useTaskStore } from '../../store/useTaskStore';
 import React, { useState, useEffect, useRef, useMemo, useCallback, lazy } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TodayView } from '../views/TodayView';
@@ -11,7 +14,10 @@ const EisenhowerView = lazy(() => import('../views/EisenhowerView').then((m) => 
 const KanbanView = lazy(() => import('../views/KanbanView').then((m) => ({ default: m.KanbanView })));
 const ProjectsView = lazy(() => import('../views/ProjectsView').then((m) => ({ default: m.ProjectsView })));
 const ReviewView = lazy(() => import('../views/ReviewView').then((m) => ({ default: m.ReviewView })));
+const NotesView = lazy(() => import('../views/NotesView').then((m) => ({ default: m.NotesView })));
 const StudyView = lazy(() => import('../views/StudyView').then((m) => ({ default: m.StudyView })));
+const LifeAreasView = lazy(() => import('../views/LifeAreasView').then((m) => ({ default: m.LifeAreasView })));
+const GoalsView = lazy(() => import('../views/GoalsView').then((m) => ({ default: m.GoalsView })));
 import { TaskList } from '../tasks/TaskList';
 import { AppShell } from './AppShell';
 import { DesktopHeader } from './DesktopHeader';
@@ -86,6 +92,39 @@ export const AppLayout: React.FC = () => {
 
   const startViewApplied = useRef(false);
   useEffect(() => {
+    const back = () => useUIStore.setState({ activeView: parseInitialView(), selectedNoteId: new URLSearchParams(window.location.search).get('note') });
+    window.addEventListener('popstate', back);
+    return () => window.removeEventListener('popstate', back);
+  }, []);
+
+  useEffect(() => {
+    const store = useTaskStore.getState().store;
+    if (store) {
+      const cleanup = syncRemindersWithStore(store);
+      return cleanup;
+    }
+  }, [tasks]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+      const { reminder, taskTitle } = detail;
+      const store = useTaskStore.getState().store;
+      useUIStore.getState().showToast(
+        `Reminder: ${taskTitle || 'Task'}`,
+        'Snooze 5m',
+        () => {
+          if (store && reminder?.id && reminder?.taskId) {
+            snoozeReminder(store, reminder.taskId, reminder.id, '5m');
+          }
+        }
+      );
+    };
+    window.addEventListener('flowtask:reminder-triggered', handler);
+    return () => window.removeEventListener('flowtask:reminder-triggered', handler);
+  }, []);
+  useEffect(() => {
     if (startViewApplied.current) return;
     if (new URLSearchParams(window.location.search).has('view') || window.location.hash.startsWith('#snapshot=')) {
       startViewApplied.current = true;
@@ -133,6 +172,28 @@ export const AppLayout: React.FC = () => {
     setIsQuickAddOpen,
   ]);
 
+  const pendingShareTarget = useRef(new URLSearchParams(window.location.search).get('action') === 'share-target');
+  useEffect(() => {
+    if (!pendingShareTarget.current) return;
+    pendingShareTarget.current = false;
+    const url = new URL(window.location.href);
+    const title = url.searchParams.get('title') || '';
+    const text = url.searchParams.get('text') || '';
+    const shareUrl = url.searchParams.get('url') || '';
+    const itemText = [title, text, shareUrl].filter(Boolean).join(' - ');
+    if (itemText.trim()) {
+      addTask(itemText.trim(), { projectId: 'inbox' });
+      useUIStore.getState().showToast('Shared item saved to Inbox');
+    }
+    const cleanUrl = canonicalWorkspaceUrl(window.location.href);
+    cleanUrl.searchParams.delete('action');
+    cleanUrl.searchParams.delete('title');
+    cleanUrl.searchParams.delete('text');
+    cleanUrl.searchParams.delete('url');
+    window.history.replaceState(window.history.state, '', cleanUrl);
+  }, [addTask]);
+
+
   useEffect(() => {
     try {
       localStorage.setItem('flowtask_sidebar_collapsed', String(isSidebarCollapsed));
@@ -178,6 +239,12 @@ export const AppLayout: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'W' || e.key === 'w')) {
         e.preventDefault();
         openModal('weeklyReview');
+      } else if (e.altKey && (e.key === ' ' || e.code === 'Space')) {
+        e.preventDefault();
+        openModal('captureHUD');
+      } else if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        useUIStore.getState().toggleCalendarDrawer();
       } else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
         e.preventDefault();
         if (isModalOpen('scratchpad')) {
@@ -261,6 +328,8 @@ export const AppLayout: React.FC = () => {
         return 'Upcoming';
       case 'projects':
         return 'Projects';
+      case 'notes':
+        return 'Notes';
       case 'review':
         return 'Review';
       case 'all':
@@ -343,6 +412,7 @@ export const AppLayout: React.FC = () => {
   }, [setSelectedTaskId]);
 
   const renderActiveView = () => {
+    if (activeView === 'notes') return <NotesView/>;
     if (activeView === 'trash' || activeView === 'archive') return <RecoveryView mode={activeView} />;
     if (activeView === 'today') {
       return (
@@ -406,7 +476,7 @@ export const AppLayout: React.FC = () => {
       );
     }
     if (activeView === 'study') {
-      return <StudyView onStartSprint={handleStartStudySprint} onSelectTask={(id) => setSelectedTaskId(id)} />;
+      return <StudyView onStartSprint={handleStartStudySprint} onSelectTask={(id: string) => setSelectedTaskId(id)} />;
     }
     if (activeView === 'timeline') {
       return (
@@ -443,6 +513,21 @@ export const AppLayout: React.FC = () => {
           onStartFocus={handleStartFocus}
           onOpenBrainDump={() => openModal('brainDump')}
           onStartSprint={handleStartStudySprint}
+        />
+      );
+    }
+    if (activeView === 'areas') {
+      return (
+        <LifeAreasView
+          onSelectProject={(id) => setActiveView(`project:${id}` as any)}
+          onSelectTask={handleSelectTask}
+        />
+      );
+    }
+    if (activeView === 'goals') {
+      return (
+        <GoalsView
+          onSelectProject={(id) => setActiveView(`project:${id}` as any)}
         />
       );
     }

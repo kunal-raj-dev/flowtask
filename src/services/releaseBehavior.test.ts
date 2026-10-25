@@ -41,6 +41,6 @@ describe('release behavior boundaries', () => {
     const record = emptyWorkspace('local');
     record.preferences._calendarFile = { name: 'private.ics', content: 'private calendar contents' };
     const backup = createWorkspaceBackup(record);
-    expect(backup.schemaVersion).toBe(6); expect(JSON.stringify(backup)).not.toContain('private calendar contents');
+    expect(backup.schemaVersion).toBe(7); expect(JSON.stringify(backup)).not.toContain('private calendar contents');
   });
 });
