@@ -9,6 +9,7 @@ import {
 } from '../../utils/timelineUtils';
 import { SchedulePlannerDialog } from '../workflow/SchedulePlannerDialog';
 import { calculateDayPlanSummary } from '../../utils/dayPlanSummary';
+import { getTaskEligibility } from '../../utils/taskEligibility';
 import { formatLocalDate } from '../../utils/nlpParser';
 import {
   TimelineHeader,
@@ -50,6 +51,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   } = useTaskContext();
 
   const [slotPlannerOpen, setSlotPlannerOpen] = useState(false);
+  const [backlogOpen, setBacklogOpen] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isRefreshingFeed, setIsRefreshingFeed] = useState(false);
 
@@ -78,6 +80,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     combinedPlannedHours,
     combinedCapacityPercent,
     cognitiveTopology,
+    taskEffortHours,
+    scheduledHours,
+    conflictMinutes,
   } = useMemo(() => {
     const START_HOUR = settings.timelineStartHour ?? 7;
     const END_HOUR = Math.max(START_HOUR + 1, settings.timelineEndHour ?? 22);
@@ -103,12 +108,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
       if (startMin !== null && startMin >= START_HOUR * 60 && startMin < END_HOUR * 60) {
         scheduled.push({ task, startMin, duration });
-      } else {
+      } else if (getTaskEligibility(task, { tasks, projects, date: effectiveDateStr }).actionable) {
         unscheduled.push(task);
       }
     });
 
-    const summary = calculateDayPlanSummary({date:effectiveDateStr,todayStr,tasks,calendarEvents,settings});
+    const summary = calculateDayPlanSummary({date:effectiveDateStr,todayStr,tasks,projects,calendarEvents,settings});
     const meetingMins = summary.timedCalendarMinutes;
     const meetingHours = (meetingMins / 60).toFixed(1);
 
@@ -123,6 +128,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
     const topology = analyzeCognitiveTopology(filteredTodayTasks, calendarEvents);
 
+    const taskEffortHours = (summary.totalDemandMinutes / 60).toFixed(1);
+    const scheduledHours = (summary.scheduledTaskMinutes / 60).toFixed(1);
+    const conflictMinutes = summary.conflictMinutes ?? 0;
+
     return {
       todayTasks: filteredTodayTasks,
       scheduledTasks: scheduled,
@@ -133,8 +142,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       combinedPlannedHours: plannedHours,
       combinedCapacityPercent: capacityPct,
       cognitiveTopology: topology,
+      taskEffortHours,
+      scheduledHours,
+      conflictMinutes,
     };
-  }, [tasks, effectiveDateStr, todayStr, settings, calendarEvents]);
+  }, [tasks, projects, effectiveDateStr, todayStr, settings, calendarEvents]);
 
   const START_HOUR = settings.timelineStartHour ?? 7;
   const END_HOUR = Math.max(START_HOUR + 1, settings.timelineEndHour ?? 22);
@@ -203,6 +215,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         taskMinutes={taskMinutes}
         combinedCapacityPercent={combinedCapacityPercent}
         isRefreshingFeed={isRefreshingFeed}
+        taskEffortHours={taskEffortHours}
+        scheduledHours={scheduledHours}
+        conflictMinutes={conflictMinutes}
         onOpenStudySession={onOpenStudySession}
         onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
         onRefreshCalendar={handleRefreshCalendar}
@@ -239,10 +254,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           initialDate={effectiveDateStr}
           onSelectTask={onSelectTask}
           onStartFocus={onStartFocus}
+          onDateChange={(d) => setPlanDate(d)}
         />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="timeline-planning-layout grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <button type="button" className="desk-button timeline-tray-toggle" aria-expanded={backlogOpen} aria-controls="timeline-staged-tasks" onClick={() => setBacklogOpen(!backlogOpen)}>
+            {backlogOpen ? 'Hide' : 'Show'} unscheduled tasks ({unscheduledTasks.length})
+          </button>
           {/* Left: Unscheduled Tasks Tray */}
+          <div id="timeline-staged-tasks" className="timeline-backlog-slot lg:col-span-4" data-open={backlogOpen || undefined}>
           <TimelineUnscheduledSidebar
             unscheduledTasks={unscheduledTasks}
             scheduledTasksCount={scheduledTasks.length}
@@ -255,6 +275,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             onClearAllScheduledTimes={handleClearAllScheduledTimes}
             onScheduleUnscheduled={handleScheduleUnscheduled}
           />
+          </div>
 
           {/* Right: Hourly Timeline Canvas */}
           <TimelineCanvas

@@ -376,8 +376,8 @@ describe('Empirical Verification: Milestone M2 Remediation Verification', () => 
       expect(ranks?.[1].textContent).toBe('02');
       expect(ranks?.[2].textContent).toBe('03');
 
-      // Overflow focus tasks (Focus 4 and Focus 5) are NOT dropped; they are preserved in daytime batches (Morning Focus)
-      const morningFocusSection = screen.getByRole('region', { name: 'Morning Focus' });
+      // Overflow focus tasks (Focus 4 and Focus 5) are NOT dropped; they are preserved in daytime batches (Daytime Flow)
+      const morningFocusSection = screen.getByRole('region', { name: 'Daytime Flow' });
       expect(morningFocusSection).toBeDefined();
       expect(morningFocusSection.textContent).toContain('Focus Task 4 (p3 deep intensity)');
       expect(morningFocusSection.textContent).toContain('Focus Task 5 (p4 deep intensity)');

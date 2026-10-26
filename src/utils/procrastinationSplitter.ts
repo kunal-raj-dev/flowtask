@@ -149,3 +149,6 @@ export function getAlternativeStarterActions(
     'Clarify what "done" looks like in 1 plain sentence (5m)',
   ];
 }
+
+export { decomposeTask } from './aiCopilot';
+

@@ -7,6 +7,7 @@ import {
   TIMELINE_END_HOUR,
 } from './timelineUtils';
 import { calculateTaskPriorityScore } from './priorityScoring';
+import { formatLocalDate } from './nlpParser';
 
 export interface AutoSlotOptions {
   startHour?: number;
@@ -133,6 +134,12 @@ export function computeAutoSlotSchedule(
 
   // 3. Greedily find earliest free gap for each task
   for (const task of sortedTasks) {
+    if (task.scheduleLocked) {
+      unslotted.push(task);
+      reasons[task.id] = 'Schedule is locked.';
+      continue;
+    }
+
     const duration = getEffectiveTaskEstimate(task) || options.defaultTaskMinutes || 30;
     const deadline = options.date && task.dueDate === options.date ? parseTimeToMinutes(task.dueTime) : null;
     const taskEndMin = Math.min(dayEndMin, deadline ?? dayEndMin);
@@ -149,6 +156,13 @@ export function computeAutoSlotSchedule(
 
     // Find next available gap starting from dayStartMin
     let candidateStart = dayStartMin;
+    if (task.deferUntil && !/^\d{4}-\d{2}-\d{2}$/.test(task.deferUntil)) {
+      const available = new Date(task.deferUntil);
+      if (Number.isFinite(available.getTime()) && options.date === formatLocalDate(available)) {
+        const availableMin = available.getHours() * 60 + available.getMinutes() + (available.getSeconds() > 0 ? 1 : 0);
+        candidateStart = Math.max(candidateStart, alignToQuarter ? Math.ceil(availableMin / 15) * 15 : availableMin);
+      }
+    }
     let foundSlot: number | null = null;
 
     while (candidateStart + duration <= taskEndMin) {

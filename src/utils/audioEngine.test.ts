@@ -105,4 +105,21 @@ describe('audioEngine enhancements', () => {
     expect(() => audioEngine.playSubtaskToggle(false)).not.toThrow();
     expect(() => audioEngine.playTaskUncheckSound()).not.toThrow();
   });
+
+  it('supports concurrent multi-track ambient mixing without cancelling other tracks', () => {
+    expect(() => audioEngine.startTrack('rain', 0.1)).not.toThrow();
+    expect(() => audioEngine.startTrack('brown', 0.15)).not.toThrow();
+    expect(() => audioEngine.startTrack('binaural', 0.08)).not.toThrow();
+
+    expect(audioEngine.isTrackPlaying('rain')).toBe(true);
+    expect(audioEngine.isTrackPlaying('brown')).toBe(true);
+    expect(audioEngine.isTrackPlaying('binaural')).toBe(true);
+
+    audioEngine.setTrackVolume('rain', 0.2);
+    expect(audioEngine.getTrackVolume('rain')).toBe(0.2);
+
+    expect(() => audioEngine.stopTrack('rain', 0)).not.toThrow();
+    expect(() => audioEngine.stopAmbientSound(0)).not.toThrow();
+    expect(audioEngine.ambientTracks.size).toBe(0);
+  });
 });

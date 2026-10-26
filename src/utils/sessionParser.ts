@@ -1,4 +1,4 @@
-import type { TargetDifficulty, SubTask, Task, SessionMetadata } from '../types/task';
+import type { TargetDifficulty, SubTask, Task, SessionMetadata, WorkBlock } from '../types/task';
 
 export interface ParsedSessionTarget {
   id: string;
@@ -39,6 +39,7 @@ export function normalizeTimeTo24h(raw: string): string | null {
     let hour = parseInt(ampmMatch[1], 10);
     const minute = ampmMatch[2] ? parseInt(ampmMatch[2], 10) : 0;
     const isPm = ampmMatch[3] === 'pm';
+    if (hour < 1 || hour > 12 || minute < 0 || minute > 59) return null;
 
     if (isPm && hour < 12) hour += 12;
     if (!isPm && hour === 12) hour = 0;
@@ -139,6 +140,7 @@ export function extractTimeRange(text: string): { start?: string; end?: string; 
 export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | null {
   const trimmed = line.trim();
   if (!trimmed) return null;
+  if (/^(?:targets?|target questions|questions|topics|checklist|to-do)\s*(?::|->|=>)?\s*$/i.test(trimmed)) return null;
 
   // Ignore Markdown fences, dividers, greetings, dates, Discord timestamps, headers
   if (
@@ -157,8 +159,7 @@ export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | 
 
   // Strip leading bullets, numbers, checkboxes, "target questions ->", "target ->"
   const cleanLine = trimmed
-    .replace(/^target\s*(?:questions?)?\s*->\s*/i, '')
-    .replace(/^target\s*:\s*/i, '')
+    .replace(/^(?:targets?|target questions|questions|topics)\s*(?:->|=>|:|→)\s*/i, '')
     .replace(/^[-*•]\s*(?:\[[ xX]\]\s*)?/, '')
     .replace(/^\[[ xX]\]\s*/, '')
     .trim();
@@ -170,6 +171,9 @@ export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | 
   let rawUrl = urlMatch ? urlMatch[1] : undefined;
   if (rawUrl) {
     rawUrl = rawUrl.replace(/[,.)]+$/, '');
+    // Copied LeetCode tables often glue an uppercase topic directly to the slug.
+    const problemUrl = rawUrl.match(/^https?:\/\/(?:www\.)?leetcode\.com\/problems\/[a-z0-9-]+\/?/);
+    if (problemUrl) rawUrl = problemUrl[0];
   }
 
   let difficulty: TargetDifficulty | undefined;
@@ -222,16 +226,9 @@ export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | 
     }
 
     // Check for estimated duration: e.g. (15m), (30 mins), 45m, ~20m, 1 hr, 1.5h
-    const timeEstMatch = workingText.match(/(?:~|\b)(\d+(?:\.\d+)?)\s*(mins?|minutes|m|hours?|hrs?|h)\b/i);
-    if (timeEstMatch) {
-      const val = parseFloat(timeEstMatch[1]);
-      const unit = timeEstMatch[2].toLowerCase();
-      if (unit.startsWith('h')) {
-        estimatedMinutes = Math.round(val * 60);
-      } else {
-        estimatedMinutes = Math.round(val);
-      }
-    }
+    const estimatePattern = /(?:~|\b)(\d+(?:\.\d+)?)\s*(minutes?|mins?|m|hours?|hrs?|h)\b/gi;
+    const estimates = [...workingText.replace(/https?:\/\/\S+/gi, '').matchAll(estimatePattern)];
+    if (estimates.length) estimatedMinutes = Math.max(1, Math.min(720, Math.round(estimates.reduce((sum, item) => sum + Number(item[1]) * (item[2].toLowerCase().startsWith('h') ? 60 : 1), 0))));
 
     // Check for leading problem number: e.g. "1. Two Sum" or "#42 Trapping Rain Water" or "42 Trapping Rain Water"
     const probNumMatch = workingText.match(/^(?:#\s*(\d+)|\b(\d+)[.)]\s*|\b(\d+)\s+)/);
@@ -259,6 +256,9 @@ export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | 
       .replace(/\s*[([][\s]*(?:(?:EASY|MEDIUM|MED|HARD)[,\s]*)?(?:~?\s*\d+(?:\.\d+)?\s*(?:mins?|minutes|m|hours?|hrs?|h))?[,\s]*(?:(?:EASY|MEDIUM|MED|HARD))?\s*[)\]]/gi, '')
       .replace(/\s*-\s*$/, '')
       .trim();
+
+    // Estimates are also accepted as ordinary suffixes: “Read chapter 3 — 30 min”.
+    workingText = workingText.replace(estimatePattern, '').replace(/\(\s*[,\s]*\)|\[\s*[,\s]*\]/g, '').replace(/[\s~–—|,-]+$/, '').trim();
 
     title = workingText || cleanLine;
   }
@@ -291,7 +291,11 @@ export function parseTargetLine(line: string, index = 0): ParsedSessionTarget | 
 export function parseStudySessions(rawText: string): ParsedSession[] {
   if (!rawText || !rawText.trim()) return [];
 
-  const lines = rawText.split('\n').map((l) => l.trim());
+  const lines = rawText.replace(/\r\n?/g, '\n').split(/\n|;\s*(?![^\n]*https?:)/).flatMap(line => {
+    // Commas separate targets only after an explicit label; topic tags keep their commas.
+    const list = line.match(/^(?:targets?|topics|questions)\s*[:→]\s*(.+)$/i);
+    return list && !line.includes('http') && !line.includes('(') ? list[1].split(/,\s*/) : [line];
+  }).map(l => l.trim());
   const sessions: ParsedSession[] = [];
 
   let currentSession: Partial<ParsedSession> | null = null;
@@ -309,9 +313,10 @@ export function parseStudySessions(rawText: string): ParsedSession[] {
 
       // If duration was not defined via header, compute sum of estimated target minutes
       const sumTargetMins = targets.reduce((sum, t) => sum + (t.estimatedMinutes || 0), 0);
-      if (duration === 0 && sumTargetMins > 0) {
-        duration = sumTargetMins;
-      }
+      const missingCount = targets.filter(target => !target.estimatedMinutes).length;
+      const explicitPacing = currentSession.targetPacingMinutes;
+      const headerDuration = currentSession.durationMinutes;
+      if (duration === 0) duration = sumTargetMins + missingCount * (explicitPacing || 30);
 
       // Auto-calculate pacing if not explicitly defined
       let pacing = currentSession.targetPacingMinutes;
@@ -326,7 +331,7 @@ export function parseStudySessions(rawText: string): ParsedSession[] {
       // Assign estimates to targets if pacing is known and target has none
       if (pacing && pacing > 0) {
         targets.forEach((t) => {
-          if (!t.estimatedMinutes) t.estimatedMinutes = pacing;
+          if (!t.estimatedMinutes) t.estimatedMinutes = explicitPacing || (headerDuration && duration > sumTargetMins ? Math.max(1, Math.floor((duration - sumTargetMins) / missingCount)) : 30);
         });
       }
 
@@ -336,7 +341,7 @@ export function parseStudySessions(rawText: string): ParsedSession[] {
       }
 
       sessions.push({
-        id: `session-${currentSession.sessionNumber || ++sessionCounter}-${Date.now().toString(36)}`,
+        id: `session-${currentSession.sessionNumber || ++sessionCounter}-${sessions.length}-${Date.now().toString(36)}`,
         sessionNumber: currentSession.sessionNumber || sessionCounter,
         sessionTopic: currentSession.sessionTopic || 'Focus & Study Session',
         rawHeader: currentSession.rawHeader,
@@ -367,6 +372,7 @@ export function parseStudySessions(rawText: string): ParsedSession[] {
     const isMarkdownHeader = /^#{1,3}\s+(.+)$/i.test(line);
     const isSessionKeyword = /^Session\s*(\d+)?\b/i.test(line);
     const isStudyKeyword = /^(?:Study|Focus)\s+Session\s*(\d+)?\b/i.test(line);
+    const isNamedHeading = /^[^:]{2,100}:$/.test(line) && !/^(?:targets?|questions|topics|task|subject|pacing):$/i.test(line);
     const hasTimeRange = extractTimeRange(line) !== null;
     const isBulletItem = /^[-*•\d+]/.test(line);
 
@@ -374,6 +380,7 @@ export function parseStudySessions(rawText: string): ParsedSession[] {
     const isExplicitHeader =
       isSessionKeyword ||
       isStudyKeyword ||
+      isNamedHeading ||
       isMarkdownHeader ||
       (hasTimeRange && !isBulletItem && !line.includes('http'));
 
@@ -547,8 +554,31 @@ export function convertSessionToTask(
     description += `**Pacing**: ${session.targetPacingMinutes} mins/${session.targetUnit || 'Q'}\n`;
   }
 
+  const taskId = `task-session-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const totalWork = subtasks.reduce((sum, target) => sum + (target.estimatedMinutes || 0), 0);
+  const duration = session.startTime && session.endTime
+    ? calculateDurationMinutes(session.startTime, session.endTime)
+    : totalWork || 30;
+
+  const timezone = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' : 'UTC';
+  const workBlocks: WorkBlock[] = dueDateStr ? [{
+    id: `wb-study-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    taskId,
+    date: dueDateStr,
+    startTime: session.startTime,
+    endTime: session.endTime,
+    durationMinutes: duration,
+    startInstant: session.startTime ? Date.parse(`${dueDateStr}T${session.startTime}:00`) || Date.now() : Date.now(),
+    endInstant: session.endTime ? Date.parse(`${dueDateStr}T${session.endTime}:00`) || (Date.now() + duration * 60000) : Date.now() + duration * 60000,
+    timezone,
+    status: 'scheduled',
+    source: 'canonical',
+    title: session.sessionTopic,
+    createdAt: Date.now(),
+  }] : [];
+
   return {
-    id: `task-session-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    id: taskId,
     title,
     description: description.trim() || undefined,
     status: 'todo',
@@ -559,11 +589,14 @@ export function convertSessionToTask(
     dueTime: session.endTime,
     scheduledStart: session.startTime,
     scheduledEnd: session.endTime,
-    estimatedMinutes: session.durationMinutes || (subtasks.length * (session.targetPacingMinutes || 30)),
+    // The calendar window and the amount of work are independent.
+    estimatedMinutes: totalWork,
     timeSpentMinutes: 0,
     subtasks,
     isPinnedToday: true,
+    isStudy: true,
     sessionMetadata,
+    workBlocks: workBlocks.length > 0 ? workBlocks : undefined,
     createdAt: Date.now(),
   };
 }

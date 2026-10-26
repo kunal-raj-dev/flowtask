@@ -445,7 +445,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         )}
 
                         <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] pt-1.5 border-t border-[var(--border-hairline)]">
-                          <span>{task.dueDate || 'No date'}</span>
+                          <span>{task.dueDate ? `Due ${task.dueDate}` : task.plannedDate ? `Planned ${task.plannedDate}` : 'No date'}</span>
                           {task.subtasks && task.subtasks.length > 0 && (
                             <span>
                               {task.subtasks.filter((s) => s.completed).length}/

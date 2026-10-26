@@ -414,7 +414,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(screen.getByRole('textbox', { name: 'Add a task to this list' })).toBeDefined();
       expect(screen.getByText('A DAY THAT FITS')).toBeDefined();
       expect(document.querySelector('.daily-planning-summary')?.textContent).toContain(
-        '0.5h planned · 5.5h available'
+        '0.5h planned · 5.5h in daily budget'
       );
       expect(screen.queryByText(/Focus Session in Progress/)).toBeNull();
       expect(screen.getByText('1h 15m focused')).toBeDefined();
@@ -463,7 +463,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         screen.getByText('Star up to three tasks below. Give your day a clear place to start.')
       ).toBeDefined();
       expect(document.querySelector('.daily-planning-summary')?.textContent).toContain(
-        '0h planned · 6h available'
+        '0h planned · 6h in daily budget'
       );
     });
 
@@ -666,7 +666,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(screen.getByText(/A clear space to begin. Add a task above/)).toBeDefined();
 
       const summary = document.querySelector('.daily-planning-summary');
-      expect(summary?.textContent).toContain('0h planned · 6h available');
+      expect(summary?.textContent).toContain('0h planned · 6h in daily budget');
       expect(summary?.textContent).toContain('0 completed');
     });
 

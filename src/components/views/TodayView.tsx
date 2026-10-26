@@ -1,3 +1,4 @@
+import { useTaskAvailabilityClock } from '../../hooks/useTaskAvailabilityClock';
 import React, { lazy, Suspense, useMemo, useState, useCallback } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { HorizonTodayView } from './today/HorizonTodayView';
@@ -29,6 +30,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
   const {
     workspacePreferences = {},
     tasks,
+    projects = [],
     toggleTaskStatus,
     toggleTaskPinToday,
     updateTask,
@@ -53,17 +55,18 @@ export const TodayView: React.FC<TodayViewProps> = ({
   });
 
   const today = useTodayStr();
+  const availabilityNow = useTaskAvailabilityClock(tasks);
 
   // Active tasks for keyboard navigation
   const visibleTasks = useMemo(() => {
-    return tasks.filter((t) => !t.deletedAt && !t.archivedAt && (isTodayTask(t, today) || isFocusTask(t, today)));
-  }, [tasks, today]);
+    return tasks.filter((t) => !t.deletedAt && !t.archivedAt && (isTodayTask(t, today, { tasks, projects, now: availabilityNow }) || isFocusTask(t, today, { tasks, projects, now: availabilityNow })));
+  }, [tasks, projects, today, availabilityNow]);
 
   const handleToggleStatusWithCelebration = useCallback(
     (taskId: string) => {
       const target = tasks.find((t) => t.id === taskId);
       const willBeDone = target ? target.status !== 'done' : false;
-      const isTopThree = target ? isFocusTask(target, today) : false;
+      const isTopThree = target ? isFocusTask(target, today, { tasks, projects, now: availabilityNow }) : false;
 
       toggleTaskStatus(taskId);
 
@@ -76,7 +79,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
         });
       }
     },
-    [tasks, today, toggleTaskStatus]
+    [tasks, projects, today, availabilityNow, toggleTaskStatus]
   );
 
   useKeyboardNavigation({

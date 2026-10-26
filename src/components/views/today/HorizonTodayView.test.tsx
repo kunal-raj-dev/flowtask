@@ -6,6 +6,7 @@ import type { Task } from '../../../types/task';
 
 const mockUpdateTask = vi.fn();
 const mockAddTask = vi.fn();
+const mockStartFocus = vi.fn();
 
 const sampleTasks: Task[] = [
   {
@@ -92,6 +93,7 @@ vi.mock('../../../context/TaskContext', () => ({
     settings: { targetWorkCapacityHours: 6, enableSmartSyntaxParsing: true },
     updateTask: mockUpdateTask,
     addTask: mockAddTask,
+    startFocusSession: mockStartFocus,
     showToast: vi.fn(),
     toggleTaskStatus: vi.fn(),
     toggleTaskPinToday: vi.fn(),
@@ -161,5 +163,37 @@ describe('HorizonTodayView', () => {
     const switcher = screen.getByRole('button', { name: 'Switch dashboard' });
     fireEvent.click(switcher);
     expect(onSwitch).toHaveBeenCalled();
+  });
+
+  it('toggles Single-Task Horizon mode, collapses batches, and provides 5m starter timer', () => {
+    const onStartFocus = vi.fn();
+    render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={onStartFocus} />);
+
+    // Initially batches are present
+    expect(screen.getByRole('region', { name: 'Morning Focus' })).toBeDefined();
+
+    // Toggle Single-Task Horizon
+    fireEvent.click(screen.getByRole('button', { name: 'Today options' }));
+    const toggleBtn = screen.getByRole('button', { name: /Single-Task Horizon/i });
+    fireEvent.click(toggleBtn);
+
+    // Batches should now be collapsed
+    expect(screen.queryByRole('region', { name: 'Morning Focus' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Daytime Flow' })).toBeNull();
+
+    // Isolated single-task horizon and 5-minute starter action are displayed
+    expect(screen.getByText('5-Minute Physical Starter Action')).toBeDefined();
+    expect(screen.getByText(/Background batch lists collapsed/i)).toBeDefined();
+
+    // Start 5m timer
+    const startTimerBtn = screen.getByRole('button', { name: /Start 5m Timer/i });
+    fireEvent.click(startTimerBtn);
+    expect(mockStartFocus).toHaveBeenCalledWith(expect.objectContaining({ taskId: 'top-1', targetDurationSec: 300 }));
+    expect(onStartFocus).not.toHaveBeenCalled();
+
+    // Toggle off restores batch view
+    fireEvent.click(screen.getByRole('button', { name: 'Today options' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show all tasks' }));
+    expect(screen.getByRole('region', { name: 'Morning Focus' })).toBeDefined();
   });
 });

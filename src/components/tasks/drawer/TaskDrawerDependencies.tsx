@@ -27,12 +27,12 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
   task,
   onOpenMergeModal,
 }) => {
-  const { tasks, updateTask, mergeTasks, showToast } = useTaskContext();
+  const { tasks, projects, updateTask, mergeTasks, showToast } = useTaskContext();
   const [isDependenciesExpanded, setIsDependenciesExpanded] = useState(false);
   const [dismissedDuplicateId, setDismissedDuplicateId] = useState<string | null>(null);
 
   const isDone = task.status === 'done';
-  const blockedInfo = isTaskBlocked(task, tasks);
+  const blockedInfo = isTaskBlocked(task, tasks, projects);
   const blockingCandidates = getPotentialBlockingCandidates(task.id, tasks);
 
   const potentialDuplicates = findPotentialDuplicates(task, tasks).filter(

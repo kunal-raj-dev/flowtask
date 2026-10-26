@@ -17,7 +17,7 @@ describe('Today workspace composition',()=>{
     expect(screen.getByRole('heading',{name:'Today.'})).toBeDefined();
     expect(screen.getByRole('textbox',{name:'Add a task to this list'})).toBeDefined();
     expect(screen.getByText('A DAY THAT FITS')).toBeDefined();
-    expect(document.querySelector('.daily-planning-summary')?.textContent).toContain('0.5h planned · 5.5h available');
+    expect(document.querySelector('.daily-planning-summary')?.textContent).toContain('0.5h planned · 5.5h in daily budget');
     expect(screen.queryByText(/Focus Session in Progress/)).toBeNull();
   });
   it('reports recorded focus in the capacity widget without another timer banner',async ()=>{

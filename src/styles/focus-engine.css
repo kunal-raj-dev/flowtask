@@ -1,0 +1,21 @@
+.focus-engine { height: 100dvh; }
+.focus-engine > header { flex-shrink: 0; gap: 12px; }
+.focus-engine > main { min-height: 0; }
+.focus-engine :is(h1,p) { max-width: 100%; overflow-wrap: anywhere; }
+
+@media (max-width: 767px) {
+  .focus-engine > header { display: grid; grid-template-columns: minmax(0,1fr) auto; padding: 12px 16px; }
+  .focus-engine > header > nav { grid-row: 2; grid-column: 1 / -1; justify-content: center; }
+  .focus-engine > header > :last-child { grid-column: 2; grid-row: 1; }
+  .focus-engine > header > :first-child { flex-wrap: wrap; gap: 4px; }
+  .focus-engine > header button { min-height: 44px; }
+  .focus-engine > main { justify-content: flex-start; padding: 24px 16px; }
+  .focus-engine [role="tabpanel"] { width: 100%; min-width: 0; }
+  .focus-engine [role="tabpanel"] > .flex { flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .focus-engine [role="tabpanel"] > h1 { white-space: normal; font-size: 24px; }
+  .focus-engine [role="timer"] { font-size: clamp(48px,16vw,72px); }
+  .focus-engine [role="tabpanel"] button { min-height: 44px; }
+}
+@media (max-height: 560px) {
+  .focus-engine > main { justify-content: flex-start; }
+}

@@ -25,6 +25,8 @@ export class AudioEngine {
   private ambientSource: AudioNode | null = null;
   private ambientGain: GainNode | null = null;
   private ambientOscillators: OscillatorNode[] = [];
+  public ambientTracks: Map<AmbientSoundType, { source: AudioNode | AudioNode[]; gain: GainNode }> = new Map();
+  public trackVolumes: Map<AmbientSoundType, number> = new Map();
   private lastMajorSoundTime: number = 0;
   private lastClickTime: number = 0;
   private lastCompletionChimeTime: number = 0;
@@ -185,38 +187,68 @@ export class AudioEngine {
     }
 
     if (profile === 'bubble') {
-      const osc = ctx.createOscillator();
+      // True dual-operator FM synthesis: 520Hz carrier modulated by 260Hz with exponential gain decay
+      const carrier = ctx.createOscillator();
+      const modulator = ctx.createOscillator();
+      const modGain = ctx.createGain();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(320, now);
-      osc.frequency.exponentialRampToValueAtTime(820, now + 0.07);
-      gain.gain.setValueAtTime(0.15 * vol, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-      osc.connect(gain);
+
+      carrier.type = 'sine';
+      carrier.frequency.setValueAtTime(520, now);
+      carrier.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+
+      modulator.type = 'sine';
+      modulator.frequency.setValueAtTime(260, now);
+
+      modGain.gain.setValueAtTime(350, now);
+      modGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+
+      gain.gain.setValueAtTime(0.16 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+
+      carrier.connect(gain);
       gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.09);
+
+      modulator.start(now);
+      carrier.start(now);
+      modulator.stop(now + 0.1);
+      carrier.stop(now + 0.1);
       return;
     }
 
     if (profile === 'marimba') {
-      // Warm acoustic wooden triad: F4 (349.23), A4 (440), C5 (523.25)
-      const playWoodBar = (freq: number, start: number, duration: number, gainVal: number) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, start);
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(gainVal * vol, start + 0.005);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(start);
-        osc.stop(start + duration);
-      };
-      playWoodBar(349.23, now, 0.28, 0.16);
-      playWoodBar(440.00, now + 0.04, 0.32, 0.15);
-      playWoodBar(523.25, now + 0.08, 0.38, 0.18);
+      // True dual-operator FM synthesis: 520Hz carrier modulated by 260Hz with exponential gain decay
+      const carrier = ctx.createOscillator();
+      const modulator = ctx.createOscillator();
+      const modGain = ctx.createGain();
+      const gain = ctx.createGain();
+
+      carrier.type = 'sine';
+      carrier.frequency.setValueAtTime(520, now);
+      carrier.frequency.exponentialRampToValueAtTime(880, now + 0.07);
+
+      modulator.type = 'sine';
+      modulator.frequency.setValueAtTime(260, now);
+
+      modGain.gain.setValueAtTime(400, now);
+      modGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+
+      gain.gain.setValueAtTime(0.18 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+      carrier.connect(gain);
+      gain.connect(ctx.destination);
+
+      modulator.start(now);
+      carrier.start(now);
+      modulator.stop(now + 0.35);
+      carrier.stop(now + 0.35);
       return;
     }
 
@@ -324,6 +356,10 @@ export class AudioEngine {
    */
   public playTaskComplete() {
     this.playCompletionChime();
+  }
+
+  public playNotification() {
+    this.playClickSound();
   }
 
   /**
@@ -440,20 +476,35 @@ export class AudioEngine {
     const vol = this.tactileVolume;
 
     if (profile === 'bubble') {
-      const osc = ctx.createOscillator();
+      // Dual-operator FM synthesis: 520Hz carrier modulated by 260Hz with exponential gain decay
+      const carrier = ctx.createOscillator();
+      const modulator = ctx.createOscillator();
+      const modGain = ctx.createGain();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(420, now);
-      osc.frequency.exponentialRampToValueAtTime(740, now + 0.035);
 
-      gain.gain.setValueAtTime(0.07 * vol, now);
+      carrier.type = 'sine';
+      carrier.frequency.setValueAtTime(520, now);
+      carrier.frequency.exponentialRampToValueAtTime(780, now + 0.04);
+
+      modulator.type = 'sine';
+      modulator.frequency.setValueAtTime(260, now);
+
+      modGain.gain.setValueAtTime(280, now);
+      modGain.gain.exponentialRampToValueAtTime(0.01, now + 0.045);
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+
+      gain.gain.setValueAtTime(0.12 * vol, now);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
 
-      osc.connect(gain);
+      carrier.connect(gain);
       gain.connect(ctx.destination);
 
-      osc.start(now);
-      osc.stop(now + 0.045);
+      modulator.start(now);
+      carrier.start(now);
+      modulator.stop(now + 0.045);
+      carrier.stop(now + 0.045);
       return;
     }
 
@@ -476,18 +527,35 @@ export class AudioEngine {
     }
 
     if (profile === 'marimba') {
-      // Wood bar tap: fundamental 520Hz with quick harmonic
-      const osc = ctx.createOscillator();
+      // True dual-operator FM synthesis: 520Hz carrier modulated by 260Hz with exponential gain decay
+      const carrier = ctx.createOscillator();
+      const modulator = ctx.createOscillator();
+      const modGain = ctx.createGain();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(520, now);
-      osc.frequency.exponentialRampToValueAtTime(260, now + 0.035);
-      gain.gain.setValueAtTime(0.12 * vol, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
-      osc.connect(gain);
+
+      carrier.type = 'sine';
+      carrier.frequency.setValueAtTime(520, now);
+      carrier.frequency.exponentialRampToValueAtTime(880, now + 0.04);
+
+      modulator.type = 'sine';
+      modulator.frequency.setValueAtTime(260, now);
+
+      modGain.gain.setValueAtTime(320, now);
+      modGain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+
+      gain.gain.setValueAtTime(0.14 * vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
+      carrier.connect(gain);
       gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.035);
+
+      modulator.start(now);
+      carrier.start(now);
+      modulator.stop(now + 0.045);
+      carrier.stop(now + 0.045);
       return;
     }
 
@@ -796,27 +864,122 @@ export class AudioEngine {
     this.ambientVolume = volume;
     this.currentAmbientType = type;
     if (type === 'brown') {
-      this.startBrownNoise(volume);
+      this.startBrownNoise(volume, false);
     } else if (type === 'pink') {
-      this.startPinkNoise(volume);
+      this.startPinkNoise(volume, false);
     } else if (type === 'white') {
-      this.startWhiteNoise(volume * 0.6);
+      this.startWhiteNoise(volume * 0.6, false);
     } else if (type === 'rain') {
-      this.startRainSound(volume);
+      this.startRainSound(volume, false);
     } else if (type === 'binaural') {
-      this.startBinauralTone(volume);
+      this.startBinauralTone(volume, false);
     }
+  }
+
+  /**
+   * Start a concurrent ambient track in the multi-track mixer without cancelling others.
+   */
+  public startTrack(type: AmbientSoundType, volume: number = 0.08) {
+    if (!this.isSoundEnabled || type === 'none') return;
+    this.trackVolumes.set(type, volume);
+    const ctx = this.getContext();
+    if (!ctx) {
+      this.ambientTracks.set(type, { source: null as unknown as AudioNode, gain: null as unknown as GainNode });
+      return;
+    }
+    // Clean up any existing instance of this track immediately to prevent audio leaks
+    if (this.ambientTracks.has(type)) {
+      this.stopTrack(type, 0);
+    }
+    if (type === 'brown') this.startBrownNoise(volume, true);
+    else if (type === 'pink') this.startPinkNoise(volume, true);
+    else if (type === 'white') this.startWhiteNoise(volume, true);
+    else if (type === 'rain') this.startRainSound(volume, true);
+    else if (type === 'binaural') this.startBinauralTone(volume, true);
+  }
+
+  /**
+   * Stop a single concurrent ambient track in the multi-track mixer.
+   */
+  public stopTrack(type: AmbientSoundType, fadeDuration: number = 0.8) {
+    const track = this.ambientTracks.get(type);
+    if (!track) return;
+    const now = this.ctx?.currentTime || 0;
+    try {
+      if (track.gain) {
+        track.gain.gain.setValueAtTime(track.gain.gain.value, now);
+        track.gain.gain.exponentialRampToValueAtTime(0.0001, now + fadeDuration);
+      }
+    } catch {}
+    if (fadeDuration <= 0) {
+      try {
+        if (Array.isArray(track.source)) {
+          track.source.forEach((s) => (s as AudioScheduledSourceNode)?.stop?.());
+        } else if (track.source) {
+          (track.source as AudioScheduledSourceNode)?.stop?.();
+        }
+      } catch {}
+      if (this.ambientTracks.get(type) === track) {
+        this.ambientTracks.delete(type);
+        if (this.currentAmbientType === type) {
+          const remaining = Array.from(this.ambientTracks.keys());
+          this.currentAmbientType = remaining.length > 0 ? remaining[0] : 'none';
+        }
+      }
+      return;
+    }
+    setTimeout(() => {
+      try {
+        if (Array.isArray(track.source)) {
+          track.source.forEach((s) => (s as AudioScheduledSourceNode)?.stop?.());
+        } else if (track.source) {
+          (track.source as AudioScheduledSourceNode)?.stop?.();
+        }
+      } catch {}
+      if (this.ambientTracks.get(type) === track) {
+        this.ambientTracks.delete(type);
+        if (this.currentAmbientType === type) {
+          const remaining = Array.from(this.ambientTracks.keys());
+          this.currentAmbientType = remaining.length > 0 ? remaining[0] : 'none';
+        }
+      }
+    }, fadeDuration * 1000);
+  }
+
+  /**
+   * Adjust the volume of an individual concurrent track in the multi-track mixer.
+   */
+  public setTrackVolume(type: AmbientSoundType, volume: number) {
+    this.trackVolumes.set(type, volume);
+    const track = this.ambientTracks.get(type);
+    if (track && track.gain && this.ctx) {
+      try {
+        const now = this.ctx.currentTime;
+        track.gain.gain.setValueAtTime(track.gain.gain.value, now);
+        track.gain.gain.linearRampToValueAtTime(volume, now + 0.1);
+      } catch {}
+    }
+  }
+
+  public getTrackVolume(type: AmbientSoundType): number {
+    return this.trackVolumes.get(type) ?? this.ambientVolume;
+  }
+
+  public isTrackPlaying(type: AmbientSoundType): boolean {
+    return this.ambientTracks.has(type);
   }
 
   /**
    * Synthesize real-time Brown Noise for deep rumble focus.
    */
-  public startBrownNoise(volume: number = 0.1) {
+  public startBrownNoise(volume: number = 0.1, multiTrack: boolean = false) {
     if (!this.isSoundEnabled) return;
     const ctx = this.getContext();
     if (!ctx) return;
 
-    this.stopAmbientSound();
+    if (!multiTrack) {
+      this.stopAmbientSound();
+    }
     this.currentAmbientType = 'brown';
 
     const bufferSize = 2 * ctx.sampleRate;
@@ -851,17 +1014,21 @@ export class AudioEngine {
 
     this.ambientSource = source;
     this.ambientGain = gain;
+    this.ambientTracks.set('brown', { source, gain });
+    this.trackVolumes.set('brown', volume);
   }
 
   /**
    * Synthesize real-time Pink Noise via Paul Kellet filter.
    */
-  public startPinkNoise(volume: number = 0.08) {
+  public startPinkNoise(volume: number = 0.08, multiTrack: boolean = false) {
     if (!this.isSoundEnabled) return;
     const ctx = this.getContext();
     if (!ctx) return;
 
-    this.stopAmbientSound();
+    if (!multiTrack) {
+      this.stopAmbientSound();
+    }
     this.currentAmbientType = 'pink';
 
     const bufferSize = 2 * ctx.sampleRate;
@@ -896,17 +1063,21 @@ export class AudioEngine {
 
     this.ambientSource = source;
     this.ambientGain = gain;
+    this.ambientTracks.set('pink', { source, gain });
+    this.trackVolumes.set('pink', volume);
   }
 
   /**
    * Synthesize real-time White Noise with gentle top-end rolloff.
    */
-  public startWhiteNoise(volume: number = 0.05) {
+  public startWhiteNoise(volume: number = 0.05, multiTrack: boolean = false) {
     if (!this.isSoundEnabled) return;
     const ctx = this.getContext();
     if (!ctx) return;
 
-    this.stopAmbientSound();
+    if (!multiTrack) {
+      this.stopAmbientSound();
+    }
     this.currentAmbientType = 'white';
 
     const bufferSize = 2 * ctx.sampleRate;
@@ -937,17 +1108,21 @@ export class AudioEngine {
 
     this.ambientSource = source;
     this.ambientGain = gain;
+    this.ambientTracks.set('white', { source, gain });
+    this.trackVolumes.set('white', volume);
   }
 
   /**
    * Synthesize gentle Rain Sound using band-filtered pink noise with subtle wave ripples.
    */
-  public startRainSound(volume: number = 0.08) {
+  public startRainSound(volume: number = 0.08, multiTrack: boolean = false) {
     if (!this.isSoundEnabled) return;
     const ctx = this.getContext();
     if (!ctx) return;
 
-    this.stopAmbientSound();
+    if (!multiTrack) {
+      this.stopAmbientSound();
+    }
     this.currentAmbientType = 'rain';
 
     const bufferSize = 2 * ctx.sampleRate;
@@ -984,17 +1159,21 @@ export class AudioEngine {
 
     this.ambientSource = source;
     this.ambientGain = gain;
+    this.ambientTracks.set('rain', { source, gain });
+    this.trackVolumes.set('rain', volume);
   }
 
   /**
    * Experimental stereo tones. Headphones required; no cognitive benefit is implied.
    */
-  public startBinauralTone(volume: number = 0.08) {
+  public startBinauralTone(volume: number = 0.08, multiTrack: boolean = false) {
     if (!this.isSoundEnabled) return;
     const ctx = this.getContext();
     if (!ctx) return;
 
-    this.stopAmbientSound();
+    if (!multiTrack) {
+      this.stopAmbientSound();
+    }
     this.currentAmbientType = 'binaural';
 
     const osc1 = ctx.createOscillator();
@@ -1020,6 +1199,8 @@ export class AudioEngine {
 
     this.ambientOscillators = [osc1, osc2];
     this.ambientGain = gain;
+    this.ambientTracks.set('binaural', { source: [osc1, osc2], gain });
+    this.trackVolumes.set('binaural', volume);
   }
 
   /**
@@ -1057,6 +1238,25 @@ export class AudioEngine {
 
   public stopAmbientSound(fadeDuration: number = 0.8) {
     this.currentAmbientType = 'none';
+
+    // Stop all multi-track ambient streams
+    for (const [, track] of this.ambientTracks.entries()) {
+      try {
+        const now = this.ctx?.currentTime || 0;
+        track.gain.gain.setValueAtTime(track.gain.gain.value, now);
+        track.gain.gain.exponentialRampToValueAtTime(0.0001, now + fadeDuration);
+      } catch {}
+      setTimeout(() => {
+        try {
+          if (Array.isArray(track.source)) {
+            track.source.forEach((s) => (s as AudioScheduledSourceNode).stop?.());
+          } else {
+            (track.source as AudioScheduledSourceNode).stop?.();
+          }
+        } catch {}
+      }, fadeDuration * 1000);
+    }
+    this.ambientTracks.clear();
 
     // Stop multi-oscillator setups (e.g. binaural beats)
     if (this.ambientOscillators.length > 0) {

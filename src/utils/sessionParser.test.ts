@@ -9,6 +9,24 @@ import {
 } from './sessionParser';
 
 describe('sessionParser', () => {
+  it('parses everyday plans and keeps mixed estimates consistent', () => {
+    const [session] = parseStudySessions('Math revision:\nTargets:\nReview algebra 20 min\nPractice equations\nReview mistakes 1h 15m');
+    expect(session.sessionTopic).toBe('Math revision');
+    expect(session.targets.map(target => target.title)).toEqual(['Review algebra', 'Practice equations', 'Review mistakes']);
+    expect(session.targets.map(target => target.estimatedMinutes)).toEqual([20, 30, 75]);
+    expect(session.durationMinutes).toBe(125);
+  });
+  it('accepts explicit comma targets and semicolon lists without splitting URL tags', () => {
+    expect(parseStudySessions('Topics: Arrays, Strings, Trees')[0].targets).toHaveLength(3);
+    expect(parseStudySessions('Review notes 20m; Solve exercises 30m')[0].targets).toHaveLength(2);
+  });
+  it('rejects invalid clock values and budgets missing targets within the remaining block', () => {
+    expect(normalizeTimeTo24h('13pm')).toBeNull();
+    expect(normalizeTimeTo24h('9:75am')).toBeNull();
+    const [session] = parseStudySessions('Session 1: Revision (9am - 10am)\nRead notes 20m\nPractice questions');
+    expect(session.targets.map(target => target.estimatedMinutes)).toEqual([20, 40]);
+    expect(convertSessionToTask(session).estimatedMinutes).toBe(60);
+  });
   it('normalizes time strings to 24-hour format', () => {
     expect(normalizeTimeTo24h('8:30 am')).toBe('08:30');
     expect(normalizeTimeTo24h('11:30 am')).toBe('11:30');
@@ -44,7 +62,7 @@ describe('sessionParser', () => {
     expect(target?.problemNumber).toBe('5');
     expect(target?.difficulty).toBe('MEDIUM');
     expect(target?.title).toContain('3Sum');
-    expect(target?.url).toBe('https://leetcode.com/problems/3sumArray');
+    expect(target?.url).toBe('https://leetcode.com/problems/3sum');
     expect(target?.tags).toContain('Two Pointers');
     expect(target?.tags).toContain('Sorting');
   });

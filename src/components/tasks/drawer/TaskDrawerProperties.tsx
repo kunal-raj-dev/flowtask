@@ -1,11 +1,12 @@
 import { getEffectiveTaskEstimate } from '../../../utils/taskTimeSummary';
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useRef } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import { WorkspaceStoreContext, useWorkspaceSelector } from '../../../services/workspaceStore';
 import { useModal } from '../../../context/ModalContext';
 import { useTodayStr, useTomorrowStr } from '../../../hooks/useCurrentDate';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import type { Task, Priority, TaskReminder } from '../../../types/task';
-import { Folder, Calendar, Clock, Flag, Timer, Plus, X, Pencil, Bell, BellRing, Check, Compass, Target, Sparkles, Hourglass } from 'lucide-react';
+import { Folder, Calendar, Clock, Flag, Timer, Plus, X, Pencil, Bell, BellRing, Check, Compass, Target, Sparkles, Hourglass, AlertTriangle, Lock } from 'lucide-react';
 import {
   getReminderCapability,
   requestReminderPermission,
@@ -13,7 +14,7 @@ import {
   snoozeReminder,
   removeReminder,
 } from '../../../services/reminderService';
-import { parseTimeToMinutes } from '../../../utils/timelineUtils';
+import { parseTimeToMinutes, findOverlappingCalendarEvent, findNextFreeGap, minutesToTimeStr } from '../../../utils/timelineUtils';
 import { LazyTaskSessionEditor as TaskSessionEditor } from '../LazyTaskSessionEditor';
 import type { SessionDraft } from '../TaskSessionEditor';
 
@@ -22,9 +23,9 @@ interface TaskDrawerPropertiesProps {
 }
 
 export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task }) => {
-  const { projects, updateTask, tasks } = useTaskContext();
-  const areas = useWorkspaceSelector((s) => s.record.areas) || [];
-  const goals = useWorkspaceSelector((s) => s.record.goals) || [];
+  const { projects, updateTask, tasks, calendarEvents, showToast } = useTaskContext();
+  const areas = useWorkspaceSelector((s) => s?.record?.areas) || [];
+  const goals = useWorkspaceSelector((s) => s?.record?.goals) || [];
   const { openModal } = useModal();
   const store = useContext(WorkspaceStoreContext);
   const todayStr = useTodayStr();
@@ -75,22 +76,100 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
     return h > 0 ? (m > 0 ? `${h}h ${m}m (${diff}m)` : `${h}h (${diff}m)`) : `${m}m`;
   }, [task.scheduledStart, task.scheduledEnd, workloadEstimate]);
 
-  const handleApplySession = (draft: SessionDraft) => {
+  const [pendingConflict, setPendingConflict] = useState<{
+    draft: SessionDraft;
+    conflictingTitle: string;
+    conflictingTime: string;
+    suggestedSlot?: { startTime: string; endTime: string };
+  } | null>(null);
+
+  const conflictDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(conflictDialogRef, () => setPendingConflict(null), Boolean(pendingConflict));
+
+  const handlePlannedDateChange = (newDate: string | undefined) => {
+    if (task.scheduleLocked) {
+      showToast?.('This task is locked. Unlock it before changing its scheduled date.');
+      return;
+    }
+    updateTask(task.id, { plannedDate: newDate });
+  };
+
+  const commitSession = (draftToApply: SessionDraft) => {
+    const isStudy = Boolean(task.isStudy || task.projectId === 'study' || task.sessionMetadata?.targetPacingMinutes);
     updateTask(task.id, {
-      scheduledStart: draft.startTime,
-      scheduledEnd: draft.endTime,
-      plannedDate: draft.plannedDate || task.plannedDate || todayStr,
+      scheduledStart: draftToApply.startTime,
+      scheduledEnd: draftToApply.endTime,
+      plannedDate: draftToApply.plannedDate || task.plannedDate || todayStr,
       sessionMetadata: {
         ...(task.sessionMetadata || {}),
-        isSession: true,
-        sessionNumber: draft.sessionNumber,
+        ...(isStudy ? { isSession: true } : { isSession: false }),
+        sessionNumber: draftToApply.sessionNumber,
         sessionTopic: task.title,
       },
     });
     setIsEditingSession(false);
   };
 
+  const handleApplySession = (draft: SessionDraft) => {
+    if (task.scheduleLocked) {
+      showToast?.('This task is locked. Unlock it before changing its scheduled time.');
+      return;
+    }
+
+    const schedDate = draft.plannedDate || task.plannedDate || todayStr;
+    const startMin = parseTimeToMinutes(draft.startTime);
+    const endMin = parseTimeToMinutes(draft.endTime);
+
+    if (startMin !== null && endMin !== null) {
+      const conflictingTask = (tasks || []).find((t) => {
+        if (t.id === task.id || t.deletedAt || t.archivedAt) return false;
+        const taskDate = t.plannedDate || t.dueDate;
+        if (taskDate !== schedDate) return false;
+        if (!t.scheduledStart || !t.scheduledEnd) return false;
+        const tStart = parseTimeToMinutes(t.scheduledStart);
+        const tEnd = parseTimeToMinutes(t.scheduledEnd);
+        if (tStart === null || tEnd === null) return false;
+        return startMin < tEnd && endMin > tStart;
+      });
+
+      const dayEvents = (calendarEvents || []).filter(
+        (ev) => !ev.date || ev.date === schedDate
+      );
+      const conflictingEvent = findOverlappingCalendarEvent(startMin, endMin - startMin, dayEvents);
+
+      if (conflictingTask || conflictingEvent) {
+        const durationMin = draft.durationMinutes || (endMin - startMin);
+        const dayTasks = (tasks || []).filter((t) => {
+          if (t.id === task.id || t.deletedAt || t.archivedAt) return false;
+          return (t.plannedDate || t.dueDate) === schedDate;
+        });
+        let freeMin = findNextFreeGap(durationMin, dayTasks, dayEvents, endMin);
+        if (freeMin === null) {
+          freeMin = findNextFreeGap(durationMin, dayTasks, dayEvents, 7 * 60);
+        }
+        const suggestedSlot = freeMin !== null ? {
+          startTime: minutesToTimeStr(freeMin),
+          endTime: minutesToTimeStr(freeMin + durationMin),
+        } : undefined;
+
+        setPendingConflict({
+          draft,
+          conflictingTitle: conflictingTask ? conflictingTask.title : conflictingEvent!.title || 'Calendar event',
+          conflictingTime: conflictingTask ? `${conflictingTask.scheduledStart}–${conflictingTask.scheduledEnd}` : `${conflictingEvent!.startTime}–${conflictingEvent!.endTime}`,
+          suggestedSlot,
+        });
+        return;
+      }
+    }
+
+    commitSession(draft);
+  };
+
   const handleRemoveSession = () => {
+    if (task.scheduleLocked) {
+      showToast?.('This task is locked. Unlock it before removing its scheduled time.');
+      return;
+    }
     updateTask(task.id, {
       scheduledStart: undefined,
       scheduledEnd: undefined,
@@ -178,7 +257,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           {task.plannedDate && (
             <button
               type="button"
-              onClick={() => updateTask(task.id, { plannedDate: undefined })}
+              onClick={() => handlePlannedDateChange(undefined)}
               className="text-[10px] text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
             >
               Clear
@@ -191,13 +270,13 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           aria-label="Planned date"
           type="date"
           value={task.plannedDate || ''}
-          onChange={(e) => updateTask(task.id, { plannedDate: e.target.value || undefined })}
+          onChange={(e) => handlePlannedDateChange(e.target.value || undefined)}
           className="w-full bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg px-2.5 py-1.5 outline-none card-surface"
         />
         <div className="flex items-center flex-wrap gap-1.5 pt-0.5 min-w-0">
           <button
             type="button"
-            onClick={() => updateTask(task.id, { plannedDate: todayStr })}
+            onClick={() => handlePlannedDateChange(todayStr)}
             className={`px-2 py-0.5 text-[10px] font-medium rounded-md border transition-colors cursor-pointer ${
               task.plannedDate === todayStr
                 ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30 font-semibold'
@@ -208,7 +287,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           </button>
           <button
             type="button"
-            onClick={() => updateTask(task.id, { plannedDate: tomorrowStr })}
+            onClick={() => handlePlannedDateChange(tomorrowStr)}
             className={`px-2 py-0.5 text-[10px] font-medium rounded-md border transition-colors cursor-pointer ${
               task.plannedDate === tomorrowStr
                 ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30 font-semibold'
@@ -221,29 +300,47 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
       </div>
 
       {/* Life Area Select */}
-      <div className="space-y-1.5 min-w-0">
-        <label
-          htmlFor="task-area-select"
-          className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5"
-        >
-          <Compass size={13} className="text-indigo-500" /> Life Area
-        </label>
-        <select
-          id="task-area-select"
-          name="taskArea"
-          aria-label="Assign to Life Area"
-          value={task.areaId || ''}
-          onChange={(e) => updateTask(task.id, { areaId: e.target.value || undefined })}
-          className="w-full bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg px-2.5 py-1.5 outline-none card-surface cursor-pointer"
-        >
-          <option value="">No Life Area</option>
-          {areas.map((a: any) => (
-            <option key={a.id} value={a.id}>
-              {a.icon ? `${a.icon} ` : ''}{a.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {(() => {
+        const currentProject = projects.find((p) => p.id === task.projectId);
+        const inheritedArea = areas.find((a: any) => a.id === currentProject?.areaId);
+        const isOverridden = Boolean(task.areaId && inheritedArea && task.areaId !== inheritedArea.id);
+        const isInherited = Boolean(!task.areaId && inheritedArea);
+
+        return (
+          <div className="space-y-1.5 min-w-0">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="task-area-select"
+                className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5"
+              >
+                <Compass size={13} className="text-indigo-500" /> Life Area
+              </label>
+              {isOverridden ? (
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">(Override)</span>
+              ) : isInherited ? (
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">(Inherited from {currentProject?.name})</span>
+              ) : null}
+            </div>
+            <select
+              id="task-area-select"
+              name="taskArea"
+              aria-label="Assign to Life Area"
+              value={task.areaId || ''}
+              onChange={(e) => updateTask(task.id, { areaId: e.target.value || undefined })}
+              className="w-full bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-lg px-2.5 py-1.5 outline-none card-surface cursor-pointer"
+            >
+              <option value="">
+                {inheritedArea ? `Inherit from project (${inheritedArea.name})` : 'No Life Area'}
+              </option>
+              {areas.map((a: any) => (
+                <option key={a.id} value={a.id}>
+                  {a.icon ? `${a.icon} ` : ''}{a.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+      })()}
 
       {/* Vision & Quarterly Goal */}
       <div className="space-y-1.5 min-w-0">
@@ -398,6 +495,11 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-[var(--text-primary)]">
             <Timer size={13} className="text-teal-500" />
             <span>Session & Timeline Schedule</span>
+            {task.scheduleLocked && (
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                <Lock size={9} /> Locked
+              </span>
+            )}
             {task.sessionMetadata?.isSession && (
               <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30">
                 🎯 Session {task.sessionMetadata.sessionNumber || 1}
@@ -410,7 +512,13 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                 {!isEditingSession && (
                   <button
                     type="button"
-                    onClick={() => setIsEditingSession(true)}
+                    onClick={() => {
+                      if (task.scheduleLocked) {
+                        showToast?.('This task is locked. Unlock it before changing its scheduled time.');
+                        return;
+                      }
+                      setIsEditingSession(true);
+                    }}
                     className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                   >
                     <Pencil size={10} />
@@ -419,7 +527,13 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                 )}
                 <button
                   type="button"
-                  onClick={handleRemoveSession}
+                  onClick={() => {
+                    if (task.scheduleLocked) {
+                      showToast?.('This task is locked. Unlock it before changing its scheduled time.');
+                      return;
+                    }
+                    handleRemoveSession();
+                  }}
                   className="text-[10px] font-medium text-rose-500 hover:underline flex items-center gap-0.5 cursor-pointer"
                 >
                   <X size={10} />
@@ -430,7 +544,13 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
               !isEditingSession && (
                 <button
                   type="button"
-                  onClick={() => setIsEditingSession(true)}
+                  onClick={() => {
+                    if (task.scheduleLocked) {
+                      showToast?.('This task is locked. Unlock it before changing its scheduled time.');
+                      return;
+                    }
+                    setIsEditingSession(true);
+                  }}
                   className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                 >
                   <Plus size={11} />
@@ -439,6 +559,23 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
               )
             )}
           </div>
+        </div>
+
+        {/* Schedule Lock Guard Toggle */}
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer select-none">
+            <input
+              type="checkbox"
+              aria-label="Lock this task's scheduled time"
+              checked={Boolean(task.scheduleLocked)}
+              onChange={(e) => updateTask(task.id, { scheduleLocked: e.target.checked })}
+              className="rounded text-amber-500 focus:ring-amber-400"
+            />
+            <span className="flex items-center gap-1">
+              <Lock size={11} className={task.scheduleLocked ? 'text-amber-500' : 'text-[var(--text-muted)]'} />
+              Lock this task's scheduled time
+            </span>
+          </label>
         </div>
 
         {/* Existing Session summary banner when not editing */}
@@ -458,7 +595,13 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
               </div>
               <button
                 type="button"
-                onClick={() => setIsEditingSession(true)}
+                onClick={() => {
+                  if (task.scheduleLocked) {
+                    showToast?.('This task is locked. Unlock it before changing its scheduled time.');
+                    return;
+                  }
+                  setIsEditingSession(true);
+                }}
                 className="text-[11px] text-teal-600 dark:text-teal-400 font-semibold hover:underline cursor-pointer"
               >
                 Change
@@ -483,10 +626,17 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             initialSessionNumber={task.sessionMetadata?.sessionNumber}
             initialPlannedDate={targetDate}
             initialStartTime={task.scheduledStart || '08:00'}
-            initialEndTime={task.scheduledEnd || '11:00'}
+            initialEndTime={
+              task.scheduledEnd || (
+                workloadEstimate && workloadEstimate > 0
+                  ? minutesToTimeStr(parseTimeToMinutes(task.scheduledStart || '08:00')! + workloadEstimate)
+                  : '11:00'
+              )
+            }
             suggestedSessionNumber={nextSessionNum}
             tasks={tasks}
             excludeTaskId={task.id}
+            taskEstimatedMinutes={workloadEstimate > 0 ? workloadEstimate : undefined}
             onApply={handleApplySession}
             onCancel={() => setIsEditingSession(false)}
           />
@@ -670,6 +820,78 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           </div>
         )}
       </div>
+
+      {pendingConflict && (
+        <div
+          ref={conflictDialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="schedule-conflict-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn"
+          onClick={() => setPendingConflict(null)}
+          data-testid="schedule-conflict-dialog"
+        >
+          <div
+            className="w-full max-w-md bg-[var(--bg-surface-l1)] border border-[var(--border-color)] rounded-xl shadow-2xl p-5 space-y-4 animate-scaleUp card-surface"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h4 id="schedule-conflict-title" className="text-sm font-bold text-[var(--text-primary)]">
+                  Schedule Conflict Detected
+                </h4>
+                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                  This reservation ({pendingConflict.draft.startTime} – {pendingConflict.draft.endTime}) collides with{' '}
+                  <strong className="text-[var(--text-primary)]">{pendingConflict.conflictingTitle}</strong> ({pendingConflict.conflictingTime}).
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              {pendingConflict.suggestedSlot && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const slot = pendingConflict.suggestedSlot!;
+                    commitSession({
+                      ...pendingConflict.draft,
+                      startTime: slot.startTime,
+                      endTime: slot.endTime,
+                    });
+                    setPendingConflict(null);
+                    showToast?.(`Adjusted to free slot: ${slot.startTime} – ${slot.endTime}`);
+                  }}
+                  className="w-full min-h-[44px] px-3 py-2 rounded-lg bg-[var(--color-brand)] hover:opacity-90 text-white font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  Adjust to free slot ({pendingConflict.suggestedSlot.startTime} – {pendingConflict.suggestedSlot.endTime})
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  commitSession(pendingConflict.draft);
+                  setPendingConflict(null);
+                }}
+                className="w-full min-h-[44px] px-3 py-2 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-primary)] border border-[var(--border-hairline)] font-medium text-xs transition cursor-pointer flex items-center justify-center"
+              >
+                Keep overlapping reservation
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPendingConflict(null)}
+                className="w-full min-h-[44px] px-3 py-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] font-medium text-xs transition cursor-pointer flex items-center justify-center"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

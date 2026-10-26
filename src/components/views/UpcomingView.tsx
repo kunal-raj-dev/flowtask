@@ -29,6 +29,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
 }) => {
   const {
     tasks,
+    projects,
     toggleTaskStatus,
     toggleTaskPinToday,
     updateTask,
@@ -60,7 +61,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
         if (!isActiveTask(t) || t.isSomeday) return false;
         return (t.plannedDate || t.dueDate) === dateStr;
       });
-      const totalMinutes = calculateDayPlanSummary({ tasks, settings, calendarEvents, date: dateStr }).totalDemandMinutes;
+      const totalMinutes = calculateDayPlanSummary({ tasks, projects, settings, calendarEvents, date: dateStr }).totalDemandMinutes;
       return {
         date: d,
         dateStr,
@@ -89,7 +90,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
       endOfWeekStr: eowStr,
       nextWeekEndStr: nweStr,
     };
-  }, [tasks, todayStr, settings, calendarEvents]);
+  }, [tasks, projects, todayStr, settings, calendarEvents]);
 
   // Filter tasks based on selected horizon date or full list
   const activeTasksToDisplay = useMemo(() => {

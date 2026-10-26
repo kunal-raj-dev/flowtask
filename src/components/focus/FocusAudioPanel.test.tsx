@@ -362,4 +362,39 @@ describe('FocusAudioPanel', () => {
 
     expect(screen.getByText(/Your personal music is only available on the device/i)).toBeDefined();
   });
+
+  it('renders concurrent soundscapes mixer and toggles Rain, Brown/Pink Noise, and Binaural Beats', () => {
+    render(
+      <FocusAudioPanel
+        preferences={DEFAULT_STUDIO}
+        media={mockMedia}
+        onUpdate={vi.fn()}
+        onUpload={vi.fn()}
+        Range={MockRange}
+      />
+    );
+
+    expect(screen.getByText('Synthesized Soundscapes')).toBeDefined();
+
+    // Toggle Rain Sound
+    const rainBtn = screen.getByText('Rain Sound').closest('button')!;
+    fireEvent.click(rainBtn);
+    expect(screen.getByTestId('range-Rain Volume')).toBeDefined();
+
+    // Toggle Brown Noise
+    const brownBtn = screen.getByText('Brown Noise').closest('button')!;
+    fireEvent.click(brownBtn);
+    expect(screen.getByTestId('range-Brown Noise Volume')).toBeDefined();
+
+    // Switch to Pink Noise
+    const pinkToggle = screen.getByRole('button', { name: 'Pink' });
+    fireEvent.click(pinkToggle);
+    expect(screen.getByText('Pink Noise')).toBeDefined();
+    expect(screen.getByTestId('range-Pink Noise Volume')).toBeDefined();
+
+    // Toggle Binaural Beats
+    const binauralBtn = screen.getByText(/Binaural Beats/i).closest('button')!;
+    fireEvent.click(binauralBtn);
+    expect(screen.getByTestId('range-Binaural Beats Volume')).toBeDefined();
+  });
 });

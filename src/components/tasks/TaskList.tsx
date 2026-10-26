@@ -1,3 +1,4 @@
+import { isInboxTask } from '../../utils/taskSelectors';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
@@ -88,13 +89,7 @@ export const TaskList: React.FC<TaskListProps> = ({
       bg = 'from-blue-500 to-indigo-600';
       fList = tasks.filter(
         (t) =>
-          t.status !== 'done' &&
-          !t.deletedAt &&
-          !t.archivedAt &&
-          t.projectId === 'inbox' &&
-          !t.dueDate &&
-          !t.plannedDate &&
-          !t.isSomeday
+          isInboxTask(t, undefined, { tasks, projects })
       );
       cList = tasks.filter(
         (t) => t.status === 'done' && !t.deletedAt && !t.archivedAt && t.projectId === 'inbox'
@@ -252,7 +247,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   const remainingFormatted = totalRemainingMinutes >= 60
     ? `${(totalRemainingMinutes / 60).toFixed(1)} hrs`
     : `${totalRemainingMinutes} mins`;
-  const blockedTasksCount = filtered.filter((t) => isTaskBlocked(t, tasks).isBlocked).length;
+  const blockedTasksCount = filtered.filter((t) => isTaskBlocked(t, tasks, projects).isBlocked).length;
 
   return (
     <div className="max-w-5xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">

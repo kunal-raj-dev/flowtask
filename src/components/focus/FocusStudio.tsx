@@ -1,3 +1,5 @@
+import { useTaskAvailabilityClock } from '../../hooks/useTaskAvailabilityClock';
+import { getTaskEligibility } from '../../utils/taskEligibility';
 import { shouldIgnoreShortcut, shortcutHintsEnabled } from '../../services/shortcutRegistry';
 import { useMotionPreference } from '../../hooks/useMotionPreference';
 import {
@@ -205,6 +207,49 @@ export function FocusStudio({
     Number(ctx.workspacePreferences.studioSummaryDismissed || 0),
   );
   const active = session?.workspaceId === ctx.workspaceId ? session : null;
+
+  const [isFullscreen, setIsFullscreen] = useState(() =>
+    Boolean(typeof document !== 'undefined' && (document.fullscreenElement || (document as any).webkitFullscreenElement))
+  );
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      const fsElement = document.fullscreenElement || (document as any).webkitFullscreenElement;
+      if (!fsElement) {
+        if (root.current?.requestFullscreen) {
+          await root.current.requestFullscreen();
+        } else if ((root.current as any)?.webkitRequestFullscreen) {
+          await (root.current as any).webkitRequestFullscreen();
+        } else if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if ((document.documentElement as any).webkitRequestFullscreen) {
+          await (document.documentElement as any).webkitRequestFullscreen();
+        } else {
+          setMessage('Fullscreen is not supported on this browser.');
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        }
+      }
+    } catch {
+      setMessage('Fullscreen is unavailable. Studio still fills your browser.');
+    }
+  }, []);
   const removePersonalAsset = async (assetId: string, title: string) => {
     const projectReferences = ctx.projects.filter(project => project.coverAssetId === assetId);
     const dashboardReferences = ctx.dashboards.filter(dashboard => dashboard.coverImage === assetId || dashboard.widgets.some(widget => widget.type === "quietScene" && widget.config.sceneId === assetId));
@@ -261,12 +306,13 @@ export function FocusStudio({
   const showSummary = last && last.finishedAt > summaryDismissed && !active;
   const lobby = !active && !showSummary;
   const today = useTodayStr();
+  const availabilityNow = useTaskAvailabilityClock(ctx.tasks);
   const availableTasks = useMemo(
     () =>
       ctx.tasks.filter(
-        (t) => !t.deletedAt && !t.archivedAt && t.status !== "done",
+        (t) => getTaskEligibility(t, { tasks: ctx.tasks, projects: ctx.projects, now: availabilityNow }).actionable,
       ),
-    [ctx.tasks],
+    [ctx.tasks, ctx.projects, availabilityNow],
   );
   const queue = useMemo(
     () =>
@@ -288,6 +334,15 @@ export function FocusStudio({
     (t) => t.id === (active?.taskId || selectedTask),
   );
   useFocusTrap(root, () => {
+    const fsElement = document.fullscreenElement || (document as any).webkitFullscreenElement;
+    if (fsElement) {
+      if (document.exitFullscreen) {
+        void document.exitFullscreen().catch(() => {});
+      } else if ((document as any).webkitExitFullscreen) {
+        void (document as any).webkitExitFullscreen().catch(() => {});
+      }
+      return;
+    }
     if (panel) setPanel(null);
     else if (clear) setClear(false);
     else void transitionView(() => onClose());
@@ -393,6 +448,11 @@ export function FocusStudio({
       await start();
     }
   };
+  const toggleRef = useRef(toggle);
+  useEffect(() => {
+    toggleRef.current = toggle;
+  });
+
   const [resetConfirmMode, setResetConfirmMode] = useState<"reset" | "restartRound" | null>(null);
   const wasRunningBeforeReset = useRef(false);
 
@@ -422,7 +482,7 @@ export function FocusStudio({
     setResetConfirmMode("restartRound");
   };
 
-  const showPip = async () => {
+  const showPip = useCallback(async () => {
     if (!pictureInPictureService.isSupported()) {
       setMessage(
         "Floating windows are unavailable in this browser. Minimize Studio to use the in-app player.",
@@ -436,13 +496,24 @@ export function FocusStudio({
         "The floating timer could not open. The in-app player is still available.",
       );
     }
-  };
+  }, []);
 
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       // Escape dismissal is a native modal control and remains active when master shortcuts are off
       if (event.code === "Escape") {
         event.preventDefault();
+        event.stopImmediatePropagation();
+        const fsElement = document.fullscreenElement || (document as any).webkitFullscreenElement;
+        if (fsElement) {
+          // In fullscreen mode: exit fullscreen without closing the studio
+          if (document.exitFullscreen) {
+            void document.exitFullscreen().catch(() => {});
+          } else if ((document as any).webkitExitFullscreen) {
+            void (document as any).webkitExitFullscreen().catch(() => {});
+          }
+          return;
+        }
         if (panel) {
           setPanel(null);
         } else if (clear) {
@@ -460,14 +531,10 @@ export function FocusStudio({
         return;
       if (event.code === "Space") {
         event.preventDefault();
-        void toggle();
+        void toggleRef.current();
       } else if (event.code === "KeyF") {
         event.preventDefault();
-        if (!document.fullscreenElement) {
-          void root.current?.requestFullscreen?.().catch(() => setMessage('Fullscreen is unavailable. Studio still fills your browser.'));
-        } else {
-          void document.exitFullscreen?.().catch(() => {});
-        }
+        void toggleFullscreen();
       } else if (event.code === "KeyZ" || event.code === "KeyC") {
         event.preventDefault();
         setClear((prev) => !prev);
@@ -479,7 +546,7 @@ export function FocusStudio({
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  });
+  }, [panel, clear, onClose, toggleFullscreen, showPip, setPanel, ctx.settings?.keyboardShortcutsEnabled]);
   useEffect(() => {
     if (summaryDismissed)
       setWorkspacePreference("studioSummaryDismissed", summaryDismissed);
@@ -759,17 +826,12 @@ export function FocusStudio({
             <Sparkles size={18} />
           </button>
           <button
-            onClick={() => {
-              if (!document.fullscreenElement) {
-                void root.current?.requestFullscreen?.().catch(() => setMessage('Fullscreen is unavailable. Studio still fills your browser.'));
-              } else {
-                void document.exitFullscreen?.();
-              }
-            }}
-            aria-label="Toggle fullscreen"
-            title={hints ? "Fullscreen (F)" : "Fullscreen"}
+            type="button"
+            onClick={() => void toggleFullscreen()}
+            aria-label={isFullscreen ? "Exit fullscreen" : "Toggle fullscreen"}
+            title={isFullscreen ? (hints ? "Exit fullscreen (F)" : "Exit fullscreen") : (hints ? "Fullscreen (F)" : "Fullscreen")}
           >
-            {document.fullscreenElement ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
           </button>
           <button
             onClick={() => void showPip()}
@@ -836,23 +898,33 @@ export function FocusStudio({
         </div>
         {lobby && <div className="studio-lobby-config"><label>Focus task<select aria-label="Focus task" value={selectedTask} onChange={e=>setSelectedTask(e.target.value)}><option value="">Open focus · no task</option>{availableTasks.map(t=><option value={t.id} key={t.id}>{t.title}</option>)}</select></label><label>Rhythm<select aria-label="Focus rhythm" value={timer.mode === 'pomodoro' && timer.focusMinutes === 25 && timer.shortBreakMinutes === 5 ? '25' : timer.mode === 'pomodoro' && timer.focusMinutes === 50 && timer.shortBreakMinutes === 10 ? '50' : timer.mode === 'stopwatch' ? 'open' : 'custom'} onChange={e=>{const v=e.target.value;if(v==='custom')setPanel('timer');else updateTimer(v==='open'?{mode:'stopwatch'}:{mode:'pomodoro',focusMinutes:Number(v),shortBreakMinutes:v==='50'?10:5});}}><option value="25">25 / 5 · A gentle start</option><option value="50">50 / 10 · Go deeper</option><option value="open">Open-ended · Your pace</option><option value="custom">Custom rhythm…</option></select></label></div>}
         <div
-          className={`studio-clock ${p.timerStyle === "ring" ? "with-ring" : ""} ${seconds >= 3600 ? 'is-hour-clock' : ''}`}
+          className={`studio-clock ${p.timerStyle === "ring" ? "with-ring" : ""} ${seconds >= 3600 ? 'is-hour-clock' : ''} ${active && active.targetDurationSec > 0 && seconds <= 60 && seconds > 0 ? 'urgency-pulse animate-pulse' : ''}`}
           role="timer"
           aria-label={`${Math.floor(seconds / 60)} minutes ${seconds % 60} seconds ${(active ? active.targetDurationSec > 0 : timer.mode !== "stopwatch" || currentPhase !== "focus") ? "remaining" : "elapsed"}`}
         >
-          <span>{formatTimerClock(seconds)}</span>
-          {p.timerStyle === "ring" && (
-            <svg viewBox="0 0 100 100" aria-hidden="true">
-              <circle cx="50" cy="50" r="47" pathLength="100" />
-              <circle
-                cx="50"
-                cy="50"
-                r="47"
-                pathLength="100"
-                strokeDasharray={`${active?.targetDurationSec ? Math.max(0, (1 - elapsed / active.targetDurationSec) * 100) : 100} 100`}
-              />
-            </svg>
-          )}
+          <span className="studio-clock-digits">{formatTimerClock(seconds)}</span>
+          {p.timerStyle === "ring" && (() => {
+            const ringRadius = 52;
+            const ringCircumference = 2 * Math.PI * ringRadius; // ~326.726
+            const ringTargetSec = active?.targetDurationSec || (timer.mode === 'pomodoro' ? (currentPhase === 'focus' ? timer.focusMinutes : currentPhase === 'short_break' ? timer.shortBreakMinutes : timer.longBreakMinutes) * 60 : 25 * 60);
+            const ringFractionElapsed = ringTargetSec > 0 ? Math.max(0, Math.min(1, elapsed / ringTargetSec)) : 0;
+            const ringDashoffset = timer.mode === 'stopwatch'
+              ? ringCircumference * (1 - Math.max(0, Math.min(1, (elapsed % 3600) / 3600)))
+              : -ringFractionElapsed * ringCircumference;
+            return (
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r={ringRadius} className="studio-ring-track" />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={ringRadius}
+                  className="studio-ring-progress"
+                  strokeDasharray={ringCircumference}
+                  strokeDashoffset={ringDashoffset}
+                />
+              </svg>
+            );
+          })()}
         </div>
         <p className="studio-session-label">
           {timer.mode === "stopwatch" && currentPhase === "focus"

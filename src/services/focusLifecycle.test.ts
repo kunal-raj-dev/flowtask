@@ -5,6 +5,7 @@ import {
   restartWorkspaceFocusRound,
   changeWorkspaceFocusState,
   elapsedFocusSeconds,
+  startWorkspaceFocus,
 } from './focusLifecycle';
 import { WorkspaceStore } from './workspaceStore';
 import { dbService, emptyWorkspace } from './dbService';
@@ -57,6 +58,19 @@ describe('focusLifecycle reliable reset and ready state contract', () => {
     expect(session.state).toBe('ready');
     // Waiting 10 minutes in ready state
     expect(elapsedFocusSeconds(session, 1000 + 600000)).toBe(0);
+  });
+
+  it('rejects unavailable tasks before creating a checkpoint, then permits an unblocked five-minute attempt', () => {
+    store.run('Add dependency', record => ({ ...record, tasks: [
+      { ...sampleTask, blockedBy: ['blocker'] },
+      { ...sampleTask, id: 'blocker', title: 'Do this first', subtasks: [] },
+    ] }));
+    expect(() => startWorkspaceFocus(store, { mode: 'countdown', taskId: sampleTask.id, targetDurationSec: 300 })).toThrow(/dependency/);
+    expect(store.getSnapshot().record.preferences.focusSession).toBeFalsy();
+    store.run('Finish blocker', record => ({ ...record, tasks: record.tasks.map(t => t.id === 'blocker' ? { ...t, status: 'done' } : t) }));
+    const session = startWorkspaceFocus(store, { mode: 'countdown', taskId: sampleTask.id, targetDurationSec: 300 });
+    expect(session.targetDurationSec).toBe(300);
+    expect(store.getSnapshot().record.tasks[0].estimatedMinutes).toBe(sampleTask.estimatedMinutes);
   });
 
   it('resets timer with save choice: creates interrupted log and returns frozen config ready session', () => {

@@ -13,8 +13,10 @@ import { studioAudio } from "../../services/studioAudio";
 import { resolveAsset } from "../../services/studioCatalog";
 import { audioEngine } from "../../utils/audioEngine";
 import { useWakeLock } from "../../hooks/useWakeLock";
+import { useFocusTabHUD } from "../../hooks/useFocusTabHUD";
 
 export function FocusRuntime() {
+  useFocusTabHUD();
   const context = useTaskContext();
   const readOnly = useWorkspaceSelector(snapshot => Boolean(snapshot.readOnly));
   const current = useRef(context);

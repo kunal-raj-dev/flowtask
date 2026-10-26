@@ -143,7 +143,7 @@ describe('TaskComposer Session Duration Generator', () => {
   it('does not force plannedDate to todayStr when a future due date is parsed', () => {
     render(<TaskComposer />);
     const input = screen.getByPlaceholderText(/What needs to be done/i);
-    fireEvent.change(input, { target: { value: 'Prepare Q3 report tomorrow at 3pm' } });
+    fireEvent.change(input, { target: { value: 'Prepare Q3 report due tomorrow at 3pm' } });
     fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
 
     expect(mockAddTask).toHaveBeenCalledWith(

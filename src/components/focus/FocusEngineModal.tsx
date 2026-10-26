@@ -1,4 +1,5 @@
 import { appShortcutAllowed } from '../../services/shortcutRuntime';
+import '../../styles/focus-engine.css';
 import React, {
   useState,
   useEffect,

@@ -331,7 +331,7 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
         <button
           type="button"
           onClick={handleToggle}
-          aria-label={isRunning ? "Pause focus timer" : isReady ? "Start focus timer" : "Resume focus timer"}
+          aria-label={isRunning ? "Pause focus session" : isReady ? "Start focus session" : "Resume focus session"}
           className={`pip-btn pip-btn-primary ${isRunning ? 'running' : ''}`}
         >
           {isRunning ? (
@@ -351,7 +351,7 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
         <button
           type="button"
           onClick={handleFinish}
-          aria-label="Finish focus session"
+          aria-label="Stop focus session"
           title="Finish session and save time"
           className="pip-btn pip-btn-secondary"
         >

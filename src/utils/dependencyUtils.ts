@@ -1,4 +1,5 @@
-import type { Task, Priority } from '../types/task';
+import type { Task, Priority, Project } from '../types/task';
+import { getTaskBlockerIds } from './taskEligibility';
 
 export interface BlockedStatus {
   isBlocked: boolean;
@@ -8,19 +9,9 @@ export interface BlockedStatus {
 /**
  * Checks if a task is blocked by any unfinished tasks.
  */
-export function isTaskBlocked(task: Task, allTasks: Task[]): BlockedStatus {
-  if (!task.blockedBy || task.blockedBy.length === 0) {
-    return { isBlocked: false, blockingTasks: [] };
-  }
-
-  const blockingTasks = allTasks.filter(
-    (t) => task.blockedBy!.includes(t.id) && t.status !== 'done'
-  );
-
-  return {
-    isBlocked: blockingTasks.length > 0,
-    blockingTasks,
-  };
+export function isTaskBlocked(task: Task, allTasks: Task[], projects: Project[] = []): BlockedStatus {
+  const blockerIds = new Set(getTaskBlockerIds(task, { tasks: allTasks, projects }));
+  return { isBlocked: blockerIds.size > 0, blockingTasks: allTasks.filter(t => blockerIds.has(t.id)) };
 }
 
 /**

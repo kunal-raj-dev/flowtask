@@ -68,7 +68,7 @@ describe('TaskDrawerProperties Component', () => {
       scheduledStart: '08:00',
       scheduledEnd: '11:00',
       sessionMetadata: expect.objectContaining({
-        isSession: true,
+        isSession: false,
         sessionNumber: 1,
       }),
     }));

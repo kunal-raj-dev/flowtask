@@ -435,7 +435,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       />
                     )}
                     <textarea
-                      ref={textareaRef}
+                      ref={textareaRef} aria-label="Note body"
                       value={input}
                       onChange={(e) => handleInputChange(e.target.value)}
                       onFocus={() => setIsFocused(true)}
@@ -457,7 +457,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   </div>
                 ) : isMultiline ? (
                   <textarea
-                    ref={textareaRef}
+                    ref={textareaRef} aria-label="Tasks to capture"
                     value={input}
                     onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => setIsFocused(true)}
@@ -474,7 +474,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   />
                 ) : (
                   <input
-                    ref={inputRef}
+                    ref={inputRef} aria-label="Task title"
                     type="text"
                     value={input}
                     onChange={(e) => handleInputChange(e.target.value)}

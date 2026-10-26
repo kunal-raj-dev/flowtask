@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import type { Task, CalendarEvent } from '../../../types/task';
 import { TimelineCurrentTimeRail } from '../TimelineCurrentTimeRail';
 import {
@@ -49,6 +49,12 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
   const todayStr = useTodayStr();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [planning, setPlanning] = useState(false);
+  const [dragOverGhost, setDragOverGhost] = useState<{
+    topPx: number;
+    heightPx: number;
+    timeStr: string;
+  } | null>(null);
+
   useEffect(() => {
     if (!isOpen || !canvasRef.current || canvasRef.current.clientHeight <= 0) return;
     const hour = new Date().getHours();
@@ -83,26 +89,125 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
       (t.plannedDate === todayStr || (!t.plannedDate && t.dueDate === todayStr))
   );
 
+  // Calculate open interstitial windows between scheduled blocks >= 15m
+  const gaps = useMemo(() => {
+    const occupied: Array<[number, number]> = [];
+
+    // Timed calendar events
+    for (const ev of calendarEvents) {
+      if (ev.isAllDay || !ev.startTime) continue;
+      const s = parseTimeToMinutes(ev.startTime);
+      if (s === null) continue;
+      const e = parseTimeToMinutes(ev.endTime) ?? s + 30;
+      if (e > s) {
+        occupied.push([Math.max(startHour * 60, s), Math.min(endHour * 60, e)]);
+      }
+    }
+
+    // Scheduled tasks
+    for (const t of scheduledTasks) {
+      const s = parseTimeToMinutes(t.scheduledStart);
+      if (s === null) continue;
+      const dur = t.estimatedMinutes || 30;
+      const e = s + dur;
+      if (e > s) {
+        occupied.push([Math.max(startHour * 60, s), Math.min(endHour * 60, e)]);
+      }
+    }
+
+    if (occupied.length === 0) {
+      const totalSpan = (endHour - startHour) * 60;
+      return totalSpan >= 15
+        ? [{ startMin: startHour * 60, endMin: endHour * 60, gapMinutes: totalSpan }]
+        : [];
+    }
+
+    occupied.sort((a, b) => a[0] - b[0]);
+    const merged: Array<[number, number]> = [];
+    for (const [start, end] of occupied) {
+      if (merged.length === 0) {
+        merged.push([start, end]);
+      } else {
+        const last = merged[merged.length - 1];
+        if (start <= last[1]) {
+          last[1] = Math.max(last[1], end);
+        } else {
+          merged.push([start, end]);
+        }
+      }
+    }
+
+    const freeGaps: Array<{ startMin: number; endMin: number; gapMinutes: number }> = [];
+    let cursor = startHour * 60;
+
+    for (const [start, end] of merged) {
+      if (start - cursor >= 15) {
+        freeGaps.push({ startMin: cursor, endMin: start, gapMinutes: start - cursor });
+      }
+      cursor = Math.max(cursor, end);
+    }
+
+    if (endHour * 60 - cursor >= 15) {
+      freeGaps.push({ startMin: cursor, endMin: endHour * 60, gapMinutes: endHour * 60 - cursor });
+    }
+
+    return freeGaps;
+  }, [calendarEvents, scheduledTasks, startHour, endHour]);
+
   const handleDragOver = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes('application/json')) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
+
+      const rect = canvasRef.current?.getBoundingClientRect() || { top: 0, left: 0 };
+      const clientY = typeof e.clientY === 'number' && !Number.isNaN(e.clientY) ? e.clientY : rect.top;
+      const scrollTop = canvasRef.current?.scrollTop || 0;
+      const y = clientY - rect.top + scrollTop;
+      const dur = 30;
+
+      // 15-minute magnetic snap
+      const rawMin = Math.round(((y / hourHeightPx) * 60) / 15) * 15 + startHour * 60;
+      const minStart = startHour * 60;
+      const maxStart = Math.min(endHour * 60 - dur, 1440 - dur);
+      let clampedStart = Math.max(minStart, Math.min(maxStart, rawMin));
+
+      // Magnetic snap to external calendar events if within 10 minutes
+      for (const ev of calendarEvents) {
+        if (ev.isAllDay) continue;
+        const evEnd = parseTimeToMinutes(ev.endTime);
+        if (evEnd !== null && Math.abs(clampedStart - evEnd) <= 10) {
+          clampedStart = evEnd;
+          break;
+        }
+      }
+
+      const { topPx, heightPx } = calculateBlockPosition(clampedStart, dur, startHour, hourHeightPx);
+      const scheduledStart = minutesToTimeStr(clampedStart);
+      const scheduledEnd = minutesToTimeStr(clampedStart + dur);
+
+      setDragOverGhost({
+        topPx,
+        heightPx,
+        timeStr: `${scheduledStart} – ${scheduledEnd}`,
+      });
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    setDragOverGhost(null);
     try {
       const raw = e.dataTransfer.getData('application/json');
       if (!raw) return;
-      const { taskId, duration } = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      const taskId = parsed?.taskId;
       if (!taskId) return;
+      const dur = parsed.duration || 30;
 
       e.preventDefault();
       const rect = canvasRef.current?.getBoundingClientRect() || { top: 0, left: 0 };
       const clientY = typeof e.clientY === 'number' && !Number.isNaN(e.clientY) ? e.clientY : rect.top;
       const scrollTop = canvasRef.current?.scrollTop || 0;
       const y = clientY - rect.top + scrollTop;
-      const dur = duration || 30;
 
       // 15-minute magnetic snap
       const rawMin = Math.round(((y / hourHeightPx) * 60) / 15) * 15 + startHour * 60;
@@ -176,6 +281,7 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
       <div
         ref={canvasRef}
         onDragOver={handleDragOver}
+        onDragLeave={() => setDragOverGhost(null)}
         onDrop={handleDrop}
         tabIndex={0}
         role="region"
@@ -204,6 +310,23 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
           hourHeightPx={hourHeightPx}
           isToday={true}
         />
+
+        {/* Interstitial Duration Gap Pills */}
+        {gaps.map((gap) => {
+          const { topPx, heightPx } = calculateBlockPosition(gap.startMin, gap.gapMinutes, startHour, hourHeightPx);
+          if (heightPx < 20) return null;
+          return (
+            <div
+              key={`gap-${gap.startMin}-${gap.endMin}`}
+              className="timeline-gap-pill absolute left-14 right-2 flex items-center justify-center pointer-events-none z-0"
+              style={{ top: `${topPx}px`, height: `${heightPx}px` }}
+            >
+              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-stone-200/50 dark:bg-stone-800/60 text-[var(--text-muted)] border border-[var(--border-hairline)]/60">
+                {gap.gapMinutes}m free window
+              </span>
+            </div>
+          );
+        })}
 
         {/* Calendar Events */}
         {calendarEvents
@@ -304,6 +427,15 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
             </div>
           );
         })}
+        {/* 15-Minute Magnetic Ghost Drag-Over Preview */}
+        {dragOverGhost && (
+          <div
+            className="dragOverGhost absolute left-14 right-2 rounded-lg border-2 border-dashed border-amber-500/80 bg-amber-500/15 pointer-events-none z-20 flex items-center px-2.5 text-xs font-mono font-bold text-amber-700 dark:text-amber-300 transition-all duration-75 shadow-xs"
+            style={{ top: `${dragOverGhost.topPx}px`, height: `${dragOverGhost.heightPx}px` }}
+          >
+            <span>{dragOverGhost.timeStr}</span>
+          </div>
+        )}
       </div>
     </aside>
     </>

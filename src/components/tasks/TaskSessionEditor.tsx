@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useId } from 'react';
 import { Timer, Check, Calendar, Clock, Hash } from 'lucide-react';
-import { parseTimeToMinutes } from '../../utils/timelineUtils';
+import { parseTimeToMinutes, minutesToTimeStr } from '../../utils/timelineUtils';
 import { useTodayStr, useTomorrowStr } from '../../hooks/useCurrentDate';
 import type { Task } from '../../types/task';
 import '../../styles/task-session-editor.css';
@@ -22,6 +22,7 @@ export interface TaskSessionEditorProps {
   tasks?: Task[];
   excludeTaskId?: string;
   title?: string;
+  taskEstimatedMinutes?: number;
   onApply: (draft: SessionDraft) => void;
   onCancel: () => void;
 }
@@ -42,6 +43,7 @@ export const TaskSessionEditor: React.FC<TaskSessionEditorProps> = ({
   tasks,
   excludeTaskId,
   title = 'Session Duration Generator',
+  taskEstimatedMinutes,
   onApply,
   onCancel,
 }) => {
@@ -136,7 +138,15 @@ export const TaskSessionEditor: React.FC<TaskSessionEditorProps> = ({
       <div className="session-presets" role="group" aria-label="Session time presets">
         <span className="session-presets-label">QUICK TIME BLOCKS</span>
         <div className="session-presets-grid">
-          {PRESETS.map(p => <button key={p.name} type="button" aria-label={p.label} aria-pressed={startTime === p.start && endTime === p.end} onClick={() => { setStartTime(p.start); setEndTime(p.end); }}>
+          {PRESETS.map(p => <button key={p.name} type="button" aria-label={p.label} aria-pressed={startTime === p.start && endTime === p.end} onClick={() => {
+            setStartTime(p.start);
+            if (taskEstimatedMinutes && taskEstimatedMinutes > 0) {
+              const startMin = parseTimeToMinutes(p.start) ?? 480;
+              setEndTime(minutesToTimeStr(startMin + taskEstimatedMinutes));
+            } else {
+              setEndTime(p.end);
+            }
+          }}>
             <span className="session-preset-name">{p.name}<span>{p.duration}</span></span>
             <span className="session-preset-time">{p.start} – {p.end}</span>
           </button>)}

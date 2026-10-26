@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { parseTaskInput } from '../../utils/nlpParser';
+import { useTaskStore } from '../../store/useTaskStore';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { audioEngine } from '../../services/audioEngine';
 import {
   Calendar,
@@ -23,8 +25,11 @@ export interface GlobalCaptureHUDProps {
 
 export const GlobalCaptureHUD: React.FC<GlobalCaptureHUDProps> = ({ isOpen, onClose }) => {
   const { addTask, projects } = useTaskContext();
+  const settings = useTaskStore(s => s.settings);
   const [inputVal, setInputVal] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, onClose, isOpen);
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
@@ -44,8 +49,11 @@ export const GlobalCaptureHUD: React.FC<GlobalCaptureHUDProps> = ({ isOpen, onCl
   }, [isOpen]);
 
   const parsed = useMemo(() => {
+    if (settings?.enableSmartSyntaxParsing === false) {
+      return { cleanTitle: inputVal, tags: [], contextTags: [], estimatedMinutes: undefined, priority: undefined, dueDate: undefined, plannedDate: undefined, dueTime: undefined, cognitiveLoad: undefined, projectTag: undefined };
+    }
     return parseTaskInput(inputVal);
-  }, [inputVal]);
+  }, [inputVal, settings?.enableSmartSyntaxParsing]);
 
   if (!isOpen) return null;
 
@@ -68,11 +76,11 @@ export const GlobalCaptureHUD: React.FC<GlobalCaptureHUDProps> = ({ isOpen, onCl
 
     addTask(title, {
       projectId: targetProjectId,
-      priority: parsed.priority || 'p3',
+      priority: parsed.priority || settings?.defaultTaskPriority || 'p3',
       dueDate: parsed.dueDate,
-      plannedDate: parsed.plannedDate || parsed.dueDate,
+      plannedDate: parsed.plannedDate,
       dueTime: parsed.dueTime,
-      estimatedMinutes: parsed.estimatedMinutes || 30,
+      estimatedMinutes: parsed.estimatedMinutes || (settings as any)?.defaultEstimatedMinutes || 30,
       cognitiveLoad: parsed.cognitiveLoad,
       tags: parsed.tags,
       contextTags: parsed.contextTags,
@@ -120,6 +128,10 @@ export const GlobalCaptureHUD: React.FC<GlobalCaptureHUDProps> = ({ isOpen, onCl
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Quick capture"
       className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/40 backdrop-blur-sm animate-fadeIn"
       onClick={onClose}
       data-testid="global-capture-hud"
@@ -132,7 +144,7 @@ export const GlobalCaptureHUD: React.FC<GlobalCaptureHUDProps> = ({ isOpen, onCl
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)] bg-[var(--bg-surface-l2)]/50">
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand)]">
             <Sparkles size={14} />
-            <span>Omnichannel Quick-Capture HUD</span>
+            <span>Quick capture</span>
           </div>
           <button
             type="button"
@@ -150,11 +162,12 @@ export const GlobalCaptureHUD: React.FC<GlobalCaptureHUDProps> = ({ isOpen, onCl
             <input
               ref={inputRef}
               type="text"
+              aria-label="Quick capture task"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="What needs doing? (~45m #work !p1 ~deep tomorrow)"
-              className="w-full px-3 py-2 text-sm bg-transparent border-b-2 border-[var(--color-brand)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
+              className="w-full pl-3 pr-28 py-2 text-sm bg-transparent border-b-2 border-[var(--color-brand)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
               autoFocus
               data-testid="capture-hud-input"
             />

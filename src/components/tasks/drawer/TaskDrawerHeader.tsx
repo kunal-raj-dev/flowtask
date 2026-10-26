@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import type { Task } from '../../../types/task';
 import { useTodayStr } from '../../../hooks/useCurrentDate';
-import { isFocusTask } from '../../../utils/taskSelectors';
+import { isTaskPinnedForDate } from '../../../utils/taskSelectors';
 import celebrate from '../../../utils/celebrate';
 import {
   X,
@@ -55,7 +55,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const isDone = task.status === 'done';
   const today = useTodayStr();
-  const isTopThree = isFocusTask(task, today);
+  const isTopThree = isTaskPinnedForDate(task, today);
 
   const handleToggleStatus = () => {
     const willBeDone = task.status !== 'done';
@@ -105,26 +105,30 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
           <button
             type="button"
             onClick={handleToggleStatus}
-            className={`w-5 h-5 rounded-full flex items-center justify-center border active:scale-85 transition-all duration-150 ${
-              isDone
-                ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white text-white dark:text-stone-950 shadow-xs'
-                : 'border-stone-400/80 dark:border-stone-500/80 hover:border-amber-500 hover:ring-2 hover:ring-amber-500/20 bg-transparent'
-            }`}
+            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center active:scale-95 transition-all duration-150 touch-target-accessible"
             aria-label={isDone ? 'Mark as incomplete' : 'Mark as complete'}
           >
-            {isDone && (
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-3 h-3 animate-check-spring"
-              >
-                <polyline points="20 6 9 17 4 12" className="animate-check-draw" />
-              </svg>
-            )}
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center border ${
+                isDone
+                  ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white text-white dark:text-stone-950 shadow-xs'
+                  : 'border-stone-400/80 dark:border-stone-500/80 hover:border-amber-500 hover:ring-2 hover:ring-amber-500/20 bg-transparent'
+              }`}
+            >
+              {isDone && (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-3 h-3 animate-check-spring"
+                >
+                  <polyline points="20 6 9 17 4 12" className="animate-check-draw" />
+                </svg>
+              )}
+            </div>
           </button>
           <span className="text-xs font-semibold text-[var(--text-secondary)]">
             {isDone ? 'Completed Task' : 'Active Task'}
@@ -138,7 +142,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             onClick={() => toggleTaskPinToday(task.id)}
             title={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
             aria-label={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
-            className={`p-1.5 rounded-lg transition-all ${
+            className={`min-w-[44px] min-h-[44px] touch-target-accessible rounded-lg flex items-center justify-center transition-all ${
               task.isPinnedToday
                 ? 'text-amber-500 bg-amber-500/15 border border-amber-500/30 shadow-xs'
                 : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-[var(--bg-surface-l2)]'
@@ -153,7 +157,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             onClick={() => updateTask(task.id, { isEvening: !task.isEvening })}
             title={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
             aria-label={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
-            className={`p-1.5 rounded-lg transition-all ${
+            className={`min-w-[44px] min-h-[44px] touch-target-accessible rounded-lg flex items-center justify-center transition-all ${
               task.isEvening
                 ? 'text-indigo-500 bg-indigo-500/15 border border-indigo-500/30 shadow-xs'
                 : 'text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-l2)]'
@@ -170,7 +174,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             }}
             title="Start Focus Timer"
             aria-label="Start Focus Timer"
-            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors"
+            className="min-w-[44px] min-h-[44px] touch-target-accessible text-[var(--text-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors flex items-center justify-center"
           >
             <Timer size={15} />
           </button>
@@ -183,7 +187,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
               title="More task actions"
               aria-label="More task actions"
               aria-expanded={isActionMenuOpen}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`min-w-[44px] min-h-[44px] touch-target-accessible rounded-lg transition-colors flex items-center justify-center ${
                 isActionMenuOpen
                   ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)]'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-l2)]'
@@ -287,7 +291,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close task details"
-            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors ml-1"
+            className="p-1.5 min-w-[44px] min-h-[44px] touch-target-accessible flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-l2)] rounded-lg transition-colors ml-1 cursor-pointer"
           >
             <X size={17} />
           </button>

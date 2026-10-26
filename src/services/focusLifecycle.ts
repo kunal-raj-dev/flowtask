@@ -4,6 +4,7 @@ import type { TimerConfiguration } from '../types/studio';
 import type { WorkspaceStore, MutationReceipt } from './workspaceStore';
 import { writeFocusCheckpoint } from './focusCheckpoint';
 import { nextStudioPhase, pausedSeconds } from './studioSessionEngine';
+import { getTaskEligibility, eligibilityMessage } from '../utils/taskEligibility';
 
 export interface FocusStartInput {
   mode: FocusSessionMode;
@@ -80,8 +81,13 @@ export function startWorkspaceFocus(store: WorkspaceStore, input: FocusStartInpu
       throw new Error('Return to your current focus session, or finish it before starting another.');
     }
   }
-  if (input.taskId && !record.tasks.some(task => task.id === input.taskId && !task.deletedAt)) {
-    throw new Error('Choose an available task before starting focus.');
+  if (input.taskId) {
+    const task = record.tasks.find(task => task.id === input.taskId && !task.deletedAt);
+    if (!task) throw new Error('Choose an available task before starting focus.');
+    if (!input.pomodoroPhase || input.pomodoroPhase === 'focus') {
+      const eligibility = getTaskEligibility(task, { tasks: record.tasks, projects: record.projects });
+      if (!eligibility.actionable) throw new Error(eligibilityMessage(eligibility));
+    }
   }
   const session = createFocusSession(input, store.id);
   const at = writeFocusCheckpoint(store.id, session);
