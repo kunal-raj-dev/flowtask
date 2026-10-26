@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDayPlanSummary, calculateUniqueIntervalMinutes, calculateWeekPlanSummary } from './dayPlanSummary';
+import {
+  calculateDayPlanSummary,
+  calculateUniqueIntervalMinutes,
+  calculateWeekPlanSummary,
+  calculateFeasibleFinishTime, calculateFinishForecast,
+} from './dayPlanSummary';
 import type { Task, CalendarEvent } from '../types/task';
 
 it('counts a planned task once across the week and keeps its later deadline separate', () => {
@@ -186,6 +191,10 @@ describe('calculateDayPlanSummary', () => {
         {
           id: 'wb1',
           taskId: 'mb1',
+          startInstant: Date.parse(`${baseDate}T09:00:00Z`),
+          endInstant: Date.parse(`${baseDate}T10:30:00Z`),
+          timezone: 'UTC',
+          status: 'scheduled',
           date: baseDate,
           durationMinutes: 90,
           createdAt: '2026-10-17T00:00:00Z',
@@ -205,3 +214,56 @@ describe('calculateDayPlanSummary', () => {
   });
 });
 
+describe('calculateFeasibleFinishTime', () => {
+  it('returns current time when remaining work is 0 or negative', () => {
+    const now = new Date('2026-10-25T14:30:00');
+    expect(calculateFeasibleFinishTime(now, 0)).toBe('14:30');
+    expect(calculateFeasibleFinishTime(now, -15)).toBe('14:30');
+  });
+
+  it('projects simple finish time without calendar events', () => {
+    const now = new Date('2026-10-25T09:00:00');
+    // 09:00 + 45 minutes = 09:45
+    expect(calculateFeasibleFinishTime(now, 45, [])).toBe('09:45');
+    // 09:00 + 120 minutes = 11:00
+    expect(calculateFeasibleFinishTime(now, 120, [])).toBe('11:00');
+  });
+
+  it('hops over active/ongoing calendar events', () => {
+    // Current time is 10:15
+    const now = new Date('2026-10-25T10:15:00');
+    // Meeting from 10:00 to 11:00 (active until 11:00)
+    const events = [
+      { id: 'ev-1', title: 'Sprint Sync', startTime: '10:00', endTime: '11:00', durationMinutes: 60 },
+    ];
+    // 30 minutes of remaining work starts at 11:00 -> finishes at 11:30
+    expect(calculateFeasibleFinishTime(now, 30, events)).toBe('11:30');
+  });
+
+  it('accounts for upcoming calendar events and interstitial gaps', () => {
+    // Current time is 09:00
+    const now = new Date('2026-10-25T09:00:00');
+    // Upcoming event from 09:30 to 10:30 (15 min gap between 09:00-09:30 is 30m, work is 45m)
+    const events = [
+      { id: 'ev-1', title: 'Review', startTime: '09:30', endTime: '10:30', durationMinutes: 60 },
+    ];
+    // Work 45m: 30m done from 09:00 to 09:30, then meeting 09:30-10:30, remaining 15m done 10:30-10:45
+    expect(calculateFeasibleFinishTime(now, 45, events)).toBe('10:45');
+  });
+
+  it('ignores past calendar events', () => {
+    const now = new Date('2026-10-25T14:00:00');
+    const pastEvents = [
+      { id: 'ev-past', title: 'Morning Standup', startTime: '09:00', endTime: '09:30', durationMinutes: 30 },
+    ];
+    // 60 minutes starting at 14:00 finishes at 15:00
+    expect(calculateFeasibleFinishTime(now, 60, pastEvents)).toBe('15:00');
+  });
+});
+
+
+
+it('exposes next-day and planning-hours limits instead of wrapping the finish clock silently', () => {
+  expect(calculateFinishForecast(new Date('2026-10-25T23:30:00'), 120, [], 22)).toEqual({ time: '01:30', dayOffset: 1, outsideWorkHours: true });
+  expect(calculateFinishForecast(new Date('2026-10-25T17:00:00'), 60, [], 18)).toEqual({ time: '18:00', dayOffset: 0, outsideWorkHours: false });
+});

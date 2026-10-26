@@ -32,9 +32,22 @@ const DOMAIN_RULES: DomainRule[] = [
       { title: 'Write unit tests and verify edge-cases', estimatedMinutes: 20 },
     ],
   },
-  // 3. Taxes & Financial Management
+  // 3. Technical, Accessibility & Security Audits
   {
-    patterns: [/tax/i, /irs/i, /filing/i, /invoice/i, /expense/i, /audit/i, /budget/i],
+    patterns: [
+      /(?:accessibility|a11y|security|ux|ui|performance|code|system|onboarding)\s+audit/i,
+      /audit\s+(?:accessibility|a11y|security|ux|ui|performance|code|system|onboarding)/i,
+    ],
+    subtasks: (title) => [
+      { title: `Review guidelines and establish evaluation checklist for "${title}"`, estimatedMinutes: 20 },
+      { title: 'Inspect target flow and document issues with evidence', estimatedMinutes: 30 },
+      { title: 'Prioritize remediation items by severity and effort', estimatedMinutes: 20 },
+      { title: 'Compile findings report and actionable tickets', estimatedMinutes: 15 },
+    ],
+  },
+  // 4. Taxes & Financial Management
+  {
+    patterns: [/tax/i, /irs/i, /filing/i, /invoice/i, /expense/i, /(?:tax|financial|irs|compliance)\s+audit/i, /audit\s+(?:tax|financial|irs|compliance)/i, /budget/i],
     subtasks: () => [
       { title: 'Gather all relevant receipts, 1099s, bank statements & invoices', estimatedMinutes: 30 },
       { title: 'Reconcile income and deductible business expenses in spreadsheet', estimatedMinutes: 40 },
@@ -179,3 +192,73 @@ export function generateStarterStep(taskTitle: string, description?: string): st
 
   return `⚡ [2-Min Starter] Spend 2 uninterrupted minutes jotting down 3 raw thoughts for "${taskTitle.trim()}"`;
 }
+
+/**
+ * ADHD Granularity Decomposer (1 to 5):
+ * 1 = Macro (2 high-level milestones)
+ * 2 = Standard (3-4 subtasks)
+ * 3 = Detailed (5-6 actionable steps)
+ * 4 = Atomic (7-8 bite-sized subtasks)
+ * 5 = Hyper-atomic starter (10-12 micro physical initiation steps)
+ */
+export function decomposeTask(
+  title: string,
+  granularity: 1 | 2 | 3 | 4 | 5 = 2
+): SuggestedSubtask[] {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) return [];
+
+  const base = suggestSubtasks(cleanTitle);
+
+  if (granularity === 1) {
+    return [
+      { title: `Plan scope and clarify expected output for "${cleanTitle}"`, estimatedMinutes: 20 },
+      { title: `Execute core work and deliver finalized result for "${cleanTitle}"`, estimatedMinutes: 40 },
+    ];
+  }
+
+  if (granularity === 2) {
+    return base.slice(0, 4);
+  }
+
+  if (granularity === 3) {
+    return [
+      { title: `Clarify definition of done and gather references for "${cleanTitle}"`, estimatedMinutes: 15 },
+      { title: `Set up workspace and initialize draft structure`, estimatedMinutes: 15 },
+      { title: `Execute primary milestone block`, estimatedMinutes: 30 },
+      { title: `Address key edge cases and dependencies`, estimatedMinutes: 20 },
+      { title: `Review, test, and polish output`, estimatedMinutes: 15 },
+      { title: `Finalize delivery and record notes`, estimatedMinutes: 10 },
+    ];
+  }
+
+  if (granularity === 4) {
+    return [
+      { title: `Clarify goal and list 3 core success criteria for "${cleanTitle}"`, estimatedMinutes: 10 },
+      { title: `Gather needed credentials, links, and documents`, estimatedMinutes: 10 },
+      { title: `Create branch, file, or canvas for "${cleanTitle}"`, estimatedMinutes: 15 },
+      { title: `Build primary outline or core functionality`, estimatedMinutes: 25 },
+      { title: `Implement secondary details and error handling`, estimatedMinutes: 20 },
+      { title: `Run self-review and verify against requirements`, estimatedMinutes: 15 },
+      { title: `Fix any discrepancies or visual/logical flaws`, estimatedMinutes: 15 },
+      { title: `Publish, commit, or deliver final artifact`, estimatedMinutes: 10 },
+    ];
+  }
+
+  // granularity === 5: 12 hyper-atomic physical initiation steps
+  return [
+    { title: `Sit down at desk and remove phone / distractions`, estimatedMinutes: 2 },
+    { title: `Open laptop and launch primary application for "${cleanTitle}"`, estimatedMinutes: 3 },
+    { title: `Create new note or file titled "${cleanTitle}"`, estimatedMinutes: 2 },
+    { title: `Write down the single first question or requirement`, estimatedMinutes: 5 },
+    { title: `Gather the primary link, document, or asset needed`, estimatedMinutes: 5 },
+    { title: `Draft initial 3-line rough outline or skeleton`, estimatedMinutes: 10 },
+    { title: `Take a 2-minute stretch break to lock in focus`, estimatedMinutes: 2 },
+    { title: `Execute the simplest 15-minute chunk of core work`, estimatedMinutes: 15 },
+    { title: `Complete the second portion of the task`, estimatedMinutes: 15 },
+    { title: `Inspect the result against initial requirements`, estimatedMinutes: 5 },
+    { title: `Clean up workspace and save all changes`, estimatedMinutes: 3 },
+    { title: `Check off task as complete and celebrate progress`, estimatedMinutes: 2 },
+  ];
+}
+

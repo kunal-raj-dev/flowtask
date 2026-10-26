@@ -172,31 +172,71 @@ export function parseTaskInput(input: string): ParsedTaskInput {
   // Use forwardDate: true so "Monday" refers to the upcoming Monday, not past
   const parsedResults = chrono.parse(workingText, new Date(), { forwardDate: true });
   if (parsedResults.length > 0) {
-    const primaryResult = parsedResults[0];
-    const parsedDate = primaryResult.start.date();
-    const formattedDate = formatLocalDate(parsedDate);
+    const removals: Array<{ start: number; end: number }> = [];
 
-    if (!dueDate) {
-      dueDate = formattedDate;
+    for (const primaryResult of parsedResults) {
+      const parsedDate = primaryResult.start.date();
+      const formattedDate = formatLocalDate(parsedDate);
+
+      // Check for preceding due/deadline or plan/schedule keywords (with optional colon and prepositions)
+      const textBefore = workingText.substring(0, primaryResult.index);
+      const dueMatch = textBefore.match(/(?:^|\s)(?:due(?:\s+(?:by|on|before|at))?|deadline(?:\s+(?:by|on|before|at))?)\s*:?\s*$/i);
+      const planMatch = textBefore.match(/(?:^|\s)(?:plan(?:ned)?(?:\s+(?:for|on|at))?|schedule(?:d)?(?:\s+(?:for|on|at))?)\s*:?\s*$/i);
+      const hasDateComponent =
+        primaryResult.start.isCertain('day') ||
+        primaryResult.start.isCertain('weekday') ||
+        primaryResult.start.isCertain('month') ||
+        primaryResult.start.isCertain('year');
+
+      if (hasDateComponent) {
+        if (dueMatch) {
+          if (!dueDate) {
+            dueDate = formattedDate;
+          }
+        } else if (planMatch) {
+          if (!plannedDate) {
+            plannedDate = formattedDate;
+          }
+        } else {
+          // Bare date language assigns strictly to plannedDate (F01 / Contract 5.1).
+          // Never assign bare date language to dueDate.
+          if (!plannedDate) {
+            plannedDate = formattedDate;
+          }
+        }
+      } else {
+        // Only time was certain (e.g. "due 5pm" or "plan 3pm")
+        if (dueMatch && !dueDate) {
+          dueDate = plannedDate || formatLocalDate(new Date());
+        } else if (planMatch && !plannedDate) {
+          plannedDate = dueDate || formatLocalDate(new Date());
+        }
+      }
+
+      // Check if a specific time component was explicitly mentioned (e.g., at 5pm)
+      if (primaryResult.start.isCertain('hour') && !dueTime) {
+        dueTime = formatLocalTime(parsedDate);
+      } else if (timeOfDayHour && !dueTime) {
+        dueTime = timeOfDayHour;
+      }
+
+      // Compute range to remove from title (including preceding keyword)
+      const removeStart =
+        primaryResult.index -
+        (dueMatch ? dueMatch[0].length : planMatch ? planMatch[0].length : 0);
+      removals.push({ start: removeStart, end: primaryResult.index + primaryResult.text.length });
     }
 
-    // Check if a specific time component was explicitly mentioned (e.g., at 5pm)
-    if (primaryResult.start.isCertain('hour')) {
-      dueTime = formatLocalTime(parsedDate);
-    } else if (timeOfDayHour) {
-      dueTime = timeOfDayHour;
+    // Sort removals descending by start index to avoid invalidating indices
+    removals.sort((a, b) => b.start - a.start);
+    for (const rm of removals) {
+      workingText = workingText.substring(0, rm.start) + ' ' + workingText.substring(rm.end);
     }
-
-    // Remove the recognized date text from the title
-    workingText =
-      workingText.substring(0, primaryResult.index) +
-      ' ' +
-      workingText.substring(primaryResult.index + primaryResult.text.length);
   } else if (timeOfDayHour) {
     dueTime = timeOfDayHour;
     const todayFormatted = formatLocalDate(new Date());
-    if (!dueDate) {
-      dueDate = todayFormatted;
+    if (!plannedDate && !dueDate) {
+      plannedDate = todayFormatted;
     }
   }
 

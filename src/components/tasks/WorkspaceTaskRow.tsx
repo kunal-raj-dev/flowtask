@@ -3,19 +3,19 @@ import { WorkspaceStoreContext } from '../../services/workspaceStore';
 import { useTaskStore } from '../../store/useTaskStore';
 import React, { useId, useRef, useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Star, Play, Pause, MoreHorizontal, Flag, Lock, Repeat2, ArrowRight, Clock } from 'lucide-react';
+import { Star, Play, Pause, MoreHorizontal, Flag, Lock, Repeat2, ArrowRight, Clock, Wand2 } from 'lucide-react';
 import { MorphCheckbox } from '../ui/MorphCheckbox';
 import type { Task } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
 import { useFocusStore } from '../../store/useFocusStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useTodayStr } from '../../hooks/useCurrentDate';
-import { isFocusTask } from '../../utils/taskSelectors';
+import { isTaskPinnedForDate } from '../../utils/taskSelectors';
 import { formatTimerClock } from '../../utils/focusTimeFormat';
 import { getEffectiveTaskEstimate } from '../../utils/taskTimeSummary';
 import { TaskContextMenu } from './TaskContextMenu';
 import celebrate from '../../utils/celebrate';
-import { PriorityPickerPopover, DatePickerPopover } from './popovers';
+import { PriorityPickerPopover, DatePickerPopover, GranularitySliderPopover } from './popovers';
 
 export interface TaskRowTimerProps {
   taskId: string;
@@ -107,7 +107,7 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
   const input = useRef<HTMLInputElement>(null);
 
   const done = task.status === 'done';
-  const pinned = isFocusTask(task, today);
+  const pinned = isTaskPinnedForDate(task, today);
   const selected = selectedTaskIds.includes(task.id);
 
   const active = isTimerActive || activeTimerTaskId === task.id;
@@ -151,21 +151,29 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
     else onSelectTask(task.id);
   };
 
+  const isFocused = Boolean(
+    context.settings?.keyboardShortcutsEnabled !== false &&
+    (isKeyboardFocused || isKeyboardFocusedRow)
+  );
+
   return (
     <div
-      className="desk-task-row"
+      className={`desk-task-row ${
+        isFocused ? 'ring-2 ring-amber-500/80 border-amber-500/50 shadow-sm bg-[var(--bg-surface-hover)]' : ''
+      }`}
       id={domId}
       data-task-id={task.id}
       data-featured={featured || undefined}
       data-done={done || undefined}
       data-selected={selected || undefined}
-      data-keyboard-focused={(context.settings?.keyboardShortcutsEnabled !== false && (isKeyboardFocused || isKeyboardFocusedRow)) || undefined}
+      data-keyboard-focused={isFocused ? 'true' : undefined}
       draggable={!task.scheduleLocked}
       onDragStart={(e) => {
         e.dataTransfer.setData(
           'application/json',
           JSON.stringify({ taskId: task.id, duration: effectiveEstimate || 30 })
         );
+        e.dataTransfer.setData('text/plain', task.id);
         e.dataTransfer.effectAllowed = 'move';
       }}
       onContextMenu={(event) => {
@@ -178,7 +186,7 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
           {String(rank).padStart(2, '0')}
         </span>
       )}
-      <div className="desk-task-check flex items-center justify-center">
+      <div className="desk-task-check touch-target-accessible flex items-center justify-center">
         <MorphCheckbox
           checked={done}
           onChange={() => {
@@ -333,7 +341,7 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
         )}
         {!done && (
           <button
-            className="desk-icon-button desk-row-reveal"
+            className="desk-icon-button desk-row-reveal touch-target-accessible"
             aria-label={pinned ? 'Remove from Top 3' : 'Pin to Top 3'}
             title={pinned ? 'Remove from Top 3' : 'Pin to Top 3'}
             aria-pressed={pinned}
@@ -344,7 +352,7 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
         )}
         {!done && toggleTaskTimer && (
           <button
-            className="desk-icon-button desk-row-reveal"
+            className="desk-icon-button desk-row-reveal touch-target-accessible"
             aria-label={running ? 'Pause tracking time' : active ? 'Resume tracking time' : 'Start live stopwatch'}
             title={running ? 'Pause tracking time' : active ? 'Resume tracking time' : 'Start live stopwatch'}
             onClick={() => toggleTaskTimer(task.id)}
@@ -354,7 +362,7 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
         )}
         {!done && onStartFocus && (
           <button
-            className={featured ? 'desk-focus-task' : 'desk-icon-button desk-row-reveal'}
+            className={featured ? 'desk-focus-task' : 'desk-icon-button desk-row-reveal touch-target-accessible'}
             aria-label={'Focus on ' + task.title}
             title={'Start focus on "' + task.title + '"'}
             onClick={() =>
@@ -365,8 +373,21 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
             {featured && <span>Focus</span>}
           </button>
         )}
+        {!done && (
+          <button
+            className="desk-icon-button desk-row-reveal touch-target-accessible"
+            aria-label={'Break into steps: ' + task.title}
+            title="Break into steps / Granularity slider"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActivePopover({ type: 'granularity', taskId: task.id });
+            }}
+          >
+            <Wand2 size={14} className="text-amber-500" />
+          </button>
+        )}
         <button
-          className="desk-icon-button desk-row-reveal"
+          className="desk-icon-button desk-row-reveal touch-target-accessible"
           aria-label={'More actions for ' + task.title}
           aria-haspopup="dialog"
           aria-expanded={!!menu}
@@ -412,6 +433,20 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
                 ...(isSomeday ? { isPinnedToday: false } : {}),
               })
             }
+            onClose={() => setActivePopover(null)}
+            anchorRect={document.getElementById(domId)?.getBoundingClientRect()}
+          />,
+          document.body
+        )}
+      {activePopover?.taskId === task.id && activePopover.type === 'granularity' &&
+        createPortal(
+          <GranularitySliderPopover
+            taskId={task.id}
+            taskTitle={task.title}
+            onApplySubtasks={(subtasks) => {
+              const existing = task.subtasks || [];
+              updateTask(task.id, { subtasks: [...existing, ...subtasks] });
+            }}
             onClose={() => setActivePopover(null)}
             anchorRect={document.getElementById(domId)?.getBoundingClientRect()}
           />,

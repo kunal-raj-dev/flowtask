@@ -1,4 +1,4 @@
-import type { Task, CalendarEvent } from "../types/task";
+import type { Task, CalendarEvent, Project } from "../types/task";
 import type { DayPlanSummary } from "../types/dashboard";
 import type { UserWorkflowSettings } from "../types/settings";
 import { parseTimeToMinutes } from "./timelineUtils";
@@ -9,6 +9,7 @@ import { calculateTaskTimeSummary } from "./taskTimeSummary";
 export interface DayPlanCalculationOptions {
   date: string; // YYYY-MM-DD
   tasks: Task[];
+  projects?: Project[];
   calendarEvents?: CalendarEvent[];
   settings?: Partial<UserWorkflowSettings>;
   focusLogsSecondsToday?: number;
@@ -96,6 +97,7 @@ export function calculateDayPlanSummary(
   const {
     date,
     tasks,
+    projects = [],
     calendarEvents = [],
     settings = {},
     focusLogsSecondsToday = 0,
@@ -178,7 +180,7 @@ export function calculateDayPlanSummary(
       return t.plannedDate === date || (!t.plannedDate && t.dueDate === date);
     }
     if (isDateToday) {
-      return isTodayTask(t, todayStr);
+      return isTodayTask(t, todayStr, { tasks, projects });
     }
     return t.plannedDate === date || (!t.plannedDate && t.dueDate === date);
   });
@@ -188,6 +190,7 @@ export function calculateDayPlanSummary(
   let scheduledTaskMinutes = 0;
   let missingEstimatesCount = 0;
   let completedTaskCount = 0;
+  const scheduledTaskIntervals: Array<[number, number]> = [];
 
   // Import and sync retries must never double-count an ID.
   const uniqueTasks = [
@@ -215,10 +218,17 @@ export function calculateDayPlanSummary(
         : Math.max(0, defaultTaskDuration - (task.timeSpentMinutes || 0));
     }
 
-    const blocksOnDay = (task.workBlocks || []).filter((b) => b.date === date);
+    const blocksOnDay = (task.workBlocks || []).filter((b) => b.date === date && b.status !== 'cancelled');
     if (blocksOnDay.length > 0) {
-      const blockMinutes = blocksOnDay.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
-      scheduledTaskMinutes += blockMinutes;
+      for (const b of blocksOnDay) {
+        const s = b.startTime ? parseTimeToMinutes(b.startTime) : null;
+        const e = b.endTime ? parseTimeToMinutes(b.endTime) : (s !== null ? s + b.durationMinutes : null);
+        const blockMins = b.durationMinutes || (s !== null && e !== null && e > s ? e - s : 0);
+        scheduledTaskMinutes += blockMins;
+        if (s !== null && e !== null && e > s) {
+          scheduledTaskIntervals.push([s, e]);
+        }
+      }
     } else if (task.scheduledStart) {
       const s = parseTimeToMinutes(task.scheduledStart);
       const e =
@@ -226,9 +236,16 @@ export function calculateDayPlanSummary(
         (s === null ? null : s + estimate);
       if (s !== null && e !== null && e > s) {
         scheduledTaskMinutes += e - s;
+        scheduledTaskIntervals.push([s, e]);
       }
     }
   }
+
+  const allOccupiedIntervals = [...timedIntervalsInWorkingHours, ...scheduledTaskIntervals];
+  const uniqueOccupiedMinutes = calculateUniqueIntervalMinutes(allOccupiedIntervals);
+  const rawOccupiedTotal = timedCalendarMinutes + scheduledTaskMinutes;
+  const conflictMinutes = Math.max(0, rawOccupiedTotal - uniqueOccupiedMinutes);
+  const freeCalendarMinutes = Math.max(0, configuredCapacityMinutes - uniqueOccupiedMinutes);
 
   const recordedFocusMinutes = Math.round(focusLogsSecondsToday / 60);
   const overbooked = totalDemandMinutes > availableTaskBudgetMinutes;
@@ -244,6 +261,9 @@ export function calculateDayPlanSummary(
     availableTaskBudgetMinutes,
     totalDemandMinutes,
     scheduledTaskMinutes,
+    uniqueOccupiedMinutes,
+    conflictMinutes,
+    freeCalendarMinutes,
     remainingTaskWorkMinutes,
     recordedFocusMinutes,
     completedTaskCount,
@@ -255,3 +275,90 @@ export function calculateDayPlanSummary(
     missingEstimatesCount,
   };
 }
+
+export type TimedCalendarEvent = {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+};
+
+/**
+ * Calculates a realistic projected finish time (HH:MM) starting from nowDate,
+ * accounting for remaining task work and hopping over active or upcoming calendar commitments.
+ */
+function calculateFinishMinutes(
+  nowDate: Date,
+  remainingWorkMinutes: number,
+  timedCalendarEvents: TimedCalendarEvent[] = []
+): number {
+  const safeDate = Number.isNaN(nowDate?.getTime?.() ?? NaN) ? new Date() : nowDate;
+  const currentMin = safeDate.getHours() * 60 + safeDate.getMinutes();
+  if (remainingWorkMinutes <= 0) {
+    return currentMin;
+  }
+
+  // Find intervals of active or upcoming calendar events
+  const intervals: Array<[number, number]> = [];
+  for (const ev of timedCalendarEvents) {
+    const s = parseTimeToMinutes(ev.startTime);
+    const e = parseTimeToMinutes(ev.endTime);
+    if (s !== null && e !== null && e > currentMin && e > s) {
+      intervals.push([Math.max(currentMin, s), e]);
+    }
+  }
+
+  // Merge overlapping or contiguous blocked intervals
+  intervals.sort((a, b) => a[0] - b[0]);
+  const merged: Array<[number, number]> = [];
+  for (const interval of intervals) {
+    if (merged.length === 0) {
+      merged.push(interval);
+    } else {
+      const last = merged[merged.length - 1];
+      if (interval[0] <= last[1]) {
+        last[1] = Math.max(last[1], interval[1]);
+      } else {
+        merged.push(interval);
+      }
+    }
+  }
+
+  let t = currentMin;
+  let rem = remainingWorkMinutes;
+
+  for (const [start, end] of merged) {
+    if (t < start) {
+      const gap = start - t;
+      if (rem <= gap) {
+        t += rem;
+        rem = 0;
+        break;
+      } else {
+        rem -= gap;
+        t = end;
+      }
+    } else if (t >= start && t < end) {
+      t = end;
+    }
+  }
+
+  if (rem > 0) {
+    t += rem;
+  }
+
+  return t;
+}
+
+export function calculateFinishForecast(now: Date, remainingMinutes: number, events: TimedCalendarEvent[] = [], endHour = 24) {
+  const minutes = calculateFinishMinutes(now, remainingMinutes, events);
+  return { time: `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(Math.floor(minutes % 60)).padStart(2, '0')}`,
+    dayOffset: Math.floor(minutes / 1440), outsideWorkHours: remainingMinutes > 0 && minutes > endHour * 60 };
+}
+
+/** Compatibility clock label; callers displaying a forecast should also expose day offset and work-hour limits. */
+export function calculateFeasibleFinishTime(now: Date, remainingMinutes: number, events: TimedCalendarEvent[] = []): string {
+  return calculateFinishForecast(now, remainingMinutes, events).time;
+}
+

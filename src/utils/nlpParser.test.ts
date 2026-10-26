@@ -4,7 +4,7 @@ import { parseTaskInput, formatLocalDate } from './nlpParser';
 describe('nlpParser', () => {
   it.each(['overmorrow', 'midday', 'noon', 'next week', 'in two hours', 'Wednesday', 'Thu', 'September', 'Sep 12', '2026-12-01', '5pm'])('retains the English date grammar for %s', phrase => {
     const parsed = parseTaskInput(`Review the release ${phrase}`);
-    expect(parsed.dueDate).toBeDefined();
+    expect(parsed.plannedDate || parsed.dueDate || parsed.dueTime).toBeDefined();
   });
 
   it('parses plain title without metadata', () => {
@@ -50,7 +50,7 @@ describe('nlpParser', () => {
     expect(res.priority).toBe('p1');
     expect(res.projectTag).toBe('finances');
     expect(res.estimatedMinutes).toBe(45);
-    expect(res.dueDate).toBeDefined();
+    expect(res.plannedDate).toBeDefined();
     expect(res.dueTime).toBe('17:00');
     expect(res.cleanTitle).toBe('Submit taxes');
   });
@@ -73,7 +73,7 @@ describe('nlpParser', () => {
     const resWeekly = parseTaskInput('Review sprint metrics every monday');
     expect(resWeekly.cleanTitle).toBe('Review sprint metrics');
     expect(resWeekly.recurrence).toBe('weekly');
-    expect(resWeekly.dueDate).toBeDefined();
+    expect(resWeekly.plannedDate || resWeekly.dueDate).toBeDefined();
 
     const resBiweekly = parseTaskInput('Pay team biweekly #finances');
     expect(resBiweekly.cleanTitle).toBe('Pay team');
@@ -87,7 +87,7 @@ describe('nlpParser', () => {
   it('parses relative time-of-day keywords (morning, afternoon, evening)', () => {
     const resMorn = parseTaskInput('Call doctor tomorrow morning');
     expect(resMorn.cleanTitle).toBe('Call doctor');
-    expect(resMorn.dueDate).toBeDefined();
+    expect(resMorn.plannedDate).toBeDefined();
     expect(resMorn.dueTime).toBe('09:00');
 
     const resAft = parseTaskInput('Client demo afternoon');
@@ -158,6 +158,30 @@ describe('nlpParser', () => {
     const medRes = parseTaskInput('Write team status report load:medium');
     expect(medRes.cleanTitle).toBe('Write team status report');
     expect(medRes.cognitiveLoad).toBe('medium');
+  });
+
+  it('assigns bare date phrases to plannedDate (F01 / Contract 5.1)', () => {
+    const res = parseTaskInput('Read chapter tomorrow #personal ~45m p1');
+    expect(res.cleanTitle).toBe('Read chapter');
+    expect(res.plannedDate).toBeDefined();
+    expect(res.dueDate).toBeUndefined();
+    expect(res.projectTag).toBe('personal');
+    expect(res.priority).toBe('p1');
+    expect(res.estimatedMinutes).toBe(45);
+  });
+
+  it('assigns explicit due phrases without colon to dueDate (F01 / Contract 5.1)', () => {
+    const res = parseTaskInput('Submit report due Friday');
+    expect(res.cleanTitle).toBe('Submit report');
+    expect(res.dueDate).toBeDefined();
+    expect(res.plannedDate).toBeUndefined();
+  });
+
+  it('handles compound inputs with bare date and explicit due (F01 / Contract 5.1)', () => {
+    const res = parseTaskInput('Submit draft tomorrow due Friday');
+    expect(res.cleanTitle).toBe('Submit draft');
+    expect(res.plannedDate).toBeDefined();
+    expect(res.dueDate).toBeDefined();
   });
 });
 
