@@ -73,6 +73,8 @@ vi.mock('../../hooks/useCurrentDate', () => ({
 describe('StudyView Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    mockAddStudySessions.mockReturnValue([{ id: 'created-study' }]);
   });
 
   it('renders Study Hub title, subtitle, and primary navigation tabs', () => {
@@ -80,7 +82,7 @@ describe('StudyView Component', () => {
 
     expect(screen.getByText('Study Hub')).toBeDefined();
     expect(
-      screen.getByText(/Targeted study sprints, paced question solving/i)
+      screen.getByText(/Plan your targets, study at your own pace/i)
     ).toBeDefined();
 
     expect(screen.getByRole('tab', { name: /Continue/i })).toBeDefined();
@@ -114,7 +116,7 @@ describe('StudyView Component', () => {
     expect(screen.getByText(/2026-10-17/i)).toBeDefined();
   });
 
-  it('switches to Templates tab, displays starter templates, and applies a template', () => {
+  it('reviews and edits a template before creating a session', async () => {
     render(<StudyView onStartSprint={vi.fn()} onSelectTask={vi.fn()} />);
 
     const templatesTab = screen.getByRole('tab', { name: /Templates/i });
@@ -129,8 +131,12 @@ describe('StudyView Component', () => {
     expect(useTemplateBtns.length).toBe(4);
     fireEvent.click(useTemplateBtns[0]);
 
-    expect(mockAddStudySessions).toHaveBeenCalled();
-    expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/Created \d+ study session/i));
+    expect(mockAddStudySessions).not.toHaveBeenCalled();
+    const editor = await screen.findByRole('dialog', { name: 'Plan a study session' }, { timeout: 5000 });
+    expect(editor).toBeDefined();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Session 1 target 1 title' }), { target: { value: 'My own problem' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create session' }));
+    expect(mockAddStudySessions.mock.calls[0][0][0].targets[0].title).toBe('My own problem');
   });
 
   it('switches to History tab and displays completed study tasks and sprint logs', () => {

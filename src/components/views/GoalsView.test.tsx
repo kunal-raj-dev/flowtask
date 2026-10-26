@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { GoalsView } from './GoalsView';
 import { TaskContext } from '../../context/TaskContext';
 import type { Project, Task } from '../../types/task';
@@ -84,5 +84,24 @@ describe('GoalsView', () => {
       const updatedBtn = goalCard.querySelector('button[title*="Mark In Progress"]');
       expect(updatedBtn).toBeTruthy();
     }
+  });
+
+  it('lets a goal link projects and later change or clear its date and links', () => {
+    renderWithContext();
+    fireEvent.click(screen.getByTestId('create-goal-button'));
+    fireEvent.change(screen.getByLabelText('Goal title'), { target: { value: 'A connected outcome' } });
+    fireEvent.change(screen.getByLabelText('Target date'), { target: { value: '2027-01-15' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Work Project' }));
+    fireEvent.click(screen.getByText('Save Goal'));
+    const card = screen.getByText('A connected outcome').closest('[data-testid]')!;
+    expect(within(card as HTMLElement).getByRole('button', { name: 'Work Project' })).toBeDefined();
+    fireEvent.click(within(card as HTMLElement).getByRole('button', { name: 'Edit Goal' }));
+    expect((screen.getByLabelText('Target date') as HTMLInputElement).value).toBe('2027-01-15');
+    fireEvent.change(screen.getByLabelText('Target date'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Work Project' }));
+    fireEvent.change(screen.getByLabelText('Goal status'), { target: { value: 'paused' } });
+    fireEvent.click(screen.getByText('Save Changes'));
+    expect(within(card as HTMLElement).queryByRole('button', { name: 'Work Project' })).toBeNull();
+    expect(within(card as HTMLElement).getByText('Paused')).toBeDefined();
   });
 });

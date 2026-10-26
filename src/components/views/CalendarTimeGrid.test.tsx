@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { CalendarTimeGrid } from './CalendarTimeGrid';
 import { TaskContext } from '../../context/TaskContext';
 import type { Task, CalendarEvent } from '../../types/task';
@@ -183,5 +183,89 @@ describe('CalendarTimeGrid', () => {
     renderWithContext({ tasks: heavyTasks });
     expect(screen.getByTestId('deficit-warning-banner')).toBeDefined();
     expect(screen.getByText(/Schedule Deficit/i)).toBeDefined();
+  });
+
+  it('resizing session adjusts scheduledEnd without rewriting task estimate', () => {
+    renderWithContext();
+    const resizeHandle = screen.getByTestId('resize-bottom-task-scheduled');
+    expect(resizeHandle).toBeDefined();
+
+    // Trigger pointerdown on resize handle
+    act(() => {
+      fireEvent.pointerDown(resizeHandle, { clientY: 200, stopPropagation: () => {}, preventDefault: () => {} });
+      window.dispatchEvent(new MouseEvent('pointermove', { clientY: 260 }));
+      window.dispatchEvent(new MouseEvent('pointerup'));
+    });
+
+    expect(mockUpdateTask).toHaveBeenCalledWith(
+      'task-scheduled',
+      expect.not.objectContaining({
+        estimatedMinutes: expect.anything(),
+      })
+    );
+    expect(mockUpdateTask).toHaveBeenCalledWith(
+      'task-scheduled',
+      expect.objectContaining({
+        scheduledEnd: expect.any(String),
+      })
+    );
+  });
+
+  it('renders multi-session task with workBlocks on subsequent days in 3-day view', () => {
+    const multiSessionTask: Task = {
+      id: 'task-multi',
+      title: 'Multi-session task',
+      status: 'todo',
+      priority: 'p1',
+      projectId: 'inbox',
+      plannedDate: testDate,
+      estimatedMinutes: 120,
+      subtasks: [],
+      createdAt: 100,
+      workBlocks: [
+        {
+          id: 'block-1',
+          taskId: 'task-multi',
+          date: testDate,
+          startTime: '09:00',
+          endTime: '10:00',
+          startInstant: Date.parse(`${testDate}T09:00:00Z`),
+          endInstant: Date.parse(`${testDate}T10:00:00Z`),
+          durationMinutes: 60,
+          timezone: 'UTC',
+          status: 'scheduled',
+          revision: 1,
+          createdAt: 100,
+          updatedAt: 100,
+        },
+        {
+          id: 'block-2',
+          taskId: 'task-multi',
+          date: '2026-10-26',
+          startTime: '14:00',
+          endTime: '15:00',
+          startInstant: Date.parse(`2026-10-26T14:00:00Z`),
+          endInstant: Date.parse(`2026-10-26T15:00:00Z`),
+          durationMinutes: 60,
+          timezone: 'UTC',
+          status: 'scheduled',
+          revision: 1,
+          createdAt: 100,
+          updatedAt: 100,
+        },
+      ],
+    };
+
+    renderWithContext({ tasks: [multiSessionTask] });
+    // Switch to 3-day view
+    const btn3Day = screen.getByRole('button', { name: /^3-day$/i });
+    fireEvent.click(btn3Day);
+
+    // Both day columns should have the task rendered
+    const colDay1 = screen.getByTestId(`calendar-column-${testDate}`);
+    const colDay2 = screen.getByTestId('calendar-column-2026-10-26');
+
+    expect(colDay1.textContent).toContain('Multi-session task');
+    expect(colDay2.textContent).toContain('Multi-session task');
   });
 });

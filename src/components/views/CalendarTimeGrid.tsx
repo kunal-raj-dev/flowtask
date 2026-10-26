@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
+import { getTaskEligibility } from '../../utils/taskEligibility';
 import type { Task, CalendarEvent } from '../../types/task';
 import { useTaskContext } from '../../context/TaskContext';
 import { audioEngine } from '../../services/audioEngine';
@@ -22,6 +23,8 @@ import {
   GripVertical,
   Maximize2,
   Lock,
+  ListTodo,
+  X,
 } from 'lucide-react';
 import { CircadianEnergyCurve } from '../timeline/CircadianEnergyCurve';
 
@@ -29,6 +32,7 @@ export interface CalendarTimeGridProps {
   onSelectTask?: (taskId: string) => void;
   onStartFocus?: (taskId: string) => void;
   initialDate?: string;
+  onDateChange?: (newDateStr: string) => void;
 }
 
 export type GridViewSpan = '1-day' | '3-day' | '7-day';
@@ -37,9 +41,11 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
   onSelectTask,
   onStartFocus,
   initialDate,
+  onDateChange,
 }) => {
   const {
     tasks,
+    projects = [],
     updateTask,
     calendarEvents: allCalendarEvents,
     settings,
@@ -49,11 +55,40 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
   const [activeDateStr, setActiveDateStr] = useState<string>(
     () => initialDate || todayStr
   );
+
+  const [prevInitialDate, setPrevInitialDate] = useState(initialDate);
+  if (initialDate && initialDate !== prevInitialDate) {
+    setPrevInitialDate(initialDate);
+    setActiveDateStr(initialDate);
+  }
+
+  const updateActiveDate = useCallback((newDateStr: string) => {
+    setActiveDateStr(newDateStr);
+    onDateChange?.(newDateStr);
+  }, [onDateChange]);
+
   const [viewSpan, setViewSpan] = useState<GridViewSpan>('1-day');
-  const [zoomScale, setZoomScale] = useState<number>(1.0); // s in [0.5, 3.0]
+  const [zoomScale, setZoomScale] = useState<number>(1.0);
   const [snapInterval, setSnapInterval] = useState<15 | 30>(15);
-  const [, setResizingTaskId] = useState<string | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+
+  // Mobile drawer state for unscheduled tasks (F20)
+  const [isMobileShelfOpen, setIsMobileShelfOpen] = useState(false);
+
+  // Drag resize preview state - commits once on release (F24)
+  const [resizePreview, setResizePreview] = useState<{
+    taskId: string;
+    scheduledStart?: string;
+    scheduledEnd?: string;
+  } | null>(null);
+
+  // 15-minute magnetic ghost bounding box preview on dragOver
+  const [dragOverGhost, setDragOverGhost] = useState<{
+    dateStr: string;
+    top: number;
+    height: number;
+    timeStr: string;
+  } | null>(null);
 
   const gridScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -84,9 +119,9 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
         t.plannedDate === activeDateStr ||
         (!t.plannedDate && t.dueDate === activeDateStr) ||
         (t.isPinnedToday && !t.plannedDate);
-      return isForDay && !t.scheduledStart;
+      return isForDay && !t.scheduledStart && getTaskEligibility(t, { tasks, projects, date: activeDateStr }).actionable;
     });
-  }, [tasks, activeDateStr]);
+  }, [tasks, projects, activeDateStr]);
 
   // Scheduled tasks mapped by date
   const scheduledTasksByDate = useMemo(() => {
@@ -94,7 +129,20 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
     dates.forEach((d) => map.set(d, []));
     tasks.forEach((t) => {
       if (t.deletedAt || t.archivedAt) return;
-      if (t.scheduledStart) {
+      if (t.workBlocks && t.workBlocks.length > 0) {
+        t.workBlocks.forEach((b) => {
+          if (b.status === 'cancelled') return;
+          const blockDate = b.date || (b.startInstant ? new Date(b.startInstant).toISOString().slice(0, 10) : null);
+          if (blockDate && map.has(blockDate)) {
+            const blockTask: Task = {
+              ...t,
+              scheduledStart: b.startTime || t.scheduledStart,
+              scheduledEnd: b.endTime || t.scheduledEnd,
+            };
+            map.get(blockDate)!.push(blockTask);
+          }
+        });
+      } else if (t.scheduledStart) {
         const targetDate = t.plannedDate || t.dueDate || activeDateStr;
         if (map.has(targetDate)) {
           map.get(targetDate)!.push(t);
@@ -183,16 +231,47 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
   );
 
   // Drag over calendar column
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, dateStr?: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    if (!dateStr) return;
+
+    const clientY = typeof e.clientY === 'number' && !Number.isNaN(e.clientY) ? e.clientY : 0;
+    const targetEl = (e.currentTarget || e.target) as HTMLElement;
+    const columnRect = targetEl?.getBoundingClientRect ? targetEl.getBoundingClientRect() : { top: 0 };
+    const colTop = typeof columnRect?.top === 'number' && !Number.isNaN(columnRect.top) ? columnRect.top : 0;
+    const relativeY = Math.max(0, clientY - colTop);
+    const effectiveHourHeight = hourHeight > 0 ? hourHeight : TIMELINE_HOUR_HEIGHT_PX;
+    const minutesFromStart = (relativeY / effectiveHourHeight) * 60;
+    const snappedMinutes = snapToInterval(Number.isNaN(minutesFromStart) ? 0 : minutesFromStart);
+
+    const dur = 30;
+    const top = (snappedMinutes / 60) * effectiveHourHeight;
+    const height = Math.max(24, (dur / 60) * effectiveHourHeight);
+    const startMins = startHour * 60 + snappedMinutes;
+
+    setDragOverGhost({
+      dateStr,
+      top,
+      height,
+      timeStr: `${minutesToTimeStr(startMins)} – ${minutesToTimeStr(startMins + dur)}`,
+    });
   };
 
-  // Drop onto a specific column and time slot
+  // Drop onto a specific column and time slot (respects scheduleLocked, F21)
   const handleDrop = (e: React.DragEvent, targetDate: string) => {
     e.preventDefault();
+    setDragOverGhost(null);
     const taskId = e.dataTransfer.getData('text/plain') || draggingTaskId;
     if (!taskId) return;
+
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    if (task.scheduleLocked) {
+      audioEngine.playNotification();
+      return;
+    }
 
     const clientY = typeof e.clientY === 'number' && !Number.isNaN(e.clientY) ? e.clientY : 0;
     const targetEl = (e.currentTarget || e.target) as HTMLElement;
@@ -204,7 +283,6 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
     const snappedMinutes = snapToInterval(Number.isNaN(minutesFromStart) ? 0 : minutesFromStart);
     const startTotalMinutes = startHour * 60 + snappedMinutes;
 
-    const task = tasks.find((t) => t.id === taskId);
     const duration = task?.estimatedMinutes || 30;
     const endTotalMinutes = startTotalMinutes + duration;
 
@@ -221,9 +299,10 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
     });
 
     setDraggingTaskId(null);
+    setIsMobileShelfOpen(false);
   };
 
-  // Resize duration handle (top or bottom)
+  // Resize duration handle (previews locally, single commit on release, F24)
   const handleResizePointerDown = (
     e: React.PointerEvent,
     task: Task,
@@ -232,13 +311,15 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
   ) => {
     e.stopPropagation();
     e.preventDefault();
-    setResizingTaskId(task.id);
+
+    if (task.scheduleLocked) return;
 
     const startMinutes = parseTimeToMinutes(task.scheduledStart) ?? startHour * 60;
     const currentEnd = parseTimeToMinutes(task.scheduledEnd) ?? startMinutes + (task.estimatedMinutes || 30);
     const initialDuration = Math.max(15, currentEnd - startMinutes);
-
     const initialY = e.clientY;
+
+    let latestPatch: { scheduledStart?: string; scheduledEnd?: string } | null = null;
 
     const onPointerMove = (moveEv: PointerEvent) => {
       const deltaY = moveEv.clientY - initialY;
@@ -248,31 +329,32 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
         const rawNewDuration = initialDuration + deltaMinutes;
         const snappedNewDuration = Math.max(15, Math.round(rawNewDuration / snapInterval) * snapInterval);
         const newEndTotal = startMinutes + snappedNewDuration;
-        const newEndStr = minutesToTimeStr(newEndTotal);
-
-        updateTask(task.id, {
-          scheduledEnd: newEndStr,
-          estimatedMinutes: snappedNewDuration,
-        });
+        latestPatch = {
+          scheduledEnd: minutesToTimeStr(newEndTotal),
+        };
       } else {
-        // Top edge: adjusts scheduledStart while preserving end time
         const rawNewStart = startMinutes + deltaMinutes;
         const snappedNewStart = Math.min(
           currentEnd - 15,
           Math.max(startHour * 60, Math.round(rawNewStart / snapInterval) * snapInterval)
         );
-        const newDuration = currentEnd - snappedNewStart;
-
-        updateTask(task.id, {
+        latestPatch = {
           scheduledStart: minutesToTimeStr(snappedNewStart),
-          estimatedMinutes: newDuration,
-        });
+        };
       }
+
+      setResizePreview({
+        taskId: task.id,
+        ...latestPatch,
+      });
     };
 
     const onPointerUp = () => {
       audioEngine.playMagneticSnap();
-      setResizingTaskId(null);
+      setResizePreview(null);
+      if (latestPatch) {
+        updateTask(task.id, latestPatch);
+      }
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
@@ -286,61 +368,74 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
     const d = new Date(activeDateStr + 'T00:00:00');
     const step = viewSpan === '1-day' ? 1 : viewSpan === '3-day' ? 3 : 7;
     d.setDate(d.getDate() - step);
-    setActiveDateStr(formatLocalDate(d));
+    updateActiveDate(formatLocalDate(d));
   };
 
   const handleNext = () => {
     const d = new Date(activeDateStr + 'T00:00:00');
     const step = viewSpan === '1-day' ? 1 : viewSpan === '3-day' ? 3 : 7;
     d.setDate(d.getDate() + step);
-    setActiveDateStr(formatLocalDate(d));
+    updateActiveDate(formatLocalDate(d));
   };
 
   const handleToday = () => {
-    setActiveDateStr(formatLocalDate(new Date()));
+    updateActiveDate(todayStr);
   };
 
   return (
     <div
-      className="calendar-time-grid flex flex-col h-full bg-[var(--bg-main)] text-[var(--text-primary)] rounded-xl border border-[var(--border-color)] overflow-hidden"
+      className="flex flex-col h-full bg-[var(--bg-main)] select-none animate-fadeIn"
       data-testid="calendar-time-grid"
     >
-      {/* Header controls: date stepper, view span switcher, zoom buttons, snap toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[var(--bg-surface-l1)] border-b border-[var(--border-color)]">
+      {/* Top Controls Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:px-5 border-b border-[var(--border-color)] bg-[var(--bg-surface-l1)]">
+        {/* Date Navigation */}
         <div className="flex items-center gap-2">
           <button
             onClick={handleToday}
-            className="px-3 py-1 text-xs font-semibold rounded-md border border-[var(--border-color)] bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-l3)]"
+            className="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-l2)] hover:border-[var(--color-brand)] transition active:scale-95 min-h-[36px]"
           >
             Today
           </button>
-          <div className="flex items-center">
+          <div className="flex items-center gap-0.5">
             <button
               onClick={handlePrev}
-              aria-label="Previous Period"
-              className="p-1 rounded-l-md border border-[var(--border-color)] hover:bg-[var(--bg-surface-l2)]"
+              aria-label="Previous Day"
+              className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] min-h-[36px] min-w-[36px] flex items-center justify-center"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={handleNext}
-              aria-label="Next Period"
-              className="p-1 rounded-r-md border-t border-b border-r border-[var(--border-color)] hover:bg-[var(--bg-surface-l2)]"
+              aria-label="Next Day"
+              className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] min-h-[36px] min-w-[36px] flex items-center justify-center"
             >
               <ChevronRight size={16} />
             </button>
           </div>
-          <span className="text-sm font-semibold tracking-tight px-2">
-            {dates[0]} {dates.length > 1 ? `– ${dates[dates.length - 1]}` : ''}
+          <span className="font-bold text-sm tracking-tight ml-1">
+            {dates[0]}
+            {dates.length > 1 && ` – ${dates[dates.length - 1]}`}
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Snap Interval Toggle */}
+        {/* View Span, Snap Interval, Mobile Backlog Toggle & Zoom */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Mobile Backlog Toggle Button (F20) */}
+          <button
+            onClick={() => setIsMobileShelfOpen((v) => !v)}
+            className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-l2)] text-xs font-medium min-h-[36px]"
+            aria-label="Toggle Staged Tasks"
+          >
+            <ListTodo size={14} className="text-[var(--color-brand)]" />
+            <span>Staged ({unscheduledTasks.length})</span>
+          </button>
+
+          {/* Magnetic snap toggle */}
           <div className="flex items-center rounded-lg border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface-l2)] text-xs">
             <button
               onClick={() => setSnapInterval(15)}
-              className={`px-2 py-0.5 rounded ${
+              className={`px-2 py-1 rounded min-h-[32px] ${
                 snapInterval === 15 ? 'bg-[var(--color-brand)] text-white' : 'text-[var(--text-secondary)]'
               }`}
             >
@@ -348,7 +443,7 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
             </button>
             <button
               onClick={() => setSnapInterval(30)}
-              className={`px-2 py-0.5 rounded ${
+              className={`px-2 py-1 rounded min-h-[32px] ${
                 snapInterval === 30 ? 'bg-[var(--color-brand)] text-white' : 'text-[var(--text-secondary)]'
               }`}
             >
@@ -362,7 +457,7 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
               <button
                 key={span}
                 onClick={() => setViewSpan(span)}
-                className={`px-2.5 py-1 rounded capitalize font-medium ${
+                className={`px-2.5 py-1 rounded capitalize font-medium min-h-[32px] ${
                   viewSpan === span
                     ? 'bg-[var(--color-brand)] text-white'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -378,7 +473,7 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
             <button
               onClick={() => handleZoom(-0.25)}
               aria-label="Zoom Out"
-              className="p-1 hover:bg-[var(--bg-surface-l3)] rounded"
+              className="p-1.5 hover:bg-[var(--bg-surface-l3)] rounded min-h-[32px] min-w-[32px] flex items-center justify-center"
               title="Zoom Out"
             >
               <ZoomOut size={14} />
@@ -389,7 +484,7 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
             <button
               onClick={() => handleZoom(0.25)}
               aria-label="Zoom In"
-              className="p-1 hover:bg-[var(--bg-surface-l3)] rounded"
+              className="p-1.5 hover:bg-[var(--bg-surface-l3)] rounded min-h-[32px] min-w-[32px] flex items-center justify-center"
               title="Zoom In"
             >
               <ZoomIn size={14} />
@@ -410,15 +505,38 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
       )}
 
       {/* Main Grid Body: Staged Brain Dump Shelf + Time-Block Canvas */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Left Staged Brain Dump Shelf (Backlog) */}
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
+        {/* Mobile Backdrop when shelf open (F20) */}
+        {isMobileShelfOpen && (
+          <div
+            className="fixed inset-0 bg-black/40 z-30 md:hidden"
+            onClick={() => setIsMobileShelfOpen(false)}
+          />
+        )}
+
+        {/* Left Staged Brain Dump Shelf (Backlog) - Collapsible on mobile (F20) */}
         <div
-          className="w-64 border-r border-[var(--border-color)] bg-[var(--bg-surface-l1)] flex flex-col min-h-0"
+          className={`border-r border-[var(--border-color)] bg-[var(--bg-surface-l1)] flex flex-col min-h-0 ${
+            isMobileShelfOpen
+              ? 'fixed inset-y-0 left-0 z-40 w-72 shadow-2xl flex md:relative md:w-64 md:shadow-none'
+              : 'hidden md:flex w-64'
+          }`}
           data-testid="brain-dump-shelf"
         >
           <div className="px-3 py-2 border-b border-[var(--border-color)] text-xs font-semibold text-[var(--text-secondary)] flex items-center justify-between">
             <span>Staged Tasks ({unscheduledTasks.length})</span>
-            <span className="text-[10px] text-[var(--text-muted)]">Drag into calendar</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-[var(--text-muted)] hidden sm:inline">Drag into calendar</span>
+              {isMobileShelfOpen && (
+                <button
+                  onClick={() => setIsMobileShelfOpen(false)}
+                  className="md:hidden p-1 rounded hover:bg-[var(--bg-surface-l2)]"
+                  aria-label="Close Staged Shelf"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-2">
             {unscheduledTasks.length === 0 ? (
@@ -457,46 +575,42 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
           </div>
         </div>
 
-        {/* Calendar Scroll Area */}
-        <div
-          ref={gridScrollRef}
-          className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden relative"
-          data-testid="grid-scroll-area"
-        >
-          {/* Day column headers */}
-          <div className="sticky top-0 z-20 flex bg-[var(--bg-surface-l2)] border-b border-[var(--border-color)] shadow-sm">
-            <div className="w-16 flex-shrink-0 border-r border-[var(--border-color)] py-2 text-center text-[10px] font-mono text-[var(--text-muted)]">
-              Time
-            </div>
+        {/* Time-Block Scrollable Canvas */}
+        <div ref={gridScrollRef} className="flex-1 overflow-y-auto flex flex-col relative">
+          {/* Header Row for Day Names */}
+          <div className="sticky top-0 z-20 flex border-b border-[var(--border-color)] bg-[var(--bg-surface-l1)] shadow-xs">
+            {/* Hour labels gutter spacer */}
+            <div className="w-14 flex-shrink-0 border-r border-[var(--border-color)]" />
             {dates.map((dateStr) => {
               const d = new Date(dateStr + 'T00:00:00');
-              const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
               const isToday = dateStr === todayStr;
-
               return (
                 <div
                   key={dateStr}
-                  className={`flex-1 py-2 text-center border-r border-[var(--border-color)] last:border-r-0 ${
-                    isToday ? 'bg-[var(--color-brand)]/5 font-bold text-[var(--color-brand)]' : ''
+                  className={`flex-1 py-2 px-3 text-center border-r border-[var(--border-color)] last:border-r-0 ${
+                    isToday ? 'bg-[var(--color-brand)]/5 font-bold' : ''
                   }`}
                 >
-                  <div className="text-[11px] uppercase tracking-wider">{dayName}</div>
-                  <div className="text-xs">{dateStr.slice(5)}</div>
+                  <div className="text-[11px] font-semibold uppercase text-[var(--text-secondary)]">
+                    {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                  </div>
+                  <div className={`text-base font-bold ${isToday ? 'text-[var(--color-brand)]' : ''}`}>
+                    {d.getDate()}
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Time lines grid canvas */}
-          <div className="flex relative" style={{ height: `${gridTotalHeight}px` }}>
-            {/* Hour gutter labels */}
-            <div className="w-16 flex-shrink-0 border-r border-[var(--border-color)] bg-[var(--bg-surface-l1)] relative select-none">
+          {/* Time Canvas Body */}
+          <div className="flex flex-1 relative" style={{ height: `${gridTotalHeight}px` }}>
+            {/* Left hour labels gutter */}
+            <div className="w-14 flex-shrink-0 relative border-r border-[var(--border-color)] bg-[var(--bg-surface-l1)]/50">
               <CircadianEnergyCurve
+                tasks={scheduledTasksByDate.get(activeDateStr) || []}
                 startHour={startHour}
                 endHour={endHour}
                 hourHeight={hourHeight}
-                width={64}
-                tasks={tasks}
                 onRescheduleTask={(taskId, newStart) => {
                   updateTask(taskId, { scheduledStart: newStart });
                   audioEngine.playMagneticSnap();
@@ -526,11 +640,21 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
               return (
                 <div
                   key={dateStr}
-                  onDragOver={handleDragOver}
+                  onDragOver={(e) => handleDragOver(e, dateStr)}
+                  onDragLeave={() => setDragOverGhost(null)}
                   onDrop={(e) => handleDrop(e, dateStr)}
                   className="flex-1 relative border-r border-[var(--border-color)] last:border-r-0"
                   data-testid={`calendar-column-${dateStr}`}
                 >
+                  {/* 15-minute magnetic ghost bounding box preview on dragOver */}
+                  {dragOverGhost && dragOverGhost.dateStr === dateStr && (
+                    <div
+                      className="dragOverGhost absolute left-1.5 right-1.5 rounded-lg border-2 border-dashed border-[var(--color-brand)] bg-[var(--color-brand)]/15 pointer-events-none z-20 flex items-center px-2 text-xs font-mono font-bold text-[var(--color-brand)] transition-all duration-75 shadow-xs"
+                      style={{ top: `${dragOverGhost.top}px`, height: `${dragOverGhost.height}px` }}
+                    >
+                      <span>{dragOverGhost.timeStr}</span>
+                    </div>
+                  )}
                   {/* Horizontal grid lines */}
                   {Array.from({ length: totalHours }).map((_, i) => (
                     <div
@@ -572,9 +696,14 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
 
                   {/* Render scheduled task blocks */}
                   {scheduled.map((task) => {
-                    const s = parseTimeToMinutes(task.scheduledStart) ?? startHour * 60;
+                    // Check if this block has a local drag-resize preview (F24)
+                    const isPreviewing = resizePreview && resizePreview.taskId === task.id;
+                    const activeStart = (isPreviewing && resizePreview.scheduledStart) || task.scheduledStart;
+                    const activeEnd = (isPreviewing && resizePreview.scheduledEnd) || task.scheduledEnd;
+
+                    const s = parseTimeToMinutes(activeStart) ?? startHour * 60;
                     const e =
-                      parseTimeToMinutes(task.scheduledEnd) ??
+                      parseTimeToMinutes(activeEnd) ??
                       s + (task.estimatedMinutes || 30);
                     const dur = Math.max(15, e - s);
                     const top = ((s - startHour * 60) / 60) * hourHeight;
@@ -582,11 +711,13 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
 
                     return (
                       <div
-                        key={task.id}
+                        key={`${task.id}-${activeStart || ''}-${activeEnd || ''}`}
                         onClick={() => onSelectTask?.(task.id)}
                         className={`absolute left-1.5 right-1.5 rounded-lg border px-2 py-1 shadow-sm transition-all z-10 group overflow-hidden cursor-pointer ${
                           task.status === 'done'
                             ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-900 dark:text-emerald-200 opacity-75'
+                            : isPreviewing
+                            ? 'bg-[var(--color-brand)]/20 border-dashed border-[var(--color-brand)]'
                             : 'bg-[var(--bg-surface-l2)] border-[var(--color-brand)] text-[var(--text-primary)] hover:shadow-md'
                         }`}
                         style={{ top: `${top}px`, height: `${height}px` }}
@@ -594,6 +725,7 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
                       >
                         {/* Top resize handle */}
                         <div
+                          data-testid={`resize-top-${task.id}`}
                           onPointerDown={(ev) => handleResizePointerDown(ev, task, 'top', dateStr)}
                           className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-[var(--color-brand)]/40 z-20"
                           title="Drag to resize start time"
@@ -625,11 +757,12 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
 
                         {/* Monospace tabular time indicator */}
                         <div className="font-mono text-[10px] text-[var(--text-secondary)] mt-0.5 tabular-nums truncate">
-                          {task.scheduledStart} – {minutesToTimeStr(e)} ({dur}m)
+                          {activeStart} – {minutesToTimeStr(e)} ({dur}m)
                         </div>
 
                         {/* Bottom resize handle */}
                         <div
+                          data-testid={`resize-bottom-${task.id}`}
                           onPointerDown={(ev) => handleResizePointerDown(ev, task, 'bottom', dateStr)}
                           className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-[var(--color-brand)]/40 z-20"
                           title="Drag to resize duration"

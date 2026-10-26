@@ -21,6 +21,7 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Keyboard,
+  Bell,
 } from 'lucide-react';
 import { useTodayStr } from '../../hooks/useCurrentDate';
 import { AestheticsSettingsContent } from '../settings/AestheticsSettingsContent';
@@ -40,7 +41,41 @@ import { exportToCSV, downloadCsv } from '../../utils/fileExporter';
 import { requestPersistentStorage } from '../../services/dbService';
 import { ShortcutsGuide } from '../common/ShortcutsGuide';
 
-export type SettingsTab = 'workflow' | 'aesthetics' | 'calendar' | 'data' | 'account' | 'focus' | 'sound' | 'workspace' | 'shortcuts' | 'about';
+export type CanonicalSettingsTab = 'workflow' | 'appearance' | 'notifications' | 'data';
+export type SettingsTab =
+  | CanonicalSettingsTab
+  | 'aesthetics'
+  | 'calendar'
+  | 'data'
+  | 'account'
+  | 'focus'
+  | 'sound'
+  | 'workspace'
+  | 'shortcuts'
+  | 'about';
+
+export function normalizeSettingsTab(tab?: string): CanonicalSettingsTab {
+  if (!tab) return 'workflow';
+  switch (tab) {
+    case 'appearance':
+    case 'aesthetics':
+    case 'sound':
+      return 'appearance';
+    case 'notifications':
+      return 'notifications';
+    case 'data':
+    case 'account':
+    case 'about':
+      return 'data';
+    case 'workflow':
+    case 'workspace':
+    case 'focus':
+    case 'calendar':
+    case 'shortcuts':
+    default:
+      return 'workflow';
+  }
+}
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -61,7 +96,12 @@ const formatHourLabel = (h: number) => {
 export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose, initialTab }) => {
   const dialogRoot = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRoot, onClose, isOpen);
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'workflow');
+  const resolveInitialTab = (tab?: SettingsTab): SettingsTab => {
+    if (!tab) return 'workflow';
+    if (tab === 'appearance') return 'aesthetics';
+    return tab;
+  };
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => resolveInitialTab(initialTab));
   const { openModal } = useModal();
   const { user } = useAuth();
 
@@ -145,6 +185,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
     { id: 'workflow', name: 'Workflow', icon: Sliders },
     { id: 'shortcuts', name: 'Shortcuts', icon: Keyboard },
     { id: 'calendar', name: 'Calendar', icon: Calendar },
+    { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'data', name: 'Data', icon: HardDrive },
     { id: 'account', name: 'Account', icon: ShieldCheck },
     { id: 'about', name: 'About', icon: Sparkles },
@@ -155,7 +196,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   if (initialTab !== prevInitialTab) {
     setPrevInitialTab(initialTab);
     if (initialTab) {
-      setActiveTab(initialTab);
+      setActiveTab(resolveInitialTab(initialTab));
     }
   }
 
@@ -320,7 +361,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
         ref={dialogRoot} tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label={activeTab === 'aesthetics' ? 'Appearance settings' : 'Application Settings'}
+        aria-label={activeTab === 'aesthetics' || activeTab === 'appearance' ? 'Appearance settings' : 'Application Settings'}
       >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-[var(--border-hairline)] flex items-center justify-between bg-[var(--bg-surface-l1)]/90 backdrop-blur-md sticky top-0 z-20">
@@ -358,7 +399,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
         <nav className="desk-settings-nav" aria-label="Settings groups">
           {groups.map((group) => {
             const Icon = group.icon;
-            const isCurrent = activeTab === group.id;
+            const isCurrent = activeTab === group.id || (group.id === 'aesthetics' && activeTab === 'appearance');
             return (
               <button
                 key={group.id}
@@ -868,7 +909,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           )}
 
           {/* TAB 2: AESTHETICS & APPEARANCE */}
-          {activeTab === 'aesthetics' && (
+          {(activeTab === 'aesthetics' || activeTab === 'appearance') && (
             <div className="space-y-6 animate-fade-in">
               <AestheticsSettingsContent
                 section="appearance"
@@ -987,9 +1028,185 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
             </div>
           )}
 
+          {/* TAB: NOTIFICATIONS & REMINDERS */}
+          {activeTab === 'notifications' && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text-primary)]">Browser Notifications & Reminders</h3>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    Configure task reminders and deliberate notification delivery.
+                  </p>
+                </div>
+
+                {/* Deliberate Intent Permission Request */}
+                <div className="p-4 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] flex items-center justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-semibold text-[var(--text-primary)] block">System Notification Permission</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">
+                      Current status: <strong className="capitalize">{typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'}</strong>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (typeof Notification !== 'undefined') {
+                        try {
+                          await Notification.requestPermission();
+                          triggerSaveToast();
+                        } catch {}
+                      }
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)] text-xs font-semibold transition cursor-pointer"
+                  >
+                    Enable Browser Notifications
+                  </button>
+                </div>
+
+                {/* Quiet Hours */}
+                <div className="p-4 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-semibold text-[var(--text-primary)] block">Quiet Hours</span>
+                      <span className="text-[11px] text-[var(--text-muted)]">Suppress notification sounds and popups during your off-hours</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.quietHoursEnabled ?? false}
+                        onChange={(e) => {
+                          updateSettings({ quietHoursEnabled: e.target.checked });
+                          triggerSaveToast();
+                        }}
+                        className="sr-only peer"
+                        aria-label="Enable Quiet Hours"
+                      />
+                      <div className="w-9 h-5 bg-stone-300 dark:bg-stone-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--color-brand)]" />
+                    </label>
+                  </div>
+
+                  {settings.quietHoursEnabled && (
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--border-hairline)]">
+                      <div>
+                        <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Quiet Hours Start</label>
+                        <input
+                          type="time"
+                          value={settings.quietHoursStart || '22:00'}
+                          onChange={(e) => {
+                            updateSettings({ quietHoursStart: e.target.value });
+                            triggerSaveToast();
+                          }}
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-l2)] text-[var(--text-primary)]"
+                          aria-label="Quiet Hours Start"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-medium text-[var(--text-secondary)] block mb-1">Quiet Hours End</label>
+                        <input
+                          type="time"
+                          value={settings.quietHoursEnd || '07:00'}
+                          onChange={(e) => {
+                            updateSettings({ quietHoursEnd: e.target.value });
+                            triggerSaveToast();
+                          }}
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-l2)] text-[var(--text-primary)]"
+                          aria-label="Quiet Hours End"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notification Sound Toggle */}
+                <div className="p-4 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-semibold text-[var(--text-primary)] block">Reminder Audio Chime</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">Play a sound when a scheduled reminder or timer fires</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.notificationSoundEnabled ?? true}
+                      onChange={(e) => {
+                        updateSettings({ notificationSoundEnabled: e.target.checked });
+                        triggerSaveToast();
+                      }}
+                      className="sr-only peer"
+                      aria-label="Enable Reminder Audio Chime"
+                    />
+                    <div className="w-9 h-5 bg-stone-300 dark:bg-stone-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--color-brand)]" />
+                  </label>
+                </div>
+
+                {/* Default Reminder Lead Time */}
+                <div className="p-4 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] space-y-2">
+                  <span className="text-xs font-semibold text-[var(--text-primary)] block">Default Reminder Lead Time</span>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'At time of event', value: 0 },
+                      { label: '5 min before', value: 5 },
+                      { label: '10 min before', value: 10 },
+                      { label: '15 min before', value: 15 },
+                      { label: '30 min before', value: 30 },
+                    ].map((preset) => {
+                      const isSelected = (settings.defaultReminderOffsetMinutes ?? 5) === preset.value;
+                      return (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => {
+                            updateSettings({ defaultReminderOffsetMinutes: preset.value });
+                            triggerSaveToast();
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                            isSelected
+                              ? 'bg-[var(--color-brand)] text-white'
+                              : 'bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:border-[var(--color-brand)]'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TAB 4: DATA, STORAGE & PORTABILITY */}
           {activeTab === 'data' && (
             <div className="space-y-6 animate-fade-in">
+              {/* Local-First vs Cloud Sync Scope Callout Banner */}
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-[var(--color-brand)]" />
+                  <h4 className="text-xs font-bold text-[var(--text-primary)]">Data Sovereignty & Synchronization Scope</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] space-y-1.5">
+                    <span className="font-semibold text-emerald-800 dark:text-emerald-400 block">✓ Included in Cloud Sync (if signed in)</span>
+                    <ul className="text-[11px] text-[var(--text-secondary)] list-disc list-inside space-y-0.5">
+                      <li>Tasks, Projects, Sections & Tags</li>
+                      <li>Connected Notes & Backlinks</li>
+                      <li>Routine definitions & configurations</li>
+                      <li>Workflow preferences & capacity targets</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] space-y-1.5">
+                    <span className="font-semibold text-amber-800 dark:text-amber-400 block">🔒 Kept Strictly Local (this device only)</span>
+                    <ul className="text-[11px] text-[var(--text-secondary)] list-disc list-inside space-y-0.5">
+                      <li>Webcal feed URLs & cached external events</li>
+                      <li>Audio engine cache & ambient sound volume</li>
+                      <li>Browser storage cache & IndexedDB binary files</li>
+                      <li>Session execution history & private device backups</li>
+                    </ul>
+                  </div>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Flowtask is local-first by design. Even without an account, your data is fully saved locally in your browser's persistent IndexedDB storage.
+                </p>
+              </div>
               {/* Storage Quota Meter */}
               {storageStats && (
                 <div id="s-storage" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">

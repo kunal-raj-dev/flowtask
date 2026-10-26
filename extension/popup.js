@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const state = await chrome.storage.local.get(['flowtask_origin','flowtask_captured_tasks']);
       const queue = state.flowtask_captured_tasks || [];
       if (queue.length >= 1000) throw new Error('Capture queue is full. Export your saved captures before adding more.');
-      const task = { id: 'ext-' + crypto.randomUUID(), title: title.value.trim(), description: notes.value.trim(), priority, projectId: 'inbox', status: 'todo', subtasks: [], createdAt: Date.now(), updatedAt: Date.now() };
+      const task = { id: 'ext-' + crypto.randomUUID(), title: title.value.trim(), description: notes.value.trim(), priority, projectId: 'inbox', status: 'todo', subtasks: [], tags: ['web-capture'], createdAt: Date.now(), updatedAt: Date.now() };
       await chrome.storage.local.set({ flowtask_captured_tasks: [...queue, task] });
       let delivered = false;
       if (state.flowtask_origin) {

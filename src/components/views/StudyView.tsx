@@ -2,153 +2,114 @@ import { isStudyTask } from '../../utils/taskSelectors';
 import React, { useState, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useTodayStr } from '../../hooks/useCurrentDate';
-import { parseStudySessions } from '../../utils/sessionParser';
+import { lazy, Suspense } from 'react';
+import { normalizeStudyTemplates, STARTER_STUDY_TEMPLATES, MAX_STUDY_TEMPLATES, studyId, STUDY_PACING_PRESETS, type StudyTemplate } from '../../utils/studyTemplates';
+import type { WorkspacePreferences } from '../../types/dashboard';
+import type { StudySessionModalProps } from '../modals/StudyPlanEditor';
 import {
   BookOpen,
   Sparkles,
   Play,
   Calendar,
+  Clock,
   History,
   LayoutTemplate,
   Plus,
   CheckCircle2,
   ArrowRight,
-  Code2,
-  GraduationCap,
-  FileText,
-  Layers,
-  Check,
+  Copy, Pencil, Trash2,
 } from 'lucide-react';
 
 interface StudyViewProps {
   onStartSprint?: (taskId: string) => void;
   onSelectTask?: (taskId: string) => void;
 }
-
-const STUDY_TEMPLATES = [
-  {
-    id: 'dsa',
-    title: 'DSA Practice Sprint',
-    description: 'Algorithmic problem-solving session with targeted difficulty levels and pacing.',
-    icon: Code2,
-    color: 'text-amber-600 bg-amber-500/10 border-amber-500/30',
-    sampleInput: `Session: DSA Problem Solving (9:00 AM - 12:00 PM)
-- Two Sum (Easy, 15m) https://leetcode.com/problems/two-sum
-- 3Sum (Medium, 30m) https://leetcode.com/problems/3sum
-- Longest Substring Without Repeating Characters (Medium, 30m) https://leetcode.com/problems/longest-substring-without-repeating-characters
-- Median of Two Sorted Arrays (Hard, 45m) https://leetcode.com/problems/median-of-two-sorted-arrays
-- Merge k Sorted Lists (Hard, 45m) https://leetcode.com/problems/merge-k-sorted-lists`,
-  },
-  {
-    id: 'exam',
-    title: 'Exam Revision & Active Recall',
-    description: 'High-yield syllabus review, active recall questioning, and past-paper revision.',
-    icon: GraduationCap,
-    color: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/30',
-    sampleInput: `Session: Systems & Architecture Revision (2:00 PM - 5:00 PM)
-- Virtual Memory & Paging Mechanisms (45m)
-- Cache Coherence Protocols (MESI) (45m)
-- Past Paper 2024: Concurrency Questions 1-4 (60m)
-- Formula Sheet & Critical Definitions Review (30m)`,
-  },
-  {
-    id: 'reading',
-    title: 'Deep Reading & Research',
-    description: 'Paper reading, documentation deep-dives, and structured note extraction.',
-    icon: FileText,
-    color: 'text-blue-600 bg-blue-500/10 border-blue-500/30',
-    sampleInput: `Session: Distributed Systems Papers (10:00 AM - 12:30 PM)
-- Read Raft Consensus Algorithm Section 1-4 (45m)
-- Extract state transition diagrams to notes (30m)
-- Read Spanner: Google's Globally Distributed Database (60m)
-- Summarize TrueTime API guarantees (15m)`,
-  },
-  {
-    id: 'dev',
-    title: 'Development Sprint',
-    description: 'Feature implementation with atomic milestones, test coverage, and documentation.',
-    icon: Layers,
-    color: 'text-purple-600 bg-purple-500/10 border-purple-500/30',
-    sampleInput: `Session: Core Auth & Workspace Upgrade (1:30 PM - 4:30 PM)
-- Implement schema migration v4 to v5 (45m)
-- Build responsive grid layout adapter (60m)
-- Write unit tests for dayPlanSummary (45m)
-- Verify end-to-end cloud sync conflict handling (30m)`,
-  },
-];
+const StudySessionModal = lazy(() => import('../modals/StudySessionModal').then(module => ({ default: module.StudySessionModal })));
 
 export const StudyView: React.FC<StudyViewProps> = ({
   onStartSprint,
   onSelectTask,
 }) => {
-  const { tasks, addStudySessions, toggleSubTask, focusLogs, showToast } = useTaskContext();
+  const { tasks, toggleSubTask, toggleTaskStatus, focusLogs, showToast, undoLastAction, workspacePreferences = {}, setWorkspacePreference } = useTaskContext();
   const todayStr = useTodayStr();
 
   const [activeTab, setActiveTab] = useState<'continue' | 'planned' | 'templates' | 'history'>('continue');
-  const [templateInput, setTemplateInput] = useState('');
-  const [isParsingOpen, setIsParsingOpen] = useState(false);
+  const [planner, setPlanner] = useState<Partial<StudySessionModalProps> | null>(null);
+  const workspace = (workspacePreferences.workspace || {}) as WorkspacePreferences;
+  const templates = workspace.studyTemplates === undefined ? STARTER_STUDY_TEMPLATES : normalizeStudyTemplates(workspace.studyTemplates);
+  const saveTemplates = (next: StudyTemplate[]) => {
+    if (!setWorkspacePreference) throw new Error('Template storage is unavailable. Reload this workspace and try again.');
+    if (next.length > MAX_STUDY_TEMPLATES || JSON.stringify(next).length > 250_000) throw new Error('The template library is full. Remove an unused template or make this plan smaller.');
+    const valid = normalizeStudyTemplates(next);
+    if (valid.length !== next.length) throw new Error('Check the template name, session names and target titles before saving.');
+    setWorkspacePreference('workspace', { ...workspace, studyTemplates: valid });
+  };
+  const saveTemplate = (template: StudyTemplate) => {
+    const exists = templates.some(item => item.id === template.id);
+    saveTemplates(exists ? templates.map(item => item.id === template.id ? template : item) : [...templates, template]);
+    showToast('Study template saved');
+  };
+  const removeTemplate = (template: StudyTemplate) => {
+    const before = templates;
+    try {
+      saveTemplates(templates.filter(item => item.id !== template.id));
+      showToast(`Removed “${template.title}”`, 'Undo', () => saveTemplates(before));
+    } catch (cause) { showToast(cause instanceof Error ? cause.message : 'Could not remove this template.'); }
+  };
+  const restoreStarters = () => {
+    try { const previous = templates; saveTemplates([...templates, ...STARTER_STUDY_TEMPLATES.filter(starter => !templates.some(item => item.id === starter.id))]); showToast('Missing starter templates restored', 'Undo', () => saveTemplates(previous)); }
+    catch (cause) { showToast(cause instanceof Error ? cause.message : 'Could not restore the starters.'); }
+  };
 
   // Unfinished study sprint tasks
   const continueSessions = useMemo(() => {
     return tasks.filter((t) => {
       if (t.deletedAt || t.archivedAt || t.status === 'done') return false;
       const isStudy = isStudyTask(t);
-      return Boolean(isStudy && t.subtasks?.some(sub => !sub.completed));
+      const date = t.plannedDate || t.dueDate;
+      return Boolean(isStudy && (!date || date <= todayStr) && t.subtasks?.length);
     });
-  }, [tasks]);
+  }, [tasks, todayStr]);
 
   // Planned sessions include an explicit overdue label for past dates.
   const plannedSessions = useMemo(() => {
     return tasks.filter((t) => {
       if (t.deletedAt || t.archivedAt || t.status === 'done') return false;
       const isStudy = isStudyTask(t);
-      return isStudy && (t.plannedDate || t.dueDate);
+      return isStudy && (t.plannedDate || t.dueDate || (t.workBlocks && t.workBlocks.length > 0));
     });
   }, [tasks]);
 
-  // Study history from focusLogs and completed tasks
+  // Structured planned study work blocks from canonical schedule
+  const plannedWorkBlocks = useMemo(() => {
+    const list: Array<{ task: (typeof tasks)[0]; block: NonNullable<(typeof tasks)[0]['workBlocks']>[0] }> = [];
+    tasks.forEach((t) => {
+      if (t.deletedAt || t.archivedAt || t.status === 'done' || !isStudyTask(t)) return;
+      if (t.workBlocks && t.workBlocks.length > 0) {
+        t.workBlocks
+          .filter((b) => b.status === 'scheduled' || b.status === 'in_progress')
+          .forEach((b) => list.push({ task: t, block: b }));
+      }
+    });
+    return list.sort((a, b) => (a.block.date || '').localeCompare(b.block.date || '') || (a.block.startTime || '').localeCompare(b.block.startTime || ''));
+  }, [tasks]);
+
+  // Study history strictly from study tasks and completed focus logs
   const studyHistory = useMemo(() => {
-    const sprintLogs = focusLogs.filter((log) => log.mode === 'sprint');
+    const studyTaskIds = new Set(tasks.filter(isStudyTask).map((t) => t.id));
+    const studyLogs = focusLogs.filter((log) => {
+      if (log.isStudy) return true;
+      if (log.taskId && studyTaskIds.has(log.taskId)) return true;
+      if (log.mode === 'sprint' && (!log.taskId || studyTaskIds.has(log.taskId))) return true;
+      return false;
+    });
     const doneTasks = tasks.filter(
       (t) =>
         t.status === 'done' &&
         !t.deletedAt && !t.archivedAt && isStudyTask(t)
     );
-    return { logs: sprintLogs, completed: doneTasks };
+    return { logs: studyLogs, completed: doneTasks };
   }, [focusLogs, tasks]);
-
-  const handleApplyTemplate = (sampleText: string) => {
-    try {
-      const parsed = parseStudySessions(sampleText);
-      if (parsed.length > 0) {
-        addStudySessions(parsed, todayStr);
-        showToast(`Created ${parsed.length} study session${parsed.length > 1 ? 's' : ''}`);
-        setActiveTab('continue');
-      } else {
-        showToast('Could not parse any sessions from template.');
-      }
-    } catch {
-      showToast('Error importing study template.');
-    }
-  };
-
-  const handleCustomImport = () => {
-    if (!templateInput.trim()) return;
-    try {
-      const parsed = parseStudySessions(templateInput);
-      if (parsed.length > 0) {
-        addStudySessions(parsed, todayStr);
-        showToast(`Imported ${parsed.length} study session${parsed.length > 1 ? 's' : ''}`);
-        setTemplateInput('');
-        setIsParsingOpen(false);
-        setActiveTab('continue');
-      } else {
-        showToast('No sessions recognized. Please format like the templates.');
-      }
-    } catch {
-      showToast('Error parsing custom study session.');
-    }
-  };
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-20">
@@ -163,7 +124,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
               Study Hub
             </h1>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Targeted study sprints, paced question solving, and active recall
+              Plan your targets, study at your own pace, and pick up where you left off.
             </p>
           </div>
         </div>
@@ -171,47 +132,17 @@ export const StudyView: React.FC<StudyViewProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setIsParsingOpen(!isParsingOpen)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold btn-forest-primary shadow-subtle active:scale-95 transition-all"
+            onClick={() => setPlanner({ initialMode: 'paste' })}
+            className="desk-button"
           >
-            <Plus size={14} />
-            <span>Parse Session</span>
+            <BookOpen size={14} />
+            <span>Paste a plan</span>
           </button>
+          <button type="button" className="desk-button primary" onClick={() => setPlanner({ initialMode: 'build' })}><Plus size={14} />New session</button>
         </div>
       </div>
 
-      {/* Parse Modal Drawer Inline */}
-      {isParsingOpen && (
-        <div className="mb-6 p-4 rounded-2xl border border-emerald-600/30 bg-[var(--bg-surface-l2)] shadow-lg animate-in fade-in duration-200">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
-            Paste Study Schedule or Question Targets
-          </h2>
-          <textarea
-            rows={5}
-            value={templateInput}
-            onChange={(e) => setTemplateInput(e.target.value)}
-            placeholder={`Session 1: DSA Practice (8:30am - 11:30am)\n- Two Sum (Easy, 15m)\n- 3Sum (Medium, 30m)\n- Longest Substring Without Repeating Characters (Medium, 30m)`}
-            className="w-full p-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-l1)] text-xs text-[var(--text-primary)] font-mono placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-emerald-600"
-          />
-          <div className="mt-3 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsParsingOpen(false)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-l1)]"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleCustomImport}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
-            >
-              <Check size={14} />
-              <span>Import Targets</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {planner && <Suspense fallback={<p role="status">Opening study planner…</p>}><StudySessionModal {...planner} isOpen onClose={() => setPlanner(null)} onStartSprint={onStartSprint} onSaveTemplate={saveTemplate} onCreated={date => { setActiveTab(date > todayStr ? 'planned' : 'continue'); showToast('Study session created', 'Undo', () => undoLastAction()); }} /></Suspense>}
 
       {/* Tab Navigation */}
       <div
@@ -324,12 +255,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h3
-                        className="text-base font-bold text-[var(--text-primary)] cursor-pointer hover:text-emerald-700 transition-colors"
-                        onClick={() => onSelectTask?.(session.id)}
-                      >
-                        {session.title}
-                      </h3>
+                      <h3 className="text-base font-bold text-[var(--text-primary)]"><button type="button" className="text-left" onClick={() => onSelectTask?.(session.id)}>{session.title}</button></h3>
                       <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)] mt-1">
                         <span>
                           {completedCount}/{totalCount} targets finished ({progressPct}%)
@@ -342,14 +268,18 @@ export const StudyView: React.FC<StudyViewProps> = ({
                       </div>
                     </div>
 
+                    <div className="flex flex-wrap gap-2">
+                    <button type="button" className="desk-button" aria-label={`Edit targets for ${session.title}`} onClick={() => onSelectTask?.(session.id)}>Edit targets</button>
                     <button
                       type="button"
                       onClick={() => onStartSprint?.(session.id)}
+                      disabled={!nextUnfinished}
                       className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition-all shadow-sm self-start sm:self-center"
                     >
                       <Play size={13} className="fill-current" />
                       <span>Start Sprint</span>
                     </button>
+                    </div>
                   </div>
 
                   {/* Progress Bar */}
@@ -381,6 +311,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
                       </button>
                     </div>
                   )}
+                  {!nextUnfinished && <div className="flex flex-wrap items-center justify-between gap-3 text-xs"><span>All targets complete. Ready to finish?</span><button type="button" className="desk-button primary" onClick={() => toggleTaskStatus(session.id)}>Mark session complete</button></div>}
                 </div>
               );
             })
@@ -388,90 +319,153 @@ export const StudyView: React.FC<StudyViewProps> = ({
         </div>
       )}
 
-      {/* Tab 2: Planned Sessions */}
+      {/* Tab 2: Planned Sessions & Work Blocks */}
       {activeTab === 'planned' && (
-        <div className="flex flex-col gap-3">
-          {plannedSessions.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface-l1)]/40 text-xs text-[var(--text-secondary)]">
-              No upcoming study sessions scheduled on your calendar.
+        <div className="flex flex-col gap-6">
+          {/* Calendar-anchored Planned Study Work Blocks */}
+          {plannedWorkBlocks.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <Clock size={14} />
+                <span>Planned Study Work Blocks ({plannedWorkBlocks.length})</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {plannedWorkBlocks.map(({ task, block }) => (
+                  <div
+                    key={block.id}
+                    className="p-3.5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 flex items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div>
+                      <h4 className="text-sm font-bold text-[var(--text-primary)]">
+                        {block.title || task.title}
+                      </h4>
+                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] mt-0.5">
+                        <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400">
+                          {block.date} {block.startTime && block.endTime ? `· ${block.startTime}–${block.endTime}` : ''}
+                        </span>
+                        <span>· {block.durationMinutes}m block</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onStartSprint?.(task.id)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                    >
+                      Launch
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            plannedSessions.map((t) => (
-              <div
-                key={t.id}
-                className="p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-l2)] flex items-center justify-between gap-3"
-              >
-                <div>
-                  <h3 className="text-sm font-bold text-[var(--text-primary)]">
-                    {t.title}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] mt-0.5">
-                    <span className="font-mono text-emerald-700 dark:text-emerald-400">
-                      {(t.plannedDate || t.dueDate)! < todayStr ? 'Overdue · ' : ''}{t.plannedDate || t.dueDate}
-                    </span>
-                    {t.estimatedMinutes && <span>· {t.estimatedMinutes}m</span>}
-                    {t.subtasks?.length ? (
-                      <span>· {t.subtasks.length} subtasks</span>
-                    ) : null}
+          )}
+
+          {/* All Scheduled Study Sessions */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              <Calendar size={14} />
+              <span>Study Tasks & Targets ({plannedSessions.length})</span>
+            </div>
+            {plannedSessions.length === 0 ? (
+              <div className="p-8 text-center rounded-2xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface-l1)]/40 text-xs text-[var(--text-secondary)]">
+                No upcoming study sessions scheduled on your calendar.
+              </div>
+            ) : (
+              plannedSessions.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-l2)] flex items-center justify-between gap-3"
+                >
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                      {t.title}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] mt-0.5">
+                      <span className="font-mono text-emerald-700 dark:text-emerald-400">
+                        {(t.plannedDate || t.dueDate)! < todayStr ? 'Overdue · ' : ''}{t.plannedDate || t.dueDate || 'Flexible'}
+                      </span>
+                      {t.estimatedMinutes && <span>· {t.estimatedMinutes}m</span>}
+                      {t.workBlocks?.length ? <span>· {t.workBlocks.length} work block{t.workBlocks.length === 1 ? '' : 's'}</span> : null}
+                      {t.subtasks?.length ? (
+                        <span>· {t.subtasks.length} subtasks</span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    <button type="button" className="desk-button" aria-label={`Edit targets for ${t.title}`} onClick={() => onSelectTask?.(t.id)}>Edit targets</button>
+                    <button
+                      type="button"
+                      onClick={() => onStartSprint?.(t.id)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                    >
+                      Launch
+                    </button>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => onStartSprint?.(t.id)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-                >
-                  Launch
-                </button>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       )}
 
-      {/* Tab 3: Starter Study Templates */}
-      {activeTab === 'templates' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {STUDY_TEMPLATES.map((tmpl) => {
-            const Icon = tmpl.icon;
-            return (
+      {activeTab === 'templates' && <section aria-label="Study templates" className="space-y-6">
+        {/* Standard Pacing Presets */}
+        <div>
+          <div className="mb-3">
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">Standard Pacing Presets</h3>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Standard interval timers sharing canonical focus runtime configurations.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {STUDY_PACING_PRESETS.map((preset) => (
               <div
-                key={tmpl.id}
-                className="p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface-l2)] flex flex-col justify-between shadow-subtle group hover:border-emerald-600/40 transition-all"
+                key={preset.id}
+                className="p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface-l2)] flex flex-col justify-between gap-3"
               >
                 <div>
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className={`p-2 rounded-xl border ${tmpl.color}`}>
-                      <Icon size={18} />
-                    </div>
-                    <h3 className="text-sm font-bold text-[var(--text-primary)]">
-                      {tmpl.title}
-                    </h3>
-                  </div>
-                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
-                    {tmpl.description}
-                  </p>
+                  <h4 className="text-sm font-bold text-[var(--text-primary)]">{preset.name}</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">{preset.description}</p>
                 </div>
-
-                <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between">
-                  <span className="text-[11px] text-[var(--text-muted)] font-mono">
-                    5-6 targets
-                  </span>
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
+                  <span className="font-mono font-semibold">{preset.timer.focusMinutes}m / {preset.timer.shortBreakMinutes}m</span>
                   <button
                     type="button"
-                    onClick={() => handleApplyTemplate(tmpl.sampleInput)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                    onClick={() => setPlanner({
+                      initialSessions: [{
+                        id: studyId(),
+                        sessionTopic: `${preset.name} Session`,
+                        rawText: '',
+                        durationMinutes: preset.timer.focusMinutes,
+                        targetPacingMinutes: preset.timer.focusMinutes,
+                        targets: [
+                          { id: studyId(), title: 'Target 1', estimatedMinutes: preset.timer.focusMinutes },
+                          { id: studyId(), title: 'Target 2', estimatedMinutes: preset.timer.focusMinutes },
+                        ],
+                      }],
+                    })}
+                    className="desk-button primary text-xs"
                   >
-                    <span>Use Template</span>
-                    <ArrowRight size={13} />
+                    Use Preset
                   </button>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      )}
 
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4"><p className="text-xs text-[var(--text-secondary)]">Reusable plans you can edit. Choose a template to review its targets before creating a session.</p><button type="button" className="desk-button" disabled={templates.length >= MAX_STUDY_TEMPLATES} onClick={() => setPlanner({ purpose: 'template' })}><Plus size={15} />New template</button></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{templates.map(template => <article key={template.id} className="p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface-l2)] space-y-3" aria-label={template.title}>
+            <h3 className="text-sm font-bold break-words">{template.title}</h3><p className="text-xs text-[var(--text-secondary)] break-words">{template.description}</p>
+            <ul className="text-xs text-[var(--text-secondary)] space-y-1">{template.sessions.flatMap(session => session.targets).slice(0, 3).map((target, index) => <li key={index} className="break-words">{target.title} · {target.estimatedMinutes}m</li>)}</ul>
+            <p className="text-xs text-[var(--text-muted)]">{template.sessions.reduce((sum, session) => sum + session.targets.length, 0)} targets · {template.sessions.reduce((sum, session) => sum + session.targets.reduce((minutes, target) => minutes + (target.estimatedMinutes || 0), 0), 0)}m</p>
+            <div className="flex flex-wrap items-center gap-2"><button type="button" className="desk-button primary" onClick={() => setPlanner({ template, initialSessions: template.sessions })}>Use Template<ArrowRight size={14} /></button><button type="button" className="desk-button" aria-label={`Edit ${template.title}`} onClick={() => setPlanner({ purpose: 'template', template, initialSessions: template.sessions })}><Pencil size={14} />Edit</button><button type="button" className="desk-icon-button" aria-label={`Duplicate ${template.title}`} disabled={templates.length >= MAX_STUDY_TEMPLATES} onClick={() => setPlanner({ purpose: 'template', template: { ...template, id: studyId(), title: `${template.title} copy` }, initialSessions: template.sessions })}><Copy size={15} /></button><button type="button" className="desk-icon-button" aria-label={`Delete ${template.title}`} onClick={() => removeTemplate(template)}><Trash2 size={15} /></button></div>
+          </article>)}</div>
+          {!templates.length && <p className="desk-notice">No saved templates yet. Create one with your own targets.</p>}
+          <button type="button" className="desk-button mt-4" onClick={restoreStarters}>Restore missing starter templates</button>
+        </div>
+      </section>}
       {/* Tab 4: Study History */}
       {activeTab === 'history' && (
         <div className="flex flex-col gap-4">

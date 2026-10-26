@@ -1,6 +1,7 @@
 import { FocusInsights } from './FocusInsights';
 import React, { useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { useWorkspaceSelector } from '../../services/workspaceStore';
 import { LogbookView } from './LogbookView';
 import { InsightsView } from './InsightsView';
 import { generateDailyStandup } from '../../utils/standupGenerator';
@@ -8,7 +9,7 @@ import { exportToCSV, exportToMarkdown, downloadFile } from '../../utils/fileExp
 import { audioEngine } from '../../utils/audioEngine';
 import { calculateEstimationBiasRatio } from '../../services/workBlockService';
 import { useModal } from '../../context/ModalContext';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Calendar } from 'lucide-react';
 import {
   Compass,
   CheckCircle2,
@@ -23,7 +24,7 @@ import { SegmentedControl } from '../ui/SegmentedControl';
 import { Button } from '../ui/Button';
 
 interface ReviewViewProps {
-  initialTab?: 'logbook' | 'insights' | 'standup' | 'export';
+  initialTab?: 'logbook' | 'insights' | 'reviews' | 'standup' | 'export';
   onSelectTask: (taskId: string) => void;
 }
 
@@ -37,9 +38,15 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
     downloadWorkspaceBackup,
   } = useTaskContext();
 
+  const workspaceReviews = useWorkspaceSelector((s) => s?.record?.reviews);
+  const sortedReviews = React.useMemo(() => {
+    if (!workspaceReviews) return [];
+    return [...workspaceReviews].sort((a, b) => b.reviewedAt - a.reviewedAt);
+  }, [workspaceReviews]);
+
   const { openModal } = useModal();
   const bias = React.useMemo(() => calculateEstimationBiasRatio(tasks), [tasks]);
-  const [activeTab, setActiveTab] = useState<'logbook' | 'insights' | 'standup' | 'export'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'logbook' | 'insights' | 'reviews' | 'standup' | 'export'>(initialTab);
   const [copiedStandup, setCopiedStandup] = useState(false);
 
   const handleCopyStandup = async () => {
@@ -156,10 +163,11 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
 
       {/* Tabs Switcher */}
       <div className="mb-6 overflow-x-auto no-scrollbar py-0.5">
-        <SegmentedControl<'logbook' | 'insights' | 'standup' | 'export'>
+        <SegmentedControl<'logbook' | 'insights' | 'reviews' | 'standup' | 'export'>
           items={[
             { id: 'logbook', label: 'Logbook', icon: <CheckCircle2 size={14} /> },
             { id: 'insights', label: 'Insights', icon: <TrendingUp size={14} /> },
+            { id: 'reviews', label: 'Past Reviews', icon: <Compass size={14} /> },
             { id: 'standup', label: 'Daily Standup', icon: <FileText size={14} /> },
             { id: 'export', label: 'Export Reports', icon: <Download size={14} /> },
           ]}
@@ -173,6 +181,108 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
         <LogbookView onSelectTask={onSelectTask} />
       ) : activeTab === 'insights' ? (
         <><FocusInsights /><InsightsView onSelectTask={onSelectTask} /></>
+      ) : activeTab === 'reviews' ? (
+        <div className="p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-[var(--text-primary)]">
+                Saved Weekly Reflections ({sortedReviews.length})
+              </h2>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Durable record of your past weekly reflections, focus metrics, and priorities.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              leftIcon={<Compass size={14} />}
+              onClick={() => setIsWeeklyReviewOpen(true)}
+            >
+              Start New Review
+            </Button>
+          </div>
+
+          {sortedReviews.length === 0 ? (
+            <div className="p-8 text-center rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] space-y-2">
+              <Compass size={32} className="mx-auto text-[var(--text-muted)]" />
+              <p className="text-xs font-semibold text-[var(--text-primary)]">No past reviews logged yet.</p>
+              <p className="text-[11px] text-[var(--text-secondary)]">Complete a weekly review to save your reflection and metrics here.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sortedReviews.map((rev) => {
+                const isDaily = rev.type === 'daily_shutdown';
+                const compCount = rev.completedTasksCount ?? rev.completedTaskIds?.length ?? 0;
+                const focusSec = rev.focusSecondsRecorded ?? rev.totalFocusSeconds ?? 0;
+                const noteText = rev.notes || rev.reflection;
+
+                return (
+                  <div
+                    key={rev.id}
+                    className="p-4 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l2)]/60 space-y-3"
+                  >
+                    <div className="flex items-center justify-between text-xs border-b border-[var(--border-hairline)]/50 pb-2">
+                      <span className="font-bold flex items-center gap-1.5">
+                        {isDaily ? <Sunset size={14} className="text-amber-500" /> : <Calendar size={13} className="text-[var(--color-brand)]" />}
+                        <span>{isDaily ? 'Daily Shutdown' : 'Weekly Review'}{rev.periodStart ? ` · ${rev.periodStart}` : ''}{rev.periodEnd && rev.periodEnd !== rev.periodStart ? ` – ${rev.periodEnd}` : ''}</span>
+                      </span>
+                      <span className="text-[11px] text-[var(--text-secondary)]">
+                        Reviewed on {new Date(rev.reviewedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="p-2 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)]">
+                        <span className="text-[10px] text-[var(--text-muted)] block">Completed Tasks</span>
+                        <span className="font-bold">{compCount}</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)]">
+                        <span className="text-[10px] text-[var(--text-muted)] block">Measured Focus</span>
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{(focusSec / 3600).toFixed(1)} hrs</span>
+                      </div>
+                      {rev.interruptedSessionsCount ? (
+                        <div className="p-2 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)]">
+                          <span className="text-[10px] text-[var(--text-muted)] block">In-Progress Work</span>
+                          <span className="font-bold text-indigo-600 dark:text-indigo-400">{rev.interruptedSessionsCount} sessions ({Math.round((rev.interruptedSecondsRecorded || 0) / 60)}m)</span>
+                        </div>
+                      ) : null}
+                      {rev.totalEstimatedMinutes !== undefined && !isDaily ? (
+                        <div className="p-2 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)]">
+                          <span className="text-[10px] text-[var(--text-muted)] block">Estimated Effort</span>
+                          <span className="font-bold">{(rev.totalEstimatedMinutes / 60).toFixed(1)} hrs</span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {noteText && (
+                      <div className="text-xs">
+                        <span className="font-semibold text-[11px] text-[var(--text-secondary)] block mb-0.5">Reflection</span>
+                        <p className="p-2 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] italic">
+                          "{noteText}"
+                        </p>
+                      </div>
+                    )}
+
+                    {rev.nextPriorities && rev.nextPriorities.length > 0 && (
+                      <div className="text-xs">
+                        <span className="font-semibold text-[11px] text-[var(--text-secondary)] block mb-1">Weekly Anchors</span>
+                        <ul className="space-y-1">
+                          {rev.nextPriorities.map((pri, i) => (
+                            <li key={i} className="flex items-center gap-1.5 text-[11px] font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand)] flex-shrink-0" />
+                              <span>{pri}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       ) : activeTab === 'standup' ? (
         <div className="p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
           <div className="flex items-center justify-between mb-4">
@@ -202,10 +312,10 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
       ) : (
         <div className="p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
           <h2 className="text-base font-bold text-[var(--text-primary)] mb-2">
-            Worklog & Workspace Exporters
+            Download your reports
           </h2>
           <p className="text-xs text-[var(--text-secondary)] mb-6">
-            Export your workspace records to standard portable formats. Protected against spreadsheet formula injection.
+            Keep a backup or take your task and time reports with you.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -213,7 +323,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onSelectTask, initialTab
               <div>
                 <h3 className="font-bold text-sm text-[var(--text-primary)] mb-1">CSV Spreadsheet Report</h3>
                 <p className="text-xs text-[var(--text-muted)] mb-4">
-                  RFC-4180 compliant with formula injection protection. Ideal for Excel and Google Sheets.
+                  Open your task report in Excel or Google Sheets.
                 </p>
               </div>
               <Button

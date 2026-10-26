@@ -37,6 +37,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   const liveTotalFocusedTodaySeconds = useTotalFocusedTodaySeconds();
   const totalFocusedTodaySeconds = (context as any)?.totalFocusedTodaySeconds ?? liveTotalFocusedTodaySeconds;
 
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [hoveredScatterPoint, setHoveredScatterPoint] = useState<{
     id: string;
     title: string;
@@ -49,6 +50,8 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
 
   const todayStr = useTodayStr();
   const [currentHour] = useState(() => new Date().getHours());
+
+  const rangeDays = dateRange === '7d' ? 7 : dateRange === '90d' ? 90 : 30;
 
   const {
     last30Days,
@@ -68,18 +71,26 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
     rollingWeeks,
     maxWeeklyTasks,
     wowPercent,
+    effortBreakdown,
   } = useMemo(() => {
-    // Generate 30-day date array
+    // Generate date array based on rangeDays
     const dates: string[] = [];
     const [year, month, day] = todayStr.split('-').map(Number);
     const baseDate = new Date(year, (month || 1) - 1, day || 1, 12, 0, 0);
-    for (let i = 29; i >= 0; i--) {
+    for (let i = rangeDays - 1; i >= 0; i--) {
       const d = new Date(baseDate);
       d.setDate(d.getDate() - i);
       dates.push(formatLocalDate(d));
     }
 
-    const completed = tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done');
+    const allCompleted = tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status === 'done');
+    const datesSet = new Set(dates);
+    const completed = allCompleted.filter((t) => {
+      const completedDate = t.completedAt
+        ? formatLocalDate(new Date(t.completedAt))
+        : t.dueDate || todayStr;
+      return datesSet.has(completedDate);
+    });
 
     const activity: Record<string, { count: number; minutes: number }> = {};
     dates.forEach((dateStr) => {
@@ -252,6 +263,18 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
     const diff = weeks[0].tasks - weeks[1].tasks;
     const pct = weeks[1].tasks > 0 ? Math.round((diff / weeks[1].tasks) * 100) : 0;
 
+    const estimatedTasks = completed.filter((t) => (t.estimatedMinutes || 0) > 0);
+    const unestimatedTasks = completed.filter((t) => !t.estimatedMinutes || t.estimatedMinutes === 0);
+    const totalEstimatedMins = estimatedTasks.reduce((acc, t) => acc + (t.estimatedMinutes || 0), 0);
+    const totalActualMins = completed.reduce((acc, t) => acc + (t.timeSpentMinutes || 0), 0);
+    const effortBreakdown = {
+      estimatedCount: estimatedTasks.length,
+      unestimatedCount: unestimatedTasks.length,
+      totalEstimatedHours: (totalEstimatedMins / 60).toFixed(1),
+      totalActualHours: (totalActualMins / 60).toFixed(1),
+      estimatedRatio: completed.length > 0 ? Math.round((estimatedTasks.length / completed.length) * 100) : 0,
+    };
+
     return {
       last30Days: dates,
       completedTasks: completed,
@@ -272,8 +295,9 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
       maxWeeklyTasks: maxWk,
       wowDiff: diff,
       wowPercent: pct,
+      effortBreakdown,
     };
-  }, [tasks, todayStr, currentHour, focusLogs, totalFocusedTodaySeconds]);
+  }, [tasks, todayStr, currentHour, focusLogs, totalFocusedTodaySeconds, rangeDays]);
 
   // Estimation Accuracy & Velocity Metrics (memoized)
   const accuracyMetrics = useMemo(() => calculateEstimationAccuracy(tasks), [tasks]);
@@ -336,7 +360,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Header Banner */}
-      <div className="p-5 rounded-xl bg-[var(--bg-surface-l1)]/90 border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md flex items-center justify-between">
+      <div className="p-5 rounded-xl bg-[var(--bg-surface-l1)]/90 border border-stone-200/80 dark:border-white/10 shadow-card card-surface backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="p-2.5 sm:p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs flex-shrink-0">
             <TrendingUp size={24} className="stroke-[2.2]" />
@@ -349,6 +373,24 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
               Real-time analytics on your execution velocity, consistency, and focus habits
             </p>
           </div>
+        </div>
+
+        {/* Date Range Selector */}
+        <div className="flex items-center gap-1 p-1 bg-stone-100 dark:bg-stone-800/80 rounded-lg border border-[var(--border-hairline)] self-start sm:self-auto">
+          {(['7d', '30d', '90d'] as const).map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setDateRange(r)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                dateRange === r
+                  ? 'bg-white dark:bg-stone-700 text-[var(--text-primary)] shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+              }`}
+            >
+              {r === '7d' ? '7 Days' : r === '30d' ? '30 Days' : '90 Days'}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -388,7 +430,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
             <span className="text-xs text-[var(--text-secondary)] font-semibold">tasks done</span>
           </div>
           <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">
-            Lifetime accomplishments
+            Window accomplishments
           </p>
         </div>
 
@@ -428,6 +470,89 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
           <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-1">
             Priority execution clarity
           </p>
+        </div>
+      </div>
+
+      {/* Preliminary Data Disclaimer Banner */}
+      {timedCompletedTasks.length < 5 && (
+        <div
+          data-testid="preliminary-data-banner"
+          className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-3 text-amber-800 dark:text-amber-300"
+        >
+          <Clock size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="text-xs leading-relaxed">
+            <span className="font-semibold">Preliminary Data:</span> Insights become more reliable after 5+ timed tasks. (Currently {timedCompletedTasks.length} timed task{timedCompletedTasks.length === 1 ? '' : 's'})
+          </div>
+        </div>
+      )}
+
+      {/* Effort Accounting Breakdown */}
+      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">
+              Effort Accounting Breakdown
+            </h3>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Estimated task effort vs actual recorded focus vs unestimated tasks
+            </p>
+          </div>
+          <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-[var(--text-secondary)] border border-[var(--border-hairline)]">
+            {effortBreakdown.estimatedRatio}% tasks estimated
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className="p-3.5 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
+            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider block">
+              Estimated Task Effort
+            </span>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                {effortBreakdown.totalEstimatedHours}h
+              </span>
+              <span className="text-xs text-[var(--text-secondary)]">
+                across {effortBreakdown.estimatedCount} tasks
+              </span>
+            </div>
+            <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
+              Intentional planned time
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
+            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider block">
+              Actual Recorded Focus
+            </span>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                {effortBreakdown.totalActualHours}h
+              </span>
+              <span className="text-xs text-[var(--text-secondary)]">
+                across finished tasks
+              </span>
+            </div>
+            <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
+              Measured execution time
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
+            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider block">
+              Unestimated Tasks
+            </span>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                {effortBreakdown.unestimatedCount}
+              </span>
+              <span className="text-xs text-[var(--text-secondary)]">
+                unmeasured tasks
+              </span>
+            </div>
+            <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
+              Estimating upfront improves velocity tracking
+            </p>
+          </div>
         </div>
       </div>
 
@@ -595,7 +720,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
           </div>
         </div>
 
-        {/* Cognitive Workload Ratio Card */}
+        {/* Observed Focus Distribution Card */}
         <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
@@ -605,10 +730,10 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-[var(--text-primary)]">
-                    Cognitive Workload Ratio
+                    Observed Focus Distribution
                   </h3>
                   <p className="text-[11px] text-[var(--text-secondary)]">
-                    Deep Work vs. Administrative Balance
+                    Deep Work vs. Routine/Admin Focus Balance
                   </p>
                 </div>
               </div>
@@ -686,7 +811,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
 
       {/* Chronobiological Peak Performance & 4-Week Velocity Trend */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Chronobiological Peak Performance Card */}
+        {/* Peak Activity Window Card */}
         <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
@@ -696,10 +821,10 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-[var(--text-primary)]">
-                    Peak Performance Window
+                    Peak Activity Window
                   </h3>
                   <p className="text-[11px] text-[var(--text-secondary)]">
-                    Chronobiological Execution Curve
+                    Observed Completion Timing Distribution
                   </p>
                 </div>
               </div>
@@ -921,15 +1046,15 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onSelectTask }) => {
         </div>
       </div>
 
-      {/* 30-Day Activity Heatmap */}
+      {/* Activity Heatmap */}
       <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-card card-surface space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-[var(--text-primary)]">
-              30-Day Execution Heatmap
+              {rangeDays}-Day Execution Heatmap
             </h3>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Daily completed tasks & focus velocity over the past month
+              Daily completed tasks & focus velocity over the selected {rangeDays}-day window
             </p>
           </div>
 

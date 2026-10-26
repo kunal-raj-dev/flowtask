@@ -118,7 +118,7 @@ export const Dialog: React.FC<DialogProps> = ({
 
             {/* Footer */}
             {footer && (
-              <div className="flex items-center justify-end gap-2 p-3 sm:p-4 bg-[var(--bg-surface-l1)]/50 border-t border-[var(--border-hairline)]">
+              <div className="flex flex-wrap items-center justify-end gap-2 p-3 sm:p-4 bg-[var(--bg-surface-l1)]/50 border-t border-[var(--border-hairline)]">
                 {footer}
               </div>
             )}

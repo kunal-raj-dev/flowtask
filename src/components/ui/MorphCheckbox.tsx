@@ -1,6 +1,8 @@
 import { useMotionPreference } from '../../hooks/useMotionPreference';
 import React from 'react';
+import { motion } from 'framer-motion';
 import { audioEngine } from '../../utils/audioEngine';
+import { SPRING_TACTILE } from '../../utils/springPhysics';
 import type { Priority } from '../../types/task';
 
 export interface MorphCheckboxProps {
@@ -97,11 +99,14 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path
+        <motion.path
           d="M3 8.5L6.5 12L13 4"
-          pathLength={1}
-          style={{ strokeDasharray: 1, strokeDashoffset: checked ? 0 : 1, opacity: checked ? 1 : 0,
-            transition: reduced ? 'none' : 'stroke-dashoffset 140ms ease-out, opacity 140ms ease-out' }}
+          initial={false}
+          animate={{
+            pathLength: checked ? 1 : 0,
+            opacity: checked ? 1 : 0,
+          }}
+          transition={reduced ? { duration: 0 } : SPRING_TACTILE}
           className="text-white"
         />
       </svg>

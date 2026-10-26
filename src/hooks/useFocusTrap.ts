@@ -35,7 +35,8 @@ export function useFocusTrap(
           el.getClientRects().length > 0 &&
           getComputedStyle(el).visibility !== "hidden",
       );
-    (items()[0] || root.current)?.focus();
+    const focusable = items();
+    (focusable.find(element => element.hasAttribute('data-autofocus')) || focusable[0] || root.current)?.focus();
     const handle = (event: KeyboardEvent) => {
       if (
         [...document.querySelectorAll('[aria-modal="true"]')].at(-1) !==

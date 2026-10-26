@@ -41,7 +41,8 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   initialTab = 'standup',
 }) => {
   const root = useRef<HTMLDivElement>(null);
-  const notes = useWorkspaceSelector(snapshot => snapshot.record.notes);
+  const fullRecord = useWorkspaceSelector(snapshot => snapshot?.record);
+  const notes = fullRecord?.notes ?? [];
   useFocusTrap(root, onClose);
   const { workspaceId, tasks, projects, importTasks, showToast, workspacePreferences = {}, smartViews = [], dashboards = [] } = useTaskContext();
   const [activeTab, setActiveTab] = useState<'standup' | 'markdown' | 'csv' | 'share' | 'json' | 'import' | 'snapshots'>(
@@ -50,7 +51,17 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   const [localSnapshots, setLocalSnapshots] = useState<RecoverySnapshot[]>([]);
   const [snapshotBusy, setSnapshotBusy] = useState(false);
   const [legacyCount, setLegacyCount] = useState(0);
-  const checkpointRecord = () => ({ tasks, projects, notes, preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn), dashboards });
+  const checkpointRecord = () => {
+    if (fullRecord) return fullRecord;
+    return {
+      tasks,
+      projects,
+      preferences: workspacePreferences as any,
+      customViews: smartViews as any,
+      dashboards: dashboards as any,
+      notes: [],
+    };
+  };
   const [copied, setCopied] = useState(false);
   const [standupFormat, setStandupFormat] = useState<'slack' | 'markdown' | 'plain'>('slack');
   const [importJsonText, setImportJsonText] = useState('');
@@ -138,7 +149,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 
   const markdownContent = exportToMarkdown(tasks, projects);
   const csvContent = exportToCSV(tasks, projects);
-  const jsonContent = JSON.stringify(createWorkspaceBackup({ tasks, projects, notes, dashboards, preferences: workspacePreferences, customViews: smartViews.filter(v => !v.isBuiltIn) }), null, 2);
+  const jsonContent = JSON.stringify(createWorkspaceBackup(checkpointRecord()), null, 2);
   const standupContent = generateDailyStandup(tasks, projects, { format: standupFormat });
   const shareUrl = generateSnapshotShareUrl(
     tasks.filter((t) => t.status !== 'done'),
@@ -684,7 +695,9 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
                             await importTasks(restored.tasks, restored.projects, true, validateBackupExtras(restored));
                             audioEngine.playCompletionChime();
                             showToast(`Restored checkpoint "${snap.label}"`, 'Undo', () => {
-                              void importTasks(previous.tasks, previous.projects, true, previous).catch(error => showToast(error.message));
+                              if (previous) {
+                                void importTasks(previous.tasks, previous.projects, true, previous).catch(error => showToast((error as Error).message));
+                              }
                             });
                             onClose();
                           } catch (error) { setImportError((error as Error).message); }

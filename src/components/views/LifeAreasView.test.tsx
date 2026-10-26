@@ -95,4 +95,20 @@ describe('LifeAreasView', () => {
 
     expect(onSelectProject).toHaveBeenCalledWith('proj-work');
   });
+
+  it('navigates to Area Detail view when an area card is clicked and back', () => {
+    renderWithContext();
+
+    const areaCard = screen.getByTestId('area-card-area-career');
+    fireEvent.click(areaCard);
+
+    expect(screen.getByTestId('area-detail-view')).toBeDefined();
+    expect(screen.getByText('Back to Life Areas')).toBeDefined();
+
+    const backBtn = screen.getByTestId('back-to-areas-button');
+    fireEvent.click(backBtn);
+
+    expect(screen.queryByTestId('area-detail-view')).toBeNull();
+    expect(screen.getByTestId('life-areas-view')).toBeDefined();
+  });
 });

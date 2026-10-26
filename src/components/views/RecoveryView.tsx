@@ -203,6 +203,7 @@ export const RecoveryView: React.FC<RecoveryViewProps> = ({ mode }) => {
             />
             <input
               type="text"
+              aria-label={isTrash ? 'Search deleted tasks' : 'Search archived tasks'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={isTrash ? 'Search deleted tasks...' : 'Search archived tasks...'}
@@ -231,7 +232,7 @@ export const RecoveryView: React.FC<RecoveryViewProps> = ({ mode }) => {
                 className="bg-transparent text-xs text-[var(--text-primary)] font-medium focus:outline-none cursor-pointer"
               >
                 <option value="all">All Projects</option>
-                <option value="inbox">Inbox</option>
+                {!projects.some(project => project.id === 'inbox') && <option value="inbox">Inbox</option>}
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}

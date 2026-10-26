@@ -6,6 +6,7 @@ import {
   snoozeReminder,
   dismissReminder,
   removeReminder,
+  syncRemindersWithStore,
   reminderManager,
 } from './reminderService';
 import { WorkspaceStore } from './workspaceStore';
@@ -155,6 +156,53 @@ describe('reminderService', () => {
     };
     reminderManager.schedule(badReminder, 'Test Task', onTrigger);
     expect(onTrigger).not.toHaveBeenCalled();
+  });
+
+  it('syncRemindersWithStore schedules reminders and reconciles on store updates', async () => {
+    const { store } = await createTestHarness();
+    vi.useFakeTimers();
+    const now = Date.now();
+    const remindAt = now + 5000;
+
+    addReminderToTask(store, 'task-rem-1', remindAt);
+
+    const cleanup = syncRemindersWithStore(store);
+    expect(reminderManager.getActiveIds().length).toBeGreaterThan(0);
+
+    cleanup();
+    expect(reminderManager.getActiveIds().length).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it('syncRemindersWithStore reconciles on rolling interval and visibilitychange', async () => {
+    const { store } = await createTestHarness();
+    vi.useFakeTimers();
+    const now = Date.now();
+
+    // Reminder 25 hours away - beyond 24h limit, initially NOT scheduled
+    const remindAt = now + 25 * 60 * 60 * 1000;
+    addReminderToTask(store, 'task-rem-1', remindAt);
+
+    // Initial clear to isolate syncRemindersWithStore
+    reminderManager.clearAll();
+    const cleanup = syncRemindersWithStore(store);
+
+    // Not scheduled initially since > 24 hours away
+    expect(reminderManager.getActiveIds().length).toBe(0);
+
+    // Advance time by 2 hours (now 23 hours away - inside 24h window)
+    vi.advanceTimersByTime(2 * 60 * 60 * 1000);
+
+    // Trigger visibilitychange event
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: true, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    // Now it should be reconciled and scheduled
+    expect(reminderManager.getActiveIds().length).toBe(1);
+
+    cleanup();
+    expect(reminderManager.getActiveIds().length).toBe(0);
+    vi.useRealTimers();
   });
 });
 

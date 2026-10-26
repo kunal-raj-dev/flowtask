@@ -266,7 +266,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           <div className="flex flex-col sm:flex-row gap-3 items-center">
             <input
               type="text"
-              value={newProjectName}
+              aria-label="Project name" maxLength={100} required value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
               placeholder="Project Name (e.g. 'Website Redesign', 'Research')"
               className="flex-1 w-full px-3 py-2 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/30"
@@ -405,7 +405,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={editName}
+                    aria-label="Project name" maxLength={100} required value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none"
                     autoFocus

@@ -5,6 +5,8 @@ import type { AppearancePreferences } from '../../types/studio';
 import { normalizeAppearance, scheduleStatus, SCHEDULE_SLOTS } from '../../utils/appearance';
 import { THEMES, THEME_IDS, isAppTheme, type AppTheme, type ThemeDefinition } from '../../utils/themeRegistry';
 import { DIURNAL_CONFIGS, type DiurnalPeriod } from '../../utils/diurnalAura';
+import { WorkspaceImagePicker } from '../workspace/WorkspaceImagePicker';
+import { useWorkspaceBackgroundChoice } from '../../hooks/useWorkspaceBackgroundChoice';
 
 export function ThemePreview({ definition }: { definition: ThemeDefinition }) {
   return <div className="theme-preview" aria-hidden="true" style={definition.tokens as CSSProperties}>
@@ -20,6 +22,8 @@ export function ThemePreview({ definition }: { definition: ThemeDefinition }) {
 export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }) {
   const { theme, workspacePreferences = {}, setWorkspacePreference } = useTaskContext();
   const prefs = normalizeAppearance(workspacePreferences.appearance || { theme });
+  const { hasBackground, setBackground } = useWorkspaceBackgroundChoice();
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [filter, setFilter] = useState<'Featured' | 'All' | 'Light' | 'Dark'>('Featured');
   const [undo, setUndo] = useState<AppearancePreferences | null>(null);
   const [message, setMessage] = useState('');
@@ -45,6 +49,15 @@ export function AppearanceControls({ onSaveToast }: { onSaveToast?: () => void }
   const visible = THEME_IDS.filter(id => filter === 'All' || (filter === 'Featured' ? THEMES[id].featured || id === theme : THEMES[id].scheme === filter.toLowerCase()));
   const collections = (['light', 'dark'] as const).map(scheme => ({ scheme, themes: visible.filter(id => THEMES[id].scheme === scheme) })).filter(collection => collection.themes.length > 0);
   return <div className="appearance-panel">
+    <section className="appearance-section" aria-labelledby="workspace-background-title">
+      <h3 id="workspace-background-title">Workspace background</h3>
+      <p className="appearance-caption">Choose an image for your current desk, or keep a plain background.</p>
+      <div className="flex flex-wrap gap-2 mt-3">
+        <button type="button" className="desk-button" onClick={() => setImagePickerOpen(true)}>{hasBackground ? 'Change background' : 'Choose background'}</button>
+        {hasBackground && <button type="button" className="desk-button" onClick={() => { setBackground('none'); onSaveToast?.(); }}>Remove background</button>}
+      </div>
+      {imagePickerOpen && <WorkspaceImagePicker onClose={() => setImagePickerOpen(false)} onSelect={onSaveToast} />}
+    </section>
     <section className="appearance-current" aria-label="Current appearance">
       <div className="appearance-current-copy">
         <span className="appearance-eyebrow">YOUR WORKSPACE</span>

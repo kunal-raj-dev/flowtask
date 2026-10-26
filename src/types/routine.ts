@@ -10,6 +10,24 @@ export interface Routine {
   steps: RoutineStep[];
   cadence: 'morning' | 'evening' | 'workday_start' | 'weekly';
   archivedAt?: number;
+  revision?: number;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
+export interface RoutineRun {
+  id: string;
+  routineId: string;
+  startedAt: number;
+  completedAt: number;
+  completedStepsCount: number;
+  totalStepsCount: number;
+  totalDurationSeconds: number;
+  status?: 'started' | 'completed' | 'skipped' | 'partial';
+  stepStates?: Record<string, 'completed' | 'skipped' | 'pending'>;
+  revision?: number;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface HabitCheckIn {
@@ -23,4 +41,7 @@ export interface Habit {
   frequency: 'daily' | 'weekdays' | 'weekly';
   checkIns: HabitCheckIn[];
   archivedAt?: number;
+  revision?: number;
+  createdAt?: number;
+  updatedAt?: number;
 }

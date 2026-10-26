@@ -2,6 +2,8 @@ import ICAL from 'ical.js';
 import type { CalendarEvent } from '../types/task';
 import { formatLocalDate } from '../utils/nlpParser';
 
+export const MAX_CALENDAR_EVENTS = 500;
+
 export function parseICSFeed(content: string, targetDateStr = formatLocalDate(new Date())): CalendarEvent[] {
   if (!content || !content.includes('BEGIN:VCALENDAR')) return [];
   if (content.length > 2 * 1024 * 1024) throw new Error('Calendar exceeds 2 MB.');
@@ -13,6 +15,7 @@ export function parseICSFeed(content: string, targetDateStr = formatLocalDate(ne
   const events: CalendarEvent[] = [];
   const formatTime = (t: ICAL.Time) => { const d = t.toJSDate(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   function include(event: ICAL.Event, start: ICAL.Time, end: ICAL.Time, suffix = '') {
+    if (events.length >= MAX_CALENDAR_EVENTS) return;
     if (event.component.getFirstPropertyValue('status') === 'CANCELLED') return;
     const startDate = start.toJSDate(), endDate = end?.toJSDate() || startDate;
     const occurrenceDateStr = start.isDate ? `${start.year}-${String(start.month).padStart(2, '0')}-${String(start.day).padStart(2, '0')}` : formatLocalDate(startDate);
@@ -27,9 +30,12 @@ export function parseICSFeed(content: string, targetDateStr = formatLocalDate(ne
       isAllDay: start.isDate,
       description: event.description || '',
       location: event.location || '',
+      isReadOnly: true,
+      isExternal: true,
     });
   }
   for (const component of items.filter(item => !item.hasProperty('recurrence-id'))) {
+    if (events.length >= MAX_CALENDAR_EVENTS) break;
     const event = new ICAL.Event(component);
     if (!event.startDate) continue;
     for (const exception of items.filter(item => item.hasProperty('recurrence-id') && item.getFirstPropertyValue('uid') === event.uid)) event.relateException(exception);
@@ -38,6 +44,7 @@ export function parseICSFeed(content: string, targetDateStr = formatLocalDate(ne
     let count = 0;
     let next: ICAL.Time | null;
     while ((next = iterator.next())) {
+      if (events.length >= MAX_CALENDAR_EVENTS) break;
       if (++count > 100000) throw new Error('Calendar recurrence is too large to expand safely.');
       if (next.toJSDate() >= endOfDay) break;
       const occurrence = event.getOccurrenceDetails(next);
@@ -46,7 +53,10 @@ export function parseICSFeed(content: string, targetDateStr = formatLocalDate(ne
   }
   return events.sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
-export async function parseICSFile(file: File, targetDateStr = formatLocalDate(new Date())) { return parseICSFeed(await file.text(), targetDateStr); }
+export async function parseICSFile(file: File, targetDateStr = formatLocalDate(new Date())) {
+  if (file.size > 2 * 1024 * 1024) throw new Error('Calendar file exceeds 2 MB limit.');
+  return parseICSFeed(await file.text(), targetDateStr);
+}
 export async function fetchICSFeed(
   feedUrl: string,
   targetDateStr = formatLocalDate(new Date()),
@@ -57,8 +67,8 @@ export async function fetchICSFeed(
   const parsed = new URL(cleanUrl);
   if (!['https:', 'http:'].includes(parsed.protocol)) throw new Error('Use an HTTP or HTTPS calendar URL.');
 
+  const cacheKey = `flowtask_cal_cache_${cleanUrl}`;
   let response: Response | null = null;
-
 
   // 1. Direct fetch attempt
   try {
@@ -92,6 +102,14 @@ export async function fetchICSFeed(
   }
 
   if (!response || !response.ok) {
+    try {
+      const cached = typeof localStorage !== 'undefined' ? localStorage.getItem(cacheKey) : null;
+      if (cached && cached.includes('BEGIN:VCALENDAR')) {
+        return parseICSFeed(cached, targetDateStr);
+      }
+    } catch {
+      // ignore storage access errors
+    }
     throw new Error(
       'Calendar could not be loaded directly. Configure your private calendar proxy or import an ICS file.'
     );
@@ -99,6 +117,13 @@ export async function fetchICSFeed(
 
   const content = await response.text();
   if (!content.includes('BEGIN:VCALENDAR')) throw new Error('The URL did not return an iCalendar feed.');
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(cacheKey, content);
+    }
+  } catch {
+    // ignore quota errors
+  }
   return parseICSFeed(content, targetDateStr);
 }
 

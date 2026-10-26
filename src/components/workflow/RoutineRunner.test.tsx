@@ -66,4 +66,49 @@ describe('RoutineRunner', () => {
     expect(screen.getByText(/Routine Complete!/i)).toBeDefined();
     expect(mockOnComplete).toHaveBeenCalledWith('routine-morning');
   });
+
+  it('closes modal when Escape key is pressed', () => {
+    render(
+      <RoutineRunner
+        routine={sampleRoutine}
+        isOpen={true}
+        onClose={mockOnClose}
+        onCompleteRoutine={mockOnComplete}
+      />
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('prompts to resume when saved routine state exists', () => {
+    localStorage.setItem(
+      'flowtask_active_routine_routine-morning',
+      JSON.stringify({
+        routineId: 'routine-morning',
+        stepIndex: 1,
+        secondsRemaining: 90,
+        startedAt: Date.now() - 60000,
+        timestamp: Date.now(),
+      })
+    );
+
+    render(
+      <RoutineRunner
+        routine={sampleRoutine}
+        isOpen={true}
+        onClose={mockOnClose}
+        onCompleteRoutine={mockOnComplete}
+      />
+    );
+
+    expect(screen.getByText(/Resume Previous Session\?/i)).toBeDefined();
+    expect(screen.getByText(/Resume Step 2/i)).toBeDefined();
+
+    // Click resume
+    fireEvent.click(screen.getByText(/Resume Step 2/i));
+    expect(screen.getByText('Review Top 3 Focus priorities')).toBeDefined();
+
+    localStorage.removeItem('flowtask_active_routine_routine-morning');
+  });
 });

@@ -18,6 +18,11 @@ export interface UserWorkflowSettings {
   defaultLandingView?: DefaultLandingView;
   enableSmartSyntaxParsing?: boolean;
   eveningShutdownPromptHour?: number;
+  quietHoursEnabled?: boolean;
+  quietHoursStart?: string;
+  quietHoursEnd?: string;
+  notificationSoundEnabled?: boolean;
+  defaultReminderOffsetMinutes?: number;
 }
 
 export const DEFAULT_WORKFLOW_SETTINGS: UserWorkflowSettings = {
@@ -36,6 +41,11 @@ export const DEFAULT_WORKFLOW_SETTINGS: UserWorkflowSettings = {
   defaultLandingView: 'today',
   enableSmartSyntaxParsing: true,
   eveningShutdownPromptHour: 18,
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '07:00',
+  notificationSoundEnabled: true,
+  defaultReminderOffsetMinutes: 0,
 };
 
 export const MIN_CAPACITY_HOURS = 1.0;

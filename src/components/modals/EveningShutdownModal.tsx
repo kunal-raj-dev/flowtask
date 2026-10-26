@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
+import { WorkspaceStoreContext } from '../../services/workspaceStore';
+import { recordWorkspaceReview } from '../../services/lifeOrganizationService';
+import type { FocusLog } from '../../types/task';
 import confetti from '../../utils/celebrate';
 import {
   Moon,
@@ -80,6 +83,25 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
     audioEngine.playCompletionChime();
   }, []);
 
+  const store = useContext(WorkspaceStoreContext);
+
+  const todayLogs = useMemo(() => {
+    const logs = (workspacePreferences?.focusLogs as FocusLog[] | undefined) || [];
+    return logs.filter(
+      (l) => l.endedAt && formatLocalDate(new Date(l.endedAt)) === todayStr
+    );
+  }, [workspacePreferences?.focusLogs, todayStr]);
+
+  const interruptedSessions = useMemo(() => {
+    return todayLogs.filter(
+      (l) => l.outcome === 'interrupted' || (l.taskId && incompleteToday.some((t) => t.id === l.taskId))
+    );
+  }, [todayLogs, incompleteToday]);
+
+  const interruptedFocusSeconds = useMemo(() => {
+    return interruptedSessions.reduce((acc, l) => acc + (l.seconds || 0), 0);
+  }, [interruptedSessions]);
+
   const handlePushAllToTomorrow = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -99,6 +121,21 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
   };
 
   const handleFinishShutdown = () => {
+    if (store) {
+      const focusSec = totalFocusMinutes * 60;
+      recordWorkspaceReview(store, {
+        type: 'daily_shutdown',
+        reviewedAt: Date.now(),
+        periodStart: todayStr,
+        periodEnd: todayStr,
+        completedTaskIds: completedToday.map((t) => t.id),
+        focusSecondsRecorded: focusSec,
+        interruptedSecondsRecorded: interruptedFocusSeconds,
+        interruptedSessionsCount: interruptedSessions.length,
+        notes: reflection.trim() || undefined,
+        nextDayFocusTaskIds: incompleteToday.filter((t) => t.plannedDate && t.plannedDate > todayStr).map((t) => t.id),
+      });
+    }
     dismissShutdown();
     audioEngine.playPomodoroComplete();
     onClose();
@@ -163,6 +200,14 @@ export const EveningShutdownModal: React.FC<EveningShutdownModalProps> = ({ onCl
             <p className="text-[11px] text-[var(--text-secondary)] font-medium">Rule of 3 Focus</p>
           </div>
         </div>
+
+        {/* Interrupted Focus Activity Acknowledged */}
+        {interruptedSessions.length > 0 && (
+          <div className="mb-4 p-3 rounded-lg bg-[var(--bg-surface-l1)]/70 border border-[var(--border-hairline)] text-xs text-[var(--text-secondary)]">
+            <span className="font-semibold text-[var(--text-primary)]">Recorded Focus Activity: </span>
+            {interruptedSessions.length} in-progress session{interruptedSessions.length > 1 ? 's' : ''} ({Math.round(interruptedFocusSeconds / 60)}m recorded) acknowledged without marking unfinished tasks complete.
+          </div>
+        )}
 
         {/* Incomplete Tasks Section */}
         {incompleteToday.length > 0 ? (

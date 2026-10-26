@@ -1,5 +1,6 @@
 import type { TaskReminder } from '../types/task';
 import type { WorkspaceStore } from './workspaceStore';
+import type { UserWorkflowSettings } from '../types/settings';
 import { audioEngine } from '../utils/audioEngine';
 
 export type ReminderCapability = 'granted' | 'denied' | 'default' | 'unsupported';
@@ -20,6 +21,26 @@ export async function requestReminderPermission(): Promise<boolean> {
     return perm === 'granted';
   } catch {
     return false;
+  }
+}
+
+export function isQuietHours(settings?: Partial<UserWorkflowSettings>, date = new Date()): boolean {
+  if (!settings?.quietHoursEnabled) return false;
+  const startStr = settings.quietHoursStart || '22:00';
+  const endStr = settings.quietHoursEnd || '07:00';
+  const [startH, startM] = startStr.split(':').map(Number);
+  const [endH, endM] = endStr.split(':').map(Number);
+
+  const nowMinutes = date.getHours() * 60 + date.getMinutes();
+  const startMinutes = (startH || 0) * 60 + (startM || 0);
+  const endMinutes = (endH || 0) * 60 + (endM || 0);
+
+  if (startMinutes > endMinutes) {
+    // Crosses midnight, e.g. 22:00 -> 07:00
+    return nowMinutes >= startMinutes || nowMinutes < endMinutes;
+  } else {
+    // Same day range, e.g. 13:00 -> 15:00
+    return nowMinutes >= startMinutes && nowMinutes < endMinutes;
   }
 }
 
@@ -45,17 +66,22 @@ export function triggerReminderNotification(
   reminder: TaskReminder,
   taskTitle: string,
   onSnooze?: (preset: '5m' | '15m' | '1h' | 'tomorrow_9am') => void,
-  onDismiss?: () => void
+  onDismiss?: () => void,
+  settings?: Partial<UserWorkflowSettings>
 ) {
-  // Play sound
-  try {
-    audioEngine.playCompletionChime();
-  } catch {
-    // Audio engine fallback
+  const inQuietHours = isQuietHours(settings);
+
+  // Play sound if not in quiet hours and sound enabled
+  if (!inQuietHours && settings?.notificationSoundEnabled !== false) {
+    try {
+      audioEngine.playCompletionChime();
+    } catch {
+      // Audio engine fallback
+    }
   }
 
-  // System notification if supported
-  if (getReminderCapability() === 'granted') {
+  // System notification if supported and not in quiet hours
+  if (!inQuietHours && getReminderCapability() === 'granted') {
     try {
       const notif = new Notification(`Reminder: ${taskTitle}`, {
         body: 'FlowTask reminder',
@@ -79,6 +105,7 @@ export function triggerReminderNotification(
         taskTitle,
         onSnooze,
         onDismiss,
+        isQuiet: inQuietHours,
       },
     });
     window.dispatchEvent(event);
@@ -87,6 +114,23 @@ export function triggerReminderNotification(
 
 class ReminderManager {
   private activeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private settings?: Partial<UserWorkflowSettings>;
+
+  public setSettings(settings: Partial<UserWorkflowSettings>) {
+    this.settings = settings;
+  }
+
+  public getSettings(): Partial<UserWorkflowSettings> | undefined {
+    return this.settings;
+  }
+
+  public getActiveIds(): string[] {
+    return Array.from(this.activeTimers.keys());
+  }
+
+  public has(reminderId: string): boolean {
+    return this.activeTimers.has(reminderId);
+  }
 
   public schedule(
     reminder: TaskReminder,
@@ -110,7 +154,7 @@ class ReminderManager {
     if (delay <= 0) {
       // Trigger immediately or within short tick
       const timer = setTimeout(() => {
-        triggerReminderNotification(reminder, taskTitle);
+        triggerReminderNotification(reminder, taskTitle, undefined, undefined, this.settings);
         onTrigger?.(reminder, taskTitle);
         this.activeTimers.delete(reminder.id);
       }, 50);
@@ -121,7 +165,7 @@ class ReminderManager {
     // If within 24 hours, schedule timer
     if (delay <= 24 * 60 * 60 * 1000) {
       const timer = setTimeout(() => {
-        triggerReminderNotification(reminder, taskTitle);
+        triggerReminderNotification(reminder, taskTitle, undefined, undefined, this.settings);
         onTrigger?.(reminder, taskTitle);
         this.activeTimers.delete(reminder.id);
       }, delay);
@@ -272,32 +316,74 @@ export function removeReminder(
 }
 
 export function syncRemindersWithStore(store: WorkspaceStore): () => void {
-  const snap = store.getSnapshot();
-  const tasks = snap.record?.tasks || [];
-  tasks.forEach((task) => {
-    if (task.deletedAt || task.archivedAt || task.status === 'done') return;
-    (task.reminders || []).forEach((r) => {
-      if (r.status === 'scheduled' || r.status === 'snoozed') {
-        reminderManager.schedule(r, task.title, (firedReminder) => {
-          store.run('Mark reminder triggered', (record) => ({
-            ...record,
-            tasks: record.tasks.map((t) =>
-              t.id === firedReminder.taskId
-                ? {
-                    ...t,
-                    reminders: (t.reminders || []).map((rem) =>
-                      rem.id === firedReminder.id ? { ...rem, status: 'triggered' as const } : rem
-                    ),
-                  }
-                : t
-            ),
-          }));
-        });
-      }
+  const reconcile = () => {
+    const snap = store.getSnapshot();
+    const tasks = snap.record?.tasks || [];
+    const activeReminderIds = new Set<string>();
+
+    tasks.forEach((task) => {
+      if (task.deletedAt || task.archivedAt || task.status === 'done') return;
+      (task.reminders || []).forEach((r) => {
+        if (r.status === 'scheduled' || r.status === 'snoozed') {
+          activeReminderIds.add(r.id);
+          reminderManager.schedule(r, task.title, (firedReminder) => {
+            store.run('Mark reminder triggered', (record) => ({
+              ...record,
+              tasks: record.tasks.map((t) =>
+                t.id === firedReminder.taskId
+                  ? {
+                      ...t,
+                      reminders: (t.reminders || []).map((rem) =>
+                        rem.id === firedReminder.id ? { ...rem, status: 'triggered' as const } : rem
+                      ),
+                    }
+                  : t
+              ),
+            }));
+          });
+        }
+      });
     });
+
+    for (const activeId of reminderManager.getActiveIds()) {
+      if (!activeReminderIds.has(activeId)) {
+        reminderManager.cancel(activeId);
+      }
+    }
+  };
+
+  reconcile();
+
+  // Periodic rolling reconciliation every 30 minutes (picks up reminders entering 24h window)
+  const intervalId = setInterval(reconcile, 30 * 60 * 1000);
+
+  // Wake up when tab becomes visible or receives focus
+  const onVisibilityOrFocus = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      reconcile();
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', onVisibilityOrFocus);
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibilityOrFocus);
+  }
+
+  const unsubscribeStore = store.subscribe(() => {
+    reconcile();
   });
 
   return () => {
+    clearInterval(intervalId);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('focus', onVisibilityOrFocus);
+    }
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibilityOrFocus);
+    }
+    unsubscribeStore();
     reminderManager.clearAll();
   };
 }

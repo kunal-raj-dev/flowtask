@@ -172,7 +172,24 @@ export function useKeyboardNavigation({
           useUIStore.getState().clearTaskSelection();
           return;
         }
-        if (['1', '2', '3', '4', 'p', 'P'].includes(e.key)) {
+        // Shift+1..4 Batch Duration shortcuts (15m, 30m, 45m, 60m)
+        if (
+          e.shiftKey &&
+          (['1', '2', '3', '4', '!', '@', '#', '$'].includes(e.key) ||
+           ['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code))
+        ) {
+          e.preventDefault();
+          let minutes = 15;
+          if (e.key === '!' || e.key === '1' || e.code === 'Digit1') minutes = 15;
+          else if (e.key === '@' || e.key === '2' || e.code === 'Digit2') minutes = 30;
+          else if (e.key === '#' || e.key === '3' || e.code === 'Digit3') minutes = 45;
+          else if (e.key === '$' || e.key === '4' || e.code === 'Digit4') minutes = 60;
+          if (onBatchUpdate) onBatchUpdate(selectedTaskIds, { estimatedMinutes: minutes });
+          else if (onUpdateTask) selectedTaskIds.forEach(id => onUpdateTask(id, { estimatedMinutes: minutes }));
+          useUIStore.getState().clearTaskSelection();
+          return;
+        }
+        if (!e.shiftKey && ['1', '2', '3', '4', 'p', 'P'].includes(e.key)) {
           e.preventDefault();
           const pMap: Record<string, Priority> = { '1': 'p1', '2': 'p2', '3': 'p3', '4': 'p4', 'p': 'p1', 'P': 'p1' };
           const p = pMap[e.key] || 'p1';
@@ -186,6 +203,24 @@ export function useKeyboardNavigation({
           useUIStore.getState().clearTaskSelection();
           return;
         }
+      }
+
+      // Shift+1..4 Duration Tagging (15m, 30m, 45m, 60m) on focused task
+      if (
+        e.shiftKey &&
+        (['1', '2', '3', '4', '!', '@', '#', '$'].includes(e.key) ||
+         ['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code))
+      ) {
+        if (focusedTaskId && onUpdateTask) {
+          e.preventDefault();
+          let minutes = 15;
+          if (e.key === '!' || e.key === '1' || e.code === 'Digit1') minutes = 15;
+          else if (e.key === '@' || e.key === '2' || e.code === 'Digit2') minutes = 30;
+          else if (e.key === '#' || e.key === '3' || e.code === 'Digit3') minutes = 45;
+          else if (e.key === '$' || e.key === '4' || e.code === 'Digit4') minutes = 60;
+          onUpdateTask(focusedTaskId, { estimatedMinutes: minutes });
+        }
+        return;
       }
 
       switch (e.key) {
@@ -325,7 +360,7 @@ export function useKeyboardNavigation({
         case '2':
         case '3':
         case '4': {
-          if (focusedTaskId && onUpdateTask) {
+          if (!e.shiftKey && focusedTaskId && onUpdateTask) {
             e.preventDefault();
             const priorityMap: Record<string, Priority> = {
               '1': 'p1',

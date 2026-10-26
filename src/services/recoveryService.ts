@@ -25,7 +25,7 @@ function scope(workspaceId: string) {
   if (!workspaceId || typeof workspaceId !== 'string') throw new Error('Choose a workspace before managing recovery checkpoints.');
 }
 function validate(backup: PortableWorkspace) {
-  if (backup.schemaVersion > 7) throw new Error('This backup requires a newer FlowTask version.');
+  if (backup.schemaVersion > 8) throw new Error('This backup requires a newer FlowTask version.');
   validateWorkspaceData(backup.tasks, backup.projects);
   validateBackupExtras(backup);
 }

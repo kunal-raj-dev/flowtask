@@ -168,13 +168,15 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
               Icon & Tint
             </span>
             <div className="flex items-center gap-2 overflow-x-auto py-1">
-              {AVAILABLE_ICONS.map(({ id, Icon }) => {
+              {AVAILABLE_ICONS.map(({ id, Icon, label }) => {
                 const isSelected = selectedIcon === id;
                 return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => setSelectedIcon(id)}
+                    aria-label={`${label} icon`}
+                    aria-pressed={isSelected}
                     className={`p-2 rounded-lg border transition-all ${
                       isSelected
                         ? 'bg-[var(--color-brand)]/15 border-[var(--color-brand)] text-[var(--color-brand)] shadow-xs'
@@ -197,6 +199,8 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                     key={c}
                     type="button"
                     onClick={() => setSelectedColor(c)}
+                    aria-label={`${c.split('-')[1]} tint`}
+                    aria-pressed={isSelected}
                     className={`w-5 h-5 rounded-full border transition-all ${
                       c === 'text-indigo-500' ? 'bg-indigo-500' :
                       c === 'text-amber-500' ? 'bg-amber-500' :
@@ -224,6 +228,7 @@ export const SmartFilterModal: React.FC<SmartFilterModalProps> = ({
                     key={p}
                     type="button"
                     onClick={() => handleTogglePriority(p)}
+                    aria-pressed={isSelected}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-all ${
                       isSelected
                         ? p === 'p1'

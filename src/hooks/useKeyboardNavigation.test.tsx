@@ -415,4 +415,38 @@ describe('useKeyboardNavigation Single-Key Popovers & Linear-Grade Interactions'
     // Restore
     useTaskStore.setState({ settings: origSettings });
   });
+
+  it('tags duration with Shift+1 (15m), Shift+2 (30m), Shift+3 (45m), Shift+4 (60m) while preserving 1-4 for priority', () => {
+    const onUpdateTask = vi.fn();
+    render(<SingleSelectHarness tasks={tasks} onUpdateTask={onUpdateTask} />);
+
+    // Focus on first task 'task-1'
+    fireEvent.keyDown(window, { key: 'j' });
+    expect(useUIStore.getState().focusedTaskId).toBe('task-1');
+
+    // Regular '1' sets priority p1
+    fireEvent.keyDown(window, { key: '1' });
+    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { priority: 'p1' });
+
+    // Regular '2' sets priority p2
+    fireEvent.keyDown(window, { key: '2' });
+    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { priority: 'p2' });
+
+    // Shift+1 sets duration 15m
+    fireEvent.keyDown(window, { key: '1', shiftKey: true });
+    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { estimatedMinutes: 15 });
+
+    // Shift+2 sets duration 30m
+    fireEvent.keyDown(window, { key: '@', shiftKey: true });
+    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { estimatedMinutes: 30 });
+
+    // Shift+3 sets duration 45m
+    fireEvent.keyDown(window, { key: '#', shiftKey: true });
+    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { estimatedMinutes: 45 });
+
+    // Shift+4 sets duration 60m
+    fireEvent.keyDown(window, { key: '$', shiftKey: true });
+    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { estimatedMinutes: 60 });
+  });
 });
+
