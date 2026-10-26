@@ -10,6 +10,10 @@ import {
   calculateEstimationBias,
   suggestCalibratedDuration,
   calculateDeficitBudget,
+  createWorkSession,
+  moveWorkSession,
+  resizeWorkSession,
+  calculateDayCapacity,
 } from './workBlockService';
 import { emptyWorkspace } from './dbService';
 import type { WorkspaceRecord } from '../types/workspace';
@@ -110,6 +114,49 @@ describe('workBlockService', () => {
     removeWorkBlock(store, 'task-1', block.id);
     const task = store.getSnapshot().record.tasks.find((t) => t.id === 'task-1')!;
     expect(task.workBlocks).toEqual([]);
+  });
+
+  it('persists zoned wall times consistently through add, edit and reload', async () => {
+    const block = addWorkBlock(store, 'task-1', { date: '2026-10-26', startTime: '09:00', durationMinutes: 60, timezone: 'Asia/Kolkata' });
+    expect(new Date(block.startInstant).toISOString()).toBe('2026-10-26T03:30:00.000Z');
+    updateWorkBlock(store, 'task-1', block.id, { date: '2026-10-27', startTime: '10:15', durationMinutes: 45 });
+    await store.settled();
+    const reloaded = new WorkspaceStore('blocks-test', false, persistence);
+    await reloaded.load();
+    const saved = reloaded.getSnapshot().record.workBlocks![0];
+    expect(saved).toMatchObject({ date: '2026-10-27', startTime: '10:15', endTime: '11:00', durationMinutes: 45 });
+    expect(new Date(saved.startInstant).toISOString()).toBe('2026-10-27T04:45:00.000Z');
+    expect(reloaded.getSnapshot().record.tasks[0].workBlocks![0]).toEqual(saved);
+  });
+
+  it('formats instant-based create and move in the saved zone, including a local day boundary', () => {
+    const block = createWorkSession(store, { taskId: 'task-1', startInstant: Date.parse('2026-10-25T19:00:00Z'), endInstant: Date.parse('2026-10-25T20:00:00Z'), timezone: 'Asia/Kolkata' });
+    expect(block).toMatchObject({ date: '2026-10-26', startTime: '00:30', endTime: '01:30' });
+    moveWorkSession(store, block.id, Date.parse('2026-10-26T03:30:00Z'), Date.parse('2026-10-26T04:00:00Z'));
+    expect(store.getSnapshot().record.workBlocks![0]).toMatchObject({ date: '2026-10-26', startTime: '09:00', endTime: '09:30', durationMinutes: 30 });
+  });
+
+  it('rejects invalid/ambiguous times and locked changes before mutating any record', () => {
+    const before = store.getSnapshot().record;
+    expect(() => addWorkBlock(store, 'task-1', { date: '2026-03-08', startTime: '02:30', durationMinutes: 30, timezone: 'America/New_York' })).toThrow(/does not exist/);
+    expect(() => addWorkBlock(store, 'task-1', { date: '2026-11-01', startTime: '01:30', durationMinutes: 30, timezone: 'America/New_York' })).toThrow(/twice/);
+    expect(() => addWorkBlock(store, 'task-1', { date: '2026-10-26', durationMinutes: 0 })).toThrow(/positive/);
+    expect(store.getSnapshot().record).toEqual(before);
+    const block = addWorkBlock(store, 'task-1', { date: '2026-10-26', durationMinutes: 30, isLocked: true });
+    expect(() => updateWorkBlock(store, 'task-1', block.id, { startTime: '11:00' })).toThrow(/locked/);
+  });
+
+  it('does not silently permit a resize to overlap another work session', () => {
+    const first = createWorkSession(store, { taskId: 'task-1', timezone: 'UTC', startInstant: Date.parse('2026-10-26T09:00:00Z'), endInstant: Date.parse('2026-10-26T09:30:00Z') });
+    createWorkSession(store, { taskId: 'task-1', timezone: 'UTC', startInstant: Date.parse('2026-10-26T09:45:00Z'), endInstant: Date.parse('2026-10-26T10:15:00Z') });
+    expect(() => resizeWorkSession(store, first.id, 'end', 30)).toThrow(/conflict/);
+    expect(store.getSnapshot().record.workBlocks![0].endInstant).toBe(Date.parse('2026-10-26T09:30:00Z'));
+  });
+
+  it('counts only the local-day portion of a crossing-midnight block', () => {
+    const block = createWorkSession(store, { taskId: 'task-1', timezone: 'Asia/Kolkata', startInstant: Date.parse('2026-10-25T18:00:00Z'), endInstant: Date.parse('2026-10-25T19:00:00Z') });
+    expect(calculateDayCapacity([block], '2026-10-25', 'Asia/Kolkata', 6).scheduledMinutes).toBe(30);
+    expect(calculateDayCapacity([block], '2026-10-26', 'Asia/Kolkata', 6).scheduledMinutes).toBe(30);
   });
 
   it('retrieves work blocks for a specific date across tasks', () => {

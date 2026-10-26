@@ -1,8 +1,11 @@
-import type { Task, Priority, Project } from '../types/task';
+import type { Task, Priority, Project, WorkBlock, CommandType } from '../types/task';
 import { calculateNextDueDate } from '../utils/storage';
 import { parseTaskInput } from '../utils/nlpParser';
 import { mergeTaskData, redirectDependencies } from '../utils/dependencyUtils';
 import { getDerivedSubtaskEstimate } from '../utils/taskTimeSummary';
+import { wallTimeToInstant } from '../utils/zonedTime';
+import { parseTimeToMinutes, minutesToTimeStr } from '../utils/timelineUtils';
+import { syncTaskLegacySchedule } from './scheduleAdapter';
 
 export interface CommandResult {
   checkpoint?: boolean;
@@ -45,9 +48,9 @@ export const commandService = {
       : requestedProject;
 
     const plannedDate =
-      overrides?.plannedDate !== undefined
+      (overrides && 'plannedDate' in overrides)
         ? overrides.plannedDate
-        : parsed.plannedDate || currentContext?.defaultPlannedDate;
+        : parsed.plannedDate || (!parsed.dueDate ? currentContext?.defaultPlannedDate : undefined);
 
     const dueDate =
       overrides?.dueDate !== undefined ? overrides.dueDate : parsed.dueDate;
@@ -110,7 +113,8 @@ export const commandService = {
   updateTask(
     tasks: Task[],
     taskId: string,
-    updates: Partial<Task>
+    updates: Partial<Task>,
+    options?: { allowLocked?: boolean }
   ): CommandResult {
     const original = tasks.find((t) => t.id === taskId);
     if (!original) {
@@ -119,6 +123,24 @@ export const commandService = {
         description: 'No-op update',
         inverse: (current) => current,
       };
+    }
+
+    // Schedule lock guard (F03 / Contract 5.2)
+    if (
+      original.scheduleLocked &&
+      !options?.allowLocked &&
+      updates.scheduleLocked !== false
+    ) {
+      const altersSchedule =
+        ('scheduledStart' in updates && updates.scheduledStart !== original.scheduledStart) ||
+        ('scheduledEnd' in updates && updates.scheduledEnd !== original.scheduledEnd) ||
+        ('plannedDate' in updates && updates.plannedDate !== original.plannedDate);
+
+      if (altersSchedule) {
+        throw new Error(
+          `Cannot modify schedule of locked task "${original.title}". Unlock the task before modifying its schedule.`
+        );
+      }
     }
 
     if (updates.projectId && updates.projectId !== original.projectId && !('milestoneId' in updates)) {
@@ -183,12 +205,20 @@ export const commandService = {
     const isCurrentlyDone = task.status === 'done';
 
     if (!isCurrentlyDone) {
+      const updatedWorkBlocks = task.workBlocks?.map((b) => {
+        if (b.status === 'scheduled' && b.startInstant >= now) {
+          return { ...b, status: 'cancelled' as const, updatedAt: now };
+        }
+        return b;
+      });
+
       // Mark as done
       const completedTask: Task = {
         ...task,
         status: 'done',
         completedAt: now,
         isPinnedToday: task.isPinnedToday, // Preserve historical Top 3 membership
+        workBlocks: updatedWorkBlocks,
         revision: (task.revision || 1) + 1,
         updatedAt: now,
       };
@@ -265,11 +295,19 @@ export const commandService = {
         },
       };
     } else {
+      const restoredWorkBlocks = task.workBlocks?.map((b) => {
+        if (b.status === 'cancelled') {
+          return { ...b, status: 'scheduled' as const, updatedAt: now };
+        }
+        return b;
+      });
+
       // Revert to todo
       const uncompletedTask: Task = {
         ...task,
         status: 'todo',
         completedAt: undefined,
+        workBlocks: restoredWorkBlocks,
         revision: (task.revision || 1) + 1,
         updatedAt: now,
       };
@@ -513,6 +551,315 @@ export const commandService = {
           idSet.has(t.id) ? { ...t, deletedAt: now, updatedAt: Date.now() } : t
         ),
     };
+  },
+
+  /**
+   * Canonical scheduling mutation with atomic rollback/inverse
+   */
+  scheduleTask(
+    tasks: Task[],
+    taskId: string,
+    schedule: {
+      date: string;
+      startTime: string;
+      endTime?: string;
+      durationMinutes?: number;
+      isLocked?: boolean;
+      timezone?: string;
+    },
+    options?: { allowLocked?: boolean }
+  ): CommandResult {
+    const original = tasks.find((t) => t.id === taskId);
+    if (!original) {
+      return { updatedTasks: tasks, description: 'No-op schedule', inverse: (c) => c };
+    }
+
+    if (original.scheduleLocked && !options?.allowLocked && schedule.isLocked !== false) {
+      throw new Error(
+        `Cannot modify schedule of locked task "${original.title}". Unlock the task before modifying its schedule.`
+      );
+    }
+
+    const tz = schedule.timezone || original.timezone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' : 'UTC');
+    const startMin = parseTimeToMinutes(schedule.startTime) ?? 9 * 60;
+    const explicitEndMin = schedule.endTime ? parseTimeToMinutes(schedule.endTime) : null;
+    const durationMinutes =
+      explicitEndMin && explicitEndMin > startMin
+        ? explicitEndMin - startMin
+        : schedule.durationMinutes && schedule.durationMinutes > 0
+        ? schedule.durationMinutes
+        : original.estimatedMinutes && original.estimatedMinutes > 0
+        ? original.estimatedMinutes
+        : 30;
+
+    const endTime = schedule.endTime || minutesToTimeStr(startMin + durationMinutes);
+
+    let startInstant: number;
+    let endInstant: number;
+    try {
+      startInstant = wallTimeToInstant(schedule.date, schedule.startTime, tz, 'earlier');
+      endInstant = startInstant + durationMinutes * 60000;
+    } catch {
+      const fallback = Date.parse(`${schedule.date}T${schedule.startTime}:00Z`);
+      startInstant = Number.isFinite(fallback) ? fallback : Date.now();
+      endInstant = startInstant + durationMinutes * 60000;
+    }
+
+    const existingWorkBlocks = original.workBlocks || [];
+    const preservedBlocks = existingWorkBlocks.filter((b) => b.status === 'completed');
+    const existingScheduledBlock = existingWorkBlocks.find((b) => b.status === 'scheduled');
+
+    const blockId = existingScheduledBlock?.id || crypto.randomUUID();
+    const newBlock: WorkBlock = {
+      id: blockId,
+      taskId: original.id,
+      startInstant,
+      endInstant,
+      timezone: tz,
+      status: original.status === 'done' ? 'completed' : 'scheduled',
+      date: schedule.date,
+      startTime: schedule.startTime,
+      endTime,
+      durationMinutes,
+      title: original.title,
+      isLocked: schedule.isLocked ?? original.scheduleLocked ?? false,
+      source: 'canonical',
+      revision: (existingScheduledBlock?.revision || 0) + 1,
+      createdAt: existingScheduledBlock?.createdAt || Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    const nextBlocks = [...preservedBlocks, newBlock];
+    const sync = syncTaskLegacySchedule(original, nextBlocks);
+    const now = Date.now();
+
+    const updatedTask: Task = {
+      ...original,
+      workBlocks: nextBlocks,
+      plannedDate: schedule.date || sync.plannedDate,
+      scheduledStart: sync.scheduledStart || schedule.startTime,
+      scheduledEnd: sync.scheduledEnd || endTime,
+      scheduleLocked: sync.scheduleLocked,
+      revision: (original.revision || 1) + 1,
+      updatedAt: now,
+    };
+
+    const previousSnapshot = { ...original, workBlocks: original.workBlocks ? [...original.workBlocks] : undefined };
+
+    const updatedTasks = tasks.map((t) => (t.id === taskId ? updatedTask : t));
+
+    return {
+      updatedTasks,
+      description: `Scheduled "${original.title}" for ${schedule.date} at ${schedule.startTime}`,
+      sideEffects: { toastMessage: `Scheduled "${original.title}"` },
+      inverse: (currentTasks: Task[]) =>
+        currentTasks.map((t) => (t.id === taskId ? { ...previousSnapshot } : t)),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) => (t.id === taskId ? { ...updatedTask, updatedAt: Date.now() } : t)),
+    };
+  },
+
+  /**
+   * Move task reservation with atomic rollback/inverse
+   */
+  moveTask(
+    tasks: Task[],
+    taskId: string,
+    newDate: string,
+    newStartTime?: string,
+    options?: { allowLocked?: boolean }
+  ): CommandResult {
+    const original = tasks.find((t) => t.id === taskId);
+    if (!original) {
+      return { updatedTasks: tasks, description: 'No-op move', inverse: (c) => c };
+    }
+
+    if (original.scheduleLocked && !options?.allowLocked) {
+      throw new Error(
+        `Cannot modify schedule of locked task "${original.title}". Unlock the task before modifying its schedule.`
+      );
+    }
+
+    const tz = original.timezone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' : 'UTC');
+    const startTime = newStartTime || original.scheduledStart || '09:00';
+    const startMin = parseTimeToMinutes(startTime) ?? 9 * 60;
+    const durationMinutes = (original.workBlocks && original.workBlocks[0]?.durationMinutes)
+      || (original.estimatedMinutes && original.estimatedMinutes > 0 ? original.estimatedMinutes : 30);
+    const endTime = minutesToTimeStr(startMin + durationMinutes);
+
+    let startInstant: number;
+    let endInstant: number;
+    try {
+      startInstant = wallTimeToInstant(newDate, startTime, tz, 'earlier');
+      endInstant = startInstant + durationMinutes * 60000;
+    } catch {
+      const fallback = Date.parse(`${newDate}T${startTime}:00Z`);
+      startInstant = Number.isFinite(fallback) ? fallback : Date.now();
+      endInstant = startInstant + durationMinutes * 60000;
+    }
+
+    const existingWorkBlocks = original.workBlocks || [];
+    const preservedBlocks = existingWorkBlocks.filter((b) => b.status === 'completed');
+    const activeBlock = existingWorkBlocks.find((b) => b.status === 'scheduled') || existingWorkBlocks[0];
+
+    const blockId = activeBlock?.id || crypto.randomUUID();
+    const updatedBlock: WorkBlock = {
+      id: blockId,
+      taskId: original.id,
+      startInstant,
+      endInstant,
+      timezone: tz,
+      status: original.status === 'done' ? 'completed' : 'scheduled',
+      date: newDate,
+      startTime,
+      endTime,
+      durationMinutes,
+      title: original.title,
+      isLocked: original.scheduleLocked ?? false,
+      source: 'canonical',
+      revision: (activeBlock?.revision || 0) + 1,
+      createdAt: activeBlock?.createdAt || Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    const nextBlocks = [...preservedBlocks.filter((b) => b.id !== blockId), updatedBlock];
+    const sync = syncTaskLegacySchedule(original, nextBlocks);
+    const now = Date.now();
+
+    const updatedTask: Task = {
+      ...original,
+      workBlocks: nextBlocks,
+      plannedDate: newDate,
+      scheduledStart: sync.scheduledStart || startTime,
+      scheduledEnd: sync.scheduledEnd || endTime,
+      scheduleLocked: sync.scheduleLocked,
+      revision: (original.revision || 1) + 1,
+      updatedAt: now,
+    };
+
+    const previousSnapshot = { ...original, workBlocks: original.workBlocks ? [...original.workBlocks] : undefined };
+
+    const updatedTasks = tasks.map((t) => (t.id === taskId ? updatedTask : t));
+
+    return {
+      updatedTasks,
+      description: `Moved "${original.title}" to ${newDate}`,
+      sideEffects: { toastMessage: `Moved "${original.title}" to ${newDate}` },
+      inverse: (currentTasks: Task[]) =>
+        currentTasks.map((t) => (t.id === taskId ? { ...previousSnapshot } : t)),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) => (t.id === taskId ? { ...updatedTask, updatedAt: Date.now() } : t)),
+    };
+  },
+
+  /**
+   * Unschedule task with atomic rollback/inverse
+   */
+  unscheduleTask(
+    tasks: Task[],
+    taskId: string,
+    options?: { allowLocked?: boolean; keepPlannedDate?: boolean }
+  ): CommandResult {
+    const original = tasks.find((t) => t.id === taskId);
+    if (!original) {
+      return { updatedTasks: tasks, description: 'No-op unschedule', inverse: (c) => c };
+    }
+
+    if (original.scheduleLocked && !options?.allowLocked) {
+      throw new Error(
+        `Cannot unschedule locked task "${original.title}". Unlock the task before unscheduling.`
+      );
+    }
+
+    const now = Date.now();
+    // Only cancel scheduled sessions; preserve completed sessions history!
+    const updatedBlocks = (original.workBlocks || []).map((b) => {
+      if (b.status === 'scheduled') {
+        return {
+          ...b,
+          status: 'cancelled' as const,
+          updatedAt: now,
+        };
+      }
+      return b;
+    });
+
+    const sync = syncTaskLegacySchedule(original, updatedBlocks);
+
+    const updatedTask: Task = {
+      ...original,
+      workBlocks: updatedBlocks,
+      scheduledStart: sync.scheduledStart,
+      scheduledEnd: sync.scheduledEnd,
+      scheduleLocked: false,
+      plannedDate: options?.keepPlannedDate ? (original.plannedDate || sync.plannedDate) : undefined,
+      revision: (original.revision || 1) + 1,
+      updatedAt: now,
+    };
+
+    const previousSnapshot = { ...original, workBlocks: original.workBlocks ? [...original.workBlocks] : undefined };
+
+    const updatedTasks = tasks.map((t) => (t.id === taskId ? updatedTask : t));
+
+    return {
+      updatedTasks,
+      description: `Unscheduled "${original.title}"`,
+      sideEffects: { toastMessage: `Unscheduled "${original.title}"` },
+      inverse: (currentTasks: Task[]) =>
+        currentTasks.map((t) => (t.id === taskId ? { ...previousSnapshot } : t)),
+      forward: (currentTasks: Task[]) =>
+        currentTasks.map((t) => (t.id === taskId ? { ...updatedTask, updatedAt: Date.now() } : t)),
+    };
+  },
+
+  /**
+   * Unified Command Dispatcher
+   */
+  executeCommand(
+    tasks: Task[],
+    command: { type: CommandType; taskId?: string; payload?: Record<string, unknown>; options?: Record<string, unknown> }
+  ): CommandResult {
+    switch (command.type) {
+      case 'schedule_task':
+        return this.scheduleTask(
+          tasks,
+          (command.taskId || command.payload?.taskId) as string,
+          ((command.payload?.schedule as any) || command.payload) as any,
+          command.options as any
+        );
+      case 'move_task':
+        return this.moveTask(
+          tasks,
+          (command.taskId || command.payload?.taskId) as string,
+          (command.payload?.newDate || command.payload?.date) as string,
+          (command.payload?.newStartTime || command.payload?.startTime) as string | undefined,
+          command.options as any
+        );
+      case 'unschedule_task':
+        return this.unscheduleTask(
+          tasks,
+          (command.taskId || command.payload?.taskId) as string,
+          command.options as any
+        );
+      case 'create_task':
+        return this.createTask(tasks, (command.payload?.title || command.payload?.input || '') as string, command.payload);
+      case 'update_task':
+        return this.updateTask(tasks, (command.taskId || command.payload?.taskId) as string, command.payload || {}, command.options as any);
+      case 'complete_task':
+        return this.toggleTaskStatus(tasks, (command.taskId || command.payload?.taskId) as string);
+      case 'delete_task':
+        return this.deleteTask(tasks, (command.taskId || command.payload?.taskId) as string);
+      case 'archive_task':
+        return this.archiveTask(tasks, (command.taskId || command.payload?.taskId) as string);
+      case 'restore_task':
+        return this.restoreTask(tasks, (command.taskId || command.payload?.taskId) as string);
+      case 'merge_tasks':
+        return this.mergeTasks(tasks, command.payload?.targetTaskId as string, command.payload?.sourceTaskId as string);
+      case 'bulk_update':
+        return this.batchUpdate(tasks, command.payload?.taskIds as string[], command.payload?.updates as any);
+      default:
+        return { updatedTasks: tasks, description: 'Unknown command', inverse: (c) => c };
+    }
   },
 
   /**

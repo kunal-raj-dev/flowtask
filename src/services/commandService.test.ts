@@ -119,10 +119,15 @@ describe('commandService', () => {
   });
 
   it('createTask respects plannedDate and dueDate precedence correctly', () => {
-    // 1. Parsed date without explicit override sets both plannedDate and dueDate
+    // 1. Parsed date: bare date assigns to plannedDate (F01)
     const result1 = commandService.createTask([], 'Call client tomorrow');
-    expect(result1.createdTask.dueDate).toBeDefined();
-    expect(result1.createdTask.plannedDate).toBeUndefined();
+    expect(result1.createdTask.plannedDate).toBeDefined();
+    expect(result1.createdTask.dueDate).toBeUndefined();
+
+    // Explicit due keyword assigns to dueDate
+    const resultDue = commandService.createTask([], 'Call client due tomorrow');
+    expect(resultDue.createdTask.dueDate).toBeDefined();
+    expect(resultDue.createdTask.plannedDate).toBeUndefined();
 
     // 2. Explicit plannedDate overrides parsed date
     const result2 = commandService.createTask([], 'Call client tomorrow', {
@@ -170,6 +175,38 @@ describe('commandService', () => {
     expect(undone[0].status).toBe('todo');
     expect(undone[0].isPinnedToday).toBe(true);
     expect(undone[0].completedAt).toBeUndefined();
+  });
+
+  it('cancels future workBlocks when task is completed and restores them on toggle back', () => {
+    const futureInstant = Date.now() + 3600000;
+    const taskWithSessions: Task = {
+      ...initialTask,
+      id: 'task-with-blocks',
+      workBlocks: [
+        {
+          id: 'wb-future',
+          taskId: 'task-with-blocks',
+          startInstant: futureInstant,
+          endInstant: futureInstant + 1800000,
+          durationMinutes: 30,
+          timezone: 'UTC',
+          status: 'scheduled',
+          revision: 1,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      ],
+    };
+
+    const completeResult = commandService.toggleTaskStatus([taskWithSessions], 'task-with-blocks');
+    const completedTask = completeResult.updatedTasks.find((t) => t.id === 'task-with-blocks')!;
+    expect(completedTask.status).toBe('done');
+    expect(completedTask.workBlocks![0].status).toBe('cancelled');
+
+    const uncompleteResult = commandService.toggleTaskStatus([completedTask], 'task-with-blocks');
+    const uncompletedTask = uncompleteResult.updatedTasks.find((t) => t.id === 'task-with-blocks')!;
+    expect(uncompletedTask.status).toBe('todo');
+    expect(uncompletedTask.workBlocks![0].status).toBe('scheduled');
   });
 
   describe('Bidirectional Command History (BUG-17)', () => {

@@ -32,7 +32,26 @@ export function ownWorkspace(store: WorkspaceStore) {
     if (acquiring || closed) return;
     acquiring = true;
     try {
-      if (!navigator.locks) { await hold(); return; }
+      if (!navigator.locks) {
+        // In environments without Web Locks API, use BroadcastChannel leader election
+        if (channel && !wait) {
+          let otherOwnerPresent = false;
+          const queryHandler = (ev: MessageEvent) => {
+            if (ev.data?.type === 'owner-present') otherOwnerPresent = true;
+          };
+          channel.addEventListener('message', queryHandler);
+          channel.postMessage({ type: 'query-owner' });
+          await new Promise<void>((resolve) => setTimeout(resolve, 50));
+          channel.removeEventListener('message', queryHandler);
+          if (otherOwnerPresent) {
+            store.setReadOnly(true);
+            await store.reload();
+            return;
+          }
+        }
+        await hold();
+        return;
+      }
       await navigator.locks.request(`flowtask-workspace-${store.id}`, wait ? { signal: abort.signal } : { ifAvailable: true }, async lock => {
         if (closed) return;
         if (lock) await hold();
@@ -49,6 +68,9 @@ export function ownWorkspace(store: WorkspaceStore) {
   if (channel) channel.onmessage = event => {
     if (closed) return;
     if (event.data?.type === 'changed' && !owner) void store.reload();
+    if (event.data?.type === 'query-owner' && owner) {
+      channel.postMessage({ type: 'owner-present' });
+    }
     if (event.data?.type === 'takeover' && owner) {
       // Freeze new writes before draining the serialized durable queue.
       store.setReadOnly(true);
@@ -60,13 +82,18 @@ export function ownWorkspace(store: WorkspaceStore) {
   };
   let operation = previous.then(() => acquire(false));
   return {
+    isOwner: () => owner,
+    isClosed: () => closed,
     async takeOver() {
       if (owner || closed) return;
       channel?.postMessage({ type: 'takeover' });
       await operation;
       if (closed) return;
       operation = acquire(true);
-      await operation;
+      const startWait = Date.now();
+      while (!owner && !closed && acquiring && Date.now() - startWait < 5000) {
+        await new Promise((r) => setTimeout(r, 10));
+      }
     },
     close() { closed = true; abort.abort(); release?.(); changed(); channel?.close(); void operation.catch(() => {}).finally(finish); },
   };

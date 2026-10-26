@@ -15,7 +15,7 @@ it("exports dashboards and useful preferences while excluding runtime state and 
   record.projects.push({ id: 'course', name: 'Course', color: '#3B82F6', milestones: [{ id: 'm1', title: 'Revise', order: 0 }] });
   record.tasks.push({ id: 't1', title: 'Chapter one', status: 'todo', priority: 'p2', projectId: 'course', milestoneId: 'm1', subtasks: [], createdAt: 1 });
   const backup = createWorkspaceBackup(record);
-  expect(backup.schemaVersion).toBe(7);
+  expect(backup.schemaVersion).toBe(8);
   expect(backup.dashboards).toHaveLength(4);
   expect(backup.projects.find(project => project.id === 'course')?.milestones?.[0].id).toBe('m1');
   expect(backup.tasks[0].milestoneId).toBe('m1');

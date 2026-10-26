@@ -8,6 +8,17 @@ const task = (id: string, patch: Partial<Task> = {}): Task => ({ id, title: id, 
 const preview = (tasks: Task[], patch: Partial<Parameters<typeof createSchedulePreview>[0]> = {}) => createSchedulePreview({ date, now, tasks, settings: { timelineStartHour: 9, timelineEndHour: 17, targetWorkCapacityHours: 6, autoSlotBufferMinutes: 10 }, ...patch });
 
 describe('shared schedule planner', () => {
+  it('excludes deferred and sequentially blocked work, including explicit selections', () => {
+    const tasks = [task('first', { projectId: 'seq', createdAt: 1 }), task('next', { projectId: 'seq', createdAt: 2 }), task('deferred', { deferUntil: '2026-10-21' })];
+    const result = preview(tasks, { selectedIds: ['next', 'deferred'], projects: [{ id: 'seq', name: 'Sequence', color: '#000000', isSequential: true }] });
+    expect(result.slotted).toEqual([]);
+    expect(result.reasons.next).toMatch(/dependency/);
+    expect(result.reasons.deferred).toMatch(/defer/);
+  });
+  it('respects a future-day exact availability time instead of placing work earlier that morning', () => {
+    const result = preview([task('later', { plannedDate: '2026-10-21', deferUntil: '2026-10-21T14:10:00' })], { date: '2026-10-21' });
+    expect(result.slotted[0].scheduledStart).toBe('14:15');
+  });
   it('only selects active unscheduled day tasks by default and never mutates input', () => {
     const tasks = [task('today'), task('backlog', { plannedDate: undefined }), task('tomorrow', { plannedDate: '2026-10-21' }), task('someday', { isSomeday: true }), task('done', { status: 'done' }), task('deleted', { deletedAt: 1 }), task('archived', { archivedAt: 1 })];
     const before = JSON.stringify(tasks);

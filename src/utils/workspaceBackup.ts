@@ -2,18 +2,23 @@ import { getEffectiveTaskEstimate } from './taskTimeSummary';
 import { validateNotes, recoveredNote } from './noteModel';
 import { normalizeAppearance } from './appearance';
 import { normalizePresentation } from './workspacePresentation';
+import { normalizeStudyTemplates } from './studyTemplates';
 import type { FocusLog } from "../types/task";
 import type { WorkspaceRecord } from "../types/workspace";
 import type { WorkspaceDashboard } from "../types/dashboard";
 import { validateDashboards } from './dashboardModel';
 import { parseRecipe } from "../services/studioCatalog";
 import { DEFAULT_STUDIO, DEFAULT_TIMER } from "../types/studio";
+import { validateAreas, validateGoals, validateRoutines, validateRoutineRuns, validateWorkBlocks, validateReviews } from './workspaceValidation';
 
 export interface BackupExtras {
   notes?: WorkspaceRecord['notes'];
   areas?: WorkspaceRecord['areas'];
   goals?: WorkspaceRecord['goals'];
   routines?: WorkspaceRecord['routines'];
+  routineRuns?: WorkspaceRecord['routineRuns'];
+  workBlocks?: WorkspaceRecord['workBlocks'];
+  reviews?: WorkspaceRecord['reviews'];
   habits?: WorkspaceRecord['habits'];
   preferences: Record<string, unknown>;
   customViews?: WorkspaceRecord["customViews"];
@@ -21,17 +26,27 @@ export interface BackupExtras {
 }
 
 /** Portable user data only: active timers, checkpoints and sync operations must never replay on restore. */
-export function createWorkspaceBackup(record: Pick<WorkspaceRecord, 'tasks' | 'projects' | 'preferences' | 'customViews' | 'dashboards' | 'notes'> & Partial<Pick<WorkspaceRecord, 'areas' | 'goals' | 'routines' | 'habits'>>) {
+export function createWorkspaceBackup(
+  record: Pick<WorkspaceRecord, 'tasks' | 'projects' | 'preferences' | 'customViews' | 'dashboards' | 'notes'> &
+    Partial<Pick<WorkspaceRecord, 'areas' | 'goals' | 'routines' | 'routineRuns' | 'workBlocks' | 'reviews' | 'habits'>>,
+  options?: { schemaVersion?: 8 | 9 }
+) {
   const preferences = Object.fromEntries(Object.entries(record?.preferences && typeof record.preferences === 'object' ? record.preferences : {}).filter(([key]) =>
     !key.startsWith('_') && !['focusSession', 'focusCheckpointAt', 'studioLastSession', 'studioSummaryDismissed'].includes(key)));
+  const taskIds = new Set((record?.tasks || []).map(task => task.id));
+  const validWorkBlocks = (record?.workBlocks || []).filter(block => taskIds.has(block.taskId));
+  const schemaVer = options?.schemaVersion ?? ((record?.workBlocks && record.workBlocks.length > 0) ? 9 : 8);
   return {
-    schemaVersion: 7,
-    version: 7,
+    schemaVersion: schemaVer,
+    version: schemaVer,
     notes: validateNotes(record?.notes || []),
-    areas: record.areas || [],
-    goals: record.goals || [],
-    routines: record.routines || [],
-    habits: record.habits || [],
+    areas: validateAreas(record?.areas || []),
+    goals: validateGoals(record?.goals || []),
+    routines: validateRoutines(record?.routines || []),
+    routineRuns: validateRoutineRuns(record?.routineRuns || []),
+    workBlocks: validateWorkBlocks(validWorkBlocks, taskIds),
+    reviews: validateReviews(record?.reviews || []),
+    habits: record?.habits || [],
     tasks: (record?.tasks || []).map(task => { const estimate = getEffectiveTaskEstimate(task); return estimate ? { ...task, estimatedMinutes: estimate } : task; }),
     projects: record?.projects || [],
     dashboards: record?.dashboards || [],
@@ -44,9 +59,9 @@ const object = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 /** A backup may contain private device preferences, but never restore a running timer or sync queue. */
 export function validateBackupExtras(raw: unknown): BackupExtras | undefined {
-  if (!object(raw) || (!("preferences" in raw) && !("customViews" in raw) && !("dashboards" in raw) && !("notes" in raw) && !("areas" in raw) && !("goals" in raw) && !("routines" in raw) && !("habits" in raw)))
+  if (!object(raw) || (!("preferences" in raw) && !("customViews" in raw) && !("dashboards" in raw) && !("notes" in raw) && !("areas" in raw) && !("goals" in raw) && !("routines" in raw) && !("routineRuns" in raw) && !("workBlocks" in raw) && !("reviews" in raw) && !("habits" in raw)))
     return undefined;
-  if ((typeof raw.schemaVersion === 'number' && raw.schemaVersion > 7) || (typeof raw.version === 'number' && raw.version > 7)) throw new Error('This backup requires a newer FlowTask version.');
+  if ((typeof raw.schemaVersion === 'number' && raw.schemaVersion > 9) || (typeof raw.version === 'number' && raw.version > 9)) throw new Error('This backup requires a newer FlowTask version.');
   const prefs = raw.preferences;
   if (prefs !== undefined && !object(prefs))
     throw new Error("Backup preferences must be an object.");
@@ -138,6 +153,12 @@ export function validateBackupExtras(raw: unknown): BackupExtras | undefined {
   }
   if (preferences.appearance) preferences.appearance = normalizeAppearance(preferences.appearance);
   if (object(preferences.workspace)) {
+    const templates = preferences.workspace.studyTemplates;
+    if (templates !== undefined) {
+      const normalized = normalizeStudyTemplates(templates);
+      if (!Array.isArray(templates) || normalized.length !== templates.length) throw new Error('Invalid study templates in backup.');
+      preferences.workspace.studyTemplates = normalized;
+    }
     const { presentation, ...rest } = preferences.workspace;
     const safe = normalizePresentation(presentation);
     preferences.workspace = { ...rest, ...(safe ? { presentation: safe } : {}) };
@@ -202,9 +223,12 @@ export function validateBackupExtras(raw: unknown): BackupExtras | undefined {
     });
   }
 
-  const areas = Array.isArray(raw.areas) ? (raw.areas as WorkspaceRecord['areas']) : undefined;
-  const goals = Array.isArray(raw.goals) ? (raw.goals as WorkspaceRecord['goals']) : undefined;
-  const routines = Array.isArray(raw.routines) ? (raw.routines as WorkspaceRecord['routines']) : undefined;
+  const areas = Array.isArray(raw.areas) ? validateAreas(raw.areas) : undefined;
+  const goals = Array.isArray(raw.goals) ? validateGoals(raw.goals) : undefined;
+  const routines = Array.isArray(raw.routines) ? validateRoutines(raw.routines) : undefined;
+  const routineRuns = Array.isArray(raw.routineRuns) ? validateRoutineRuns(raw.routineRuns) : undefined;
+  const workBlocks = Array.isArray(raw.workBlocks) ? validateWorkBlocks(raw.workBlocks) : undefined;
+  const reviews = Array.isArray(raw.reviews) ? validateReviews(raw.reviews) : undefined;
   const habits = Array.isArray(raw.habits) ? (raw.habits as WorkspaceRecord['habits']) : undefined;
 
   return {
@@ -212,6 +236,9 @@ export function validateBackupExtras(raw: unknown): BackupExtras | undefined {
     areas,
     goals,
     routines,
+    routineRuns,
+    workBlocks,
+    reviews,
     habits,
     preferences,
     customViews: (raw.customViews || []) as WorkspaceRecord["customViews"],
@@ -246,30 +273,86 @@ export function mergeBackupExtras(
       if (![...notes.values()].some(n => n.title === copy.title && n.body === copy.body)) notes.set(copy.id, copy);
     }
   }
+
+  // Conflict handling with relationship remapping for Areas
+  const areaRemap = new Map<string, string>();
   const areas = new Map((before.areas || []).map(a => [a.id, a]));
   for (const a of incoming.areas || []) {
-    if (!areas.has(a.id)) areas.set(a.id, a);
+    const existing = areas.get(a.id);
+    if (!existing) {
+      areas.set(a.id, a);
+    } else if (existing.name !== a.name) {
+      const newId = crypto.randomUUID();
+      areaRemap.set(a.id, newId);
+      areas.set(newId, { ...a, id: newId, name: `${a.name} (Imported)` });
+    }
   }
+
+  // Conflict handling with relationship remapping for Goals
   const goals = new Map((before.goals || []).map(g => [g.id, g]));
   for (const g of incoming.goals || []) {
-    if (!goals.has(g.id)) goals.set(g.id, g);
+    const targetAreaId = g.areaId && areaRemap.has(g.areaId) ? areaRemap.get(g.areaId) : g.areaId;
+    const adjustedGoal = targetAreaId !== g.areaId ? { ...g, areaId: targetAreaId } : g;
+    const existing = goals.get(g.id);
+    if (!existing) {
+      goals.set(g.id, adjustedGoal);
+    } else if (existing.title !== g.title) {
+      const newId = crypto.randomUUID();
+      goals.set(newId, { ...adjustedGoal, id: newId, title: `${adjustedGoal.title} (Imported)` });
+    }
   }
+
   const routines = new Map((before.routines || []).map(r => [r.id, r]));
   for (const r of incoming.routines || []) {
-    if (!routines.has(r.id)) routines.set(r.id, r);
+    const existing = routines.get(r.id);
+    if (!existing) {
+      routines.set(r.id, r);
+    } else if (existing.title !== r.title) {
+      const newId = crypto.randomUUID();
+      routines.set(newId, { ...r, id: newId, title: `${r.title} (Imported)` });
+    }
   }
+
+  const routineRuns = new Map((before.routineRuns || []).map(r => [r.id, r]));
+  for (const r of incoming.routineRuns || []) {
+    if (!routineRuns.has(r.id)) routineRuns.set(r.id, r);
+  }
+
+  const workBlocks = new Map((before.workBlocks || []).map(w => [w.id, w]));
+  for (const w of incoming.workBlocks || []) {
+    const existing = workBlocks.get(w.id);
+    if (!existing) {
+      workBlocks.set(w.id, w);
+    } else if (
+      (typeof w.revision === 'number' && typeof existing.revision === 'number' && w.revision > existing.revision) ||
+      (typeof w.updatedAt === 'number' && typeof existing.updatedAt === 'number' && w.updatedAt > existing.updatedAt)
+    ) {
+      workBlocks.set(w.id, w);
+    }
+  }
+
+  const reviews = new Map((before.reviews || []).map(r => [r.id, r]));
+  for (const r of incoming.reviews || []) {
+    if (!reviews.has(r.id)) reviews.set(r.id, r);
+  }
+
   const habits = new Map((before.habits || []).map(h => [h.id, h]));
   for (const h of incoming.habits || []) {
     if (!habits.has(h.id)) habits.set(h.id, h);
   }
+
   for (const d of [...(before.dashboards || []), ...(incoming.dashboards || [])]) {
     if (!dashboardMap.has(d.id)) dashboardMap.set(d.id, d);
   }
+
   return {
     notes: [...notes.values()],
     areas: [...areas.values()],
     goals: [...goals.values()],
     routines: [...routines.values()],
+    routineRuns: [...routineRuns.values()],
+    workBlocks: [...workBlocks.values()],
+    reviews: [...reviews.values()],
     habits: [...habits.values()],
     preferences,
     customViews: [
