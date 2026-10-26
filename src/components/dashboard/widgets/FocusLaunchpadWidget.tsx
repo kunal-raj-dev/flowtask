@@ -1,3 +1,4 @@
+import { useTaskAvailabilityClock } from '../../../hooks/useTaskAvailabilityClock';
 import React from 'react';
 import { Play, ArrowUpRight } from 'lucide-react';
 import { useTaskContext } from '../../../context/TaskContext';
@@ -8,9 +9,10 @@ import { useTodayStr } from '../../../hooks/useCurrentDate';
 import { isFocusTask } from '../../../utils/taskSelectors';
 import type { WidgetComponentProps } from '../../../types/dashboard';
 export const FocusLaunchpadWidget: React.FC<WidgetComponentProps> = ({ widget }) => {
-  const modal = React.useContext(ModalContext), { focusSession, tasks } = useTaskContext(), { recipes, update, preferences } = useStudioPreferences(), scenes = useBuiltInScenes(), today = useTodayStr();
+  const modal = React.useContext(ModalContext), { focusSession, tasks, projects = [] } = useTaskContext(), { recipes, update, preferences } = useStudioPreferences(), scenes = useBuiltInScenes(), today = useTodayStr();
+  const availabilityNow = useTaskAvailabilityClock(tasks);
   const entries = [...recipes.filter(r => r.favorite), ...recipes.filter(r => !r.favorite)].slice(0,Number(widget.config.maxRecipes || 3));
-  const task = tasks.find(t => isFocusTask(t,today));
+  const task = tasks.find(t => isFocusTask(t, today, { tasks, projects, now: availabilityNow }));
   const open = () => modal?.openModal('pomodoro');
   return <div className="desk-focus-recipes">
     {focusSession && <button className="desk-active-session" onClick={open}><span><strong>{focusSession.taskTitle || 'Your focus session'}</strong><small>{focusSession.state === 'paused' ? 'Paused · Ready when you are' : 'Session in progress'}</small></span><ArrowUpRight size={17}/></button>}

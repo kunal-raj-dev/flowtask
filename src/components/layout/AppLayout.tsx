@@ -1,7 +1,8 @@
+import { useTaskAvailabilityClock } from '../../hooks/useTaskAvailabilityClock';
 import { canonicalWorkspaceUrl, resolveStartView } from '../../utils/entryRoute';
 import { parseInitialView, useUIStore } from '../../store/useUIStore';
 import { shouldIgnoreShortcut } from '../../services/shortcutRegistry';
-import { isTodayTask } from '../../utils/taskSelectors';
+import { isTodayTask, isInboxTask } from '../../utils/taskSelectors';
 import { RecoveryView } from '../views/RecoveryView';
 import { snoozeReminder, syncRemindersWithStore } from '../../services/reminderService';
 import { useTaskStore } from '../../store/useTaskStore';
@@ -18,6 +19,7 @@ const NotesView = lazy(() => import('../views/NotesView').then((m) => ({ default
 const StudyView = lazy(() => import('../views/StudyView').then((m) => ({ default: m.StudyView })));
 const LifeAreasView = lazy(() => import('../views/LifeAreasView').then((m) => ({ default: m.LifeAreasView })));
 const GoalsView = lazy(() => import('../views/GoalsView').then((m) => ({ default: m.GoalsView })));
+const RoutinesView = lazy(() => import('../views/RoutinesView').then((m) => ({ default: m.RoutinesView })));
 import { TaskList } from '../tasks/TaskList';
 import { AppShell } from './AppShell';
 import { DesktopHeader } from './DesktopHeader';
@@ -68,6 +70,7 @@ export const AppLayout: React.FC = () => {
 
   const { preferences: studioPreferences } = useStudioPreferences();
   const todayStr = useTodayStr();
+  const availabilityNow = useTaskAvailabilityClock(tasks);
   const { user, isAnonymous } = useAuth();
   const { openModal, closeModal, isModalOpen, hasAnyModalOpen } = useModal();
 
@@ -152,13 +155,20 @@ export const AppLayout: React.FC = () => {
       pendingSnapshot
     )
       return;
-    pendingQuickAdd.current = false;
-    const url = canonicalWorkspaceUrl(window.location.href);
-    if (url.searchParams.get('action') === 'quickadd') {
-      url.searchParams.delete('action');
-      window.history.replaceState(window.history.state, '', url);
-    }
-    setIsQuickAddOpen(true);
+    // Commit after the provider's mount effects, including development effect replay.
+    // Otherwise its cleanup can close the dialog after this URL has been consumed.
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      pendingQuickAdd.current = false;
+      const url = canonicalWorkspaceUrl(window.location.href);
+      if (url.searchParams.get('action') === 'quickadd') {
+        url.searchParams.delete('action');
+        window.history.replaceState(window.history.state, '', url);
+      }
+      setIsQuickAddOpen(true);
+    });
+    return () => { cancelled = true; };
   }, [
     syncStatus,
     hasAnyModalOpen,
@@ -289,21 +299,15 @@ export const AppLayout: React.FC = () => {
     settings?.keyboardShortcutsEnabled,
   ]);
 
-  const todayCount = useMemo(() => tasks.filter((t) => isTodayTask(t, todayStr)).length, [tasks, todayStr]);
+  const todayCount = useMemo(() => tasks.filter((t) => isTodayTask(t, todayStr, { tasks, projects, now: availabilityNow })).length, [tasks, projects, todayStr, availabilityNow]);
 
   const inboxCount = useMemo(
     () =>
       tasks.filter(
         (t) =>
-          t.status !== 'done' &&
-          !t.deletedAt &&
-          !t.archivedAt &&
-          t.projectId === 'inbox' &&
-          !t.dueDate &&
-          !t.plannedDate &&
-          !t.isSomeday
+          isInboxTask(t, todayStr, { tasks, projects, now: availabilityNow })
       ).length,
-    [tasks]
+    [tasks, projects, todayStr, availabilityNow]
   );
 
   const upcomingCount = useMemo(
@@ -321,7 +325,7 @@ export const AppLayout: React.FC = () => {
       case 'today':
         return 'Today';
       case 'dashboard':
-        return 'Dashboard Canvas';
+        return 'Dashboard';
       case 'inbox':
         return 'Inbox';
       case 'upcoming':
@@ -352,6 +356,12 @@ export const AppLayout: React.FC = () => {
         return 'Trash';
       case 'archive':
         return 'Archive';
+      case 'areas':
+        return 'Life Areas';
+      case 'goals':
+        return 'Goals';
+      case 'routines':
+        return 'Routines';
       default:
         if (activeView.startsWith('project:')) {
           const p = projects.find((proj) => proj.id === activeView.split(':')[1]);
@@ -531,6 +541,9 @@ export const AppLayout: React.FC = () => {
         />
       );
     }
+    if (activeView === 'routines') {
+      return <RoutinesView onSelectTask={handleSelectTask} />;
+    }
     return (
       <TaskList
         onSelectTask={(id) => setSelectedTaskId(id)}
@@ -546,11 +559,11 @@ export const AppLayout: React.FC = () => {
       className="workspace-mobile-header lg:hidden flex items-center justify-between px-3.5 sm:px-6 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl sticky top-0 z-20 transition-all shrink-0"
       style={{ borderBottomColor: `color-mix(in srgb, var(--color-brand) 12%, var(--border-hairline))` }}
     >
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex flex-1 items-center gap-2 min-w-0">
         <button
           onClick={() => setIsSidebarOpenMobile(true)}
           aria-label="Open navigation menu"
-          className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+          className="p-2 shrink-0 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
         >
           <Menu size={20} strokeWidth={1.75} />
         </button>
@@ -572,7 +585,7 @@ export const AppLayout: React.FC = () => {
           onClick={() => setIsAuthModalOpen(true)}
           title={user && !isAnonymous ? `Account: ${user.displayName || user.email}` : 'Cloud Sync & Account'}
           aria-label="Cloud Sync and Account Settings"
-          className="p-1.5 text-[var(--text-secondary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95 flex items-center justify-center"
+          className="mobile-secondary-action mobile-account-action p-1.5 text-[var(--text-secondary)] rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95 flex items-center justify-center"
         >
           {user && !isAnonymous ? (
             <div className="relative shrink-0">
@@ -621,7 +634,7 @@ export const AppLayout: React.FC = () => {
           onClick={() => openModal('copilotOmnibar')}
           title="FlowTask Copilot"
           aria-label="Open Copilot Omnibar"
-          className="mobile-secondary-action p-2 text-[var(--color-brand)] rounded-xl hover:bg-[var(--bg-surface-hover)]"
+          className="p-2 text-[var(--color-brand)] rounded-xl hover:bg-[var(--bg-surface-hover)]"
         >
           <Sparkles size={18} />
         </button>

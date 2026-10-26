@@ -30,7 +30,7 @@ export interface UIState {
   densityMode: 'compact' | 'default' | 'spacious';
   isCalendarDrawerOpen: boolean;
   toast: ToastState | null;
-  activePopover: { type: 'priority' | 'date'; taskId: string } | null;
+  activePopover: { type: 'priority' | 'date' | 'granularity'; taskId: string } | null;
 
   isAuthModalOpen: boolean;
   isQuickAddOpen: boolean;
@@ -72,7 +72,7 @@ export interface UIState {
     onSecondaryAction?: () => void
   ) => void;
   clearToast: () => void;
-  setActivePopover: (popover: { type: 'priority' | 'date'; taskId: string } | null) => void;
+  setActivePopover: (popover: { type: 'priority' | 'date' | 'granularity'; taskId: string } | null) => void;
 
   setIsAuthModalOpen: (open: boolean) => void;
   setIsQuickAddOpen: (open: boolean) => void;
@@ -91,7 +91,7 @@ export const parseInitialView = (): ViewId => {
   if (typeof window === 'undefined') return 'today';
   try {
     const view = new URL(window.location.href).searchParams.get('view') || 'today';
-    return /^(dashboard|today|inbox|upcoming|projects|notes|study|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view)
+    return /^(dashboard|today|inbox|upcoming|projects|notes|areas|goals|routines|study|review|all|someday|timeline|matrix|kanban|insights|logbook|trash|archive|project:.+|smart:.+)$/.test(view)
       ? (view as ViewId)
       : 'today';
   } catch {

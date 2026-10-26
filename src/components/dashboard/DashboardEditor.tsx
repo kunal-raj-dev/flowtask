@@ -30,7 +30,7 @@ function read(key: string) { try { return localStorage.getItem(key); } catch { r
 function write(key: string, value: string | null) { try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); return true; } catch { return false; } }
 
 export const DashboardEditor: React.FC<DashboardEditorProps> = ({ dashboards, workspaceId = 'local', activeDashboardId, onActiveDashboardChange, onUpdateDashboards, onSelectTask, onStartFocus, onStartSprint, onPlanMyDay }) => {
-  const { workspacePreferences = {}, settings } = useTaskContext();
+  const { workspacePreferences = {}, settings, setWorkspacePreference } = useTaskContext();
   const workspace = (workspacePreferences.workspace || {}) as WorkspacePreferences;
   const saved = dashboards.length ? dashboards : STARTER_DASHBOARDS;
   const [selectedDashboardId, setSelectedDashboardId] = useState<string | null>(null);
@@ -180,7 +180,10 @@ export const DashboardEditor: React.FC<DashboardEditorProps> = ({ dashboards, wo
       onReorderDashboard={(id, direction) => { const next = [...saved].sort((a,b) => a.order - b.order), i = next.findIndex(d => d.id === id), j = i + direction; if (j < 0 || j >= next.length) return; [next[i], next[j]] = [next[j], next[i]]; onUpdateDashboards(next.map((d, order) => ({ ...d, order }))); }}
       onResetToStarter={id => { const starter = getStarterDashboard(id); if (!starter) return; if (!isEditing) start(); change(() => ({ ...clone(starter), id: dashboard.id, name: dashboard.name, coverImage: dashboard.coverImage, coverFocalPoint: dashboard.coverFocalPoint, createdAt: dashboard.createdAt, revision: dashboard.revision, order: dashboard.order })); setIsEditing(true); }}
       isEditing={isEditing} onToggleEdit={start} onPlanMyDay={onPlanMyDay} hasDraft={hasDraft} onResumeDraft={resume} onDiscardDraft={discard}
-      onCoverChange={(coverImage, coverFocalPoint) => onUpdateDashboards(saved.map(d => d.id === dashboard.id ? { ...d, coverImage, coverFocalPoint: coverImage ? coverFocalPoint : undefined, updatedAt: Date.now() } : d))}
+      onCoverChange={(coverImage, coverFocalPoint) => {
+        onUpdateDashboards(saved.map(d => d.id === dashboard.id ? { ...d, coverImage: coverImage || 'none', coverFocalPoint: coverImage && coverImage !== 'none' ? coverFocalPoint : undefined, updatedAt: Date.now() } : d));
+        setWorkspacePreference?.('workspace', { ...workspace, showCovers: true, presentation: { ...workspace.presentation, version: 1, plainBackground: false } });
+      }}
       onExport={exportCurrent} onImport={() => fileRef.current?.click()} />
     <input ref={fileRef} type="file" accept=".json,application/json" className="sr-only" tabIndex={-1} aria-label="Import dashboard file" onChange={e => { void importFile(e.target.files?.[0]); e.target.value = ''; }} />
     {message && <div className="desk-notice" role="status"><span>{message}</span>{deleted && <button onClick={() => { const recovered = deleted!; onUpdateDashboards([...saved, recovered], recovered.id); setDeleted(null); select(recovered.id); setMessage('Dashboard restored.'); }}>Undo removal</button>}<button aria-label="Dismiss workspace notice" onClick={() => setMessage('')}><X size={16}/></button></div>}

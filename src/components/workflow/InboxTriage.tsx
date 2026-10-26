@@ -15,7 +15,7 @@ export function InboxTriage() {
   const tasks = ctx.tasks
     .filter(
       (t) =>
-        isInboxTask(t) &&
+        isInboxTask(t, undefined, { tasks: ctx.tasks, projects: ctx.projects }) &&
         !processed.includes(t.id),
     )
     .sort((a, b) => a.createdAt - b.createdAt);

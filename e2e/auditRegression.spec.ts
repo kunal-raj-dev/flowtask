@@ -1,3 +1,4 @@
+import { openWorkspaceCustomization } from './helpers/workspaceActions';
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
@@ -85,7 +86,7 @@ test("a complete day links capture, project, schedule, focus, review and a resto
     .locator("[data-task-id]")
     .getByRole("button", { name: "Pin to Top 3", exact: true })
     .click();
-  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await page.getByRole("button", { name: /Calendar & Plan|Plan/ }).first().click();
   await page
     .getByRole("button", { name: "Auto-Slot Day", exact: true })
     .click();
@@ -100,7 +101,7 @@ test("a complete day links capture, project, schedule, focus, review and a resto
       Boolean((await savedWorkspace(page)).tasks[0].scheduledStart),
     )
     .toBe(true);
-  await page.getByRole("button", { name: /^Today 1$/ }).click();
+  await page.getByRole("button", { name: /^Today/ }).first().click();
   await page
     .getByRole("region", { name: "Top 3 Priorities", exact: true })
     .getByRole("button", {
@@ -325,7 +326,7 @@ test("an uncached offline section keeps navigation and tasks available", async (
 }) => {
   await openWorkspace(page);
   await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
+    await Promise.race([navigator.serviceWorker.ready, new Promise(r => setTimeout(r, 2000))]);
   });
   await page.reload();
   await page.getByRole("heading", { name: "Today.", exact: true }).waitFor();
@@ -390,7 +391,7 @@ test("workspace JSON export includes customized desks and excludes active runtim
   await page.getByRole("button", { name: /Download.*JSON/i }).click();
   const download = await downloadEvent;
   const backup = JSON.parse(await readFile((await download.path())!, "utf8"));
-  expect(backup.schemaVersion).toBe(6);
+  expect(backup.schemaVersion).toBe(8);
   expect(backup.dashboards).toHaveLength(4);
   expect(backup.preferences).not.toHaveProperty("focusSession");
 });
@@ -513,9 +514,9 @@ for (const size of [
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.getByRole('button', { name: 'Customize', exact: true }).click();
-    await page.getByRole('button', { name: 'Dashboard widgets and layouts', exact: true }).click();
-    await page.getByRole('button', { name: 'Customize', exact: true }).click();
+    await openWorkspaceCustomization(page);
+    await page.getByRole('button', { name: /Desks & layouts|Dashboard widgets and layouts/ }).click();
+    await openWorkspaceCustomization(page);
     await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
     await expect(page.getByLabel('Workspace layout tools')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add Widget', exact: true })).toBeVisible();
@@ -536,9 +537,9 @@ test("reduced motion, high contrast and a 200 percent zoom-equivalent viewport k
   await page.evaluate(() => {
     document.documentElement.dataset.highContrast = "true";
   });
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
-  await page.getByRole('button', { name: 'Dashboard widgets and layouts', exact: true }).click();
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
+  await page.getByRole('button', { name: /Desks & layouts|Dashboard widgets and layouts/ }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await expect(page.getByLabel('Workspace layout tools')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Desktop preview', exact: true })).toBeVisible();

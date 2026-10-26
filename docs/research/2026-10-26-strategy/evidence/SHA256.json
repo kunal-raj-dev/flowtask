@@ -1,0 +1,107 @@
+[
+  {
+    "file": "COMPETITIVE_INTELLIGENCE.md",
+    "bytes": 41929,
+    "sha256": "1dde366b2ffbea5717ba1143b42f3e8ab46f60f0228b395b25fbcd9a4d756aee"
+  },
+  {
+    "file": "evidence/01-first-use-desktop.jpg",
+    "bytes": 67180,
+    "sha256": "32d7a3698d647d7445f80d2a84ce65b025384cf13adc4b4ab2698e5a0d9c355d"
+  },
+  {
+    "file": "evidence/02-studio-desktop.jpg",
+    "bytes": 79078,
+    "sha256": "f844b6ae6ce90be93ca52a982e255e154d65022f5c082824fa61a8f123bc09df"
+  },
+  {
+    "file": "evidence/03-capture-date-meaning.jpg",
+    "bytes": 78331,
+    "sha256": "e0df66ee822cb807654734c24350daa7f1779105324fa1ff8e9e6933e7883796"
+  },
+  {
+    "file": "evidence/04-task-drawer-desktop.jpg",
+    "bytes": 76563,
+    "sha256": "d0db6d5d963270f039a3024156244843fb4efe980e99d8ec3734e15f1cf8318b"
+  },
+  {
+    "file": "evidence/05-overlap-capacity-desktop.jpg",
+    "bytes": 64460,
+    "sha256": "945f3e8f61cd26d9789142a9756bfd3c3cc2c71233143e974cc21aad9e7ef89d"
+  },
+  {
+    "file": "evidence/06-note-task-link.jpg",
+    "bytes": 60023,
+    "sha256": "c5d70bd9e1adbdb3084fa1c93e552319ab75882e73b893502839c4bf73b47128"
+  },
+  {
+    "file": "evidence/07-today-phone.jpg",
+    "bytes": 30011,
+    "sha256": "c49acac42a9cf19e25b2ef93ea63eaec7c8e9393de5c8fd011f2dd6129049fc7"
+  },
+  {
+    "file": "evidence/08-plan-phone.jpg",
+    "bytes": 24407,
+    "sha256": "1edf3537aa9cef1706f86c1100dc185d9947df9102706236ba1e120db4c16ee9"
+  },
+  {
+    "file": "evidence/09-goblin-breakdown.jpg",
+    "bytes": 73960,
+    "sha256": "26ff79c536e6296258c69e3461a657351335bc2dfdc86989bf5ec9b02a715f5d"
+  },
+  {
+    "file": "evidence/10-unrelated-breakdown.jpg",
+    "bytes": 67983,
+    "sha256": "3b5ab2b24714281bf0e1e99d46f0e2c056c0fffc52b42758cbfadedb3e35bb01"
+  },
+  {
+    "file": "evidence/11-dashboard-desktop.jpg",
+    "bytes": 112772,
+    "sha256": "36598d23ea604f7bc68584efb993da0954b2e06649b0861998b2bd70ca22f65a"
+  },
+  {
+    "file": "evidence/12-planning-capacity-summary.jpg",
+    "bytes": 43060,
+    "sha256": "5853a54daa8524a5e4cabe3b96f35885e68de02bb116624411af1ce08f839c7b"
+  },
+  {
+    "file": "evidence/13-lock-bypass.ax.txt",
+    "bytes": 8436,
+    "sha256": "0cfb3332401e52c3eb02f06b2bca95e620d520187ec7659070d7547630c2003e"
+  },
+  {
+    "file": "evidence/13-lock-bypass.jpg",
+    "bytes": 106471,
+    "sha256": "f2cab12bdbc7e757d5c64e9bb729552e5fe200ee1a7f91338d3133e78e1b46ae"
+  },
+  {
+    "file": "evidence/14-todoist-usd-pricing.jpg",
+    "bytes": 61186,
+    "sha256": "a8a7d3ad0e33272e7f0b45922d00138b299e269c73ceea7270acd71d4a97fecd"
+  },
+  {
+    "file": "evidence/15-reservation-capacity.ax.txt",
+    "bytes": 6333,
+    "sha256": "6c1b3d6d78c7cab42e07b9df1efb48ad16d36166074f04fecbf27544e511d217"
+  },
+  {
+    "file": "evidence/15-reservation-capacity.jpg",
+    "bytes": 106711,
+    "sha256": "ef50ddc9564c59d92e585a8e85f8c80de2bb376e91d3b630f55d837684bd0dde"
+  },
+  {
+    "file": "evidence/16-locked-state.jpg",
+    "bytes": 119711,
+    "sha256": "402ea5d37632da3a6cc4311e778306428bb75c9d64951886de6636e83e7ccba7"
+  },
+  {
+    "file": "evidence/VERIFICATION.md",
+    "bytes": 14721,
+    "sha256": "bd0494bb0d4bf7db78da3394cf70e3a3d18ac73c83f8064e9454c5f35d816966"
+  },
+  {
+    "file": "REPORT.md",
+    "bytes": 53682,
+    "sha256": "075323e55568e901fd4d65ade6fb4286793b98cc34584e062a9263abadc4be91"
+  }
+]

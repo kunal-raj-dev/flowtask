@@ -1,3 +1,4 @@
+import { openWorkspaceCustomization } from './helpers/workspaceActions';
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -86,7 +87,7 @@ test("workspace image picker applies explicit covers and preserves them after re
 
   await page.getByRole("button", { name: /^Today/ }).click();
   await page.getByRole("button", { name: "Switch dashboard", exact: true }).click();
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await page.getByRole("button", { name: "Add Widget", exact: true }).click();
   const widgetCard = page.getByRole("dialog", { name: "Add Widget to Workspace" }).locator("article").filter({ has: page.getByRole("heading", { name: "Quiet Scene & Clock", exact: true }) });

@@ -54,6 +54,13 @@ const OPTIONAL_TASK_FIELDS: (keyof Task)[] = [
   'isAutoTriaged',
   'rolloverCount',
   'lastRolledOverAt',
+  'deferUntil',
+  'areaId',
+  'goalId',
+  'cognitiveLoad',
+  'isLifeAdmin',
+  'cleanSlateQuarantinedAt',
+  'predecessorTaskId',
 ];
 
 /**
@@ -138,15 +145,25 @@ export function createCloudAdapter(uid: string): CloudAdapter {
   return {
     async read() {
       const snapshots = await Promise.all(SYNC_COLLECTIONS.map(name => getDocsFromServer(workspaceCollection(database, uid, name))));
-      const [tasks, projects, dashboards, focusLogs, recipes, preferences, notes] = snapshots;
+      const colMap = new Map<SyncCollection, SyncedEntity[]>();
+      snapshots.forEach((snap, idx) => {
+        const colName = SYNC_COLLECTIONS[idx];
+        colMap.set(colName, snap.docs.map((d) => ({ ...d.data(), id: d.id })) as SyncedEntity[]);
+      });
       return {
-        tasks: tasks.docs.map((d) => ({ ...d.data(), id: d.id })) as Task[],
-        projects: projects.docs.map((d) => ({ ...d.data(), id: d.id })) as Project[],
-        dashboards: dashboards.docs.map((d) => ({ ...d.data(), id: d.id })) as SyncedEntity[],
-        focusLogs: focusLogs.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
-        recipes: recipes.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
-        preferences: preferences.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
-        notes: notes.docs.map(d => ({ ...d.data(), id: d.id })) as SyncedEntity[],
+        tasks: (colMap.get('tasks') || []) as Task[],
+        projects: (colMap.get('projects') || []) as Project[],
+        dashboards: colMap.get('dashboards') || [],
+        focusLogs: colMap.get('focusLogs') || [],
+        recipes: colMap.get('recipes') || [],
+        preferences: colMap.get('preferences') || [],
+        notes: colMap.get('notes') || [],
+        areas: colMap.get('areas') || [],
+        goals: colMap.get('goals') || [],
+        routines: colMap.get('routines') || [],
+        routineRuns: colMap.get('routineRuns') || [],
+        workBlocks: colMap.get('workBlocks') || [],
+        reviews: colMap.get('reviews') || [],
       };
     },
     async apply(operation) {

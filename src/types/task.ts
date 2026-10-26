@@ -58,10 +58,16 @@ export interface TaskReminder {
   createdAt: number;
 }
 
+export type WorkBlockStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+
 export interface WorkBlock {
   id: string;
   taskId: string;
-  date: string; // YYYY-MM-DD
+  startInstant: number;
+  endInstant: number;
+  timezone: string;
+  status: WorkBlockStatus;
+  date?: string; // YYYY-MM-DD
   startTime?: string; // HH:mm
   endTime?: string; // HH:mm
   durationMinutes: number;
@@ -69,6 +75,8 @@ export interface WorkBlock {
   isLocked?: boolean;
   completedAt?: number;
   externalEventId?: string;
+  source?: 'canonical' | 'legacy_clock' | 'embedded' | string;
+  revision?: number;
   createdAt?: number | string;
   updatedAt?: number | string;
 }
@@ -79,6 +87,7 @@ export interface Task {
   originNoteId?: string;
   milestoneId?: string;
   scheduleLocked?: boolean;
+  isStudy?: boolean;
   nextAction?: string;
   recurrenceSourceId?: string;
   reminders?: TaskReminder[];
@@ -180,6 +189,7 @@ export type ViewId =
   | 'settings'
   | 'areas'
   | 'goals'
+  | 'routines'
   | 'life_admin'
   | `project:${string}`
   | `smart:${string}`;
@@ -211,6 +221,8 @@ export interface CalendarEvent {
   sourceId?: string;
   sourceName?: string;
   color?: string;
+  isReadOnly?: boolean;
+  isExternal?: boolean;
 }
 
 export type CognitiveIntensity = 'deep' | 'medium' | 'admin';
@@ -269,6 +281,8 @@ export interface FocusSessionSegment {
 }
 
 export interface FocusLog {
+  isStudy?: boolean;
+  workBlockId?: string;
   pausedSeconds?: number;
   revision?: number;
   updatedAt?: number;
@@ -289,6 +303,7 @@ export interface FocusLog {
 }
 
 export interface FocusSession {
+  workBlockId?: string;
   recoverCompletion?: boolean;
   finishedAt?: number;
   totalPausedMs?: number;
@@ -324,6 +339,7 @@ export type CommandType =
   | 'complete_task'
   | 'schedule_task'
   | 'move_task'
+  | 'unschedule_task'
   | 'merge_tasks'
   | 'archive_task'
   | 'delete_task'

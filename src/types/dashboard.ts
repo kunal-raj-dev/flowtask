@@ -133,6 +133,8 @@ export interface WorkspacePresentation {
   version: 1;
   offerDismissed?: boolean;
   dailyDeskId?: string;
+  intensity?: number;
+  plainBackground?: boolean;
 }
 
 export interface DayPlanSummary {
@@ -157,4 +159,7 @@ export interface DayPlanSummary {
     durationMinutes: number;
   }>;
   missingEstimatesCount: number;
+  uniqueOccupiedMinutes?: number;
+  conflictMinutes?: number;
+  freeCalendarMinutes?: number;
 }

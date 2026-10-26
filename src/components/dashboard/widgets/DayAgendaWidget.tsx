@@ -1,3 +1,4 @@
+import { useTaskAvailabilityClock } from '../../../hooks/useTaskAvailabilityClock';
 import { getEffectiveTaskEstimate } from '../../../utils/taskTimeSummary';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, CalendarDays, CalendarClock } from 'lucide-react';
@@ -7,7 +8,8 @@ import { isTodayTask } from '../../../utils/taskSelectors';
 import { parseTimeToMinutes, minutesToTimeStr } from '../../../utils/timelineUtils';
 import type { WidgetComponentProps } from '../../../types/dashboard';
 export const DayAgendaWidget: React.FC<WidgetComponentProps> = ({ widget, onSelectTask }) => {
-  const { tasks, calendarEvents = [], settings, setActiveView } = useTaskContext(), today = useTodayStr();
+  const { tasks, projects = [], calendarEvents = [], settings, setActiveView } = useTaskContext(), today = useTodayStr();
+  const availabilityNow = useTaskAvailabilityClock(tasks);
   const [now, setNow] = useState(() => new Date());
   useEffect(() => { const timer = setInterval(() => setNow(new Date()),60000); return () => clearInterval(timer); },[]);
   const current = now.getHours()*60+now.getMinutes();
@@ -16,13 +18,13 @@ export const DayAgendaWidget: React.FC<WidgetComponentProps> = ({ widget, onSele
     const result: { id: string; title: string; start: number; end: number; task: boolean; done: boolean }[] = [];
     if (widget.config.showCalendar !== false) for (const e of events) { const start = parseTimeToMinutes(e.startTime), end = parseTimeToMinutes(e.endTime); if (!e.isAllDay && start !== null && end !== null && end > start) result.push({ id: e.id,title:e.title,start,end,task:false,done:false }); }
     if (widget.config.showScheduledTasks !== false) for (const t of tasks) {
-      if (!isTodayTask(t,today) && !(t.status === 'done' && !t.deletedAt && !t.archivedAt && t.plannedDate === today)) continue;
+      if (!isTodayTask(t, today, { tasks, projects, now: availabilityNow }) && !(t.status === 'done' && !t.deletedAt && !t.archivedAt && t.plannedDate === today)) continue;
       const start = parseTimeToMinutes(t.scheduledStart); if (start === null) continue;
       const end = parseTimeToMinutes(t.scheduledEnd) ?? start + (getEffectiveTaskEstimate(t) || settings?.defaultTaskDuration || 30);
       result.push({ id:t.id,title:t.title,start,end,task:true,done:t.status==='done' });
     }
     return result.sort((a,b) => a.start-b.start);
-  },[tasks,events,today,widget.config,settings]);
+  },[tasks,projects,events,today,widget.config,settings,availabilityNow]);
   const next = items.find(item => item.end > current && !item.done);
   return <div className="desk-agenda">
     {next && widget.config.showNextBlockHighlight !== false && <p className="desk-agenda-next"><span>{next.start <= current ? 'Now' : 'Up next'}</span>{next.title}</p>}

@@ -11,6 +11,7 @@ function createLegacyStarters(now = Date.now()): WorkspaceDashboard[] {
       id: STARTER_DAILY_DESK_ID,
       name: 'Daily Desk',
       icon: 'Sun',
+      coverImage: 'dolomite-dawn',
       isDefault: true,
       order: 0,
       revision: 1,

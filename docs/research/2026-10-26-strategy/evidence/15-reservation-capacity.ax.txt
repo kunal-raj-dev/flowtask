@@ -1,0 +1,195 @@
+Browser tab: 1, Title: "FlowTask — Plan your day. Enter your flow.", URL: "http://localhost:5176/app?view=timeline".
+1 AXWebArea FlowTask — Plan your day. Enter your flow., URL: localhost:5176/app?view=timeline
+	2 container
+		3 link Description: Skip to main content, Value: localhost:5176/app?view=timeline#main-content
+		4 container Desktop navigation
+			5 button FlowTask — Return to Today
+				6 text FlowTask
+			7 button Multi-line Brain Dump
+			8 button Collapse Sidebar ([)
+			9 container
+				10 text WORKSPACE
+				11 button Today 2
+					12 text Today
+					13 text 2
+				14 button Inbox 1
+					15 text Inbox
+					16 text 1
+				17 button Calendar & Plan
+					18 text Calendar & Plan
+				19 button Projects 2
+					20 text Projects
+					21 text 2
+				22 button Notes
+					23 text Notes
+				24 button Focus Studio A place for your best work
+					25 text Focus Studio
+					26 text A place for your best work
+				27 text LIFE ARCHITECTURE
+				28 button Life Areas
+					29 text Life Areas
+				30 button Vision & Goals
+					31 text Vision & Goals
+				32 button Routines
+					33 text Routines
+				34 button (expanded) MORE, Secondary Actions: Collapse
+					35 text MORE
+				36 button Upcoming
+					37 text Upcoming
+				38 button Study Hub
+					39 text Study Hub
+				40 button Review
+					41 text Review
+				42 button All Tasks 3
+					43 text All Tasks
+					44 text 3
+				45 button Someday
+					46 text Someday
+				47 button Archive
+					48 text Archive
+				49 button Trash
+					50 text Trash
+				51 text SMART VIEWS
+				52 button Create Smart Filter View
+				53 button Expand Smart Views
+				54 text PROJECTS ( 2 )
+				55 button Add Project
+				56 button Collapse Projects
+				57 button Work
+				58 button Personal 1
+					59 text Personal
+					60 text 1
+			61 button Customize appearance
+			62 link Description: Visit welcome page, Value: localhost:5176/
+			63 button Description: Sticky Scratchpad, Help: Sticky Scratchpad (Alt+N)
+				64 text Quick Notes
+				65 text Alt
+				66 text +N
+			67 button Description: Preferences and Settings, Help: Preferences & Settings (Ctrl+,)
+				68 text Settings
+				69 text Ctrl
+				70 text +,
+		71 container main-content
+			72 container
+				73 button (expanded) Description: Toggle Sidebar ([), Secondary Actions: Collapse
+				74 text FlowTask Plan
+				75 button Search and commands
+					76 text Search everything
+					77 container
+						78 text Ctrl  K
+				79 button Description: Open Quick-Capture HUD (Alt+Space), Help: Quick-Capture HUD (Alt+Space)
+				80 button Description: Mute audio earcons, Help: Audio earcons enabled
+				81 button Description: Open Copilot Omnibar, Help: Plan with your local assistant
+				82 button Focus
+				83 button New Task
+				84 button Description: Saved on this device. Account and backup options, Help: Account, saving and cloud sync
+			85 container
+				86 text A realistic rhythm
+				87 heading Plan., Value: 1
+					88 text Plan .
+				89 text Make space for your priorities, one block at a time.
+				90 button Study session
+				91 button Calendar overlay (.ics)
+				92 container
+					93 text 1.3 h
+				94 text planned /  6 h capacity
+				95 container
+					96 text 2  scheduled tasks
+				97 text Room to adjust your day
+				98 button Previous day
+				99 text Planning date
+				100 date field (settable) Description: Planning date, Value: 2026-10-26
+					101 container
+						102 stepper
+						103 stepper
+						104 stepper
+					105 pop up button Show date picker Show date picker
+				106 button Next day
+				107 button Today
+				108 button Canvas
+				109 button Multi-Day Grid
+				110 container timeline-staged-tasks
+					111 heading UNSCHEDULED (0), Value: 4
+						112 text UNSCHEDULED ( 0 )
+					113 button Clear Times, Help: Clear all scheduled times for today
+					114 text All tasks for this day are scheduled.
+				115 container
+					116 text 07:00
+					117 button Schedule at 07:00
+						118 text Schedule at 
+						119 text 07:00
+					120 text 08:00
+					121 button Schedule at 08:00
+						122 text Schedule at 
+						123 text 08:00
+					124 text 09:00
+					125 button Schedule at 09:00
+						126 text Schedule at 
+						127 text 09:00
+					128 text 10:00
+					129 button Schedule at 10:00
+						130 text Schedule at 
+						131 text 10:00
+					132 text 11:00
+					133 button Schedule at 11:00
+						134 text Schedule at 
+						135 text 11:00
+					136 text 12:00
+					137 button Schedule at 12:00
+						138 text Schedule at 
+						139 text 12:00
+					140 text 13:00
+					141 button Schedule at 13:00
+						142 text Schedule at 
+						143 text 13:00
+					144 text 14:00
+					145 button Schedule at 14:00
+						146 text Schedule at 
+						147 text 14:00
+					148 text 15:00
+					149 button Schedule at 15:00
+						150 text Schedule at 
+						151 text 15:00
+					152 text 16:00
+					153 button Schedule at 16:00
+						154 text Schedule at 
+						155 text 16:00
+					156 text 17:00
+					157 button Schedule at 17:00
+						158 text Schedule at 
+						159 text 17:00
+					160 text 18:00
+					161 button Schedule at 18:00
+						162 text Schedule at 
+						163 text 18:00
+					164 text 19:00
+					165 button Schedule at 19:00
+						166 text Schedule at 
+						167 text 19:00
+					168 text 20:00
+					169 button Schedule at 20:00
+						170 text Schedule at 
+						171 text 20:00
+					172 text 21:00
+					173 button Schedule at 21:00
+						174 text Schedule at 
+						175 text 21:00
+					176 text 12:09
+					177 button Mark "AUDIT — Read chapter" as complete
+					178 text AUDIT — Read chapter 🎯 Session  1 🧠 Deep 14:30  –  17:30 ( 180 m)
+					179 container
+						180 button -15m, Help: Nudge 15m earlier
+						181 button +15m, Help: Nudge 15m later
+						182 button Sprint, Help: Launch Study Sprint Cockpit
+						183 button ✕, Help: Remove from timeline (unschedule)
+					184 text ☕ Rest Buffer (+ 15 m) Cognitive recovery
+					185 button Mark "AUDIT — Draft project proposal" as complete
+					186 text AUDIT — Draft project proposal 🎯 Session  2 ★ Focus 🧠 Deep 08:00  –  11:00 ( 180 m)
+					187 container
+						188 button -15m, Help: Nudge 15m earlier
+						189 button +15m, Help: Nudge 15m later
+						190 button Sprint, Help: Launch Study Sprint Cockpit
+						191 button ✕, Help: Remove from timeline (unschedule)
+					192 text ☕ Rest Buffer (+ 15 m) Cognitive recovery
+
+The focused UI element is 17 button Calendar & Plan

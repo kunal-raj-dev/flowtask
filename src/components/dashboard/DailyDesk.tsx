@@ -1,3 +1,4 @@
+import { useTaskAvailabilityClock } from '../../hooks/useTaskAvailabilityClock';
 import { useStudioPreferences } from '../../hooks/useStudio';
 import { DailyNoteButton } from '../notes/DailyNoteButton';
 import { useEffect, useState } from "react";
@@ -77,19 +78,21 @@ export function DailyDesk({
   onStartSprint,
   onPlanMyDay,
 }: Props) {
-  const { tasks, focusSession, calendarEvents = [], settings, setIsEveningShutdownOpen, updateTask, showToast, undoLastAction } = useTaskContext();
+  const { tasks, projects = [], focusSession, calendarEvents = [], settings, setIsEveningShutdownOpen, updateTask, showToast, undoLastAction } = useTaskContext();
   const today = useTodayStr();
+  const availabilityNow = useTaskAvailabilityClock(tasks);
   const { preferences: studio } = useStudioPreferences();
   const summary = calculateDayPlanSummary({
     date: today,
     todayStr: today,
     tasks,
+    projects,
     calendarEvents,
     settings,
   });
   const focusedSeconds = useTotalFocusedTodaySeconds();
-  const candidates = tasks.filter((t) => isTodayTask(t, today));
-  const priorities = candidates.filter((t) => isFocusTask(t, today));
+  const candidates = tasks.filter((t) => isTodayTask(t, today, { tasks, projects, now: availabilityNow }));
+  const priorities = candidates.filter((t) => isFocusTask(t, today, { tasks, projects, now: availabilityNow }));
   const [chosen, setChosen] = useState(""),
     [contextOpen, setContextOpen] = useState(false);
   const [narrow, setNarrow] = useState(
@@ -154,7 +157,7 @@ export function DailyDesk({
       <div className="daily-section-heading">
         <h2>Today's tasks</h2>
         <span>
-          {candidates.filter((t) => !isFocusTask(t, today)).length} to do
+          {candidates.filter((t) => !isFocusTask(t, today, { tasks, projects, now: availabilityNow })).length} to do
         </span>
       </div>
       <TaskListWidget {...propsFor("taskList")} hideCapture />

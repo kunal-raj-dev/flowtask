@@ -17,6 +17,18 @@ beforeEach(() => { vi.stubGlobal("localStorage", { getItem: vi.fn(() => null), s
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("workspace visual picker", () => {
+  it("can remove even the implicit default background without selecting an image", async () => {
+    const onSelect = vi.fn(), onClose = vi.fn();
+    render(<WorkspaceVisualPicker isOpen onClose={onClose} assets={assets} onSelect={onSelect} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove background' }));
+    expect(onSelect).toHaveBeenCalledWith('none');
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("does not describe a plain background as a missing personal image", () => {
+    render(<WorkspaceVisualPicker isOpen onClose={vi.fn()} assets={assets} value="none" onSelect={vi.fn()} />);
+    expect(screen.queryByText(/saved personal image is not available/)).toBeNull();
+  });
   it("shows context-matched recommendations and applies only after explicit confirmation", async () => {
     const user = userEvent.setup(), onSelect = vi.fn(), onClose = vi.fn();
     render(<WorkspaceVisualPicker isOpen onClose={onClose} assets={assets} context={{ kind: "project", projectName: "Build software API" }} onSelect={onSelect}/>);

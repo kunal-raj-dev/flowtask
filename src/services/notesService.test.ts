@@ -10,6 +10,7 @@ import {
   taskFromNote,
   appendDailyNote,
   noteFromTaskDescription,
+  syncLinkedTaskStatusToNote,
 } from "./notesService";
 import {
   findNotes,
@@ -304,5 +305,104 @@ describe("connected notes", () => {
       { taskId: "task-101", excerpt: "Comprehensive Architecture Audit" },
     ]);
   });
+  it("syncs linked task completion status bidirectionally to note checkboxes", async () => {
+    const { store } = await harness();
+    const note = createNote(store, {
+      title: "Sprint Checklist",
+      body: "## Tasks\n- [ ] Review PR\n- [ ] Deploy to staging\n",
+    });
+
+    const taskId = taskFromNote(store, note.id, "Review PR");
+    expect(taskId).toBeTruthy();
+
+    // Toggle to completed
+    syncLinkedTaskStatusToNote(store, taskId, true);
+    let updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    expect(updatedNote?.body).toContain("- [x] Review PR");
+    expect(updatedNote?.body).toContain("- [ ] Deploy to staging");
+
+    // Toggle back to incomplete
+    syncLinkedTaskStatusToNote(store, taskId, false);
+    updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    expect(updatedNote?.body).toContain("- [ ] Review PR");
+    expect(updatedNote?.body).toContain("- [ ] Deploy to staging");
+  });
+  it("automatically updates linked note when task is toggled via useTaskStore", async () => {
+    const { store } = await harness();
+    useTaskStore.getState().setWorkspaceStore(store);
+
+    const note = createNote(store, {
+      title: "Weekly Plan",
+      body: "- [ ] Send weekly report\n",
+    });
+
+    const taskId = taskFromNote(store, note.id, "Send weekly report");
+
+    // Complete task via store action
+    useTaskStore.getState().toggleTaskStatus(taskId);
+    let updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    expect(updatedNote?.body).toContain("- [x] Send weekly report");
+
+    // Uncomplete task via store action
+    useTaskStore.getState().toggleTaskStatus(taskId);
+    updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    expect(updatedNote?.body).toContain("- [ ] Send weekly report");
+  });
+
+  it("syncs numbered checklists (1. [ ], 2. [ ]) bidirectionally", async () => {
+    const { store } = await harness();
+    const note = createNote(store, {
+      title: "Release Steps",
+      body: "1. [ ] Run migrations\n2. [ ] Health check\n",
+    });
+
+    const taskId = taskFromNote(store, note.id, "Run migrations");
+    syncLinkedTaskStatusToNote(store, taskId, true);
+
+    let updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    expect(updatedNote?.body).toContain("1. [x] Run migrations");
+    expect(updatedNote?.body).toContain("2. [ ] Health check");
+
+    syncLinkedTaskStatusToNote(store, taskId, false);
+    updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    expect(updatedNote?.body).toContain("1. [ ] Run migrations");
+  });
+
+  it("handles tasks created with leading checkbox in title (- [ ] Task)", async () => {
+    const { store } = await harness();
+    const note = createNote(store, {
+      title: "Checklist",
+      body: "- [ ] Backup DB\n",
+    });
+
+    // Excerpt includes "- [ ] Backup DB"
+    const taskId = taskFromNote(store, note.id, "- [ ] Backup DB");
+    syncLinkedTaskStatusToNote(store, taskId, true);
+
+    let updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    expect(updatedNote?.body).toContain("- [x] Backup DB");
+
+    // Toggling back to incomplete succeeds even though original title had "- [ ]"
+    syncLinkedTaskStatusToNote(store, taskId, false);
+    updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    expect(updatedNote?.body).toContain("- [ ] Backup DB");
+  });
+
+  it("modifies only exact matching line and does not corrupt substring lines", async () => {
+    const { store } = await harness();
+    const note = createNote(store, {
+      title: "Deployment Plan",
+      body: "- [ ] Deploy\n- [ ] Deploy to production\n",
+    });
+
+    const taskId = taskFromNote(store, note.id, "Deploy");
+    syncLinkedTaskStatusToNote(store, taskId, true);
+
+    const updatedNote = store.getSnapshot().record.notes?.find((n) => n.id === note.id);
+    // Only "Deploy" should be marked done, NOT "Deploy to production"
+    expect(updatedNote?.body).toContain("- [x] Deploy\n- [ ] Deploy to production");
+  });
 });
+
+
 

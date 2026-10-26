@@ -77,6 +77,7 @@ export const WorkspaceVisualPicker: React.FC<Props> = ({ isOpen, onClose, value,
     if (!file) return;
     setError(""); setUploading(true);
     try {
+      if (!file.type.startsWith("image/")) throw new Error("Choose an image file (JPG, PNG, WebP or AVIF).");
       const asset = await mediaService.importFile(file, workspaceId);
       window.dispatchEvent(new Event("flowtask:media-changed"));
       setSelectedId(asset.id); setPosition({ x: 50, y: 50 }); setShow("library"); setCategory("all");
@@ -84,7 +85,7 @@ export const WorkspaceVisualPicker: React.FC<Props> = ({ isOpen, onClose, value,
     finally { setUploading(false); }
   };
 
-  return <Dialog isOpen={isOpen} onClose={onClose} title="Choose a workspace image" description="Curated covers and your personal images stay on the surfaces where they help." size="xl" className="workspace-visual-picker" footer={<><button type="button" className="desk-button" onClick={onClose}>Cancel</button>{value && <button type="button" className="desk-button" onClick={() => { onSelect(undefined); onClose(); }}>No cover</button>}<button type="button" className="desk-button primary" disabled={!selectedId || !selectedAsset} onClick={choose}>Use image</button></>}>
+  return <Dialog isOpen={isOpen} onClose={onClose} title="Choose a workspace image" description="Curated covers and your personal images stay on the surfaces where they help." size="xl" className="workspace-visual-picker" footer={<><button type="button" className="desk-button" onClick={onClose}>Cancel</button>{(context.kind === "dashboard" || (value && value !== "none")) && <button type="button" className="desk-button" onClick={() => { onSelect(context.kind === "dashboard" ? "none" : undefined); onClose(); }}>Remove background</button>}<button type="button" className="desk-button primary" disabled={uploading || !selectedId || !selectedAsset} onClick={choose}>Use image</button></>}>
     <div className="workspace-visual-tools">
       <label className="workspace-visual-search"><Search size={16}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search images or moods" aria-label="Search workspace images"/></label>
       <button type="button" className="desk-button" disabled={uploading} onClick={() => inputRef.current?.click()}><ImagePlus size={16}/>{uploading ? "Adding image…" : "Upload image"}</button>
@@ -93,7 +94,7 @@ export const WorkspaceVisualPicker: React.FC<Props> = ({ isOpen, onClose, value,
     </div>
     {error && <p className="workspace-visual-error" role="alert">{error}</p>}
     {catalogError && <p className="workspace-visual-hint" role="status">Some built-in images are unavailable. Upload a personal image or try again when online.</p>}
-    {value && !allAssets.some(asset => asset.id === value) && <p className="workspace-visual-hint" role="status">This saved personal image is not available on this device. Choose another image to replace it.</p>}
+    {value && value !== 'none' && !loading && !allAssets.some(asset => asset.id === value) && <p className="workspace-visual-hint" role="status">This saved personal image is not available on this device. Choose another image or remove it.</p>}
     <div className="workspace-visual-filters" role="tablist" aria-label="Workspace image collections">
       <button type="button" role="tab" aria-selected={show === "library" && category === "recommended"} onClick={() => { setShow("library"); setCategory("recommended"); }}>Recommended</button>
       <button type="button" role="tab" aria-selected={show === "library" && category !== "recommended"} onClick={() => { setShow("library"); setCategory("all"); }}>All</button>

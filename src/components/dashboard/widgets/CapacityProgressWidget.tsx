@@ -1,3 +1,4 @@
+import { useTaskAvailabilityClock } from '../../../hooks/useTaskAvailabilityClock';
 import React from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import { useTodayStr } from '../../../hooks/useCurrentDate';
@@ -6,8 +7,9 @@ import { useTotalFocusedTodaySeconds } from '../../../hooks/useTotalFocusedToday
 import { formatSecondsToHumanReadable } from '../../../utils/focusTimeFormat';
 import type { WidgetComponentProps } from '../../../types/dashboard';
 export const CapacityProgressWidget: React.FC<WidgetComponentProps> = () => {
-  const { tasks, calendarEvents, settings } = useTaskContext(), today = useTodayStr(), seconds = useTotalFocusedTodaySeconds();
-  const summary = calculateDayPlanSummary({ date:today,todayStr:today,tasks,calendarEvents,settings,focusLogsSecondsToday:seconds });
+  const { tasks, projects, calendarEvents, settings } = useTaskContext(), today = useTodayStr(), seconds = useTotalFocusedTodaySeconds();
+  useTaskAvailabilityClock(tasks);
+  const summary = calculateDayPlanSummary({ date:today,todayStr:today,tasks,projects,calendarEvents,settings,focusLogsSecondsToday:seconds });
   const pct = summary.availableTaskBudgetMinutes > 0 ? Math.min(100,summary.totalDemandMinutes/summary.availableTaskBudgetMinutes*100) : summary.totalDemandMinutes ? 100 : 0;
   return <div className="desk-capacity">
     <div className="desk-capacity-values"><div><small>Room for tasks</small><strong>{formatSecondsToHumanReadable(summary.availableTaskBudgetMinutes*60)}</strong></div><div><small>Remaining work</small><strong>{formatSecondsToHumanReadable(summary.remainingTaskWorkMinutes*60)}</strong></div></div>

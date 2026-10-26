@@ -1,7 +1,9 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import type { WorkspaceRecord } from '../types/workspace';
 import { DEFAULT_PROJECTS } from '../utils/storage';
-import { validateWorkspaceData } from '../utils/workspaceValidation';
+import { validateWorkspaceData, validateAreas, validateGoals, validateRoutines, validateRoutineRuns, validateWorkBlocks, validateReviews } from '../utils/workspaceValidation';
+import { parseTimeToMinutes, minutesToTimeStr } from '../utils/timelineUtils';
+import type { WorkBlock } from '../types/task';
 import { formatLocalDate } from '../utils/nlpParser';
 import { createStarterDashboards } from './starterDashboards';
 import { validateDashboards } from '../utils/dashboardModel';
@@ -62,11 +64,13 @@ export function getDatabase() {
 }
 export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
   return {
-    schemaVersion: 9,
+    schemaVersion: 11,
     notes: [],
     areas: [],
     goals: [],
     routines: [],
+    routineRuns: [],
+    reviews: [],
     habits: [],
     workBlocks: [],
     reminders: [],
@@ -82,7 +86,7 @@ export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
   };
 }
 function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
-  if (typeof raw.schemaVersion === 'number' && raw.schemaVersion > 10) throw new Error('This workspace requires a newer FlowTask version. Export the original data before updating.');
+  if (typeof raw.schemaVersion === 'number' && raw.schemaVersion > 11) throw new Error('This workspace requires a newer FlowTask version. Export the original data before updating.');
   const data = validateWorkspaceData(raw.tasks || [], raw.projects || DEFAULT_PROJECTS);
   const date = formatLocalDate(new Date());
   const starters = createStarterDashboards();
@@ -93,25 +97,83 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
   if (!dashboards.some(d => d.isDefault) && dashboards.length > 0) {
     dashboards = dashboards.map((d, i) => i === 0 ? { ...d, isDefault: true } : d);
   }
-  return {
-    ...emptyWorkspace(id),
-    ...raw,
-    ...data,
-    dashboards,
-    workspaceId: id,
-    schemaVersion: (raw.schemaVersion === 10 ? 10 : 9),
-    notes: validateNotes(raw.notes),
-    areas: raw.areas || [],
-    goals: raw.goals || [],
-    routines: raw.routines || [],
-    habits: raw.habits || [],
-    preferences: {
-      ...raw.preferences,
-      ...(dashboardRecovery ? { _dashboardRecovery: true } : {}),
-      ...((raw.schemaVersion || 0) < 4 ? { _v4CloudSeedNeeded: true } : {}),
-      ...((raw.schemaVersion || 0) < 5 ? { _v5DashboardSeedNeeded: true } : {}),
-    },
-    tasks: data.tasks.map(t => ({
+
+  // Migrate work blocks from older single-schedule fields & embedded task.workBlocks
+  const existingWorkBlocks = validateWorkBlocks(raw.workBlocks || []);
+  const blockIds = new Set(existingWorkBlocks.map(b => b.id));
+  const migratedBlocks: WorkBlock[] = [...existingWorkBlocks];
+
+  // 1. Migrate embedded task.workBlocks
+  for (const t of data.tasks) {
+    if (Array.isArray(t.workBlocks)) {
+      for (const embedded of t.workBlocks) {
+        if (!blockIds.has(embedded.id)) {
+          const validated = validateWorkBlocks([embedded])[0];
+          if (validated) {
+            migratedBlocks.push(validated);
+            blockIds.add(embedded.id);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Migrate single schedule fields into WorkBlocks if task is not already represented
+  for (const t of data.tasks) {
+    if (t.scheduledStart && (t.plannedDate || t.dueDate)) {
+      const taskHasBlock = migratedBlocks.some(b => b.taskId === t.id);
+      if (!taskHasBlock) {
+        const targetDate = t.plannedDate || t.dueDate || date;
+        const startMin = parseTimeToMinutes(t.scheduledStart) ?? 9 * 60;
+        const explicitEnd = parseTimeToMinutes(t.scheduledEnd);
+        const duration = explicitEnd && explicitEnd > startMin ? explicitEnd - startMin : t.estimatedMinutes || 30;
+        const parsedStart = Date.parse(`${targetDate}T${t.scheduledStart}:00Z`);
+        const startInstant = Number.isFinite(parsedStart) ? parsedStart : Date.now();
+        const endInstant = startInstant + duration * 60000;
+        const newBlock: WorkBlock = {
+          id: `wb-migrated-${t.id}`,
+          taskId: t.id,
+          startInstant,
+          endInstant,
+          timezone: t.timezone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' : 'UTC'),
+          status: t.status === 'done' ? 'completed' : 'scheduled',
+          durationMinutes: duration,
+          date: targetDate,
+          startTime: t.scheduledStart,
+          endTime: t.scheduledEnd || minutesToTimeStr(startMin + duration),
+          isLocked: Boolean(t.scheduleLocked),
+          revision: 1,
+          createdAt: typeof t.createdAt === 'number' ? t.createdAt : Date.now(),
+          updatedAt: typeof t.updatedAt === 'number' ? t.updatedAt : Date.now(),
+        };
+        migratedBlocks.push(newBlock);
+        blockIds.add(newBlock.id);
+      }
+    }
+  }
+
+  const tasksWithProjections = data.tasks.map(t => {
+    const taskBlocks = migratedBlocks.filter(b => b.taskId === t.id && b.status !== 'cancelled');
+    if (taskBlocks.length > 0) {
+      const unfinished = taskBlocks.filter(b => b.status !== 'completed').sort((a, b) => a.startInstant - b.startInstant);
+      const chosen = unfinished[0] || taskBlocks.sort((a, b) => b.startInstant - a.startInstant)[0];
+      return {
+        ...t,
+        plannedDate: chosen.date || t.plannedDate,
+        scheduledStart: chosen.startTime || t.scheduledStart,
+        scheduledEnd: chosen.endTime || t.scheduledEnd,
+        isSomeday: t.isSomeday || t.projectId === 'ideas',
+        topThreeDate: t.topThreeDate || (t.isPinnedToday ? t.plannedDate || t.dueDate || date : undefined),
+        rolloverCount: t.rolloverCount,
+        lastRolledOverAt: t.lastRolledOverAt,
+        bufferMinutes: t.bufferMinutes,
+        isAutoTriaged: t.isAutoTriaged,
+        deferUntil: (t as any).deferUntil,
+        predecessorTaskId: (t as any).predecessorTaskId,
+        cognitiveLoad: (t as any).cognitiveLoad,
+      };
+    }
+    return {
       ...t,
       isSomeday: t.isSomeday || t.projectId === 'ideas',
       topThreeDate: t.topThreeDate || (t.isPinnedToday ? t.plannedDate || t.dueDate || date : undefined),
@@ -122,7 +184,31 @@ function normalize(raw: Partial<WorkspaceRecord>, id: string): WorkspaceRecord {
       deferUntil: (t as any).deferUntil,
       predecessorTaskId: (t as any).predecessorTaskId,
       cognitiveLoad: (t as any).cognitiveLoad,
-    })),
+    };
+  });
+
+  return {
+    ...emptyWorkspace(id),
+    ...raw,
+    tasks: tasksWithProjections,
+    projects: data.projects,
+    dashboards,
+    workspaceId: id,
+    schemaVersion: 11,
+    notes: validateNotes(raw.notes),
+    areas: validateAreas(raw.areas),
+    goals: validateGoals(raw.goals),
+    routines: validateRoutines(raw.routines),
+    routineRuns: validateRoutineRuns(raw.routineRuns),
+    workBlocks: migratedBlocks,
+    reviews: validateReviews(raw.reviews),
+    habits: raw.habits || [],
+    preferences: {
+      ...raw.preferences,
+      ...(dashboardRecovery ? { _dashboardRecovery: true } : {}),
+      ...((raw.schemaVersion || 0) < 4 ? { _v4CloudSeedNeeded: true } : {}),
+      ...((raw.schemaVersion || 0) < 5 ? { _v5DashboardSeedNeeded: true } : {}),
+    },
   };
 }
 export const dbService = {
@@ -160,6 +246,8 @@ export const dbService = {
           await db.put('legacy_backups', { id: `v6:${id}`, workspaceId: id, savedAt: Date.now(), record });
         }
         if ((record.schemaVersion || 0) < 8 && !await db.get('legacy_backups', `v7:${id}`)) await db.put('legacy_backups', { id: `v7:${id}`, workspaceId: id, savedAt: Date.now(), record });
+        if ((record.schemaVersion || 0) < 10 && !await db.get('legacy_backups', `v9:${id}`)) await db.put('legacy_backups', { id: `v9:${id}`, workspaceId: id, savedAt: Date.now(), record });
+        if ((record.schemaVersion || 0) < 11 && !await db.get('legacy_backups', `v10:${id}`)) await db.put('legacy_backups', { id: `v10:${id}`, workspaceId: id, savedAt: Date.now(), record });
         return normalize(record, id);
       }
     }
@@ -171,6 +259,12 @@ export const dbService = {
         const db = await getDatabase();
         if (!await db.get('legacy_backups', `v8:${id}`)) await db.put('legacy_backups', { id: `v8:${id}`, workspaceId: id, savedAt: Date.now(), record: parsed });
       } else if (!localStorage.getItem(`flowtask_pre_v9_${id}`)) localStorage.setItem(`flowtask_pre_v9_${id}`, raw);
+    }
+    if ((parsed.schemaVersion || 0) < 11) {
+      if (typeof indexedDB !== 'undefined') {
+        const db = await getDatabase();
+        if (!await db.get('legacy_backups', `v10:${id}`)) await db.put('legacy_backups', { id: `v10:${id}`, workspaceId: id, savedAt: Date.now(), record: parsed });
+      } else if (!localStorage.getItem(`flowtask_pre_v11_${id}`)) localStorage.setItem(`flowtask_pre_v11_${id}`, raw);
     }
     return normalize(parsed, id);
   },

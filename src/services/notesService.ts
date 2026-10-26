@@ -202,3 +202,86 @@ export function noteFromTaskDescription(
   return createdNoteId;
 }
 
+export function syncLinkedTaskStatusToNote(
+  store: WorkspaceStore,
+  taskId: string,
+  isDone: boolean,
+) {
+  store.run('Sync linked task to note', (record) => {
+    const task = record.tasks.find((t) => t.id === taskId);
+    if (!task) return record;
+
+    const matchingNotes = (record.notes || []).filter(
+      (n) =>
+        !n.deletedAt &&
+        (n.id === task.originNoteId ||
+          n.linkedTasks?.some((link) => link.taskId === taskId)),
+    );
+
+    if (matchingNotes.length === 0) return record;
+
+    const stripCheckboxPrefix = (str: string) =>
+      str.replace(/^(\s*(?:[-*+]|\d+[.)])?\s*)\[[ xX]\]\s*/, '').trim();
+
+    let hasChange = false;
+    const updatedNotes = (record.notes || []).map((note) => {
+      if (!matchingNotes.some((m) => m.id === note.id)) return note;
+
+      const targetExcerpt =
+        note.linkedTasks?.find((l) => l.taskId === taskId)?.excerpt || task.title;
+      const excerptFirstLine = targetExcerpt ? targetExcerpt.split('\n')[0].trim() : '';
+
+      const cleanExcerpt = stripCheckboxPrefix(excerptFirstLine);
+      const cleanTaskTitle = stripCheckboxPrefix(task.title || '');
+
+      const lines = note.body.split('\n');
+      let noteModified = false;
+
+      // Regex matches: indentation, bullet or digit marker, checkbox, and item text
+      const checkboxRegex = /^(\s*(?:[-*+]|\d+[.)])?\s*)\[([ xX])\]\s*(.*)$/;
+
+      // First check if an exact match exists among checkbox lines
+      const hasExactMatch = lines.some((line) => {
+        const m = line.match(checkboxRegex);
+        if (!m) return false;
+        const item = m[3].trim();
+        return (cleanTaskTitle && item === cleanTaskTitle) || (cleanExcerpt && item === cleanExcerpt);
+      });
+
+      const updatedLines = lines.map((line) => {
+        if (noteModified) return line;
+
+        const match = line.match(checkboxRegex);
+        if (!match) return line;
+
+        const [, prefix, checkState, itemContent] = match;
+        const currentDone = checkState === 'x' || checkState === 'X';
+        if (currentDone === isDone) return line;
+
+        const cleanItem = itemContent.trim();
+        const matches = hasExactMatch
+          ? (cleanTaskTitle && cleanItem === cleanTaskTitle) || (cleanExcerpt && cleanItem === cleanExcerpt)
+          : (cleanTaskTitle && (cleanItem === cleanTaskTitle || cleanItem.startsWith(cleanTaskTitle + ' '))) ||
+            (cleanExcerpt && (cleanItem === cleanExcerpt || cleanItem.startsWith(cleanExcerpt + ' ')));
+
+        if (!matches) return line;
+
+        noteModified = true;
+        return `${prefix}[${isDone ? 'x' : ' '}] ${itemContent}`;
+      });
+
+      if (noteModified) {
+        hasChange = true;
+        return withNoteVersion(note, { body: updatedLines.join('\n') });
+      }
+      return note;
+    });
+
+    if (!hasChange) return record;
+    return {
+      ...record,
+      notes: updatedNotes,
+    };
+  });
+}
+

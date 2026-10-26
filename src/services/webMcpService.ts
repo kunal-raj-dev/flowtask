@@ -461,18 +461,12 @@ export const createTaskTool: WebMcpToolDefinition<
       currentTasks,
       params.title.trim(),
       overrides,
-      { defaultPriority: (currentRecord.preferences.settings as UserWorkflowSettings | undefined)?.defaultTaskPriority || DEFAULT_WORKFLOW_SETTINGS.defaultTaskPriority, enableParsing: (currentRecord.preferences.settings as UserWorkflowSettings | undefined)?.enableSmartSyntaxParsing },
+      {
+        defaultPriority: (currentRecord.preferences.settings as UserWorkflowSettings | undefined)?.defaultTaskPriority || DEFAULT_WORKFLOW_SETTINGS.defaultTaskPriority,
+        enableParsing: (currentRecord.preferences.settings as UserWorkflowSettings | undefined)?.enableSmartSyntaxParsing,
+        projects: currentRecord.projects,
+      },
     );
-
-    if (currentRecord.projects && currentRecord.projects.length > 0) {
-      if (
-        !currentRecord.projects.some(
-          (p) => p.id === result.createdTask.projectId,
-        )
-      ) {
-        result.createdTask.projectId = "inbox";
-      }
-    }
 
     store.run(result.description, (record) => ({
       ...record,
@@ -540,12 +534,14 @@ export const updateTaskTool: WebMcpToolDefinition<
       }
     }
 
-    const updatedTask: Task = { ...task, ...updates, updatedAt: Date.now() };
+    const result = commandService.updateTask(currentTasks, params.taskId, updates);
 
-    store.run(`Update task "${updatedTask.title}"`, (record) => ({
+    store.run(result.description, (record) => ({
       ...record,
-      tasks: record.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      tasks: result.updatedTasks,
     }));
+
+    const updatedTask = result.updatedTasks.find((t) => t.id === params.taskId)!;
 
     return {
       success: true,
@@ -580,20 +576,22 @@ export const completeTaskTool: WebMcpToolDefinition<
     }
 
     const targetDone = params.completed !== undefined ? params.completed : task.status !== "done";
-    const updatedTask: Task = {
-      ...task,
-      status: targetDone ? "done" : "todo",
-      completedAt: targetDone ? Date.now() : undefined,
-      updatedAt: Date.now(),
-    };
 
-    store.run(
-      targetDone ? `Complete task "${task.title}"` : `Reopen task "${task.title}"`,
-      (record) => ({
-        ...record,
-        tasks: record.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
-      }),
-    );
+    if ((task.status === "done") === targetDone) {
+      return {
+        success: true,
+        task,
+      };
+    }
+
+    const result = commandService.toggleTaskStatus(currentTasks, params.taskId);
+
+    store.run(result.description, (record) => ({
+      ...record,
+      tasks: result.updatedTasks,
+    }));
+
+    const updatedTask = result.updatedTasks.find((t) => t.id === params.taskId)!;
 
     return {
       success: true,
@@ -696,8 +694,8 @@ export const listTodayTasksTool: WebMcpToolDefinition<
       );
     }
 
-    const todayActive = relevantTasks.filter((t) => isTodayTask(t, todayStr));
-    const topThree = todayActive.filter((t) => isFocusTask(t, todayStr));
+    const todayActive = relevantTasks.filter((t) => isTodayTask(t, todayStr, { tasks: currentTasks, projects: store.getSnapshot().record.projects }));
+    const topThree = todayActive.filter((t) => isFocusTask(t, todayStr, { tasks: currentTasks, projects: store.getSnapshot().record.projects }));
     const daytime = todayActive.filter((t) => !isFocusTask(t, todayStr));
 
     let completed: Task[] = [];
@@ -853,19 +851,19 @@ export const scheduleTimelineBlockTool: WebMcpToolDefinition<
     const scheduledEnd = formatMin(snappedEndMin);
     const plannedDate = params.date || task.plannedDate || formatLocalDate(new Date());
 
-    const updatedTask: Task = {
-      ...task,
-      plannedDate,
-      scheduledStart,
-      scheduledEnd,
-      isSomeday: false,
-      updatedAt: Date.now(),
-    };
+    const result = commandService.scheduleTask(tasks, task.id, {
+      date: plannedDate,
+      startTime: scheduledStart,
+      endTime: scheduledEnd,
+      durationMinutes: duration,
+    });
 
-    store.run(`Schedule task "${task.title}" at ${scheduledStart}`, (record) => ({
+    store.run(result.description, (record) => ({
       ...record,
-      tasks: record.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      tasks: result.updatedTasks,
     }));
+
+    const updatedTask = result.updatedTasks.find((t) => t.id === task.id) || task;
 
     return {
       success: true,
@@ -914,7 +912,7 @@ export const getDailySummaryTool: WebMcpToolDefinition<
     );
 
     const completed = dayTasks.filter((t) => t.status === "done" && completedOn(t, dateStr));
-    const topThree = dayTasks.filter((t) => isFocusTask(t, dateStr));
+    const topThree = dayTasks.filter((t) => isFocusTask(t, dateStr, { tasks, projects: record.projects }));
     const topThreeDone = topThree.filter((t) => t.status === "done");
 
     const totalPlannedMinutes = dayTasks.reduce(
@@ -991,17 +989,22 @@ export const decomposeTaskTool: WebMcpToolDefinition<
         estimatedMinutes: s.estimatedMinutes,
       }));
 
-      updatedTask = {
-        ...matchedTask,
-        subtasks: [...(matchedTask.subtasks || []), ...generatedSubtasks],
-        nextAction: starterStep,
-        updatedAt: Date.now(),
-      };
+      const newSubtasks = [...(matchedTask.subtasks || []), ...generatedSubtasks];
+      const result = commandService.updateTask(
+        store.getSnapshot().record.tasks,
+        matchedTask.id,
+        {
+          subtasks: newSubtasks,
+          nextAction: starterStep,
+        }
+      );
 
-      store.run(`Decompose task "${matchedTask.title}"`, (record) => ({
+      store.run(result.description, (record) => ({
         ...record,
-        tasks: record.tasks.map((t) => (t.id === updatedTask!.id ? updatedTask! : t)),
+        tasks: result.updatedTasks,
       }));
+
+      updatedTask = result.updatedTasks.find((t) => t.id === matchedTask!.id);
     }
 
     return {
@@ -1036,7 +1039,7 @@ export const getWorkspaceStatusTool: WebMcpToolDefinition<
     const activeTasks = tasks.filter((t) => isActiveTask(t));
     const activeTasksCount = activeTasks.length;
     const todayTasksCount = tasks.filter((t) =>
-      isTodayTask(t, todayStr),
+      isTodayTask(t, todayStr, { tasks, projects: record.projects }),
     ).length;
 
     const overdueCount = tasks.filter((t) => {
@@ -1153,11 +1156,49 @@ export function registerWebMcpTools(
   }
 
   const call = async (name: string, args: unknown) => {
-    if (activeRegistration !== registration || options?.signal?.aborted)
+    if (activeRegistration !== registration || options?.signal?.aborted) {
       throw new Error(
         "These assistant tools are no longer connected to this workspace.",
       );
-    return executeWebMcpTool(name, args);
+    }
+
+    if (options?.signal) {
+      return new Promise((resolve, reject) => {
+        const onAbort = () => {
+          reject(
+            new Error(
+              "These assistant tools are no longer connected to this workspace.",
+            ),
+          );
+        };
+        options.signal!.addEventListener("abort", onAbort, { once: true });
+
+        Promise.resolve(executeWebMcpTool(name, args))
+          .then((res) => {
+            if (activeRegistration !== registration || options.signal!.aborted) {
+              reject(
+                new Error(
+                  "These assistant tools are no longer connected to this workspace.",
+                ),
+              );
+            } else {
+              resolve(res);
+            }
+          })
+          .catch(reject)
+          .finally(() => {
+            options.signal?.removeEventListener("abort", onAbort);
+          });
+      });
+    }
+
+    const result = await executeWebMcpTool(name, args);
+    if (activeRegistration !== registration) {
+      throw new Error(
+        "These assistant tools are no longer connected to this workspace.",
+      );
+    }
+    return result;
   };
 
   const bridge: GlobalWebMcpBridge = {

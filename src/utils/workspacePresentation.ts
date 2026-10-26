@@ -15,5 +15,14 @@ export function normalizePresentation(
     /^[^/\s]{1,200}$/.test(value.dailyDeskId)
       ? { dailyDeskId: value.dailyDeskId }
       : {}),
+    ...(typeof value.intensity === "number" &&
+    Number.isFinite(value.intensity) &&
+    value.intensity >= 0 &&
+    value.intensity <= 1
+      ? { intensity: value.intensity }
+      : {}),
+    ...(typeof value.plainBackground === "boolean"
+      ? { plainBackground: value.plainBackground }
+      : {}),
   };
 }

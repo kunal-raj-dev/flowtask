@@ -148,7 +148,7 @@ export const DEFAULT_STUDIO: StudioPreferences = {
   shuffleAtBoundary: false,
   continueAudioOnFinish: false,
   breakPrompts: true,
-  timerStyle: "digital",
+  timerStyle: "ring",
   nextAction: "",
 };
 

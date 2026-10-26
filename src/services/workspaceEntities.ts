@@ -1,5 +1,6 @@
 import { normalizeAppearance } from '../utils/appearance';
 import { validateNotes } from '../utils/noteModel';
+import { validateAreas, validateGoals, validateRoutines, validateRoutineRuns, validateWorkBlocks, validateReviews } from '../utils/workspaceValidation';
 import type {
   WorkspaceRecord,
   SyncCollection,
@@ -11,6 +12,7 @@ import type { FocusLog } from "../types/task";
 import type { FocusRecipe } from "../types/studio";
 import { normalizeDashboard } from '../utils/dashboardModel';
 import { normalizePresentation } from '../utils/workspacePresentation';
+import { normalizeStudyTemplates } from '../utils/studyTemplates';
 
 export const SYNC_COLLECTIONS: SyncCollection[] = [
   "tasks",
@@ -20,6 +22,12 @@ export const SYNC_COLLECTIONS: SyncCollection[] = [
   "recipes",
   "preferences",
   "notes",
+  "areas",
+  "goals",
+  "routines",
+  "routineRuns",
+  "workBlocks",
+  "reviews",
 ];
 export const SYNC_PREFERENCE_KEYS = [
   "settings",
@@ -34,9 +42,9 @@ export const SYNC_PREFERENCE_KEYS = [
 export function safePreference(key: string, value: unknown): unknown {
   if (key === 'appearance') return normalizeAppearance(value);
   if (key === 'workspace' && value && typeof value === 'object') {
-    const { pinnedDestinations, viewDisplaySettings, defaultDashboardId, showCovers, presentation } = value as Record<string, unknown>;
+    const { pinnedDestinations, viewDisplaySettings, defaultDashboardId, showCovers, presentation, studyTemplates } = value as Record<string, unknown>;
     const safePresentation = normalizePresentation(presentation);
-    return { ...(pinnedDestinations ? { pinnedDestinations } : {}), ...(viewDisplaySettings ? { viewDisplaySettings } : {}), ...(defaultDashboardId ? { defaultDashboardId } : {}), ...(typeof showCovers === 'boolean' ? { showCovers } : {}), ...(safePresentation ? { presentation: safePresentation } : {}) };
+    return { ...(pinnedDestinations ? { pinnedDestinations } : {}), ...(viewDisplaySettings ? { viewDisplaySettings } : {}), ...(defaultDashboardId ? { defaultDashboardId } : {}), ...(typeof showCovers === 'boolean' ? { showCovers } : {}), ...(safePresentation ? { presentation: safePresentation } : {}), ...(studyTemplates !== undefined ? { studyTemplates: normalizeStudyTemplates(studyTemplates) } : {}) };
   }
   if (key !== "studio" || !value || typeof value !== "object") return value;
   const {
@@ -68,7 +76,7 @@ export function workspaceEntities(
   record: WorkspaceRecord,
   collection: SyncCollection,
 ): SyncedEntity[] {
-  if (collection === "tasks" || collection === "projects" || collection === "notes")
+  if (collection === "tasks" || collection === "projects" || collection === "notes" || collection === "areas" || collection === "goals" || collection === "routines" || collection === "routineRuns" || collection === "workBlocks" || collection === "reviews")
     return record[collection] || [];
   if (collection === "dashboards")
     return (record.dashboards || []).map(d => { const { sm: _mobile, ...layouts } = d.layouts; return { ...d, layouts }; });
@@ -108,6 +116,12 @@ export function replaceEntities(
   values: SyncedEntity[],
 ): WorkspaceRecord {
   if (collection === 'notes') return { ...record, notes: validateNotes(values) };
+  if (collection === 'areas') return { ...record, areas: validateAreas(values) };
+  if (collection === 'goals') return { ...record, goals: validateGoals(values) };
+  if (collection === 'routines') return { ...record, routines: validateRoutines(values) };
+  if (collection === 'routineRuns') return { ...record, routineRuns: validateRoutineRuns(values) };
+  if (collection === 'workBlocks') return { ...record, workBlocks: validateWorkBlocks(values) };
+  if (collection === 'reviews') return { ...record, reviews: validateReviews(values) };
   if (collection === "tasks")
     return { ...record, tasks: values as WorkspaceRecord["tasks"] };
   if (collection === "projects")

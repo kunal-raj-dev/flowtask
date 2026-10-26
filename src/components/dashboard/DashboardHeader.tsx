@@ -24,6 +24,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
   const { activeDashboard, dashboards, isEditing } = props;
   const media = useMediaCatalog();
   const cover = media.visuals.find(scene => scene.id === activeDashboard.coverImage);
+  const hasCover = !!activeDashboard.coverImage && activeDashboard.coverImage !== 'none';
   const [failedCover, setFailedCover] = useState<string | null>(null);
   const [open, setOpen] = useState(false), [visualPickerOpen, setVisualPickerOpen] = useState(false), [renaming, setRenaming] = useState<string | null>(null), [name, setName] = useState('');
   const today = useTodayStr();
@@ -31,7 +32,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
   const formatted = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(date);
   return <>
     {cover && failedCover !== cover.id && <img className="desk-dashboard-cover" src={cover.poster || cover.src} alt="" width={cover.width || 1200} height={cover.height || 600} style={{ objectPosition: `${activeDashboard.coverFocalPoint?.x ?? cover.focalPoint?.x ?? 50}% ${activeDashboard.coverFocalPoint?.y ?? cover.focalPoint?.y ?? 50}%` }} onError={() => setFailedCover(cover.id)} />}
-    {activeDashboard.coverImage && ((!cover && !media.loading) || failedCover === cover?.id) && <div className="desk-dashboard-cover-missing" role="status"><span>Your saved desk image is unavailable on this device.</span><button type="button" className="desk-button" onClick={() => setVisualPickerOpen(true)}>Choose replacement</button></div>}
+    {hasCover && ((!cover && !media.loading) || failedCover === cover?.id) && <div className="desk-dashboard-cover-missing" role="status"><span>Your saved desk image is unavailable on this device.</span><button type="button" className="desk-button" onClick={() => setVisualPickerOpen(true)}>Choose replacement</button></div>}
     <header className="desk-page-header">
       <div>
         <p className="desk-eyebrow">{formatted}</p>
@@ -51,7 +52,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = props => {
           <button className="desk-icon-button danger" aria-label={'Delete ' + desk.name} disabled={dashboards.length <= 1} onClick={() => { props.onDeleteDashboard(desk.id); setOpen(false); }}><Trash2 size={15}/></button></div>
       </div>)}</div>
       <div className="desk-manager-tools"><button className="desk-button" onClick={() => { setOpen(false); props.onToggleEdit(); }}>Edit workspace</button><button className="desk-button" disabled={dashboards.length >= 20} onClick={() => { props.onCreateDashboard(); setOpen(false); }}><Plus size={16}/>Create New Dashboard</button><button className="desk-button" onClick={() => { props.onExport?.(); }}><Download size={16}/>Export layout</button><button className="desk-button" disabled={dashboards.length >= 20} onClick={() => { props.onImport?.(); setOpen(false); }}><Upload size={16}/>Import layout</button></div>
-      <div className="desk-cover-select"><span>Background for {activeDashboard.name}</span>{activeDashboard.coverImage && !cover && !media.loading && <small role="status">Saved personal image is unavailable on this device.</small>}<button type="button" className="desk-button" onClick={() => { setOpen(false); setVisualPickerOpen(true); }}>{cover ? 'Change image' : activeDashboard.coverImage ? 'Choose replacement' : 'Choose an image'}</button></div>
+      <div className="desk-cover-select"><span>Background for {activeDashboard.name}</span>{hasCover && !cover && !media.loading && <small role="status">Saved personal image is unavailable on this device.</small>}<button type="button" className="desk-button" onClick={() => { setOpen(false); setVisualPickerOpen(true); }}>{cover ? 'Change image' : hasCover ? 'Choose replacement' : 'Choose an image'}</button></div>
       <div className="desk-template-heading"><LayoutTemplate size={17}/><h3>Start with a little structure</h3></div><p className="desk-muted">Preview a starter on your current desk. Save to apply it, or Cancel to keep your layout.</p>
       <div className="desk-template-grid">{STARTER_DASHBOARDS.map(starter => {
         const layout = starter.layouts.lg;

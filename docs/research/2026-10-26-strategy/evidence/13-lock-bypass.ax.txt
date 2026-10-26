@@ -1,0 +1,267 @@
+- link "Skip to main content":
+  - /url: "#main-content"
+- complementary "Desktop navigation":
+  - button "FlowTask — Return to Today":
+    - generic: FlowTask
+  - button "Multi-line Brain Dump":
+  - button "Collapse Sidebar ([)":
+  - generic: Workspace
+  - button "Today 2":
+    - generic: Today
+    - generic: "2"
+  - button "Inbox 1":
+    - generic: Inbox
+    - generic: "1"
+  - button "Calendar & Plan":
+    - generic: Calendar & Plan
+  - button "Projects 2":
+    - generic: Projects
+    - generic: "2"
+  - button "Notes":
+    - generic: Notes
+  - button "Focus Studio A place for your best work":
+    - text: Focus Studio
+    - generic: A place for your best work
+  - generic: Life Architecture
+  - button "Life Areas":
+    - generic: Life Areas
+  - button "Vision & Goals":
+    - generic: Vision & Goals
+  - button "Routines":
+    - generic: Routines
+  - generic "More"
+  - button "Upcoming":
+    - generic: Upcoming
+  - button "Study Hub":
+    - generic: Study Hub
+  - button "Review":
+    - generic: Review
+  - button "All Tasks 3":
+    - generic: All Tasks
+    - generic: "3"
+  - button "Someday":
+    - generic: Someday
+  - button "Archive":
+    - generic: Archive
+  - button "Trash":
+    - generic: Trash
+  - generic: Smart Views
+  - button "Create Smart Filter View":
+  - button "Expand Smart Views":
+  - generic: Projects (2)
+  - button "Add Project":
+  - button "Collapse Projects":
+  - button "Work":
+    - generic: Work
+  - button "Personal 1":
+    - generic: Personal
+    - generic: "1"
+  - button "Customize appearance":
+    - text: Appearance
+  - link "Visit welcome page":
+    - /url: /
+    - text: Visit welcome page
+  - button "Sticky Scratchpad":
+    - generic: Quick Notes
+    - generic: Alt+N
+  - button "Preferences and Settings":
+    - generic: Settings
+    - generic: Ctrl+,
+- main:
+  - button "Toggle Sidebar ([)" [expanded]:
+  - generic: FlowTask
+  - generic: /
+  - generic: Today
+  - button "Search and commands":
+    - generic: Search everything
+    - generic: Ctrl K
+  - button "Open Quick-Capture HUD (Alt+Space)":
+  - button "Mute audio earcons":
+  - button "Open Copilot Omnibar":
+  - button "Focus":
+    - text: Focus
+  - button "New Task":
+    - generic: New task
+  - button "Saved on this device. Account and backup options":
+    - generic: On this device
+  - generic: Modular Dashboard Canvas
+  - button "Back to Horizon Daily Flow":
+    - generic: Back to Horizon Daily Flow
+  - paragraph: Monday, October 26
+  - heading "Today." [level=1]
+  - button "Switch dashboard":
+    - generic: Daily Desk
+  - paragraph: Your priorities, with room to breathe.
+  - button "Customize":
+    - generic: Customize
+  - button "Plan my day":
+    - text: Plan my day
+  - button "Import dashboard file"
+  - region "Top 3 Priorities":
+    - heading "Top 3 Priorities" [level=2]
+    - generic: Make it count
+    - generic "Priority 1": "01"
+    - checkbox "Mark as complete":
+    - button "AUDIT — Draft project proposal"
+    - paragraph:
+      - generic: Open outline and write the first paragraph
+    - button "P3":
+      - text: P3
+    - text: 30m
+    - generic "Schedule locked":
+      - text: Locked
+    - button "Focus on AUDIT — Draft project proposal":
+      - generic: Focus
+    - button "More actions for AUDIT — Draft project proposal":
+    - paragraph: 2 spaces left. Leave room for what matters.
+  - region "Today's Tasks":
+    - heading "Today's Tasks" [level=2]
+    - textbox "Add a task to this list":
+      - /placeholder: What needs your attention today?
+    - button "Add task" [disabled]: ↵
+    - checkbox "Mark as complete":
+    - button "AUDIT — Read chapter"
+    - generic: Personal
+    - button "P1":
+      - text: P1
+    - button "Due Oct 27"
+    - text: 45m
+    - button "Pin to Top 3":
+    - button "Start live stopwatch":
+    - button "Focus on AUDIT — Read chapter":
+    - button "Break down AUDIT — Read chapter":
+    - button "More actions for AUDIT — Read chapter":
+  - region "Continue Study":
+    - heading "Continue Study" [level=2]
+    - paragraph: No active study sprints
+    - paragraph: Parse a study log or set up pacing targets to sprint through practice problems.
+    - button "Go to Study Hub"
+  - region "Day Agenda":
+    - heading "Day Agenda" [level=2]
+    - paragraph:
+      - generic: Up next
+      - text: AUDIT — Read chapter
+    - list:
+      - time:
+        - text: 08:00
+        - generic: 11:00
+      - button "AUDIT — Draft project proposal Task":
+        - text: AUDIT — Draft project proposal
+        - generic: Task
+      - time:
+        - text: 14:30
+        - generic: 17:30
+      - button "AUDIT — Read chapter Task":
+        - text: AUDIT — Read chapter
+        - generic: Task
+    - button "Open day plan":
+      - text: Open day plan
+  - region "Quick Notes":
+    - heading "Quick Notes" [level=2]
+    - group "Note source":
+      - button "Scratchpad" [pressed]
+      - button "Daily Note"
+      - button "Task notes"
+    - button "Copy notes":
+    - textbox "Workspace scratchpad":
+      - /placeholder: A thought, a reminder, a place to pick up later…
+    - paragraph: Saved on this device · Select text to create a task
+- dialog "Task Details":
+  - button "Mark as complete"
+  - generic: Active Task
+  - button "Unpin from Top 3 Focus":
+  - button "Move to This Evening":
+  - button "Start Focus Timer":
+  - button "More task actions":
+  - button "Close task details":
+  - textbox "Task title":
+    - /placeholder: Task title...
+    - text: AUDIT — Draft project proposal
+  - text: Next small action
+  - textbox "Next small action":
+    - /placeholder: Make starting a little easier
+    - text: Open outline and write the first paragraph
+  - generic "Time blocking"
+  - checkbox "Lock this task's scheduled time" [checked]
+  - text: Lock this task's scheduled time
+  - generic "Time spent with this task"
+  - text: Project
+  - combobox "Assign to project":
+    - option "Inbox" [selected]
+    - option "Work"
+    - option "Personal"
+  - text: Priority
+  - combobox "Set priority":
+    - option "P1 Urgent"
+    - option "P2 High"
+    - option "P3 Medium" [selected]
+    - option "P4 Normal / Low"
+  - text: Planned Date
+  - button "Clear"
+  - textbox "Planned date": 2026-10-26
+  - button "Today"
+  - button "Tomorrow"
+  - text: Life Area
+  - combobox "Assign to Life Area":
+    - option "No Life Area" [selected]
+    - option "briefcase Work"
+    - option "home Home"
+    - option "heart Health"
+    - option "book Learning"
+    - option "user Personal"
+  - text: Vision Goal
+  - combobox "Link to Vision Goal":
+    - option "No Linked Goal" [selected]
+  - text: Defer Until (Tickler)
+  - textbox "Defer until date"
+  - paragraph: Hides task from Today until this date arrives.
+  - checkbox "Life Admin Task Low cognitive friction (errands, emails, billing)"
+  - text: Life Admin Task
+  - paragraph: Low cognitive friction (errands, emails, billing)
+  - paragraph: Stuck or feeling friction?
+  - paragraph: Diagnose why, start "Just 10 Mins", or break into micro-steps.
+  - button "Break Down":
+    - generic: Break Down
+  - text: Deadline
+  - textbox "Due date"
+  - button "Today"
+  - button "Tomorrow"
+  - generic: Session & Timeline Schedule
+  - generic: 🎯 Session 2
+  - button "Edit Session":
+    - generic: Edit Session
+  - button "Remove Session":
+    - generic: Remove Session
+  - generic: "Calendar block:"
+  - generic: 08:00 – 11:00
+  - generic: 3h (180m)
+  - button "Change"
+  - text: "Workload estimate:"
+  - strong: None
+  - generic: Task Reminders & Alerts
+  - button "+ Add Reminder":
+    - generic: + Add Reminder
+  - button "Enable browser notification alerts":
+    - text: Enable browser notification alerts
+  - generic: Subtasks
+  - button "Find a 5-minute start":
+    - generic: Find a 5-minute start
+  - button "Suggest steps":
+    - generic: Suggest steps
+  - textbox "Add subtask":
+    - /placeholder: Add subtask...
+  - spinbutton "Subtask estimate in minutes"
+  - button "Add subtask" [disabled]:
+  - generic: Notes & Description
+  - button "Preview":
+    - generic: Preview
+  - textbox "Task notes and description":
+    - /placeholder: "Add details, links, checklists (- [ ]), or code (`code`)..."
+  - generic "Repeat and schedule"
+  - generic "Dependencies and related tasks"
+  - generic "Tags and context"
+  - generic "Study tools"
+  - 'button "Study Session Metadata Session #2"':
+    - generic: Study Session Metadata
+    - generic: "Session #2"
+  - generic "Activity and history"

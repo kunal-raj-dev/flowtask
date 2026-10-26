@@ -1,3 +1,4 @@
+import { openWorkspaceCustomization } from './helpers/workspaceActions';
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import path from 'node:path';
@@ -42,7 +43,7 @@ test('populated desktop desk supports capture, shared task actions, agenda and a
 
 test('layout editing isolates task actions, supports accessible moves, undo and save after mobile preview',async({page})=>{
   await page.setViewportSize({width:1440,height:1000}); await seed(page);
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await expect(page.locator('.widget-body').first()).toHaveAttribute('inert','');
   const before=(await workspace(page)).dashboards[0];
@@ -63,7 +64,7 @@ test('layout editing isolates task actions, supports accessible moves, undo and 
 
 test('unfinished layout recovers after navigation without changing the saved dashboard',async({page})=>{
   await seed(page); const count=(await workspace(page)).dashboards[0].widgets.length;
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await page.getByRole('button',{name:'Remove Continue Study',exact:true}).click();
   await page.getByRole('button',{name:'Inbox',exact:true}).click();
@@ -110,7 +111,7 @@ for(const width of [360,390,768]) test(`workspace at ${width}px remains readable
   await page.setViewportSize({width,height:900}); await seed(page);
   await expect(page.getByRole('heading',{name:'Today.',exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   await page.getByRole('button',{name:'Move Top 3 Priorities later',exact:true}).click();
   await page.getByRole('button',{name:'Undo layout change',exact:true}).click();
@@ -168,7 +169,7 @@ test('large workspace keeps task rendering bounded and keyboard navigation reach
   for(let i=0;i<45;i++) await page.keyboard.press('j');
   await expect(page.locator('[data-keyboard-focused="true"]')).toBeVisible();
   await expect(page.locator('[data-keyboard-focused="true"]')).toBeInViewport();
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
   for(const name of ['Projects','Recent Activity','Weekly Workload','Resources','Quiet Scene & Clock','Focus Launchpad','Capacity & Progress']) {
     await page.getByRole('button',{name:'Add Widget',exact:true}).click();

@@ -14,6 +14,8 @@ The current production-readiness candidate adds account-scoped recovery, explici
 
 For interrupted work, the [implementation checkpoint](docs/IMPLEMENTATION_STATUS.md) records milestone coverage, the latest fixes and the remaining release gates.
 
+The [ecosystem upgrade checkpoint](docs/ECOSYSTEM_IMPLEMENTATION_STATUS.md) records the first correctness and daily-workflow increment on top of the Antigravity upgrades, its verification evidence and the remaining phased work.
+
 Today supports a full-area, theme-tinted background across both daily and modular views. The local Copilot offers editable task breakdowns, scheduling previews, task-linked focus and daily summaries. See [responsive workspace and Copilot behavior](docs/WORKSPACE_RESPONSIVE_COPILOT.md) for supported commands and verification details.
 
 ## Run locally

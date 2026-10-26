@@ -1,0 +1,215 @@
+{
+  "capturedAt": "2026-10-25T12:31:26.528Z",
+  "method": "Public unauthenticated vendor pages; no app account; screenshots temporary, not republished.",
+  "results": [
+    {
+      "name": "sunsama",
+      "url": "https://www.sunsama.com/",
+      "finalUrl": "https://www.sunsama.com/",
+      "screenshot": "C:\\Users\\kunal\\AppData\\Local\\Temp\\flowtask-ecosystem-ui-2026-10-25\\sunsama.png",
+      "title": "Sunsama - Make work-life balance a reality.",
+      "images": [
+        {
+          "alt": "",
+          "src": "https://pub-f7ae218077e542729e28e6f8f45a9a40.r2.dev/images/687719c4ef59a8616e4cf0fa_Ellipse-24.svg",
+          "width": 1163,
+          "height": 938
+        },
+        {
+          "alt": "Screenshot of the Sunsama productivity app Home view, with a left sidebar for Daily and Weekly planning, two central columns of task cards for Monday and Tuesday, and a right-hand vertical calendar showing color-coded events such as Morning routine, Product demo with Jenn, Lunch, and Review prototype of new feature.",
+          "src": "https://pub-f7ae218077e542729e28e6f8f45a9a40.r2.dev/images/689dccdcc5a4dd323c07127c_Main%20container.svg",
+          "width": 759,
+          "height": 554
+        }
+      ]
+    },
+    {
+      "name": "akiflow",
+      "url": "https://akiflow.com/",
+      "finalUrl": "https://akiflow.com/",
+      "screenshot": "C:\\Users\\kunal\\AppData\\Local\\Temp\\flowtask-ecosystem-ui-2026-10-25\\akiflow.png",
+      "title": "Akiflow | Time-Blocking Digital Planner & Calendar",
+      "images": [
+        {
+          "alt": "The Akiflow app integrating tasks from multiple tools into the Universal Inbox, displayed next to the One Calendar, that displays multiple calendars in one view",
+          "src": "https://framerusercontent.com/images/eE3zfnbwzc9vnhCbcsfkdWQG4v8.png?scale-down-to=2048&width=2384&height=1144",
+          "width": 1240,
+          "height": 595
+        },
+        {
+          "alt": "Akiflow Nuances",
+          "src": "https://framerusercontent.com/images/TcEjN9yvArasyJUlP83Nu8VFn4.png?width=647&height=480",
+          "width": 1123,
+          "height": 833
+        },
+        {
+          "alt": "Akiflow Nuances",
+          "src": "https://framerusercontent.com/images/TcEjN9yvArasyJUlP83Nu8VFn4.png?width=647&height=480",
+          "width": 700,
+          "height": 519
+        },
+        {
+          "alt": "Akiflow Nuances",
+          "src": "https://framerusercontent.com/images/TcEjN9yvArasyJUlP83Nu8VFn4.png?width=647&height=480",
+          "width": 961,
+          "height": 713
+        },
+        {
+          "alt": "Akiflow",
+          "src": "https://framerusercontent.com/images/7G3sv6o5B6kFI5yhuhQhasXa4.png?scale-down-to=1024&width=1240&height=1288",
+          "width": 837,
+          "height": 869
+        }
+      ]
+    },
+    {
+      "name": "tiimo",
+      "url": "https://www.tiimoapp.com/",
+      "finalUrl": "https://www.tiimoapp.com/",
+      "screenshot": "C:\\Users\\kunal\\AppData\\Local\\Temp\\flowtask-ecosystem-ui-2026-10-25\\tiimo.png",
+      "title": "Visual Planner for Every Neurotype | Tiimo",
+      "images": [
+        {
+          "alt": "",
+          "src": "https://cdn.prod.website-files.com/64786b619e5c33d650d5499e/6aa8ff8d8be80a8156c123a2_tiimo-app-icon-ios27.png",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "alt": "Tiimo app interface displaying Todo list called Japan Trip with subtasks like Sunglasses, City Map, etc; a Schedule for Wednesday with tasks like Pay my bills, etc; A focus timer for a task called Do Laundry; AI Co-planner screen; and the Trophies page.",
+          "src": "https://cdn.prod.website-files.com/64786b619e5c33d650d5499e/6a2675589e3530f027664648_eb5b57b6c6f9687f39599ac939501563_wwdc26_front_website-p-1600.png",
+          "width": 1440,
+          "height": 761
+        },
+        {
+          "alt": "Tiimo focus timer screen showing a laundry task countdown with progress ring, checklist steps like separating colors and starting wash cycle, designed to keep users focused and moving through routines.",
+          "src": "https://cdn.prod.website-files.com/64786b619e5c33d650d5499e/68af0bde58edac8686f4a97e_300bf37c74e11348a3a5467ab6620b22_focus%20%281%29.png",
+          "width": 1275,
+          "height": 1873
+        },
+        {
+          "alt": "Tiimo daily planner app showing a structured schedule with tasks like paying bills, morning routine with shower and breakfast, biking to work, and lunch, helping users organize their day with clear routines.",
+          "src": "https://cdn.prod.website-files.com/64786b619e5c33d650d5499e/68af49fd00d2d66c4043df3b_a7cb189af8ed5519c1e13132a39a9a37_tiimoapp_visual_plan_routine.png",
+          "width": 1275,
+          "height": 1873
+        },
+        {
+          "alt": "Tiimo planner customization screen on light background showing a grid of activity icons such as yoga, cooking, laundry, biking, bathing, reading, cleaning, exercising, and sleep, used to personalize tasks and routines.",
+          "src": "https://cdn.prod.website-files.com/64786b619e5c33d650d5499e/68b1ac4e61106fce812252d3_e6ffe9f73d05ed3bef27b8e26afc5e52_makeityours-light-1-3.png",
+          "width": 1275,
+          "height": 1873
+        },
+        {
+          "alt": "Tiimo iOS home screen widgets showing to-do list with tasks like call mom, yoga, and refill meds, plus a laundry timer and focus countdown, designed to keep daily schedule visible and accessible with one tap.",
+          "src": "https://cdn.prod.website-files.com/64786b619e5c33d650d5499e/68afffbc70c5b5cf691b7d3d_5e0dbdb2350d441d9a6a3fb9d30e2b28_widgets.png",
+          "width": 1275,
+          "height": 1873
+        },
+        {
+          "alt": "",
+          "src": "https://cdn.prod.website-files.com/64786b619e5c33d650d5499e/693195e41187ff0ebc0eb432_Mel_Hel_Winner_1x1-p-1600.jpg",
+          "width": 1440,
+          "height": 1440
+        }
+      ],
+      "inspectedAsset": "https://cdn.prod.website-files.com/64786b619e5c33d650d5499e/6a2675589e3530f027664648_eb5b57b6c6f9687f39599ac939501563_wwdc26_front_website-p-1600.png"
+    },
+    {
+      "name": "goblin",
+      "url": "https://goblin.tools/Todo",
+      "finalUrl": "https://goblin.tools/Todo",
+      "screenshot": "C:\\Users\\kunal\\AppData\\Local\\Temp\\flowtask-ecosystem-ui-2026-10-25\\goblin.png",
+      "title": "Magic ToDo - Goblin Tools",
+      "images": []
+    },
+    {
+      "name": "things",
+      "url": "https://culturedcode.com/things/features/",
+      "finalUrl": "https://culturedcode.com/things/features/",
+      "screenshot": "C:\\Users\\kunal\\AppData\\Local\\Temp\\flowtask-ecosystem-ui-2026-10-25\\things.png",
+      "title": "What’s New in the all-new Things. Your to-do list for Mac & iOS",
+      "images": [
+        {
+          "alt": "Screenshots of Things running on Mac, iPhone, iPad, and Apple Watch",
+          "src": "https://culturedcode.com/things/2022-07-21/images/whatsnew-collage-io60.png",
+          "width": 2000,
+          "height": 2000
+        },
+        {
+          "alt": "Today and This Evening",
+          "src": "https://static.culturedcode.com/things/videos/2017-05-18-website-videos/2-today-mac.png",
+          "width": 1000,
+          "height": 1500
+        },
+        {
+          "alt": "Heading",
+          "src": "https://static.culturedcode.com/things/videos/2017-05-18-website-videos/4-headings-mac.png",
+          "width": 1000,
+          "height": 1312
+        },
+        {
+          "alt": "Checklists",
+          "src": "https://static.culturedcode.com/things/videos/2017-05-18-website-videos/5-checklists-mac-2.png",
+          "width": 1000,
+          "height": 1362
+        },
+        {
+          "alt": "Quick Find",
+          "src": "https://static.culturedcode.com/things/videos/2017-05-18-website-videos/7-quickfind-mac.png",
+          "width": 1000,
+          "height": 742
+        },
+        {
+          "alt": "Jump Start",
+          "src": "https://static.culturedcode.com/things/videos/2017-05-18-website-videos/8-jumpstart-mac.png",
+          "width": 1000,
+          "height": 1364
+        },
+        {
+          "alt": "Timely Reminders",
+          "src": "https://static.culturedcode.com/things/videos/2017-05-18-website-videos/10-reminders-mac.png",
+          "width": 1000,
+          "height": 1500
+        },
+        {
+          "alt": "Multiple Windows",
+          "src": "https://static.culturedcode.com/things/videos/2017-05-18-website-videos/12-multiplewindows-mac-3.png",
+          "width": 1800,
+          "height": 1800
+        }
+      ]
+    },
+    {
+      "name": "toby",
+      "url": "https://www.gettoby.com/",
+      "finalUrl": "https://www.gettoby.com/",
+      "screenshot": "C:\\Users\\kunal\\AppData\\Local\\Temp\\flowtask-ecosystem-ui-2026-10-25\\toby.png",
+      "title": "Toby - The Best Way to Organize Your Tabs",
+      "images": []
+    },
+    {
+      "name": "mynoise",
+      "url": "https://mynoise.net/NoiseMachines/whiteNoiseGenerator.php",
+      "finalUrl": "https://mynoise.net/NoiseMachines/whiteNoiseGenerator.php",
+      "screenshot": "C:\\Users\\kunal\\AppData\\Local\\Temp\\flowtask-ecosystem-ui-2026-10-25\\mynoise.png",
+      "title": "The Ultimate White Noise Player — Design Your Own Color",
+      "images": [],
+      "note": "Initial capture may still show audio loading; playback not evaluated."
+    },
+    {
+      "name": "capacities",
+      "url": "https://capacities.io/",
+      "finalUrl": "https://capacities.io/",
+      "screenshot": "C:\\Users\\kunal\\AppData\\Local\\Temp\\flowtask-ecosystem-ui-2026-10-25\\capacities.png",
+      "title": "A studio for your mind | Capacities",
+      "images": [
+        {
+          "alt": "See Capacities in action",
+          "src": "https://capacities.io/_ipx/f_webp&q_70&fit_cover&s_896x504/capacities-main-video.jpeg",
+          "width": 896,
+          "height": 504
+        }
+      ]
+    }
+  ]
+}

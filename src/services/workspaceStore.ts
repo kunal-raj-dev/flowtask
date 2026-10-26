@@ -5,7 +5,7 @@ import type { WorkspaceRecord, EntityChange, PendingOperation, SyncCollection, S
 import { dbService, emptyWorkspace } from './dbService';
 import { readFocusCheckpoint } from './focusCheckpoint';
 import type { WorkspaceDashboard } from '../types/dashboard';
-import { validateWorkspaceData } from '../utils/workspaceValidation';
+import { validateWorkspaceData, validateAreas, validateGoals, validateRoutines, validateRoutineRuns, validateWorkBlocks, validateReviews } from '../utils/workspaceValidation';
 import { recoveryService } from './recoveryService';
 import { formatLocalDate } from '../utils/nlpParser';
 import { validateBackupExtras } from '../utils/workspaceBackup';
@@ -38,7 +38,7 @@ export interface StoreSnapshot {
 export interface MutationReceipt { operationId: string; persisted: Promise<void> }
 export interface CloudAdapter {
   apply: (operation: PendingOperation) => Promise<void>;
-  read: () => Promise<{ tasks: Task[]; projects: Project[]; dashboards?: SyncedEntity[]; focusLogs?: SyncedEntity[]; recipes?: SyncedEntity[]; preferences?: SyncedEntity[]; notes?: SyncedEntity[] }>;
+  read: () => Promise<{ tasks: Task[]; projects: Project[]; dashboards?: SyncedEntity[]; focusLogs?: SyncedEntity[]; recipes?: SyncedEntity[]; preferences?: SyncedEntity[]; notes?: SyncedEntity[]; areas?: SyncedEntity[]; goals?: SyncedEntity[]; routines?: SyncedEntity[]; routineRuns?: SyncedEntity[]; workBlocks?: SyncedEntity[]; reviews?: SyncedEntity[] }>;
 }
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const semantic = (value: SyncedEntity | null) => { if (!value) return null; const { revision: _revision, updatedAt: _updatedAt, ...rest } = value; return rest; };
@@ -46,7 +46,7 @@ const uid = () => crypto.randomUUID();
 export function changesBetween(before: WorkspaceRecord, after: WorkspaceRecord): EntityChange[] {
   const changes: EntityChange[] = [];
   for (const collection of SYNC_COLLECTIONS) {
-    if ((collection === 'tasks' || collection === 'projects' || collection === 'dashboards') && before[collection] === after[collection]) continue;
+    if ((collection === 'tasks' || collection === 'projects' || collection === 'dashboards' || collection === 'notes' || collection === 'areas' || collection === 'goals' || collection === 'routines' || collection === 'routineRuns' || collection === 'workBlocks' || collection === 'reviews') && before[collection] === after[collection]) continue;
     const old = new Map(workspaceEntities(before, collection).map(x => [x.id, x]));
     const next = new Map(workspaceEntities(after, collection).map(x => [x.id, x]));
     for (const id of new Set([...old.keys(), ...next.keys()])) {
@@ -141,6 +141,12 @@ export class WorkspaceStore {
     const before = this.snapshot.record;
     let after = transform(before);
     if (before.notes !== after.notes) validateNotes(after.notes);
+    if (before.areas !== after.areas && after.areas) validateAreas(after.areas);
+    if (before.goals !== after.goals && after.goals) validateGoals(after.goals);
+    if (before.routines !== after.routines && after.routines) validateRoutines(after.routines);
+    if (before.routineRuns !== after.routineRuns && after.routineRuns) validateRoutineRuns(after.routineRuns);
+    if (before.workBlocks !== after.workBlocks && after.workBlocks) validateWorkBlocks(after.workBlocks);
+    if (before.reviews !== after.reviews && after.reviews) validateReviews(after.reviews);
     if (before.tasks !== after.tasks || before.projects !== after.projects) {
       validateWorkspaceData(after.tasks, after.projects);
       const projectIds = new Set(after.projects.map(project => project.id));
@@ -155,6 +161,8 @@ export class WorkspaceStore {
       !same(before.areas, after.areas) ||
       !same(before.goals, after.goals) ||
       !same(before.routines, after.routines) ||
+      !same(before.routineRuns, after.routineRuns) ||
+      !same(before.reviews, after.reviews) ||
       !same(before.habits, after.habits) ||
       !same(before.workBlocks, after.workBlocks) ||
       !same(before.reminders, after.reminders);
@@ -165,6 +173,8 @@ export class WorkspaceStore {
       areas: after.areas,
       goals: after.goals,
       routines: after.routines,
+      routineRuns: after.routineRuns,
+      reviews: after.reviews,
       habits: after.habits,
       workBlocks: after.workBlocks,
       reminders: after.reminders,

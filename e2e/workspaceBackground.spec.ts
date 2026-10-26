@@ -1,3 +1,4 @@
+import { openWorkspaceCustomization } from './helpers/workspaceActions';
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { seedPlanner, assertViewport, plannerErrors } from './helpers/plannerWorkspace';
@@ -50,7 +51,7 @@ test('navigation preserves the image element and background changes apply throug
     await expect(page.locator(`[data-workspace-view="${label === 'Plan' ? 'timeline' : label.toLowerCase()}"]`)).toBeVisible();
     expect(await image.evaluate((el, previous) => el === previous, original)).toBe(true);
   }
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Background', exact: true }).click();
   const picker = page.getByRole('dialog', { name: 'Choose a workspace image' });
   await picker.getByRole('textbox', { name: 'Search workspace images' }).fill('Archival Reading Room');
@@ -60,9 +61,9 @@ test('navigation preserves the image element and background changes apply throug
   await navigation.getByRole('button', { name: 'Inbox', exact: true }).click();
   await expect(image).toHaveAttribute('src', /ws-archival-reading-room/);
   await navigation.getByRole('button', { name: /^Today/ }).click();
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Background', exact: true }).click();
-  await page.getByRole('button', { name: 'No cover', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove background', exact: true }).click();
   await expect(image).toHaveCount(0);
   await navigation.getByRole('button', { name: 'Inbox', exact: true }).click();
   await expect(page.locator('.workspace-surface')).not.toHaveAttribute('data-has-workspace-background');

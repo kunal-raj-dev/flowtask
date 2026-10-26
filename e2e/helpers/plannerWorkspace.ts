@@ -41,6 +41,8 @@ export async function readPlanner(page: Page) {
 }
 
 export async function assertViewport(page: Page) {
+  // Check settled geometry, including animated sidebar/dialog exits.
+  await expect(async () => {
   const overflow = await page.evaluate(() => {
     const width = window.innerWidth;
     const candidates = [...document.querySelectorAll<HTMLElement>('main h1, main h2, main header, main input, main button, [role="dialog"] input, [role="dialog"] button')];
@@ -55,4 +57,5 @@ export async function assertViewport(page: Page) {
     }).slice(0, 6).map(el => ({ text: el.textContent?.slice(0, 55), className: el.className, rect: el.getBoundingClientRect().toJSON() })) };
   });
   expect(overflow, JSON.stringify(overflow)).toEqual({ document: false, offenders: [] });
+  }).toPass({ timeout: 5000 });
 }

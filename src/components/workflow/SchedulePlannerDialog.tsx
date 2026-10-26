@@ -13,7 +13,7 @@ function SchedulePlanner({ onClose, initialDate }: { onClose: () => void; initia
   const ctx = useTaskContext();
   const today = useTodayStr();
   const [date, setDate] = useState(initialDate || today);
-  const defaults = (day: string) => ctx.tasks.filter(t => !t.isSomeday && belongsToPlanDay(t, day, today) && !scheduleExclusion(t, ctx.tasks)).map(t => t.id);
+  const defaults = (day: string) => ctx.tasks.filter(t => !t.isSomeday && belongsToPlanDay(t, day, today) && !scheduleExclusion(t, ctx.tasks, ctx.projects, day)).map(t => t.id);
   const [selected, setSelected] = useState(() => defaults(initialDate || today));
   const [estimates, setEstimates] = useState<Record<string, number>>({});
   const [backlog, setBacklog] = useState(false);
@@ -34,7 +34,7 @@ function SchedulePlanner({ onClose, initialDate }: { onClose: () => void; initia
   }, [date]);
   const tasks = ctx.tasks.filter(t => !t.deletedAt && !t.archivedAt && t.status !== 'done' && !t.scheduledStart && (belongsToPlanDay(t, date, today) || backlog || selected.includes(t.id)));
   const valid = isPlanDate(date) && date >= today && !calendarLoading && selected.length > 0 && selected.every(id => estimates[id] === undefined || Number.isFinite(estimates[id]) && estimates[id] > 0 && estimates[id] <= 1440);
-  const calculate = () => createSchedulePreview({ date, tasks: ctx.tasks, calendarEvents: ctx.calendarEvents, settings: ctx.settings, selectedIds: selected, estimates });
+  const calculate = () => createSchedulePreview({ date, tasks: ctx.tasks, projects: ctx.projects, calendarEvents: ctx.calendarEvents, settings: ctx.settings, selectedIds: selected, estimates });
   const invalidate = () => { setPreview(null); setMessage(''); };
   const apply = () => {
     if (!preview || !valid || applying.current) return;
@@ -64,7 +64,7 @@ function SchedulePlanner({ onClose, initialDate }: { onClose: () => void; initia
     </div>
     <p className="planner-hint">Uses your working hours and daily budget. Existing blocks stay in place; tasks are scheduled as whole blocks. Other tasks are included only when you select them.</p>
     <div className="planner-task-list">
-      {tasks.map(task => { const reason = scheduleExclusion(task, ctx.tasks); return <div key={task.id} className="planner-task">
+      {tasks.map(task => { const reason = scheduleExclusion(task, ctx.tasks, ctx.projects, date); return <div key={task.id} className="planner-task">
         <label className="planner-check"><input type="checkbox" checked={selected.includes(task.id)} disabled={!!reason} onChange={e => { setSelected(e.target.checked ? [...selected, task.id] : selected.filter(id => id !== task.id)); invalidate(); }} /><span>{task.title}{reason && <small>{reason}</small>}</span></label>
         <label className="planner-duration"><span className="sr-only">Minutes for {task.title}</span><input aria-label={`Minutes for ${task.title}`} type="number" min="1" max="1440" value={Number.isNaN(estimates[task.id]) ? '' : getDerivedSubtaskEstimate(task.subtasks) ?? estimates[task.id] ?? (getEffectiveTaskEstimate(task) || ctx.settings.defaultTaskDuration)} disabled={!!reason || getDerivedSubtaskEstimate(task.subtasks) !== null} title={getDerivedSubtaskEstimate(task.subtasks) !== null ? 'Synced from subtasks' : undefined} onChange={e => { setEstimates({ ...estimates, [task.id]: e.target.valueAsNumber }); invalidate(); }} /><span>min</span></label>
       </div>; })}

@@ -1,3 +1,4 @@
+import { openWorkspaceCustomization } from './helpers/workspaceActions';
 import { test, expect, type Page } from '@playwright/test';
 import { STARTER_DASHBOARDS } from '../src/services/starterDashboards';
 import { DEFAULT_WORKFLOW_SETTINGS } from '../src/types/settings';
@@ -121,7 +122,7 @@ test('wheel over empty widgets reaches the page and starter preview Cancel prese
   await empty.hover(); await page.mouse.wheel(0, 600);
   await expect.poll(() => page.locator('.today-dashboard-scroll').evaluate(el => el.scrollTop)).toBeGreaterThan(before);
   const original = (await readPlanner(page)).dashboards[0];
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.locator('.desk-template-grid').getByRole('button', { name: /^Study Desk/ }).click();
   await expect(page.getByRole('button', { name: 'Save Layout', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();

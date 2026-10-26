@@ -1,5 +1,6 @@
+import { useTaskAvailabilityClock } from '../../hooks/useTaskAvailabilityClock';
 import { shortcutHintsEnabled, MOD_KEY, ALT_KEY } from '../../services/shortcutRegistry';
-import { isTodayTask } from '../../utils/taskSelectors';
+import { isTodayTask, isInboxTask } from '../../utils/taskSelectors';
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
@@ -35,6 +36,7 @@ import {
   BookOpen,
   Cloud,
   Headphones as HeadphonesIcon,
+  Repeat,
 } from 'lucide-react';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
 import { Badge, BrandLogo } from '../ui';
@@ -142,6 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }
 
   const todayStr = useTodayStr();
+  const availabilityNow = useTaskAvailabilityClock(tasks);
 
   // Memoized view counts and project counts in a single pass
   const { todayCount, inboxCount, upcomingCount, somedayCount, allCount, activeProjectCount, projectTaskCountMap } = useMemo(() => {
@@ -154,14 +157,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     tasks.forEach((t) => {
       if (t.deletedAt || t.archivedAt) return;
-      if (isTodayTask(t, todayStr)) {
+      if (isTodayTask(t, todayStr, { tasks, projects, now: availabilityNow })) {
         today++;
       }
       if (t.status !== 'done') {
         all++;
         projectMap.set(t.projectId, (projectMap.get(t.projectId) || 0) + 1);
 
-        if (t.projectId === 'inbox' && !t.dueDate && !t.plannedDate && !t.isSomeday) {
+        if (isInboxTask(t, todayStr, { tasks, projects, now: availabilityNow })) {
           inbox++;
         }
         const taskDate = t.plannedDate || t.dueDate;
@@ -185,7 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       activeProjectCount: activeProjects,
       projectTaskCountMap: projectMap,
     };
-  }, [tasks, projects, todayStr]);
+  }, [tasks, projects, todayStr, availabilityNow]);
 
   const handleCreateProject = (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,10 +226,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'review', label: 'Review', icon: TrendingUp, count: null, color: 'text-teal-500' },
   ];
 
-  // Life Architecture: Areas & Goals
+  // Life Architecture: Areas, Goals & Routines
   const lifeNavItems: SidebarNavItem[] = [
     { id: 'areas', label: 'Life Areas', icon: Compass, count: null, color: 'text-amber-500' },
     { id: 'goals', label: 'Vision & Goals', icon: Target, count: null, color: 'text-rose-500' },
+    { id: 'routines', label: 'Routines', icon: Repeat, count: null, color: 'text-indigo-500' },
   ];
 
   // Expandable Perspectives: Board, Matrix, All Tasks, Someday, Archive, Trash
@@ -702,7 +706,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Footer: Quick Notes, Settings, and Account/Sync */}
+      {/* Desktop account status lives in the header; retain access in the mobile drawer. */}
       <div className="p-2.5 border-t border-[var(--border-hairline)] space-y-1.5 text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {onOpenAesthetics && <button className="sidebar-utility" aria-label="Customize appearance" onClick={()=>{onOpenAesthetics();onItemClick?.();}}><Palette size={14}/>Appearance</button>}
         <a className="sidebar-utility" href="/">Visit welcome page<ChevronRight size={13}/></a>
@@ -743,7 +747,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {hints && <span className="text-[10px] text-[var(--text-muted)] font-mono">{MOD_KEY}+,</span>}
         </button>
 
-        <button
+        {isMobileDrawer && <button
           type="button"
           onClick={() => {
             setIsAuthModalOpen(true);
@@ -783,7 +787,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 : 'bg-stone-400'
             }`}
           />
-        </button>
+        </button>}
       </div>
     </aside>
   );

@@ -1,0 +1,15 @@
+{
+  "researchDate": "2026-10-25",
+  "method": "Loaded the current workBlockService through Vite SSR and called addWorkBlock with an in-memory store stub. No IndexedDB, cloud or user workspace writes.",
+  "input": {
+    "date": "2026-10-25",
+    "startTime": "09:00",
+    "durationMinutes": 30,
+    "timezone": "Asia/Kolkata"
+  },
+  "actualStartInstant": "2026-10-25T09:00:00.000Z",
+  "expectedStartInstant": "2026-10-25T03:30:00.000Z",
+  "savedTimezone": "Asia/Kolkata",
+  "savedStartTime": "09:00",
+  "result": "Local wall time is interpreted as UTC by this helper; public callers and saved records need separate impact assessment before migration."
+}

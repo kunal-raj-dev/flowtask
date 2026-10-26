@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -81,6 +82,8 @@ export const AppShell: React.FC<AppShellProps> = ({
   isPomodoroOpen,
   onSelectTaskFromModalRoot,
 }) => {
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(mobileDrawerRef, onCloseMobileSidebar, isSidebarOpenMobile);
   return (
     <div className="flowtask-workspace relative flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-200">
       {/* Skip to Main Content Link (WCAG 2.2 Level A / AA) */}
@@ -123,6 +126,10 @@ export const AppShell: React.FC<AppShellProps> = ({
       <AnimatePresence>
         {isSidebarOpenMobile && (
           <motion.div
+            ref={mobileDrawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile navigation"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

@@ -4,7 +4,7 @@ import { useTaskContext } from "../../context/TaskContext";
 import { useTodayStr } from "../../hooks/useCurrentDate";
 import { Dialog } from "../ui/Dialog";
 import { calculateDayPlanSummary } from "../../utils/dayPlanSummary";
-import { isTodayTask } from "../../utils/taskSelectors";
+import { isTodayTask, isTaskActionable } from "../../utils/taskSelectors";
 
 interface DailyPlanningProps {
   showCard?: boolean;
@@ -27,16 +27,16 @@ export function DailyPlanning({
   const today = useTodayStr();
   const [step, setStep] = useState(1);
   const [selected, setSelected] = useState<string[]>(() =>
-      ctx.tasks.filter((t) => isTodayTask(t, today)).map((t) => t.id),
+      ctx.tasks.filter((t) => isTodayTask(t, today, { tasks: ctx.tasks, projects: ctx.projects })).map((t) => t.id),
     ),
     [pinned, setPinned] = useState<string[]>(() =>
       ctx.tasks
-        .filter((t) => isTodayTask(t, today) && t.topThreeDate === today)
+        .filter((t) => isTodayTask(t, today, { tasks: ctx.tasks, projects: ctx.projects }) && t.topThreeDate === today)
         .slice(0, 3)
         .map((t) => t.id),
     );
   const active = ctx.tasks.filter(
-    (t) => t.status !== "done" && !t.archivedAt && !t.deletedAt && !t.isSomeday,
+    (t) => isTaskActionable(t, today, { tasks: ctx.tasks, projects: ctx.projects }),
   );
   const summary = calculateDayPlanSummary({
     date: today,
@@ -48,16 +48,20 @@ export function DailyPlanning({
   const meetings = summary.timedCalendarMinutes,
     capacity = summary.availableTaskBudgetMinutes,
     planned = summary.totalDemandMinutes;
-  const chosenMinutes = calculateDayPlanSummary({
+  const chosenSummary = calculateDayPlanSummary({
     date: today,
     todayStr: today,
     tasks: active
       .filter((t) => selected.includes(t.id))
       .map((t) => ({ ...t, plannedDate: today })),
+    calendarEvents: ctx.calendarEvents,
     settings: ctx.settings,
-  }).totalDemandMinutes;
+  });
+  const chosenMinutes = chosenSummary.totalDemandMinutes;
+  const chosenScheduledMinutes = chosenSummary.scheduledTaskMinutes;
+  const chosenUniqueOccupied = chosenSummary.uniqueOccupiedMinutes ?? chosenScheduledMinutes;
   const start = () => {
-    setSelected(active.filter((t) => isTodayTask(t, today)).map((t) => t.id));
+    setSelected(active.filter((t) => isTodayTask(t, today, { tasks: ctx.tasks, projects: ctx.projects })).map((t) => t.id));
     setPinned(
       active
         .filter((t) => t.topThreeDate === today)
@@ -69,7 +73,7 @@ export function DailyPlanning({
   };
   const apply = () => {
     const updates = active
-      .filter((t) => selected.includes(t.id) || isTodayTask(t, today))
+      .filter((t) => selected.includes(t.id) || isTodayTask(t, today, { tasks: ctx.tasks, projects: ctx.projects }))
       .map((t) => ({
         id: t.id,
         updates: {
@@ -195,12 +199,14 @@ export function DailyPlanning({
                 {selected.length} tasks · {pinned.length} priorities
               </span>
               <strong>
-                {chosenMinutes} / {capacity} min
+                {chosenMinutes}m task effort · {chosenScheduledMinutes}m reserved
               </strong>
               <p>
-                {chosenMinutes > capacity
-                  ? `Your plan is ${chosenMinutes - capacity} minutes over capacity. Go back to make room, or save it as an intentional exception.`
-                  : `${capacity - chosenMinutes} minutes of breathing room. Your deadlines stay intact.`}
+                {chosenSummary.overbooked || chosenUniqueOccupied > capacity
+                  ? `Your plan is ${Math.max(chosenSummary.overbookedMinutes, chosenUniqueOccupied - capacity)} minutes over capacity (${chosenMinutes}m task effort, ${chosenUniqueOccupied}m reserved against ${capacity}m capacity). Go back to make room, or save it as an intentional exception.`
+                  : chosenUniqueOccupied >= capacity
+                  ? `Calendar is fully reserved (${chosenUniqueOccupied}m reserved against ${capacity}m capacity).`
+                  : `${Math.max(0, Math.min(chosenSummary.availableTaskBudgetMinutes - chosenMinutes, chosenSummary.freeCalendarMinutes ?? (capacity - chosenUniqueOccupied)))} minutes of available window. Your deadlines stay intact.`}
               </p>
               {pinned.map((id) => (
                 <p key={id}>

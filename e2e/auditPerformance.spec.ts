@@ -1,3 +1,4 @@
+import { openWorkspaceCustomization } from './helpers/workspaceActions';
 import { test, expect } from "@playwright/test";
 
 for (const width of [1440, 390])
@@ -80,7 +81,7 @@ for (const width of [1440, 390])
       }),
     ).toBeVisible();
     expect(await page.locator("[data-task-id]").count()).toBeLessThan(80);
-    await page.getByRole('button', { name: 'Customize', exact: true }).click();
+    await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Edit workspace', exact: true }).click();
     await page
       .getByRole("button", { name: "Move Top 3 Priorities later", exact: true })

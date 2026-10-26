@@ -148,3 +148,64 @@ test('tasks with reminders and workBlocks and projects with areaId pass schema v
   const overAreaIdProj = { ...validProj, id: 'p_area2', areaId: 'x'.repeat(201) };
   await assertFails(setDoc(doc(db, 'users/a/projects/p_area2'), overAreaIdProj));
 });
+
+test('tasks support deferUntil, areaId, goalId, cognitiveLoad, isLifeAdmin and dependencies under rules allowlist', async () => {
+  const db = env.authenticatedContext('a').firestore();
+  const taskRef = doc(db, 'users/a/tasks/t_full');
+  const fullTask = {
+    ...task,
+    id: 't_full',
+    deferUntil: '2026-11-01',
+    areaId: 'area-1',
+    goalId: 'goal-1',
+    cognitiveLoad: 'deep_work',
+    isLifeAdmin: false,
+    cleanSlateQuarantinedAt: 1700000000000,
+    predecessorTaskId: 't_prev',
+    revision: 1,
+    updatedAt: 1,
+  };
+  await assertSucceeds(setDoc(taskRef, fullTask));
+
+  // Invalid cognitiveLoad fails
+  await assertFails(setDoc(taskRef, { ...fullTask, revision: 2, cognitiveLoad: 'extreme' }));
+  // Other user cannot read
+  const otherDb = env.authenticatedContext('b').firestore();
+  await assertFails(getDoc(doc(otherDb, 'users/a/tasks/t_full')));
+});
+
+test('canonical collections (areas, goals, routines, routineRuns, workBlocks, reviews) enforce ownership and valid schema', async () => {
+  const db = env.authenticatedContext('a').firestore();
+  const otherDb = env.authenticatedContext('b').firestore();
+
+  // Area
+  const areaRef = doc(db, 'users/a/areas/area1');
+  const areaData = { id: 'area1', name: 'Health', sortOrder: 0, revision: 1, createdAt: 1, updatedAt: 1 };
+  await assertSucceeds(setDoc(areaRef, areaData));
+  await assertFails(getDoc(doc(otherDb, 'users/a/areas/area1')));
+
+  // Goal
+  const goalRef = doc(db, 'users/a/goals/goal1');
+  const goalData = { id: 'goal1', title: 'Marathon', projectIds: ['p1'], status: 'in_progress', revision: 1, createdAt: 1, updatedAt: 1 };
+  await assertSucceeds(setDoc(goalRef, goalData));
+  await assertFails(setDoc(goalRef, { ...goalData, status: 'invalid_status' }));
+
+  // Routine & RoutineRun
+  const routineRef = doc(db, 'users/a/routines/rout1');
+  const routineData = { id: 'rout1', title: 'Morning', cadence: 'morning', steps: [{ id: 's1', title: 'Water' }], revision: 1, createdAt: 1, updatedAt: 1 };
+  await assertSucceeds(setDoc(routineRef, routineData));
+
+  const runRef = doc(db, 'users/a/routineRuns/run1');
+  const runData = { id: 'run1', routineId: 'rout1', startedAt: 100, completedAt: 200, completedStepsCount: 1, totalStepsCount: 1, totalDurationSeconds: 100, revision: 1, createdAt: 1, updatedAt: 1 };
+  await assertSucceeds(setDoc(runRef, runData));
+
+  // WorkBlock
+  const wbRef = doc(db, 'users/a/workBlocks/wb1');
+  const wbData = { id: 'wb1', taskId: 't', startInstant: 1000, endInstant: 2000, timezone: 'UTC', status: 'scheduled', durationMinutes: 16, revision: 1, createdAt: 1, updatedAt: 1 };
+  await assertSucceeds(setDoc(wbRef, wbData));
+
+  // Review
+  const revRef = doc(db, 'users/a/reviews/rev1');
+  const revData = { id: 'rev1', periodStart: '2026-10-19', periodEnd: '2026-10-25', reviewedAt: 1000, reflection: 'Great week', nextPriorities: ['p1'], completedTasksCount: 5, totalEstimatedMinutes: 120, totalFocusSeconds: 6000, revision: 1, createdAt: 1, updatedAt: 1 };
+  await assertSucceeds(setDoc(revRef, revData));
+});

@@ -17,7 +17,7 @@ import { DEFAULT_WORKFLOW_SETTINGS } from '../types/settings';
 import { BUILT_IN_SMART_VIEWS } from '../utils/smartViewUtils';
 import { getTodayStr } from '../hooks/useCurrentDate';
 import { audioEngine } from '../utils/audioEngine';
-import { isActiveTask, isFocusTask } from '../utils/taskSelectors';
+import { isActiveTask, isTaskPinnedForDate } from '../utils/taskSelectors';
 import { useUIStore } from './useUIStore';
 import { useModalStore } from './useModalStore';
 import { downloadJson } from '../utils/fileExporter';
@@ -27,6 +27,8 @@ import { getDerivedSubtaskEstimate } from '../utils/taskTimeSummary';
 import { dbService, emptyWorkspace } from '../services/dbService';
 import { writeFocusCheckpoint } from '../services/focusCheckpoint';
 import { convertSessionToTask, type ParsedSession } from '../utils/sessionParser';
+import { cancelFutureTaskSessions, restoreTaskSessions } from '../services/workBlockService';
+import { syncLinkedTaskStatusToNote } from '../services/notesService';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'local' | 'conflict' | 'error';
 
@@ -52,7 +54,7 @@ export interface TaskState {
   // Task Actions (Deterministic)
   addTask: (input: string, explicitOverrides?: Partial<Task>) => Task;
   addMultipleTasks: (lines: string[], overrides?: Partial<Task>) => void;
-  updateTask: (id: string, updates: Partial<Task>) => void;
+  updateTask: (id: string, updates: Partial<Task>, options?: { allowLocked?: boolean }) => void;
   deleteTask: (id: string) => void;
   permanentDeleteTask: (id: string) => void;
   archiveTask: (id: string) => void;
@@ -255,9 +257,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
   },
 
-  updateTask: (id: string, updates: Partial<Task>) => {
+  updateTask: (id: string, updates: Partial<Task>, options?: { allowLocked?: boolean }) => {
     const { store, tasks } = get();
-    execute(store, tasks, (list) => commandService.updateTask(list, id, updates), set);
+    execute(store, tasks, (list) => commandService.updateTask(list, id, updates, options), set);
+    if (store && updates.status !== undefined) {
+      syncLinkedTaskStatusToNote(store, id, updates.status === 'done');
+    }
   },
 
   deleteTask: (id: string) => {
@@ -290,6 +295,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     execute(store, tasks, (list) => commandService.toggleTaskStatus(list, id), set);
 
+    if (store) {
+      if (isCompleting) {
+        cancelFutureTaskSessions(store, id);
+      } else {
+        restoreTaskSessions(store, id);
+      }
+      syncLinkedTaskStatusToNote(store, id, isCompleting);
+    }
+
     if (isCompleting) {
       audioEngine.playTaskComplete();
     } else {
@@ -304,8 +318,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     if (!task || !isActiveTask(task)) return false;
 
     const todayStr = getTodayStr();
-    const pinned = isFocusTask(task, todayStr);
-    if (!pinned && currentTasks.filter((t) => isFocusTask(t, todayStr)).length >= 3) {
+    const pinned = isTaskPinnedForDate(task, todayStr);
+    if (!pinned && currentTasks.filter((t) => isTaskPinnedForDate(t, todayStr)).length >= 3) {
       useUIStore.getState().showToast('Your Top 3 is full. Unpin a task first.');
       return false;
     }
@@ -467,6 +481,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
               : list;
           }, r.tasks),
         };
+      });
+      ids.forEach((id) => {
+        const task = store.getSnapshot().record.tasks.find((t) => t.id === id);
+        if (task) {
+          syncLinkedTaskStatusToNote(store, id, task.status === 'done');
+        }
       });
     }
   },
@@ -789,11 +809,18 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   addStudySessions: (sessions: ParsedSession[], date = getTodayStr(), projectId = 'inbox') => {
     const created = sessions.map((s) => convertSessionToTask(s, date, projectId));
+    const createdBlocks = created.flatMap((t) => t.workBlocks || []);
     const { store } = get();
     if (store) {
-      store.run('Add study sessions', (r) => ({ ...r, tasks: [...created, ...r.tasks] }));
+      store.run('Add study sessions', (r) => ({
+        ...r,
+        tasks: [...created, ...r.tasks],
+        workBlocks: [...(r.workBlocks || []), ...createdBlocks],
+      }));
     } else {
-      set((s) => ({ tasks: [...created, ...s.tasks] }));
+      set((s) => ({
+        tasks: [...created, ...s.tasks],
+      }));
     }
     return created;
   },

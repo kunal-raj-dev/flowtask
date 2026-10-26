@@ -26,9 +26,9 @@ const GRID_PADDING: [number, number] = [0, 0];
 
 export const GridLayoutAdapter: React.FC<GridLayoutAdapterProps> = props => {
   const { dashboard, isEditing, previewBreakpoint = 'lg' } = props;
-  const { tasks, focusSession } = useTaskContext();
+  const { tasks, projects = [], focusSession } = useTaskContext();
   const today = useTodayStr();
-  const priorityCount = Math.min(3, tasks.filter(task => isFocusTask(task,today)).length);
+  const priorityCount = Math.min(3, tasks.filter(task => isFocusTask(task, today, { tasks, projects })).length);
   const { width, containerRef, mounted } = useContainerWidth({
     measureBeforeMount: true,
     initialWidth: typeof window !== 'undefined' ? window.innerWidth : 1200,

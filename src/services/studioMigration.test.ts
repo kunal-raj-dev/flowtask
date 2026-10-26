@@ -16,7 +16,7 @@ it('preserves the raw v8 workspace and its private scratchpad before adding note
   const raw = { ...emptyWorkspace('notes-v8'), schemaVersion: 8 as const, notes: undefined, preferences: { scratchpad: 'Still private' } };
   await db.put('workspaces', raw);
   const current = await dbService.loadWorkspace('notes-v8');
-  expect(current?.schemaVersion).toBe(9);
+  expect(current?.schemaVersion).toBe(11);
   expect(current?.notes).toEqual([]);
   expect(current?.preferences.scratchpad).toBe('Still private');
   const checkpoint = await db.get('legacy_backups', 'v8:notes-v8');
@@ -25,15 +25,27 @@ it('preserves the raw v8 workspace and its private scratchpad before adding note
   await dbService.loadWorkspace('notes-v8');
   expect((await db.get('legacy_backups', 'v8:notes-v8')).savedAt).toBe(checkpoint.savedAt);
 });
-it('upgrades v3 repeatedly without rewriting historical phases or replacing its backup',async()=>{
-  const db=await getDatabase();const original={...emptyWorkspace('migration-test'),schemaVersion:3,preferences:{focusLogs:[{id:'old',seconds:20,mode:'stopwatch',taskId:null,startedAt:1,endedAt:20001}],scratchpad:'keep'}};
-  await db.put('workspaces',original);const migrated=await dbService.loadWorkspace('migration-test');
-  expect(migrated?.schemaVersion).toBe(9);expect(migrated?.preferences._v4CloudSeedNeeded).toBe(true);expect(migrated?.preferences._v5DashboardSeedNeeded).toBe(true);expect(migrated?.preferences.focusLogs).toEqual(original.preferences.focusLogs);
-  const backup=await db.get('legacy_backups','v3:migration-test');expect(backup.record).toEqual(original);
-  const backupV4=await db.get('legacy_backups','v4:migration-test');expect(backupV4.record).toEqual(original);
-  const backupV5=await db.get('legacy_backups','v5:migration-test');expect(backupV5.record).toEqual(original);
-  const backupV6=await db.get('legacy_backups','v6:migration-test');expect(backupV6.record).toEqual(original);
-  await dbService.saveWorkspace('migration-test',migrated!);await dbService.loadWorkspace('migration-test');expect((await db.get('legacy_backups','v3:migration-test')).savedAt).toBe(backup.savedAt);
+
+it('upgrades v3 repeatedly without rewriting historical phases or replacing its backup', async () => {
+  const db = await getDatabase();
+  const original = { ...emptyWorkspace('migration-test'), schemaVersion: 3, preferences: { focusLogs: [{ id: 'old', seconds: 20, mode: 'stopwatch', taskId: null, startedAt: 1, endedAt: 20001 }], scratchpad: 'keep' } };
+  await db.put('workspaces', original);
+  const migrated = await dbService.loadWorkspace('migration-test');
+  expect(migrated?.schemaVersion).toBe(11);
+  expect(migrated?.preferences._v4CloudSeedNeeded).toBe(true);
+  expect(migrated?.preferences._v5DashboardSeedNeeded).toBe(true);
+  expect(migrated?.preferences.focusLogs).toEqual(original.preferences.focusLogs);
+  const backup = await db.get('legacy_backups', 'v3:migration-test');
+  expect(backup.record).toEqual(original);
+  const backupV4 = await db.get('legacy_backups', 'v4:migration-test');
+  expect(backupV4.record).toEqual(original);
+  const backupV5 = await db.get('legacy_backups', 'v5:migration-test');
+  expect(backupV5.record).toEqual(original);
+  const backupV6 = await db.get('legacy_backups', 'v6:migration-test');
+  expect(backupV6.record).toEqual(original);
+  await dbService.saveWorkspace('migration-test', migrated!);
+  await dbService.loadWorkspace('migration-test');
+  expect((await db.get('legacy_backups', 'v3:migration-test')).savedAt).toBe(backup.savedAt);
   expect(db.objectStoreNames.contains('media')).toBe(true);
 });
 
@@ -55,7 +67,7 @@ it('upgrades v5 workspace to the current schema writing v5 snapshot to legacy_ba
   };
   await db.put('workspaces', v5Original);
   const migrated = await dbService.loadWorkspace('v5-migration-test');
-  expect(migrated?.schemaVersion).toBe(9);
+  expect(migrated?.schemaVersion).toBe(11);
   expect(migrated?.tasks[0].id).toBe('task-1');
   const backup = await db.get('legacy_backups', 'v5:v5-migration-test');
   expect(backup).toBeDefined();
@@ -67,11 +79,41 @@ it('upgrades a v6 project without milestones and preserves a repeat-safe v6 back
   const original = { ...emptyWorkspace('v6-path-test'), schemaVersion: 6 as const, projects: [{ id: 'inbox', name: 'Inbox', color: '#64748B' }, { id: 'course', name: 'Course', color: '#3B82F6' }] };
   await db.put('workspaces', original);
   const migrated = await dbService.loadWorkspace('v6-path-test');
-  expect(migrated?.schemaVersion).toBe(9);
+  expect(migrated?.schemaVersion).toBe(11);
   expect(migrated?.projects.find(project => project.id === 'course')?.milestones).toBeUndefined();
   const snapshot = await db.get('legacy_backups', 'v6:v6-path-test');
   expect(snapshot.record).toEqual(original);
   await dbService.saveWorkspace('v6-path-test', migrated!);
   await dbService.loadWorkspace('v6-path-test');
   expect((await db.get('legacy_backups', 'v6:v6-path-test')).savedAt).toBe(snapshot.savedAt);
+});
+
+it('upgrades v10 workspace writing v10 snapshot to legacy_backups and normalizing multi-session blocks', async () => {
+  const db = await getDatabase();
+  const v10Original = {
+    ...emptyWorkspace('v10-migration-test'),
+    schemaVersion: 10 as const,
+    tasks: [{
+      id: 'task-split',
+      title: 'Split Task',
+      status: 'todo' as const,
+      priority: 'p1' as const,
+      projectId: 'inbox',
+      scheduledStart: '10:00',
+      scheduledEnd: '11:30',
+      plannedDate: '2026-10-25',
+      estimatedMinutes: 90,
+      createdAt: 1000,
+      subtasks: [],
+    }],
+  };
+  await db.put('workspaces', v10Original);
+  const migrated = await dbService.loadWorkspace('v10-migration-test');
+  expect(migrated?.schemaVersion).toBe(11);
+  expect(migrated?.workBlocks).toHaveLength(1);
+  expect(migrated?.workBlocks?.[0].taskId).toBe('task-split');
+  expect(migrated?.workBlocks?.[0].status).toBe('scheduled');
+  const backup = await db.get('legacy_backups', 'v10:v10-migration-test');
+  expect(backup).toBeDefined();
+  expect(backup.record.schemaVersion).toBe(10);
 });

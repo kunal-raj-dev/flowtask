@@ -57,23 +57,32 @@ export default defineConfig({
           '**/calendarService*.js',
           '**/brand/social-preview*',
           '**/brand/*.png',
-          '**/*Modal*.js',
+          '**/*Modal*.{js,css}',
           '**/WorkspaceVisualPicker*.{js,css}',
           '**/CopilotOmnibar*.{js,css}',
           '**/velocityCalibrator*.js',
           '**/ReviewView*.{js,css}',
           '**/TimelineView*.{js,css}',
           '**/FocusStudio*.{js,css}',
-          '**/KanbanView*.js',
-          '**/EisenhowerView*.js',
+          '**/KanbanView*.{js,css}',
+          '**/EisenhowerView*.{js,css}',
           '**/ProjectsView*.{js,css}',
-          '**/StudyView*.js',
+          '**/StudyView*.{js,css}',
           '**/UpcomingView*.{js,css}',
           '**/OnboardingFlow*.js',
           '**/CommandPalette*.js',
           '**/standupGenerator*.js',
           '**/cloudWorkspace*.js',
+          '**/lifeOrganizationService*.js',
+          '**/GlobalCaptureHUD*.js',
+          '**/HelpPage*.{js,css}',
           '**/DashboardCanvasView*.{js,css}',
+          '**/NotesView*.{js,css}',
+          '**/LifeAreasView*.{js,css}',
+          '**/GoalsView*.{js,css}',
+          '**/RoutinesView*.{js,css}',
+          '**/RoutineRunner*.{js,css}',
+          '**/TaskSessionEditor*.{js,css}',
         ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
@@ -118,7 +127,7 @@ export default defineConfig({
             if (id.includes('ical.js')) {
               return 'ical';
             }
-            if (id.includes('react') || id.includes('scheduler')) {
+            if (/(?:[\\/])(react|react-dom|scheduler)(?:[\\/])/.test(id)) {
               return 'vendor';
             }
             if (id.includes('framer-motion')) {

@@ -1,0 +1,8 @@
+{
+  "researchDate": "2026-10-25",
+  "method": "Pure selectors invoked through Vite SSR with synthetic in-memory tasks; no workspace writes.",
+  "fixture": "Active Today task blocked by another incomplete task",
+  "utilsIsTaskActionable": true,
+  "utilsIsTodayTask": true,
+  "servicesIsActionableTask": false
+}

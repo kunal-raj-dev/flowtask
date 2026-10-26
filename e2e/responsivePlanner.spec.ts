@@ -1,3 +1,4 @@
+import { openWorkspaceCustomization } from './helpers/workspaceActions';
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { seedPlanner, readPlanner, assertViewport, plannerErrors } from './helpers/plannerWorkspace';
@@ -52,7 +53,7 @@ for (const width of [320, 360, 390, 768, 1024, 1280, 1440]) {
 
 test('Today background selection spans both views, survives reload and can be removed', async ({ page }) => {
   await seedPlanner(page);
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Choose a background', exact: true }).click();
   const picker = page.getByRole('dialog', { name: 'Choose a workspace image' });
   await picker.getByRole('textbox', { name: 'Search workspace images' }).fill('Morning Library');
@@ -67,9 +68,9 @@ test('Today background selection spans both views, survives reload and can be re
   await expect(page.getByText('Modular Dashboard Canvas', { exact: true })).toBeVisible();
   await expect(image).toBeVisible();
   await page.reload(); await expect(image).toBeVisible();
-  await page.getByRole('button', { name: 'Customize', exact: true }).click();
+  await openWorkspaceCustomization(page);
   await page.getByRole('button', { name: 'Change background', exact: true }).click();
-  await page.getByRole('button', { name: 'No cover', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove background', exact: true }).click();
   await expect(image).toHaveCount(0);
 });
 
@@ -88,7 +89,7 @@ test('bright, dark and busy wallpapers stay readable in light and dark themes', 
   await page.setViewportSize({ width: 1280, height: 900 });
   await seedPlanner(page);
   for (const [id, title] of [['ws-nature-tateyama-snow', 'Tateyama Snow Route'], ['ws-illustration-starry-night', 'Starry Night'], ['ws-morning-library', 'Morning Library']]) {
-    await page.getByRole('button', { name: 'Customize', exact: true }).click();
+    await openWorkspaceCustomization(page);
     await page.getByRole('button', { name: /^(Choose a background|Change background)$/ }).click();
     const picker = page.getByRole('dialog', { name: 'Choose a workspace image' });
     await picker.getByRole('textbox', { name: 'Search workspace images' }).fill(title);
@@ -184,7 +185,7 @@ test('all themes retain full-background geometry with and without an image', asy
     const audit = await new AxeBuilder({ page }).include('.today-surface').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(audit.violations.filter(v => v.impact === 'critical' || v.impact === 'serious').map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) })), theme).toEqual([]);
   }
-  await page.getByRole('button', { name: 'Customize', exact: true }).click(); await page.getByRole('button', { name: 'Change background', exact: true }).click(); await page.getByRole('button', { name: 'No cover', exact: true }).click();
+  await openWorkspaceCustomization(page); await page.getByRole('button', { name: 'Change background', exact: true }).click(); await page.getByRole('button', { name: 'Remove background', exact: true }).click();
   for (const theme of THEME_IDS) {
     await page.evaluate(async theme => { const { applyTheme } = await import('/src/utils/themeRegistry.ts'); applyTheme(theme); }, theme);
     await expect(page.locator('[data-today-background]')).toHaveCount(0); await assertViewport(page);
