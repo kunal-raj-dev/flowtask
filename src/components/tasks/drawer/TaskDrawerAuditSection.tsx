@@ -42,7 +42,7 @@ export const TaskDrawerAuditSection: React.FC<TaskDrawerAuditSectionProps> = ({ 
         className="w-full flex items-center justify-between p-3.5 bg-[var(--bg-surface-l2)]/60 hover:bg-[var(--bg-surface-l2)] transition-colors text-left"
       >
         <div className="flex items-center gap-2">
-          <History size={14} className="text-amber-500" />
+          <History size={14} className="text-[var(--color-brand)]" />
           <span className="text-xs font-semibold text-[var(--text-primary)]">
             Task details
           </span>
@@ -77,11 +77,11 @@ export const TaskDrawerAuditSection: React.FC<TaskDrawerAuditSectionProps> = ({ 
             <span className="text-[var(--text-muted)]">Progress</span>
             <span className="inline-flex items-center gap-1 font-medium capitalize">
               {task.status === 'done' ? (
-                <span className="text-emerald-500 flex items-center gap-1">
+                <span className="text-[var(--pastel-sage)] flex items-center gap-1">
                   <Check size={12} strokeWidth={3} /> Done
                 </span>
               ) : (
-                <span className="text-amber-500">In Progress</span>
+                <span className="text-[var(--color-brand)]">In Progress</span>
               )}
             </span>
           </div>
@@ -89,7 +89,7 @@ export const TaskDrawerAuditSection: React.FC<TaskDrawerAuditSectionProps> = ({ 
           {task.completedAt && (
             <div className="flex items-center justify-between">
               <span className="text-[var(--text-muted)]">Completed At</span>
-              <span className="font-mono text-emerald-600 dark:text-emerald-400 text-[11px]">
+              <span className="font-mono text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] text-[11px]">
                 {formatAuditDate(task.completedAt)}
               </span>
             </div>
@@ -107,7 +107,7 @@ export const TaskDrawerAuditSection: React.FC<TaskDrawerAuditSectionProps> = ({ 
           <div className="flex items-center justify-between pt-2 border-t border-[var(--border-hairline)]">
             <span className="text-[var(--text-muted)]">Time Logged vs Est.</span>
             <span className="font-mono text-[11px]">
-              <span className="text-amber-500 font-semibold">{task.timeSpentMinutes || 0}m</span>
+              <span className="text-[var(--color-brand)] font-semibold">{task.timeSpentMinutes || 0}m</span>
               <span className="text-[var(--text-muted)]">
                 {' '}
                 / {task.estimatedMinutes ? `${task.estimatedMinutes}m` : 'none'}

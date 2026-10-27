@@ -118,6 +118,7 @@ export interface ViewDisplaySettings {
 }
 
 export interface WorkspacePreferences {
+  todayLayout?: TodayLayoutPreferences;
   presentation?: WorkspacePresentation;
   defaultDashboardId?: string;
   activeDashboardId?: string;
@@ -127,6 +128,13 @@ export interface WorkspacePreferences {
   density?: 'comfortable' | 'compact';
   showCovers?: boolean;
   [key: string]: unknown;
+}
+
+export type TodaySectionId = 'capture' | 'capacity' | 'priorities' | 'morning' | 'tasks' | 'evening' | 'goals' | 'dailyNote' | 'focusCard';
+export interface TodayLayoutPreferences {
+  version: 1;
+  sections: Array<{ id: TodaySectionId; visible: boolean }>;
+  contextPanel: 'none' | 'schedule';
 }
 
 export interface WorkspacePresentation {

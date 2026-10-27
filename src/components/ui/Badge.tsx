@@ -32,64 +32,64 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 const variantStyles: Record<BadgeVariant, { container: string; dot: string }> = {
   neutral: {
-    container: 'bg-stone-500/10 text-stone-700 dark:text-stone-300 border-stone-500/20',
-    dot: 'bg-stone-400 dark:bg-stone-500',
+    container: 'bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] border-[var(--border-color)]',
+    dot: 'bg-[var(--text-muted)]',
   },
   brand: {
-    container: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/25',
-    dot: 'bg-amber-500',
+    container: 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] border-[var(--color-brand-border)]',
+    dot: 'bg-[var(--color-brand)]',
   },
   focus: {
-    container: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30 shadow-xs',
-    dot: 'bg-amber-500',
+    container: 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] border-[var(--color-brand-border)] shadow-xs',
+    dot: 'bg-[var(--color-brand)]',
   },
   success: {
-    container: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/25',
-    dot: 'bg-emerald-500',
+    container: 'bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-sage)]',
   },
   danger: {
-    container: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25',
-    dot: 'bg-rose-500',
+    container: 'bg-[var(--pastel-coral-subtle)] text-[var(--pastel-coral)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-coral)]',
   },
   blue: {
-    container: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25',
-    dot: 'bg-sky-500',
+    container: 'bg-[var(--pastel-sky-subtle)] text-[var(--pastel-sky)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-sky)]',
   },
   teal: {
-    container: 'bg-teal-500/10 text-teal-800 dark:text-teal-300 border-teal-500/25',
-    dot: 'bg-teal-500',
+    container: 'bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-sage)]',
   },
   purple: {
-    container: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25',
-    dot: 'bg-purple-500',
+    container: 'bg-[var(--pastel-lavender-subtle)] text-[var(--pastel-lavender)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-lavender)]',
   },
   p1: {
-    container: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25',
-    dot: 'bg-rose-500',
+    container: 'bg-[var(--pastel-coral-subtle)] text-[var(--pastel-coral)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-coral)]',
   },
   p2: {
-    container: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/25',
-    dot: 'bg-amber-500',
+    container: 'bg-[var(--pastel-amber-subtle)] text-[var(--pastel-amber)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-amber)]',
   },
   p3: {
-    container: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25',
-    dot: 'bg-sky-500',
+    container: 'bg-[var(--pastel-sky-subtle)] text-[var(--pastel-sky)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-sky)]',
   },
   p4: {
-    container: 'bg-stone-500/10 text-stone-700 dark:text-stone-300 border-stone-500/20',
-    dot: 'bg-stone-400 dark:bg-stone-500',
+    container: 'bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] border-[var(--border-color)]',
+    dot: 'bg-[var(--text-muted)]',
   },
   todo: {
-    container: 'bg-stone-500/10 text-stone-700 dark:text-stone-300 border-stone-500/20',
-    dot: 'bg-stone-400 dark:bg-stone-500',
+    container: 'bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] border-[var(--border-color)]',
+    dot: 'bg-[var(--text-muted)]',
   },
   in_progress: {
-    container: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25',
-    dot: 'bg-sky-500',
+    container: 'bg-[var(--pastel-sky-subtle)] text-[var(--pastel-sky)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-sky)]',
   },
   done: {
-    container: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/25',
-    dot: 'bg-emerald-500',
+    container: 'bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] border-[var(--border-color)]',
+    dot: 'bg-[var(--pastel-sage)]',
   },
 };
 

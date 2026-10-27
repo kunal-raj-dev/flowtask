@@ -292,15 +292,17 @@ export const BatchActionBar: React.FC = () => {
                 {p}
               </span>
               <span
-                className={`w-2 h-2 rounded-full ${
-                  p === 'p1'
-                    ? 'bg-rose-500'
-                    : p === 'p2'
-                    ? 'bg-amber-500'
-                    : p === 'p3'
-                    ? 'bg-blue-500'
-                    : 'bg-stone-400'
-                }`}
+                className="w-2 h-2 rounded-full"
+                style={{
+                  backgroundColor:
+                    p === 'p1'
+                      ? 'var(--pastel-coral)'
+                      : p === 'p2'
+                      ? 'var(--pastel-amber)'
+                      : p === 'p3'
+                      ? 'var(--pastel-sky)'
+                      : 'var(--text-muted)',
+                }}
               />
             </button>
           ))}

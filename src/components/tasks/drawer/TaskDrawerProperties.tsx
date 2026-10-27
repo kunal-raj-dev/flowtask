@@ -258,7 +258,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             <button
               type="button"
               onClick={() => handlePlannedDateChange(undefined)}
-              className="text-[10px] text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
+              className="text-[10px] text-[var(--color-brand)] dark:text-[var(--color-brand)] hover:underline cursor-pointer"
             >
               Clear
             </button>
@@ -279,8 +279,8 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             onClick={() => handlePlannedDateChange(todayStr)}
             className={`px-2 py-0.5 text-[10px] font-medium rounded-md border transition-colors cursor-pointer ${
               task.plannedDate === todayStr
-                ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30 font-semibold'
-                : 'bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border-[var(--border-hairline)]'
+                ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] border-[var(--color-brand-border)] font-semibold'
+                : 'bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] border-[var(--border-hairline)]'
             }`}
           >
             Today
@@ -290,8 +290,8 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             onClick={() => handlePlannedDateChange(tomorrowStr)}
             className={`px-2 py-0.5 text-[10px] font-medium rounded-md border transition-colors cursor-pointer ${
               task.plannedDate === tomorrowStr
-                ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30 font-semibold'
-                : 'bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border-[var(--border-hairline)]'
+                ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] border-[var(--color-brand-border)] font-semibold'
+                : 'bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] border-[var(--border-hairline)]'
             }`}
           >
             Tomorrow
@@ -313,10 +313,10 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                 htmlFor="task-area-select"
                 className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5"
               >
-                <Compass size={13} className="text-indigo-500" /> Life Area
+                <Compass size={13} className="text-[var(--pastel-lavender)]" /> Life Area
               </label>
               {isOverridden ? (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">(Override)</span>
+                <span className="text-[10px] text-[var(--color-brand)] dark:text-[var(--color-brand)] font-mono">(Override)</span>
               ) : isInherited ? (
                 <span className="text-[10px] text-[var(--text-muted)] font-mono">(Inherited from {currentProject?.name})</span>
               ) : null}
@@ -348,7 +348,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
           htmlFor="task-goal-select"
           className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5"
         >
-          <Target size={13} className="text-emerald-500" /> Vision Goal
+          <Target size={13} className="text-[var(--pastel-sage)]" /> Vision Goal
         </label>
         <select
           id="task-goal-select"
@@ -374,13 +374,13 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             htmlFor="task-defer-until-input"
             className="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5"
           >
-            <Hourglass size={13} className="text-sky-500" /> Defer Until (Tickler)
+            <Hourglass size={13} className="text-[var(--pastel-sky)]" /> Defer Until (Tickler)
           </label>
           {task.deferUntil && (
             <button
               type="button"
               onClick={() => updateTask(task.id, { deferUntil: undefined })}
-              className="text-[10px] text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+              className="text-[10px] text-[var(--pastel-sky)] dark:text-[var(--pastel-sky)] hover:underline cursor-pointer"
             >
               Clear
             </button>
@@ -415,9 +415,9 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
       </div>
 
       {/* Overcome Resistance (Procrastination Diagnostic Wizard Banner) */}
-      <div className="sm:col-span-2 flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-500/25">
+      <div className="sm:col-span-2 flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-[var(--color-brand-border)]">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+          <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] flex items-center justify-center font-bold">
             <Sparkles size={16} />
           </div>
           <div>
@@ -428,7 +428,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
         <button
           type="button"
           onClick={() => openModal('procrastinationWizard', { taskId: task.id, task })}
-          className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs transition shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+          className="px-3.5 py-1.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-[var(--text-on-brand)] font-medium text-xs transition shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
         >
           <Sparkles size={13} />
           <span>Break Down</span>
@@ -448,7 +448,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             <button
               type="button"
               onClick={() => updateTask(task.id, { dueDate: undefined })}
-              className="text-[10px] text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
+              className="text-[10px] text-[var(--color-brand)] dark:text-[var(--color-brand)] hover:underline cursor-pointer"
             >
               Clear
             </button>
@@ -469,8 +469,8 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             onClick={() => updateTask(task.id, { dueDate: todayStr })}
             className={`px-2 py-0.5 text-[10px] font-medium rounded-md border transition-colors cursor-pointer ${
               task.dueDate === todayStr
-                ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30 font-semibold'
-                : 'bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border-[var(--border-hairline)]'
+                ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] border-[var(--color-brand-border)] font-semibold'
+                : 'bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] border-[var(--border-hairline)]'
             }`}
           >
             Today
@@ -480,8 +480,8 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             onClick={() => updateTask(task.id, { dueDate: tomorrowStr })}
             className={`px-2 py-0.5 text-[10px] font-medium rounded-md border transition-colors cursor-pointer ${
               task.dueDate === tomorrowStr
-                ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30 font-semibold'
-                : 'bg-[var(--bg-surface-l1)] hover:bg-stone-200 dark:hover:bg-stone-700 text-[var(--text-secondary)] border-[var(--border-hairline)]'
+                ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] border-[var(--color-brand-border)] font-semibold'
+                : 'bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] border-[var(--border-hairline)]'
             }`}
           >
             Tomorrow
@@ -493,15 +493,15 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
       <div className="sm:col-span-2 min-w-0 pt-2.5 border-t border-[var(--border-hairline)] space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-[var(--text-primary)]">
-            <Timer size={13} className="text-teal-500" />
+            <Timer size={13} className="text-[var(--pastel-sage)]" />
             <span>Session & Timeline Schedule</span>
             {task.scheduleLocked && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] border border-[var(--color-brand-border)] flex items-center gap-1">
                 <Lock size={9} /> Locked
               </span>
             )}
             {task.sessionMetadata?.isSession && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30">
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] border border-[var(--border-color)]">
                 🎯 Session {task.sessionMetadata.sessionNumber || 1}
               </span>
             )}
@@ -519,7 +519,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                       }
                       setIsEditingSession(true);
                     }}
-                    className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                    className="text-[10px] font-semibold text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] hover:underline flex items-center gap-0.5 cursor-pointer"
                   >
                     <Pencil size={10} />
                     <span>Edit Session</span>
@@ -534,7 +534,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                     }
                     handleRemoveSession();
                   }}
-                  className="text-[10px] font-medium text-rose-500 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  className="text-[10px] font-medium text-[var(--pastel-coral)] hover:underline flex items-center gap-0.5 cursor-pointer"
                 >
                   <X size={10} />
                   <span>Remove Session</span>
@@ -551,7 +551,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                     }
                     setIsEditingSession(true);
                   }}
-                  className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  className="text-[10px] font-semibold text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] hover:underline flex items-center gap-0.5 cursor-pointer"
                 >
                   <Plus size={11} />
                   <span>+ Add Session</span>
@@ -569,10 +569,10 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
               aria-label="Lock this task's scheduled time"
               checked={Boolean(task.scheduleLocked)}
               onChange={(e) => updateTask(task.id, { scheduleLocked: e.target.checked })}
-              className="rounded text-amber-500 focus:ring-amber-400"
+              className="rounded text-[var(--color-brand)] focus:ring-[var(--color-focus-ring)]"
             />
             <span className="flex items-center gap-1">
-              <Lock size={11} className={task.scheduleLocked ? 'text-amber-500' : 'text-[var(--text-muted)]'} />
+              <Lock size={11} className={task.scheduleLocked ? 'text-[var(--color-brand)]' : 'text-[var(--text-muted)]'} />
               Lock this task's scheduled time
             </span>
           </label>
@@ -588,7 +588,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                   {task.scheduledStart || '08:00'} – {task.scheduledEnd || '11:00'}
                 </span>
                 {currentDuration && (
-                  <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-semibold bg-teal-500/15 text-teal-700 dark:text-teal-300">
+                  <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-semibold bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)]">
                     {currentDuration}
                   </span>
                 )}
@@ -602,7 +602,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                   }
                   setIsEditingSession(true);
                 }}
-                className="text-[11px] text-teal-600 dark:text-teal-400 font-semibold hover:underline cursor-pointer"
+                className="text-[11px] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] font-semibold hover:underline cursor-pointer"
               >
                 Change
               </button>
@@ -612,7 +612,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] pt-1 border-t border-[var(--border-hairline)] text-[var(--text-secondary)]">
               <span>Workload estimate: <strong className="text-[var(--text-primary)] font-mono">{workloadEstimate ? `${workloadEstimate}m` : 'None'}</strong></span>
               {calendarDurationMinutes !== null && workloadEstimate > 0 && calendarDurationMinutes !== workloadEstimate && (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                <span className="text-[10px] text-[var(--color-brand)] dark:text-[var(--color-brand)] font-medium">
                   Note: Calendar slot ({calendarDurationMinutes}m) differs from workload ({workloadEstimate}m)
                 </span>
               )}
@@ -647,10 +647,10 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
       <div className="sm:col-span-2 min-w-0 pt-2.5 border-t border-[var(--border-hairline)] space-y-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-primary)]">
-            <Bell size={13} className="text-amber-500" />
+            <Bell size={13} className="text-[var(--color-brand)]" />
             <span>Task Reminders & Alerts</span>
             {task.reminders && task.reminders.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300">
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)]">
                 {task.reminders.length}
               </span>
             )}
@@ -661,7 +661,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
               <button
                 type="button"
                 onClick={() => setIsAddingReminder(true)}
-                className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                className="text-[10px] font-semibold text-[var(--color-brand)] dark:text-[var(--color-brand)] hover:underline flex items-center gap-0.5 cursor-pointer"
               >
                 <Plus size={11} />
                 <span>+ Add Reminder</span>
@@ -673,11 +673,11 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
         {/* Capability disclosure */}
         <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] bg-[var(--bg-surface-l1)] px-2.5 py-1 rounded-md border border-[var(--border-hairline)]">
           {capability === 'granted' ? (
-            <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span className="text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] flex items-center gap-1">
               <Check size={11} /> Browser notifications active on this device
             </span>
           ) : capability === 'denied' ? (
-            <span className="text-amber-600 dark:text-amber-400">
+            <span className="text-[var(--color-brand)] dark:text-[var(--color-brand)]">
               Browser notifications blocked (sound alerts will play when tab is open)
             </span>
           ) : capability === 'unsupported' ? (
@@ -689,7 +689,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                 const granted = await requestReminderPermission();
                 setCapability(granted ? 'granted' : 'denied');
               }}
-              className="text-amber-600 dark:text-amber-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+              className="text-[var(--color-brand)] dark:text-[var(--color-brand)] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
             >
               <BellRing size={11} /> Enable browser notification alerts
             </button>
@@ -720,10 +720,10 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                     <span
                       className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase ${
                         rem.status === 'snoozed'
-                          ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
+                          ? 'bg-[var(--pastel-sky-subtle)] text-[var(--pastel-sky)] dark:text-[var(--pastel-sky)]'
                           : rem.status === 'dismissed'
-                            ? 'bg-stone-500/15 text-stone-600 dark:text-stone-400'
-                            : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                            ? 'bg-[var(--bg-surface-l3)] text-[var(--text-muted)] dark:text-[var(--text-muted)]'
+                            : 'bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)]'
                       }`}
                     >
                       {rem.status}
@@ -737,7 +737,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                         onClick={() => {
                           if (store) snoozeReminder(store, task.id, rem.id, '15m');
                         }}
-                        className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                        className="text-[10px] text-[var(--color-brand)] dark:text-[var(--color-brand)] hover:underline cursor-pointer"
                       >
                         Snooze 15m
                       </button>
@@ -753,7 +753,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                           });
                         }
                       }}
-                      className="p-1 text-[var(--text-muted)] hover:text-rose-500 rounded hover:bg-stone-200/50 dark:hover:bg-white/5 transition-colors"
+                      className="p-1 text-[var(--text-muted)] hover:text-[var(--pastel-coral)] rounded hover:bg-[var(--bg-surface-l3)] dark:hover:bg-white/5 transition-colors"
                     >
                       <X size={12} />
                     </button>
@@ -766,7 +766,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
 
         {/* Add Reminder Form */}
         {isAddingReminder && (
-          <div className="p-2.5 rounded-lg bg-[var(--bg-surface-l1)] border border-amber-500/30 space-y-2">
+          <div className="p-2.5 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--color-brand-border)] space-y-2">
             <div className="flex items-center gap-2">
               <input
                 type="date"
@@ -812,7 +812,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
                   }
                   setIsAddingReminder(false);
                 }}
-                className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] transition-colors"
+                className="px-2.5 py-1 rounded bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-[var(--text-on-brand)] font-bold text-[11px] transition-colors"
               >
                 Set Reminder
               </button>
@@ -836,7 +836,7 @@ export const TaskDrawerProperties: React.FC<TaskDrawerPropertiesProps> = ({ task
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+              <div className="p-2 rounded-lg bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] shrink-0">
                 <AlertTriangle size={20} />
               </div>
               <div>

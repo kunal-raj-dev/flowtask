@@ -1,0 +1,26 @@
+.inbox-workspace { width: 100%; max-width: 1240px; margin-inline: auto; padding: 32px clamp(20px, 3vw, 48px) 72px; display: flex; flex-direction: column; gap: 24px; }
+.inbox-workspace .desk-page-header { padding: 0; }
+.inbox-workspace .task-composer { margin: 0; }
+.workspace-view-switch { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--border-hairline); border-radius: 12px; background: var(--bg-surface-l1); width: fit-content; flex-shrink: 0; }
+.workspace-view-switch button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--text-secondary); }
+.workspace-view-switch button[aria-pressed="true"] { background: var(--bg-surface-l2); color: var(--text-primary); box-shadow: var(--shadow-subtle); }
+.workspace-view-switch button:hover { background: var(--bg-surface-hover); }
+.inbox-task-surface { border: 1px solid var(--border-hairline); border-radius: 18px; padding: 20px; background: var(--bg-surface-l2); }
+.inbox-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 8px 12px; }
+.inbox-list-heading h2 { font-size: 14px; font-weight: 600; }
+.inbox-list-heading > span { font-size: 12px; color: var(--text-muted); }
+.flowtask-workspace .inbox-task-list .desk-task-row { background: transparent; border: 0; border-bottom: 1px solid var(--border-hairline); border-radius: 8px; padding: 14px 8px; box-shadow: none; transform: none; }
+.flowtask-workspace .inbox-task-list .desk-task-row:last-child { border-bottom-color: transparent; }
+.flowtask-workspace .inbox-task-list .desk-task-row:hover { background: var(--bg-surface-hover); }
+.inbox-empty { padding: 36px 16px; text-align: center; }
+.inbox-empty h3 { font-size: 18px; font-weight: 550; margin-bottom: 10px; }
+.inbox-empty p { max-width: 40ch; margin: auto; font-size: 14px; line-height: 1.7; color: var(--text-secondary); }
+.inbox-process-view { display: flex; flex-direction: column; min-width: 0; border-radius: 18px; border: 1px solid var(--border-hairline); background: var(--bg-surface-l2); }
+.inbox-process-view > .inbox-process-content { display: flex; flex-direction: column; align-items: center; padding: 24px; }
+@media (max-width: 767px) {
+  .inbox-workspace { padding: 24px 18px 40px; gap: 20px; }
+  .inbox-workspace .desk-page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .workspace-view-switch button { min-height: 40px; }
+  .inbox-task-surface { padding: 16px 12px; }
+  .inbox-process-view > .inbox-process-content { padding: 16px; }
+}

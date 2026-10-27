@@ -29,7 +29,7 @@ export const StudyContinuationWidget: React.FC<WidgetComponentProps> = ({
     <div className="flex flex-col h-full justify-between">
       {displaySessions.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-          <BookOpen size={22} className="text-amber-500 mb-2" />
+          <BookOpen size={22} className="text-[var(--color-brand)] mb-2" />
           <p className="text-xs font-semibold text-[var(--text-primary)]">
             No active study sprints
           </p>
@@ -39,7 +39,7 @@ export const StudyContinuationWidget: React.FC<WidgetComponentProps> = ({
           <button
             type="button"
             onClick={() => setActiveView('study')}
-            className="mt-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+            className="mt-2.5 text-xs font-bold text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] hover:underline"
           >
             Go to Study Hub
           </button>
@@ -55,11 +55,11 @@ export const StudyContinuationWidget: React.FC<WidgetComponentProps> = ({
             return (
               <div
                 key={t.id}
-                className="p-3 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] hover:border-amber-500/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="p-3 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] hover:border-[var(--color-brand-border)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 <div className="min-w-0 flex-1 cursor-pointer" onClick={() => onSelectTask?.(t.id)}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)]">
                       Sprint
                     </span>
                     <h4 className="task-title-text font-bold truncate">
@@ -67,7 +67,7 @@ export const StudyContinuationWidget: React.FC<WidgetComponentProps> = ({
                     </h4>
                   </div>
 
-                  <p className="task-meta-text truncate text-emerald-700 dark:text-emerald-400 font-medium">
+                  <p className="task-meta-text truncate text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] font-medium">
                     Next: {nextSubtask?.title || 'Finish session'}
                   </p>
 
@@ -77,7 +77,7 @@ export const StudyContinuationWidget: React.FC<WidgetComponentProps> = ({
                     </span>
                     <div className="w-20 h-1.5 rounded-full bg-[var(--bg-surface-l2)] overflow-hidden">
                       <div
-                        className="h-full bg-amber-500 rounded-full"
+                        className="h-full bg-[var(--color-brand)] rounded-full"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -87,7 +87,7 @@ export const StudyContinuationWidget: React.FC<WidgetComponentProps> = ({
                 <button
                   type="button"
                   onClick={() => onStartSprint?.(t.id)}
-                  className="self-start sm:self-center flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 transition-colors shadow-xs active:scale-95 shrink-0"
+                  className="self-start sm:self-center flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--color-brand)] text-[var(--text-on-brand)] hover:bg-[var(--color-brand)] transition-colors shadow-xs active:scale-95 shrink-0"
                 >
                   <Play size={12} className="fill-current" />
                   <span>Continue</span>

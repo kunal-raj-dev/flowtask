@@ -22,6 +22,12 @@ export function WorkspaceBackground({ children }: { children: ReactNode }) {
   const coverId = isPlain ? 'none' : (dashboard.coverImage || DEFAULT_BACKGROUND_SCENE_ID);
   const asset = media.visuals.find(a => a.id === coverId);
   const src = isPlain ? undefined : (asset?.variants?.[0]?.src || asset?.src || (coverId === DEFAULT_BACKGROUND_SCENE_ID ? DEFAULT_BACKGROUND_SRC : undefined));
+  const imageSources = asset && asset.kind !== 'video'
+    ? [...(asset.variants || []), ...(asset.width ? [{ src: asset.src, width: asset.width, height: asset.height || 0 }] : [])]
+      .filter((variant, index, all) => variant.width > 0 && all.findIndex(other => other.width === variant.width) === index)
+      .sort((a, b) => a.width - b.width)
+      .map(variant => `${variant.src} ${variant.width}w`).join(', ')
+    : undefined;
 
   const imageKey = `${dashboard.id}:${dashboard.updatedAt}:${src}`;
   const [failedImage, setFailedImage] = useState('');
@@ -49,6 +55,8 @@ export function WorkspaceBackground({ children }: { children: ReactNode }) {
           <img
             key={imageKey}
             src={src}
+            srcSet={imageSources || undefined}
+            sizes="(min-width: 1024px) calc(100vw - 248px), 100vw"
             alt=""
             loading="eager"
             onError={() => {

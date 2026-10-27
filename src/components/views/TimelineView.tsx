@@ -25,6 +25,7 @@ interface TimelineViewProps {
   onStartSprint?: (taskId: string) => void;
   onOpenStudySession?: () => void;
   selectedDateStr?: string;
+  onSelectedDateChange?: (date: string) => void;
 }
 
 export const TimelineView: React.FC<TimelineViewProps> = ({
@@ -33,6 +34,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onStartSprint,
   onOpenStudySession,
   selectedDateStr,
+  onSelectedDateChange,
 }) => {
   const {
     tasks,
@@ -58,6 +60,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const todayStr = useTodayStr();
   const [planDate, setPlanDate] = useState(todayStr);
   const effectiveDateStr = selectedDateStr || planDate;
+  const updatePlanDate = (date: string) => { setPlanDate(date); onSelectedDateChange?.(date); };
 
   const calendarEvents = useMemo(
     () => allCalendarEvents.filter(event => event.date === effectiveDateStr || (!event.date && effectiveDateStr===todayStr)),
@@ -200,10 +203,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   }, [setCalendarIcsUrl]);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-4 space-y-6">
+    <div className={`${onSelectedDateChange ? 'planning-embedded' : 'max-w-5xl mx-auto px-4 py-4'} space-y-6`}>
       <SchedulePlannerDialog isOpen={slotPlannerOpen} onClose={() => setSlotPlannerOpen(false)} date={effectiveDateStr} />
       {/* Executive Workload Capacity Gauge Header */}
       <TimelineHeader
+        embedded={Boolean(onSelectedDateChange)}
         scheduledCount={scheduledTasks.length}
         calendarEventCount={calendarEvents.length}
         calendarIcsUrl={calendarIcsUrl}
@@ -225,18 +229,18 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
       {/* Mode switcher and planning date */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        {!selectedDateStr && viewMode === 'canvas' && (
+        {(!selectedDateStr || onSelectedDateChange) && viewMode === 'canvas' && (
           <div className="desk-plan-date">
-            <button className="desk-button" aria-label="Previous day" onClick={()=>{const d=new Date(planDate+'T12:00:00');d.setDate(d.getDate()-1);setPlanDate(formatLocalDate(d));}}>←</button>
-            <label>Planning date<input aria-label="Planning date" type="date" value={planDate} onChange={e=>{if(e.target.value)setPlanDate(e.target.value);}}/></label>
-            <button className="desk-button" aria-label="Next day" onClick={()=>{const d=new Date(planDate+'T12:00:00');d.setDate(d.getDate()+1);setPlanDate(formatLocalDate(d));}}>→</button>
-            <button className="desk-button" onClick={()=>setPlanDate(todayStr)}>Today</button>
+            <button className="desk-button" aria-label="Previous day" onClick={()=>{const d=new Date(effectiveDateStr+'T12:00:00');d.setDate(d.getDate()-1);updatePlanDate(formatLocalDate(d));}}>←</button>
+            <label>Planning date<input aria-label="Planning date" type="date" value={effectiveDateStr} onChange={e=>{if(e.target.value)updatePlanDate(e.target.value);}}/></label>
+            <button className="desk-button" aria-label="Next day" onClick={()=>{const d=new Date(effectiveDateStr+'T12:00:00');d.setDate(d.getDate()+1);updatePlanDate(formatLocalDate(d));}}>→</button>
+            <button className="desk-button" onClick={()=>updatePlanDate(todayStr)}>Today</button>
           </div>
         )}
         <div className="flex items-center rounded-lg border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface-l2)] text-xs ml-auto">
           <button
             onClick={() => setViewMode('canvas')}
-            className={`px-3 py-1 rounded font-medium ${viewMode === 'canvas' ? 'bg-[var(--color-brand)] text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+            className={`px-3 py-1 rounded font-medium ${viewMode === 'canvas' ? 'bg-[var(--color-brand)] text-[var(--text-on-brand)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
             Canvas
           </button>
@@ -254,7 +258,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           initialDate={effectiveDateStr}
           onSelectTask={onSelectTask}
           onStartFocus={onStartFocus}
-          onDateChange={(d) => setPlanDate(d)}
+          onDateChange={(d) => updatePlanDate(d)}
         />
       ) : (
         <div className="timeline-planning-layout grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

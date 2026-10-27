@@ -1,5 +1,5 @@
-/* Studio palettes are independent of the planner and shared with the floating timer. */
-.focus-studio { background: #0b0e14; color: var(--studio-text); }
+/* Studio palettes follow the planner unless explicitly overridden. */
+.focus-studio { background: var(--studio-canvas); color: var(--studio-text); }
 .focus-studio :is(.studio-session-core, .studio-lobby-library, .studio-panel, .studio-dock, .studio-summary) {
   background: color-mix(in srgb, var(--studio-panel) var(--studio-panel-opacity,96%), transparent); color: var(--studio-text); border-color: var(--studio-border);
   box-shadow: 0 18px 60px #00000026;

@@ -66,7 +66,7 @@ export const TaskDrawerTags: React.FC<TaskDrawerTagsProps> = ({ task }) => {
             {task.tags?.map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[var(--bg-surface-l1)] text-stone-700 dark:text-stone-300 border border-[var(--border-subtle)]"
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[var(--bg-surface-l1)] text-[var(--text-muted)] dark:text-[var(--text-muted)] border border-[var(--border-subtle)]"
               >
                 <span>#{t}</span>
                 <button
@@ -75,7 +75,7 @@ export const TaskDrawerTags: React.FC<TaskDrawerTagsProps> = ({ task }) => {
                     const updated = (task.tags || []).filter((x) => x !== t);
                     updateTask(task.id, { tags: updated.length > 0 ? updated : undefined });
                   }}
-                  className="hover:text-rose-500 transition-colors"
+                  className="hover:text-[var(--pastel-coral)] transition-colors"
                 >
                   <X size={10} />
                 </button>
@@ -85,7 +85,7 @@ export const TaskDrawerTags: React.FC<TaskDrawerTagsProps> = ({ task }) => {
             {task.contextTags?.map((ctx) => (
               <span
                 key={ctx}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] border border-[var(--border-color)]"
               >
                 <span>@{ctx}</span>
                 <button
@@ -94,7 +94,7 @@ export const TaskDrawerTags: React.FC<TaskDrawerTagsProps> = ({ task }) => {
                     const updated = (task.contextTags || []).filter((x) => x !== ctx);
                     updateTask(task.id, { contextTags: updated.length > 0 ? updated : undefined });
                   }}
-                  className="hover:text-rose-500 transition-colors"
+                  className="hover:text-[var(--pastel-coral)] transition-colors"
                 >
                   <X size={10} />
                 </button>
@@ -131,7 +131,7 @@ export const TaskDrawerTags: React.FC<TaskDrawerTagsProps> = ({ task }) => {
               type="button"
               onClick={handleAddTag}
               disabled={!newTagInput.trim()}
-              className="px-3 py-1.5 bg-stone-900 dark:bg-white text-white dark:text-stone-950 text-xs font-semibold rounded-lg disabled:opacity-40 transition-all card-surface cursor-pointer"
+              className="px-3 py-1.5 bg-[var(--bg-surface-l3)] dark:bg-white text-white dark:text-[var(--text-muted)] text-xs font-semibold rounded-lg disabled:opacity-40 transition-all card-surface cursor-pointer"
             >
               Add
             </button>
@@ -157,8 +157,8 @@ export const TaskDrawerTags: React.FC<TaskDrawerTagsProps> = ({ task }) => {
                   }}
                   className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-medium border transition-colors ${
                     isPresent
-                      ? 'bg-teal-600 text-white border-teal-600 font-bold'
-                      : 'bg-[var(--bg-surface-l1)] text-teal-700 dark:text-teal-300 border-teal-500/20 hover:bg-teal-500/10'
+                      ? 'bg-[var(--pastel-sage)] text-[var(--bg-main)] border-[var(--border-color)] font-bold'
+                      : 'bg-[var(--bg-surface-l1)] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] border-[var(--border-color)] hover:bg-[var(--pastel-sage-subtle)]'
                   }`}
                 >
                   {chip}

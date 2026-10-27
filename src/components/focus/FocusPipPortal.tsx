@@ -12,7 +12,8 @@ import { useTaskContext } from "../../context/TaskContext";
 import { useModal } from "../../context/ModalContext";
 import { useStudioPreferences, useMediaCatalog } from '../../hooks/useStudio';
 import { resolveAsset } from '../../services/studioCatalog';
-import { STUDIO_THEME_IDS, studioThemeId, floatingThemeTokens } from '../../utils/studioAppearance';
+import { STUDIO_THEME_IDS, resolveStudioTheme, studioThemeId, floatingThemeTokens } from '../../utils/studioAppearance';
+import { useUIStore } from '../../store/useUIStore';
 import { THEMES } from '../../utils/themeRegistry';
 import type { AppearancePreferences } from '../../types/studio';
 
@@ -41,10 +42,13 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const appearanceRef = useRef<HTMLDivElement | null>(null);
-  const themeId = preferences.pipTheme === 'studio' ? preferences.interfaceTheme : studioThemeId(preferences.pipTheme);
+  const appTheme = useUIStore(state => state.theme);
+  const themeId = preferences.pipTheme === 'studio' ? resolveStudioTheme(preferences, appTheme) : studioThemeId(preferences.pipTheme);
   const isBreak = focusSession?.pomodoroPhase === 'short_break' || focusSession?.pomodoroPhase === 'long_break';
   const selectedScene = resolveAsset(isBreak ? preferences.breakSceneId || preferences.sceneId : preferences.sceneId, media.scenes);
-  const highContrast = Boolean((workspacePreferences.appearance as Partial<AppearancePreferences> | undefined)?.highContrast);
+  const appearance = workspacePreferences.appearance as Partial<AppearancePreferences> | undefined;
+  const highContrast = Boolean(appearance?.highContrast);
+  const resolvedAccent = preferences.pipTheme === 'studio' && preferences.themeMode === 'app' ? appearance?.accent || '' : '';
   const sceneSource = (preferences.pipBackground && !highContrast && selectedScene ? selectedScene.poster || (selectedScene.kind === 'video' ? selectedScene.thumbnail : selectedScene.variants?.find(variant => variant.width >= 640)?.src || selectedScene.src) : '') || '';
   const [failedScene, setFailedScene] = useState('');
   const showScene = Boolean(sceneSource && failedScene !== sceneSource);
@@ -53,7 +57,7 @@ export const FocusPipHUD: React.FC<FocusPipHUDProps> = ({ onReturnToApp }) => {
     'data-pip-theme': themeId,
     'data-pip-background': showScene ? selectedScene?.id : 'off',
     style: {
-      ...floatingThemeTokens(themeId, highContrast),
+      ...floatingThemeTokens(themeId, highContrast, resolvedAccent),
       colorScheme: THEMES[themeId].scheme,
     } as CSSProperties,
   };

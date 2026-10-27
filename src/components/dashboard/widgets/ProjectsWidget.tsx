@@ -56,7 +56,7 @@ export const ProjectsWidget: React.FC<WidgetComponentProps<ProjectsConfig>> = ({
           <button
             type="button"
             onClick={() => setActiveView('projects')}
-            className="mt-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+            className="mt-2 text-xs font-bold text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] hover:underline"
           >
             Create or browse projects
           </button>
@@ -80,7 +80,7 @@ export const ProjectsWidget: React.FC<WidgetComponentProps<ProjectsConfig>> = ({
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: p.color || '#10B981' }}
                       />
-                      <h4 className="task-title-text font-bold truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-300">
+                      <h4 className="task-title-text font-bold truncate group-hover:text-[var(--pastel-sage)] dark:group-hover:text-[var(--pastel-sage)]">
                         {p.name}
                       </h4>
                     </div>
@@ -105,7 +105,7 @@ export const ProjectsWidget: React.FC<WidgetComponentProps<ProjectsConfig>> = ({
                   {/* Progress track */}
                   <div className="w-full h-1.5 rounded-full bg-[var(--bg-surface-l2)] overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-emerald-600 transition-all duration-300"
+                      className="h-full rounded-full bg-[var(--pastel-sage)] transition-all duration-300"
                       style={{ width: `${pct}%` }}
                     />
                   </div>

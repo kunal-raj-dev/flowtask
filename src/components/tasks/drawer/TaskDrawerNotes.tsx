@@ -97,7 +97,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
         parts.push(
           <code
             key={match.index}
-            className="px-1.5 py-0.5 rounded bg-stone-200/60 dark:bg-white/[0.08] font-mono text-[11px] text-[var(--color-brand)] font-semibold"
+            className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-l3)] dark:bg-white/[0.08] font-mono text-[11px] text-[var(--color-brand)] font-semibold"
           >
             {token.slice(1, -1)}
           </code>
@@ -197,7 +197,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
           if (line.startsWith('- ') || line.startsWith('* ')) {
             return (
               <div key={idx} className="flex items-start gap-2 pl-2">
-                <span className="text-amber-500 font-bold">•</span>
+                <span className="text-[var(--color-brand)] font-bold">•</span>
                 <span>{renderFormattedInline(line.slice(2))}</span>
               </div>
             );
@@ -205,7 +205,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
           if (line.startsWith('- [ ] ')) {
             return (
               <div key={idx} className="flex items-start gap-2 pl-2 text-[var(--text-secondary)]">
-                <span className="w-3 h-3 rounded border border-stone-400 dark:border-stone-600 inline-block mt-0.5 shrink-0" />
+                <span className="w-3 h-3 rounded border border-[var(--border-color)] dark:border-[var(--border-color)] inline-block mt-0.5 shrink-0" />
                 <span>{renderFormattedInline(line.slice(6))}</span>
               </div>
             );
@@ -213,7 +213,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
           if (line.startsWith('- [x] ') || line.startsWith('- [X] ')) {
             return (
               <div key={idx} className="flex items-start gap-2 pl-2 text-[var(--text-muted)] line-through">
-                <span className="w-3 h-3 rounded bg-emerald-500 text-white flex items-center justify-center text-[9px] mt-0.5 shrink-0">
+                <span className="w-3 h-3 rounded bg-[var(--pastel-sage)] text-[var(--bg-main)] flex items-center justify-center text-[9px] mt-0.5 shrink-0">
                   ✓
                 </span>
                 <span>{renderFormattedInline(line.slice(6))}</span>
@@ -258,7 +258,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
       {isMarkdownPreview ? (
         <div
           onClick={() => setIsMarkdownPreview(false)}
-          className="w-full min-h-[100px] p-3.5 bg-[var(--bg-surface-l1)]/50 border border-[var(--border-hairline)] rounded-xl cursor-pointer hover:border-stone-400 dark:hover:border-stone-600 transition-colors card-surface"
+          className="w-full min-h-[100px] p-3.5 bg-[var(--bg-surface-l1)]/50 border border-[var(--border-hairline)] rounded-xl cursor-pointer hover:border-[var(--border-color)] dark:hover:border-[var(--border-color)] transition-colors card-surface"
           title="Click to edit notes"
         >
           {renderMarkdownNotes(localNotes)}
@@ -273,7 +273,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
           onChange={handleNotesChange}
           onBlur={handleBlur}
           placeholder="Add details, links, checklists (- [ ]), or code (`code`)..."
-          className="w-full text-xs p-3.5 bg-[var(--bg-surface-l1)]/50 text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-xl outline-none focus:border-stone-400 dark:focus:border-stone-600 resize-none leading-relaxed card-surface font-mono"
+          className="w-full text-xs p-3.5 bg-[var(--bg-surface-l1)]/50 text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-xl outline-none focus:border-[var(--border-color)] dark:focus:border-[var(--border-color)] resize-none leading-relaxed card-surface font-mono"
         />
       )}
 
@@ -302,7 +302,7 @@ export const TaskDrawerNotes: React.FC<TaskDrawerNotesProps> = ({ task }) => {
                 showToast?.((e as Error).message);
               }
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] hover:border-amber-500/40 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] hover:border-[var(--color-brand-border)] transition-colors"
           >
             <BookOpen size={12} />
             <span>Extract to Note</span>

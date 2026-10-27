@@ -71,4 +71,18 @@ describe('DesktopHeader', () => {
     fireEvent.click(copilotBtn);
     expect(onOpenCopilot).toHaveBeenCalled();
   });
+
+  it('keeps Focus Studio in workspace tools while the sidebar provides its main entry', () => {
+    render(<DesktopHeader {...defaultProps} />);
+    expect(screen.queryByRole('button', { name: 'Focus' })).toBeNull();
+    const studio = screen.getByRole('button', { name: 'Open Focus Studio', hidden: true });
+    fireEvent.click(studio);
+    expect(defaultProps.onOpenFocus).toHaveBeenCalledTimes(1);
+  });
+
+  it('exposes Focus Studio directly when navigation is collapsed', () => {
+    render(<DesktopHeader {...defaultProps} isSidebarCollapsed />);
+    fireEvent.click(screen.getByRole('button', { name: 'Focus' }));
+    expect(defaultProps.onOpenFocus).toHaveBeenCalledTimes(1);
+  });
 });

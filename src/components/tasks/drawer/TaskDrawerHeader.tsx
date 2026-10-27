@@ -91,7 +91,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <div className="w-12 h-1.5 rounded-full bg-stone-300 dark:bg-stone-600" />
+        <div className="w-12 h-1.5 rounded-full bg-[var(--bg-surface-l3)] dark:bg-[var(--bg-surface-l3)]" />
       </div>
 
       {/* Drawer Header */}
@@ -111,8 +111,8 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             <div
               className={`w-5 h-5 rounded-full flex items-center justify-center border ${
                 isDone
-                  ? 'bg-stone-900 dark:bg-white border-stone-900 dark:border-white text-white dark:text-stone-950 shadow-xs'
-                  : 'border-stone-400/80 dark:border-stone-500/80 hover:border-amber-500 hover:ring-2 hover:ring-amber-500/20 bg-transparent'
+                  ? 'bg-[var(--bg-surface-l3)] dark:bg-white border-[var(--border-color)] dark:border-white text-white dark:text-[var(--text-muted)] shadow-xs'
+                  : 'border-[var(--border-color)] dark:border-[var(--border-color)] hover:border-[var(--color-brand)] hover:ring-2 hover:ring-[var(--color-focus-ring)] bg-transparent'
               }`}
             >
               {isDone && (
@@ -144,8 +144,8 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             aria-label={task.isPinnedToday ? 'Unpin from Top 3 Focus' : 'Pin to Top 3 Focus'}
             className={`min-w-[44px] min-h-[44px] touch-target-accessible rounded-lg flex items-center justify-center transition-all ${
               task.isPinnedToday
-                ? 'text-amber-500 bg-amber-500/15 border border-amber-500/30 shadow-xs'
-                : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-[var(--bg-surface-l2)]'
+                ? 'text-[var(--color-brand)] bg-[var(--color-brand-subtle)] border border-[var(--color-brand-border)] shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--bg-surface-l2)]'
             }`}
           >
             <Star size={15} className={task.isPinnedToday ? 'fill-current' : ''} />
@@ -159,8 +159,8 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
             aria-label={task.isEvening ? 'Move to Daytime' : 'Move to This Evening'}
             className={`min-w-[44px] min-h-[44px] touch-target-accessible rounded-lg flex items-center justify-center transition-all ${
               task.isEvening
-                ? 'text-indigo-500 bg-indigo-500/15 border border-indigo-500/30 shadow-xs'
-                : 'text-[var(--text-muted)] hover:text-indigo-500 hover:bg-[var(--bg-surface-l2)]'
+                ? 'text-[var(--pastel-lavender)] bg-[var(--pastel-lavender-subtle)] border border-[var(--border-color)] shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[var(--pastel-lavender)] hover:bg-[var(--bg-surface-l2)]'
             }`}
           >
             <Moon size={15} className={task.isEvening ? 'fill-indigo-500/30' : ''} />
@@ -223,9 +223,9 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowProjectPicker(true)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
                     >
-                      <Folder size={14} className="text-blue-500" />
+                      <Folder size={14} className="text-[var(--pastel-sky)]" />
                       <span>Move to Project…</span>
                     </button>
 
@@ -236,7 +236,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
                         duplicateTask(task.id);
                         onClose();
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
                     >
                       <Copy size={14} className="text-[var(--text-muted)]" />
                       <span>Duplicate Task</span>
@@ -248,7 +248,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
                         setIsActionMenuOpen(false);
                         onOpenMergeModal();
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
                     >
                       <GitMerge size={14} className="text-[var(--text-muted)]" />
                       <span>Merge with Task</span>
@@ -261,7 +261,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
                         archiveTask(task.id);
                         onClose();
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-white/[0.06] rounded-lg transition-colors text-left"
                     >
                       <Archive size={14} className="text-[var(--text-muted)]" />
                       <span>Archive Task</span>
@@ -276,7 +276,7 @@ export const TaskDrawerHeader: React.FC<TaskDrawerHeaderProps> = ({
                         deleteTask(task.id);
                         onClose();
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[var(--pastel-coral)] dark:text-[var(--pastel-coral)] hover:bg-[var(--pastel-coral-subtle)] rounded-lg transition-colors text-left"
                     >
                       <Trash2 size={14} />
                       <span>Delete Task</span>

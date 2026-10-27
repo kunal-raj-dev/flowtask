@@ -30,7 +30,7 @@ export const TaskDrawerStudySection: React.FC<TaskDrawerStudySectionProps> = ({
         className="w-full flex items-center justify-between p-3.5 bg-[var(--bg-surface-l2)]/60 hover:bg-[var(--bg-surface-l2)] transition-colors text-left"
       >
         <div className="flex items-center gap-2">
-          <Sparkles size={14} className="text-emerald-500" />
+          <Sparkles size={14} className="text-[var(--pastel-sage)]" />
           <span className="text-xs font-semibold text-[var(--text-primary)]">
             Study Session Metadata
           </span>
@@ -50,7 +50,7 @@ export const TaskDrawerStudySection: React.FC<TaskDrawerStudySectionProps> = ({
       {isStudyExpanded && (
         <div className="p-4 bg-[var(--bg-surface-l1)]/50 border-t border-[var(--border-hairline)] space-y-3.5 text-xs">
           {task.sessionMetadata?.isSession ? (
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-3">
+            <div className="p-3.5 rounded-xl bg-[var(--pastel-sage-subtle)] border border-[var(--border-color)] flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-xs font-bold text-[var(--text-primary)]">
@@ -59,7 +59,7 @@ export const TaskDrawerStudySection: React.FC<TaskDrawerStudySectionProps> = ({
                   </div>
                   <div className="text-[11px] text-[var(--text-muted)] font-mono flex items-center gap-2 mt-0.5">
                     {task.sessionMetadata.pacingMinutesPerQuestion && (
-                      <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                      <span className="font-semibold text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)]">
                         ⚡ {task.sessionMetadata.pacingMinutesPerQuestion}m / question
                       </span>
                     )}
@@ -78,7 +78,7 @@ export const TaskDrawerStudySection: React.FC<TaskDrawerStudySectionProps> = ({
                       onStartFocus(task.id);
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95"
+                  className="px-3 py-1.5 rounded-lg bg-[var(--pastel-sage)] hover:bg-[var(--pastel-sage)] text-[var(--bg-main)] text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95"
                 >
                   <Zap size={13} className="fill-current" />
                   <span>Launch Sprint</span>
@@ -114,7 +114,7 @@ export const TaskDrawerStudySection: React.FC<TaskDrawerStudySectionProps> = ({
                   });
                   showToast('Study session mode enabled');
                 }}
-                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[var(--pastel-sage)] hover:bg-[var(--pastel-sage)] text-[var(--bg-main)] transition-colors"
               >
                 Enable Study Mode
               </button>

@@ -9,8 +9,7 @@ import { useTaskStore } from '../../store/useTaskStore';
 import React, { useState, useEffect, useRef, useMemo, useCallback, lazy } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { TodayView } from '../views/TodayView';
-const UpcomingView = lazy(() => import('../views/UpcomingView').then((m) => ({ default: m.UpcomingView })));
-const TimelineView = lazy(() => import('../views/TimelineView').then((m) => ({ default: m.TimelineView })));
+const PlanningView = lazy(() => import('../views/PlanningView').then((m) => ({ default: m.PlanningView })));
 const EisenhowerView = lazy(() => import('../views/EisenhowerView').then((m) => ({ default: m.EisenhowerView })));
 const KanbanView = lazy(() => import('../views/KanbanView').then((m) => ({ default: m.KanbanView })));
 const ProjectsView = lazy(() => import('../views/ProjectsView').then((m) => ({ default: m.ProjectsView })));
@@ -20,7 +19,7 @@ const StudyView = lazy(() => import('../views/StudyView').then((m) => ({ default
 const LifeAreasView = lazy(() => import('../views/LifeAreasView').then((m) => ({ default: m.LifeAreasView })));
 const GoalsView = lazy(() => import('../views/GoalsView').then((m) => ({ default: m.GoalsView })));
 const RoutinesView = lazy(() => import('../views/RoutinesView').then((m) => ({ default: m.RoutinesView })));
-const InboxTriageView = lazy(() => import('../views/InboxTriageView').then((m) => ({ default: m.InboxTriageView })));
+const InboxView = lazy(() => import('../views/InboxView').then((m) => ({ default: m.InboxView })));
 import { TaskList } from '../tasks/TaskList';
 import { AppShell } from './AppShell';
 import { DesktopHeader } from './DesktopHeader';
@@ -330,7 +329,7 @@ export const AppLayout: React.FC = () => {
       case 'inbox':
         return 'Inbox';
       case 'upcoming':
-        return 'Upcoming';
+        return 'Plan';
       case 'projects':
         return 'Projects';
       case 'notes':
@@ -441,19 +440,22 @@ export const AppLayout: React.FC = () => {
     }
     if (activeView === 'inbox') {
       return (
-        <InboxTriageView
+        <InboxView
           onSelectTask={handleSelectTask}
+          onStartFocus={handleStartFocus}
+          onStartSprint={handleStartStudySprint}
           onGoToToday={() => setActiveView('today')}
         />
       );
     }
-    if (activeView === 'upcoming') {
+    if (activeView === 'upcoming' || activeView === 'timeline') {
       return (
-        <UpcomingView
+        <PlanningView
           onSelectTask={handleSelectTask}
           onStartFocus={handleStartFocus}
           onOpenBrainDump={handleOpenBrainDump}
           onStartSprint={handleStartStudySprint}
+          onOpenStudySession={handleOpenStudySession}
         />
       );
     }
@@ -485,16 +487,6 @@ export const AppLayout: React.FC = () => {
     }
     if (activeView === 'study') {
       return <StudyView onStartSprint={handleStartStudySprint} onSelectTask={(id: string) => setSelectedTaskId(id)} />;
-    }
-    if (activeView === 'timeline') {
-      return (
-        <TimelineView
-          onSelectTask={(id) => setSelectedTaskId(id)}
-          onStartFocus={handleStartFocus}
-          onStartSprint={handleStartStudySprint}
-          onOpenStudySession={() => openModal('studySession')}
-        />
-      );
     }
     if (activeView === 'matrix') {
       return <EisenhowerView onSelectTask={(id) => setSelectedTaskId(id)} />;

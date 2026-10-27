@@ -74,7 +74,7 @@ export function InboxTriage() {
         <div className="v2-planning-icon">
           <Inbox size={19} />
         </div>
-        <div>
+        <div className="v2-planning-content">
           <strong>A thought captured. A little clarity next.</strong>
           <p>Process unscheduled ideas one at a time.</p>
         </div>

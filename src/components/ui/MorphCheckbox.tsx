@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { audioEngine } from '../../utils/audioEngine';
 import { SPRING_TACTILE } from '../../utils/springPhysics';
 import type { Priority } from '../../types/task';
+import { onAccent } from '../../utils/themeRegistry';
 
 export interface MorphCheckboxProps {
   checked: boolean;
@@ -56,19 +57,12 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
     }
   };
 
-  const getBorderColor = () => {
-    if (checked) {
-      if (color) return color;
-      if (priority === 'p1') return '#F43F5E';
-      if (priority === 'p2') return '#0EA5E9';
-      if (priority === 'p3') return '#8B5CF6';
-      return '#10B981';
-    }
-    if (priority === 'p1') return 'border-rose-400 dark:border-rose-500';
-    if (priority === 'p2') return 'border-sky-400 dark:border-sky-500';
-    if (priority === 'p3') return 'border-violet-400 dark:border-violet-500';
-    return 'border-stone-300 dark:border-stone-600 hover:border-amber-500';
-  };
+  const priorityColor = priority === 'p1' ? 'var(--pastel-coral)'
+    : priority === 'p2' ? 'var(--pastel-amber)'
+    : priority === 'p3' ? 'var(--pastel-sky)'
+    : priority === 'p4' ? 'var(--text-muted)' : 'var(--pastel-sage)';
+  const fill = color || priorityColor;
+  const checkColor = color && /^#[0-9a-f]{6}$/i.test(color) ? onAccent(color) : 'var(--bg-main)';
 
   return (
     <button
@@ -76,17 +70,17 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
       role="checkbox"
       aria-checked={checked}
       aria-label={ariaLabel}
+      data-priority={priority}
       disabled={disabled}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       style={{
         width: `${size}px`,
         height: `${size}px`,
-        ...(checked ? { backgroundColor: color || (priority === 'p1' ? '#F43F5E' : priority === 'p2' ? '#0EA5E9' : priority === 'p3' ? '#8B5CF6' : '#10B981'), borderColor: color || 'transparent' } : {}),
+        borderColor: color || (priority ? priorityColor : 'var(--border-strong)'),
+        ...(checked ? { backgroundColor: fill, color: checkColor } : {}),
       }}
-      className={`rounded-[6px] shrink-0 flex items-center justify-center border transition-colors select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
-        !checked ? getBorderColor() : ''
-      } ${reduced ? '' : 'active:scale-90'} ${
+      className={`rounded-[6px] shrink-0 flex items-center justify-center border transition-colors select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${reduced ? '' : 'active:scale-90'} ${
         reduced ? 'transition-none' : ''
       } ${className}`}
     >
@@ -107,7 +101,6 @@ export const MorphCheckbox: React.FC<MorphCheckboxProps> = ({
             opacity: checked ? 1 : 0,
           }}
           transition={reduced ? { duration: 0 } : SPRING_TACTILE}
-          className="text-white"
         />
       </svg>
     </button>

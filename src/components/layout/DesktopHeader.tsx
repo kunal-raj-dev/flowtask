@@ -1,7 +1,7 @@
 import { shortcutHintsEnabled, MOD_KEY } from '../../services/shortcutRegistry';
 import { useTaskStore } from '../../store/useTaskStore';
 import React from 'react';
-import { Menu, Search, Plus, Timer, Cloud, Sparkles, Volume2, VolumeX, Compass, MoreHorizontal, Settings } from 'lucide-react';
+import { Menu, Search, Plus, Timer, Cloud, Sparkles, Volume2, VolumeX, Compass, MoreHorizontal, Settings, ChevronRight } from 'lucide-react';
 import { audioEngine } from '../../utils/audioEngine';
 import { useModalStore } from '../../store/useModalStore';
 import { FocusMiniPlayer } from '../focus/FocusMiniPlayer';
@@ -33,7 +33,7 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({ viewTitle, isSideb
   const isSyncOk = syncStatus === 'synced' || syncStatus === 'offline' || !user;
 
   return (
-    <header className="product-header hidden lg:flex backdrop-blur-md">
+    <header className="product-header refined-product-header hidden lg:flex backdrop-blur-md" data-focus-active={Boolean(active)}>
       <div className="product-header-location">
         <button
           className="product-icon-button hover:scale-105 active:scale-95 transition-transform"
@@ -64,13 +64,14 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({ viewTitle, isSideb
         <button className="product-icon-button product-more-button" popoverTarget={utilityId} aria-label="Workspace tools" title="Workspace tools"><MoreHorizontal size={18} /></button>
         <div id={utilityId} popover="auto" className="product-tools-popover" onClick={event => { if ((event.target as HTMLElement).closest('button')) event.currentTarget.hidePopover?.(); }}>
         <p>Workspace tools</p>
+        {!active && !isSidebarCollapsed && <button type="button" onClick={onOpenFocus} aria-label="Open Focus Studio"><Timer size={16} className="text-[var(--color-brand)]" /><span>Focus Studio</span></button>}
         <button
           type="button"
           onClick={() => useModalStore.getState().openModal('captureHUD')}
           aria-label="Open Quick-Capture HUD (Alt+Space)"
           title="Quick-Capture HUD (Alt+Space)"
         >
-          <Sparkles size={16} className="text-amber-500" />
+          <Sparkles size={16} className="text-[var(--color-brand)]" />
           <span>Quick capture</span>{hints && <kbd>Alt Space</kbd>}
         </button>
         <button
@@ -83,10 +84,11 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({ viewTitle, isSideb
           aria-label={soundEnabled ? "Mute audio earcons" : "Unmute audio earcons"}
           title={soundEnabled ? "Audio earcons enabled" : "Audio muted"}
         >
-          {soundEnabled ? <Volume2 size={16} className="text-amber-500" /> : <VolumeX size={16} className="text-[var(--text-muted)]" />}
+          {soundEnabled ? <Volume2 size={16} className="text-[var(--color-brand)]" /> : <VolumeX size={16} className="text-[var(--text-muted)]" />}
           <span>{soundEnabled ? 'Mute interface sounds' : 'Enable interface sounds'}</span>
         </button>
         <button type="button" onClick={onOpenSettings}><Settings size={16} /><span>Settings</span>{hints && <kbd>{MOD_KEY} ,</kbd>}</button>
+        <a href="/">Visit welcome page<ChevronRight size={14} /></a>
         </div>
         {onOpenCopilot && (
           <button
@@ -95,22 +97,22 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({ viewTitle, isSideb
             aria-label="Open Copilot Omnibar"
             title="Plan with your local assistant"
           >
-            <Compass size={18} className="text-violet-500" />
+            <Compass size={18} className="text-[var(--color-brand)]" />
           </button>
         )}
         {active ? (
           <FocusMiniPlayer variant="desktop" />
-        ) : (
+        ) : isSidebarCollapsed ? (
           <button
             className="desk-button product-focus-button enabled:active:scale-[0.96] transition-transform cursor-pointer shadow-2xs"
             onClick={onOpenFocus}
             aria-label="Focus"
             title="Open Focus Studio"
           >
-            <Timer size={16} className="text-amber-500" />
+            <Timer size={16} className="text-[var(--color-brand)]" />
             <span>Focus Studio</span>
           </button>
-        )}
+        ) : null}
         <button
           className="desk-button primary product-add-button enabled:active:scale-[0.96] transition-transform cursor-pointer shadow-xs"
           onClick={onQuickAdd}

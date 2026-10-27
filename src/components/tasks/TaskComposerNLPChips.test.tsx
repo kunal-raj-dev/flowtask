@@ -41,6 +41,21 @@ describe('TaskComposer Auto-Revealing NLP Chips (BUG-18)', () => {
     vi.clearAllMocks();
   });
 
+  it('keeps capture tools out of the idle row and preserves the draft when opening and closing them', () => {
+    render(<TaskComposer />);
+    expect(screen.queryByRole('tab', { name: 'Note' })).toBeNull();
+    const input = screen.getByRole('textbox', { name: 'Task title' }) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Write the response' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
+    expect(screen.getByRole('tab', { name: 'Note' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /More details/ })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
+    expect(screen.queryByRole('tab', { name: 'Note' })).toBeNull();
+    expect(input.value).toBe('Write the response');
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(mockAddTask).toHaveBeenCalledWith('Write the response', expect.objectContaining({ plannedDate: '2026-10-04' }));
+  });
+
   it('keeps chips hidden when typing plain text without natural language tokens', () => {
     render(<TaskComposer />);
 

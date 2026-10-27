@@ -71,6 +71,9 @@
 /* Opaque data surfaces keep decorative light away from text. */
 .flowtask-workspace :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { border-color: var(--border-strong); }
 .flowtask-workspace .desk-task-meta :is([data-priority="p1"],[data-overdue="true"]) { color: var(--pastel-coral); }
+.flowtask-workspace .desk-task-meta [data-priority="p2"] { color: var(--pastel-amber); }
+.flowtask-workspace .desk-task-meta [data-priority="p3"] { color: var(--pastel-sky); }
+.flowtask-workspace .desk-task-meta [data-priority="p4"] { color: var(--text-muted); }
 html :is([class~="bg-[var(--color-brand)]"], .bg-brand, .btn-forest-primary) { color: var(--text-on-brand); }
 @media (max-width: 420px) {
   .theme-library-grid { grid-template-columns: minmax(0,1fr); }

@@ -81,6 +81,7 @@ export interface AppearancePreferences {
   highContrast: boolean;
 }
 export interface StudioPreferences {
+  themeMode: 'app' | 'custom';
   interfaceTheme: import('../utils/studioAppearance').StudioThemeId;
   panelOpacity: number;
   pipTheme: import('../utils/studioAppearance').FloatingThemeId;
@@ -122,6 +123,7 @@ export const DEFAULT_TIMER: TimerConfiguration = {
   autoStart: false,
 };
 export const DEFAULT_STUDIO: StudioPreferences = {
+  themeMode: 'app',
   interfaceTheme: 'linen',
   panelOpacity: .96,
   pipTheme: 'studio',

@@ -20,15 +20,18 @@ import { audioEngine } from '../../utils/audioEngine';
 import celebrate from '../../utils/celebrate';
 import { Badge } from '../ui';
 import type { Task, Priority } from '../../types/task';
+import { shouldIgnoreShortcut } from '../../services/shortcutRegistry';
 
 interface InboxTriageViewProps {
   onSelectTask?: (id: string) => void;
   onGoToToday?: () => void;
+  embedded?: boolean;
 }
 
 export const InboxTriageView: React.FC<InboxTriageViewProps> = ({
   onSelectTask,
   onGoToToday,
+  embedded = false,
 }) => {
   const {
     tasks,
@@ -173,19 +176,9 @@ export const InboxTriageView: React.FC<InboxTriageViewProps> = ({
   // Global Keyboard shortcuts for Triage (E, S, P, 1-4, B, Backspace)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is inside an input, textarea, or modifier is held
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement ||
-        (e.target as HTMLElement).isContentEditable ||
-        e.ctrlKey ||
-        e.metaKey ||
-        e.altKey
-      ) {
-        return;
-      }
-
+      if (document.querySelector('[aria-modal="true"]')) return;
+      if (shouldIgnoreShortcut(e)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (!currentTask) return;
 
       const key = e.key.toLowerCase();
@@ -227,9 +220,9 @@ export const InboxTriageView: React.FC<InboxTriageViewProps> = ({
   }, [currentTask, handleDone, handleAiBreakdown, handleSetPriority, handleDelete]);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--bg-main)] text-[var(--text-primary)]">
+    <div className={embedded ? 'inbox-process-view' : 'flex-1 flex flex-col h-full overflow-hidden bg-[var(--bg-main)] text-[var(--text-primary)]'}>
       {/* Top Header Bar */}
-      <header className="px-6 py-4 border-b border-[var(--border-hairline)] flex items-center justify-between shrink-0 bg-[var(--bg-surface-l1)]/60 backdrop-blur-md">
+      {!embedded && <header className="px-6 py-4 border-b border-[var(--border-hairline)] flex items-center justify-between shrink-0 bg-[var(--bg-surface-l1)]/60 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
             <Inbox size={20} strokeWidth={2} />
@@ -266,10 +259,10 @@ export const InboxTriageView: React.FC<InboxTriageViewProps> = ({
             <span>Breakdown</span>
           </div>
         )}
-      </header>
+      </header>}
 
       {/* Main Content Workspace */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-center">
+      <div className={embedded ? 'inbox-process-content' : 'flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-center'}>
         {remainingCount === 0 ? (
           /* Inbox Zero Celebratory State */
           <motion.div

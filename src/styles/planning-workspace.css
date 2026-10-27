@@ -1,0 +1,19 @@
+@import './inbox-workspace.css';
+.planning-workspace { width: 100%; max-width: 1360px; margin-inline: auto; padding: 32px clamp(20px, 3vw, 48px) 72px; display: flex; flex-direction: column; gap: 24px; }
+.planning-workspace .desk-page-header { padding: 0; }
+.planning-content { min-width: 0; }
+.planning-content > .planning-embedded { width: 100%; max-width: none; padding: 0; margin: 0; }
+.planning-content .workspace-task-section { background: var(--bg-surface-l2); border: 1px solid var(--border-hairline); border-radius: 18px; padding: 20px; }
+.planning-content .workspace-page-header { background: transparent; box-shadow: none; border: 0; }
+.planning-content .desk-plan-header { padding: 0; background: transparent; border: 0; }
+.planning-content .desk-plan-header .desk-page-header { justify-content: flex-end; margin-bottom: 16px; }
+.planning-capture { margin-bottom: 20px; }
+.planning-capture .task-composer { margin-bottom: 0; }
+.planning-workload { padding: 12px 0; margin-bottom: 12px; }
+.planning-workload > summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+.planning-workload[open] > summary { margin-bottom: 16px; }
+@media (max-width: 767px) {
+  .planning-workspace { padding: 24px 18px 40px; gap: 20px; }
+  .planning-workspace .desk-page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .planning-content .workspace-task-section { padding: 16px; }
+}

@@ -20,7 +20,7 @@ export const FocusLaunchpadWidget: React.FC<WidgetComponentProps> = ({ widget })
       if (focusSession) { open(); return; }
       update({ recipeId:recipe.id,sceneId:recipe.sceneId,breakSceneId:recipe.breakSceneId||recipe.sceneId,layers:recipe.layers,musicId:recipe.musicId,musicVolume:recipe.musicVolume,timer:recipe.timer,taskSource:recipe.taskSource==='project'&&!preferences.projectId?'top3':recipe.taskSource });
       modal?.openModal('pomodoro',{taskId:task?.id||null,initialPhase:recipe.initialPhase});
-    }}><span className="desk-recipe-art">{scene?.thumbnail && <img src={scene.thumbnail} alt="" loading="lazy"/>}</span><span><strong>{recipe.name}</strong><small>{recipe.timer.mode === 'stopwatch' ? 'Open-ended' : recipe.timer.focusMinutes+' min'} · {recipe.layers.length ? 'Ambient sound' : 'Quiet space'}</small></span><Play size={15}/></button>; })}
+    }}><span className="desk-recipe-art">{scene?.thumbnail && <img src={scene.thumbnail} alt="" loading="lazy"/>}</span><span className="desk-recipe-info"><strong>{recipe.name}</strong><small>{recipe.timer.mode === 'stopwatch' ? 'Open-ended' : recipe.timer.focusMinutes+' min'} · {recipe.layers.length ? 'Ambient sound' : 'Quiet space'}</small></span><Play size={15}/></button>; })}
     <button className="desk-text-action" onClick={open}>Find your flow<ArrowUpRight size={14}/></button>
   </div>;
 };

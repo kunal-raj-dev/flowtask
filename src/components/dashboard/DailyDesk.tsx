@@ -192,17 +192,17 @@ export function DailyDesk({
       <section className="daily-flow-path" aria-label="Daily flow">
         <button type="button" className="daily-flow-action" aria-label="Plan my day" onClick={onPlanMyDay}>
           <span className="daily-flow-number">01</span>
-          <span><strong>Plan</strong><small>{candidates.length} tasks · {priorities.length}/3 priorities</small></span>
+          <span className="daily-flow-label"><strong>Plan</strong><small>{candidates.length} tasks · {priorities.length}/3 priorities</small></span>
         </button>
         <span className="daily-flow-connector" aria-hidden="true" />
         <div className="daily-flow-current" aria-current="step">
           <span className="daily-flow-number">02</span>
-          <span><strong>Focus</strong><small>{task ? "Next action below" : "Choose a task below"}</small></span>
+          <span className="daily-flow-label"><strong>Focus</strong><small>{task ? "Next action below" : "Choose a task below"}</small></span>
         </div>
         <span className="daily-flow-connector" aria-hidden="true" />
         <button type="button" className="daily-flow-action" onClick={() => setIsEveningShutdownOpen(true)}>
           <span className="daily-flow-number">03</span>
-          <span><strong>Reflect</strong><small>{summary.completedTaskCount} done · {formatSecondsToHumanReadable(focusedSeconds)} focused</small></span>
+          <span className="daily-flow-label"><strong>Reflect</strong><small>{summary.completedTaskCount} done · {formatSecondsToHumanReadable(focusedSeconds)} focused</small></span>
         </button>
       </section>
       {summary.overbooked && (

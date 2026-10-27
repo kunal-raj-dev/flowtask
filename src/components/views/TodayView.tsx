@@ -9,6 +9,9 @@ import { OnboardingFlow } from '../modals/OnboardingFlow';
 import { BackupReminder } from '../workflow/BackupReminder';
 import celebrate from '../../utils/celebrate';
 import { TodayAppearance } from '../workspace/TodayAppearance';
+import type { TodayLayoutPreferences, WorkspacePreferences } from '../../types/dashboard';
+import { normalizeTodayLayout, partitionTodayTasks } from '../../utils/todayLayout';
+import type { Priority } from '../../types/task';
 
 const DashboardCanvasView = lazy(() => import('./DashboardCanvasView').then(module => ({ default: module.DashboardCanvasView })));
 
@@ -38,10 +41,18 @@ export const TodayView: React.FC<TodayViewProps> = ({
     batchUpdateTasks,
     batchDeleteTasks,
     settings,
+    setWorkspacePreference,
   } = useTaskContext();
 
   const [viewMode, setViewMode] = useState<'horizon' | 'dashboard'>(initialViewMode);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [layoutPreview, setLayoutPreview] = useState<TodayLayoutPreferences | null>(null);
+  const workspace = workspacePreferences.workspace as WorkspacePreferences | undefined;
+  const savedLayout = normalizeTodayLayout(workspace?.todayLayout);
+  const layout = layoutPreview ?? savedLayout;
+  const closeCustomize = () => { setLayoutPreview(null); setCustomizeOpen(false); };
+  const openCustomize = () => { setLayoutPreview(normalizeTodayLayout(workspace?.todayLayout)); setCustomizeOpen(true); };
+  const saveLayout = (next: TodayLayoutPreferences) => setWorkspacePreference?.('workspace', { ...workspace, todayLayout: next });
   const [welcome, setWelcome] = useState(() => {
     try {
       return (
@@ -59,8 +70,12 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
   // Active tasks for keyboard navigation
   const visibleTasks = useMemo(() => {
-    return tasks.filter((t) => !t.deletedAt && !t.archivedAt && (isTodayTask(t, today, { tasks, projects, now: availabilityNow }) || isFocusTask(t, today, { tasks, projects, now: availabilityNow })));
-  }, [tasks, projects, today, availabilityNow]);
+    const active = tasks.filter((t) => !t.deletedAt && !t.archivedAt && t.status !== 'done' && (isTodayTask(t, today, { tasks, projects, now: availabilityNow }) || isFocusTask(t, today, { tasks, projects, now: availabilityNow })));
+    const weight: Record<Priority, number> = { p1: 1, p2: 2, p3: 3, p4: 4 };
+    const priorities = active.filter(task => isFocusTask(task, today, { tasks, projects, now: availabilityNow })).sort((a, b) => weight[a.priority] - weight[b.priority]).slice(0, 3);
+    const groups = partitionTodayTasks(active, layout, priorities.map(task => task.id));
+    return layout.sections.flatMap(section => section.visible && section.id in groups ? groups[section.id as keyof typeof groups] : []);
+  }, [tasks, projects, today, availabilityNow, layout]);
 
   const handleToggleStatusWithCelebration = useCallback(
     (taskId: string) => {
@@ -71,11 +86,15 @@ export const TodayView: React.FC<TodayViewProps> = ({
       toggleTaskStatus(taskId);
 
       if (willBeDone && isTopThree) {
+        const theme = getComputedStyle(document.documentElement);
+        const celebrationColors = ['--color-brand', '--pastel-sage', '--pastel-lavender', '--pastel-coral', '--pastel-sky']
+          .map(token => theme.getPropertyValue(token).trim())
+          .filter(Boolean);
         celebrate({
           particleCount: 50,
           spread: 60,
           origin: { y: 0.7 },
-          colors: ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#3B82F6'],
+          ...(celebrationColors.length > 0 ? { colors: celebrationColors } : {}),
         });
       }
     },
@@ -107,7 +126,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
   return (
     <div className="today-surface">
-      <TodayAppearance customizeOpen={customizeOpen} onClose={() => setCustomizeOpen(false)} onEditWidgets={() => setViewMode('dashboard')} />
+      <TodayAppearance customizeOpen={customizeOpen} onClose={closeCustomize} onEditWidgets={() => setViewMode('dashboard')} layout={layout} onPreview={setLayoutPreview} onApply={() => { saveLayout(layout); closeCustomize(); }} />
       <div className="today-content">
 
       {viewMode === 'horizon' ? (
@@ -118,7 +137,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
           onStartFocus={onStartFocus}
           onStartSprint={onStartSprint}
           onSwitchToDashboard={() => setViewMode('dashboard')}
-          onCustomize={() => setCustomizeOpen(true)}
+          onCustomize={openCustomize}
+          layout={layout}
+          onLayoutChange={next => customizeOpen ? setLayoutPreview(next) : saveLayout(next)}
         />
       ) : (
         <Suspense fallback={<p role="status">Opening your dashboard…</p>}>

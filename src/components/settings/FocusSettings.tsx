@@ -11,7 +11,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
       <section className="v2-settings-section p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <div className="p-2 rounded-xl bg-[var(--color-brand-subtle)] text-[var(--color-brand)] border border-[var(--color-brand-border)]">
               {sound ? <Sparkles size={18} /> : <Timer size={18} />}
             </div>
             <div>
@@ -43,7 +43,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                   step="0.01"
                   value={p.masterVolume}
                   onChange={(e) => update({ masterVolume: Number(e.target.value) })}
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-[var(--color-brand)] cursor-pointer"
                 />
                 <span className="text-xs font-mono font-bold text-[var(--text-secondary)] w-9 text-right">
                   {Math.round(p.masterVolume * 100)}%
@@ -56,7 +56,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                 type="checkbox"
                 checked={p.continueAudioOnFinish}
                 onChange={(e) => update({ continueAudioOnFinish: e.target.checked })}
-                className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
+                className="w-4 h-4 rounded text-[var(--color-brand)] accent-[var(--color-brand)] cursor-pointer"
               />
               <span>Continue audio after a completed session</span>
             </label>
@@ -79,7 +79,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                     },
                   })
                 }
-                className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none cursor-pointer"
+                className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-[var(--color-brand)] outline-none cursor-pointer"
               >
                 <option value="pomodoro">Pomodoro (Intervals)</option>
                 <option value="countdown">Countdown Target</option>
@@ -117,7 +117,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                         if (n >= 1 && n <= f.max)
                           update({ timer: { ...p.timer, [f.key]: n } });
                       }}
-                      className="w-16 px-2.5 py-1 text-sm font-mono font-bold rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none"
+                      className="w-16 px-2.5 py-1 text-sm font-mono font-bold rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-[var(--color-brand)] outline-none"
                     />
                     <span className="text-xs text-[var(--text-secondary)] font-semibold">mins</span>
                   </div>
@@ -149,7 +149,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                       }
                       className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${
                         isSelected
-                          ? "border-amber-500 bg-amber-500/20 text-amber-800 dark:text-amber-200 shadow-xs"
+                          ? "border-[var(--color-brand)] bg-[var(--color-brand-subtle)] text-[var(--color-brand)] shadow-xs"
                           : "border-[var(--border-hairline)] bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                       }`}
                     >
@@ -176,7 +176,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                   onClick={() => update({ timerStyle: "digital" })}
                   className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                     p.timerStyle !== "ring"
-                      ? "bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold shadow-xs"
+                      ? "bg-[var(--color-brand-subtle)] text-[var(--color-brand)] font-bold shadow-xs"
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
@@ -187,7 +187,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                   onClick={() => update({ timerStyle: "ring" })}
                   className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                     p.timerStyle === "ring"
-                      ? "bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold shadow-xs"
+                      ? "bg-[var(--color-brand-subtle)] text-[var(--color-brand)] font-bold shadow-xs"
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
@@ -205,7 +205,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                   onChange={(e) =>
                     update({ timer: { ...p.timer, autoStart: e.target.checked } })
                   }
-                  className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
+                  className="w-4 h-4 rounded text-[var(--color-brand)] accent-[var(--color-brand)] cursor-pointer"
                 />
                 <span>Automatically start the next Pomodoro phase</span>
               </label>
@@ -215,7 +215,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
                   type="checkbox"
                   checked={p.breakPrompts !== false}
                   onChange={(e) => update({ breakPrompts: e.target.checked })}
-                  className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
+                  className="w-4 h-4 rounded text-[var(--color-brand)] accent-[var(--color-brand)] cursor-pointer"
                 />
                 <span>Show mindful stretch & reflection prompts during breaks</span>
               </label>
@@ -230,7 +230,7 @@ export function FocusSettings({ sound = false }: { sound?: boolean }) {
               closeModal("settings");
               openModal("pomodoro", { initialPanel: sound ? "sound" : "timer" });
             }}
-            className="w-full py-2 px-4 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2 px-4 rounded-xl border border-[var(--color-brand-border)] bg-[var(--color-brand-subtle)] hover:bg-[var(--color-brand-subtle)] text-[var(--color-brand)] text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <span>Open {sound ? "sound mixer" : "Focus Studio"}</span>
             <ExternalLink size={13} />

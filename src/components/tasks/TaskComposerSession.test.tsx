@@ -44,6 +44,7 @@ describe('TaskComposer Session Duration Generator', () => {
 
   it('renders + Session chip and toggles the Session Duration Generator card', async () => {
     render(<TaskComposer />);
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
 
     // Expand properties
     const setPropsBtn = screen.getByRole('button', { name: /more details/i });
@@ -66,6 +67,7 @@ describe('TaskComposer Session Duration Generator', () => {
 
   it('submits task with scheduled start, end, duration and session metadata', async () => {
     render(<TaskComposer />);
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
 
     // Input task title
     const input = screen.getByPlaceholderText(/What needs to be done/i);
@@ -102,6 +104,7 @@ describe('TaskComposer Session Duration Generator', () => {
 
   it('applies quick session time presets (e.g. Afternoon 14:30–17:30)', async () => {
     render(<TaskComposer />);
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
 
     // Expand properties & enable session
     fireEvent.click(screen.getByRole('button', { name: /more details/i }));
@@ -128,6 +131,7 @@ describe('TaskComposer Session Duration Generator', () => {
   });
   it('defaults plannedDate to todayStr when no date is specified in today view', () => {
     render(<TaskComposer />);
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
     const input = screen.getByPlaceholderText(/What needs to be done/i);
     fireEvent.change(input, { target: { value: 'Buy groceries' } });
     fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
@@ -142,6 +146,7 @@ describe('TaskComposer Session Duration Generator', () => {
 
   it('does not force plannedDate to todayStr when a future due date is parsed', () => {
     render(<TaskComposer />);
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
     const input = screen.getByPlaceholderText(/What needs to be done/i);
     fireEvent.change(input, { target: { value: 'Prepare Q3 report due tomorrow at 3pm' } });
     fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
@@ -156,6 +161,7 @@ describe('TaskComposer Session Duration Generator', () => {
   });
   it('requires Apply, preserves a manual work estimate, and discards edited session drafts on Cancel', async () => {
     render(<TaskComposer />);
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
     fireEvent.change(screen.getByPlaceholderText(/What needs to be done/i), { target: { value: 'Study arrays ~40m' } });
     fireEvent.click(screen.getByRole('button', { name: /more details/i }));
     fireEvent.click(screen.getByRole('button', { name: /\+ Session/i }));
@@ -169,6 +175,7 @@ describe('TaskComposer Session Duration Generator', () => {
 
   it('does not turn an unapplied open editor into a saved session', () => {
     render(<TaskComposer />);
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
     fireEvent.change(screen.getByPlaceholderText(/What needs to be done/i), { target: { value: 'Review notes ~20m' } });
     fireEvent.click(screen.getByRole('button', { name: /more details/i }));
     fireEvent.click(screen.getByRole('button', { name: /\+ Session/i }));

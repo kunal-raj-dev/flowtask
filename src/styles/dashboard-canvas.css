@@ -372,7 +372,7 @@
 .daily-flow-path > .daily-flow-action { transition: background-color 140ms cubic-bezier(0.16, 1, 0.3, 1); }
 .daily-flow-path > .daily-flow-action:hover { background: var(--bg-surface-l2); }
 .daily-flow-path > .daily-flow-action:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
-.daily-flow-path > .daily-flow-action > span:nth-child(2), .daily-flow-current > span:nth-child(2) { display: grid; min-width: 0; gap: 3px; }
+.daily-flow-label { display: grid; min-width: 0; gap: 3px; }
 .daily-flow-current { background: var(--bg-surface-l2); }
 .daily-flow-path strong { font-size: 12px; }
 .daily-flow-path small { overflow: hidden; max-width: 190px; color: var(--text-secondary); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }

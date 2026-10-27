@@ -275,7 +275,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   const getCapacityGuidance = (hours: number) => {
     if (hours < 4) return { text: 'Minimalist & recovery pacing', color: 'text-stone-600 dark:text-stone-300' };
     if (hours <= 7) return { text: 'Optimal cognitive balance for deep work & retention', color: 'text-emerald-700 dark:text-emerald-300' };
-    if (hours <= 10) return { text: 'Intensive workday sprint / high output', color: 'text-amber-800 dark:text-amber-300' };
+    if (hours <= 10) return { text: 'Intensive workday sprint / high output', color: 'text-[var(--pastel-amber)]' };
     if (hours <= 14) return { text: 'Exam marathon & deep study sprint mode', color: 'text-indigo-700 dark:text-indigo-300' };
     return { text: 'Extended marathon crunch — schedule recovery & hydration', color: 'text-rose-700 dark:text-rose-300' };
   };
@@ -448,7 +448,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   <div>
                     <label htmlFor="daily-capacity-custom-input" className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
                       <span>Daily Planned Capacity Target</span>
-                      <Sparkles size={14} className="text-amber-500" />
+                      <Sparkles size={14} className="text-[var(--color-brand)]" />
                     </label>
                     <p className="text-xs text-[var(--text-secondary)]">
                       Choose a realistic amount of time for your tasks. Perfect for regular workdays or intense study sprints.
@@ -456,7 +456,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   </div>
 
                   {/* Direct Custom Numerical Input */}
-                  <div className="flex items-center gap-1 bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-xl px-2.5 py-1 focus-within:ring-2 focus-within:ring-amber-500 transition-all shrink-0">
+                  <div className="flex items-center gap-1 bg-[var(--color-brand-subtle)] dark:bg-[var(--color-brand-subtle)] border border-[var(--color-brand-border)] rounded-xl px-2.5 py-1 focus-within:ring-2 focus-within:ring-[var(--color-focus-ring)] transition-all shrink-0">
                     <input
                       type="number"
                       min={MIN_CAPACITY_HOURS}
@@ -496,7 +496,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       updateSettings({ targetWorkCapacityHours: val });
                       triggerSaveToast();
                     }}
-                    className="w-full accent-amber-500 cursor-pointer"
+                    className="w-full accent-[var(--color-brand)] cursor-pointer"
                   />
                   <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
                     <span>{MIN_CAPACITY_HOURS}h (Minimal)</span>
@@ -528,7 +528,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                           onClick={() => handleCapacityPreset(hours)}
                           className={`min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all text-center active:scale-95 cursor-pointer ${
                             isSelected
-                              ? 'border-amber-500 bg-amber-500/20 text-amber-800 dark:text-amber-300 shadow-xs'
+                              ? 'border-[var(--color-brand)] bg-[var(--color-brand-subtle)] text-[var(--color-brand)] shadow-xs'
                               : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-stone-400'
                           }`}
                         >
@@ -570,7 +570,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                         onClick={() => handleDurationPreset(mins)}
                         className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-amber-500 bg-amber-500/10 text-amber-800 dark:text-amber-300 shadow-xs'
+                            ? 'border-[var(--color-brand)] bg-[var(--color-brand-subtle)] text-[var(--color-brand)] shadow-xs'
                             : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                         }`}
                       >
@@ -581,7 +581,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
 
                   {/* Custom Duration Input / Button */}
                   {isCustomDurationOpen || !isPresetDuration ? (
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-800 dark:text-amber-300">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-[var(--color-brand)] bg-[var(--color-brand-subtle)] text-[var(--color-brand)]">
                       <span className="text-xs font-semibold">Custom:</span>
                       <input
                         type="number"
@@ -599,7 +599,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                             (e.target as HTMLInputElement).blur();
                           }
                         }}
-                        className="w-12 bg-transparent text-center font-mono font-bold text-xs outline-none border-b border-amber-500/50"
+                        className="w-12 bg-transparent text-center font-mono font-bold text-xs outline-none border-b border-[var(--color-brand-border)]"
                         autoFocus={isCustomDurationOpen && isPresetDuration}
                       />
                       <span className="text-xs font-semibold">m</span>
@@ -608,7 +608,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     <button
                       type="button"
                       onClick={() => setIsCustomDurationOpen(true)}
-                      className="py-1.5 px-3 rounded-xl text-xs font-semibold border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-amber-500/50 cursor-pointer"
+                      className="py-1.5 px-3 rounded-xl text-xs font-semibold border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--color-brand-border)] cursor-pointer"
                     >
                       + Custom
                     </button>
@@ -638,7 +638,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       aria-label="Timeline start hour"
                       value={settings.timelineStartHour}
                       onChange={(e) => handleStartHourChange(parseInt(e.target.value, 10))}
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none cursor-pointer"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-[var(--color-brand)] outline-none cursor-pointer"
                     >
                       {ALL_START_HOURS.map((h) => (
                         <option key={h} value={h}>
@@ -658,7 +658,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       aria-label="Timeline end hour"
                       value={settings.timelineEndHour}
                       onChange={(e) => handleEndHourChange(parseInt(e.target.value, 10))}
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none cursor-pointer"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-[var(--color-brand)] outline-none cursor-pointer"
                     >
                       {ALL_END_HOURS.map((h) => (
                         <option key={h} value={h}>
@@ -672,7 +672,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                 {/* Canvas Coverage Preview */}
                 <div className="pt-2 px-3 py-2 rounded-xl bg-stone-500/5 dark:bg-white/[0.03] border border-[var(--border-hairline)] flex items-center justify-between text-xs text-[var(--text-muted)]">
                   <span className="font-medium text-[var(--text-secondary)]">Canvas Window</span>
-                  <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">
+                  <span className="font-mono text-[var(--color-brand)] font-semibold">
                     {settings.timelineEndHour - settings.timelineStartHour} hrs ({formatHourLabel(settings.timelineStartHour)} – {formatHourLabel(settings.timelineEndHour)})
                   </span>
                 </div>
@@ -701,7 +701,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       }}
                       className={`py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                         settings.autoSlotBufferMinutes === mins
-                          ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 shadow-xs'
+                          ? 'border-[var(--color-brand)] bg-[var(--color-brand-subtle)] text-[var(--color-brand)] shadow-xs'
                           : 'border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
                     >
@@ -731,7 +731,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       }}
                       className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                         settings.weekStartDay === 'monday'
-                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs font-bold'
+                          ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] shadow-xs font-bold'
                           : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                       }`}
                     >
@@ -745,7 +745,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       }}
                       className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                         settings.weekStartDay === 'sunday'
-                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs font-bold'
+                          ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] shadow-xs font-bold'
                           : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                       }`}
                     >
@@ -773,7 +773,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       updateSettings({ autoArchiveCompleted: e.target.value as AutoArchiveCompleted });
                       triggerSaveToast();
                     }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-amber-500 outline-none cursor-pointer"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-[var(--text-primary)] focus:border-[var(--color-brand)] outline-none cursor-pointer"
                   >
                     <option value="never">Manual only (Never)</option>
                     <option value="immediate">Immediate</option>
@@ -797,10 +797,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   </div>
                   <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)]">
                     {[
-                      { id: 'p1', label: 'P1 Urgent', color: 'text-rose-500' },
-                      { id: 'p2', label: 'P2 High', color: 'text-amber-500' },
-                      { id: 'p3', label: 'P3 Normal', color: 'text-sky-500' },
-                      { id: 'p4', label: 'P4 Low', color: 'text-stone-400' },
+                      { id: 'p1', label: 'P1 Urgent', color: 'text-[var(--pastel-coral)]' },
+                      { id: 'p2', label: 'P2 High', color: 'text-[var(--pastel-amber)]' },
+                      { id: 'p3', label: 'P3 Normal', color: 'text-[var(--pastel-sky)]' },
+                      { id: 'p4', label: 'P4 Low', color: 'text-[var(--text-muted)]' },
                     ].map((p) => {
                       const isSelected = (settings.defaultTaskPriority || 'p3') === p.id;
                       return (
@@ -813,7 +813,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                           }}
                           className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold shadow-xs'
+                              ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] font-bold shadow-xs'
                               : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                           }`}
                         >
@@ -845,7 +845,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     triggerSaveToast();
                   }}
                   className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    settings.enableSmartSyntaxParsing !== false ? 'bg-amber-500' : 'bg-stone-300 dark:bg-stone-700'
+                    settings.enableSmartSyntaxParsing !== false ? 'bg-[var(--color-brand)]' : 'bg-stone-300 dark:bg-stone-700'
                   }`}
                 >
                   <span
@@ -857,12 +857,12 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
               </div>
 
               {/* Guided Onboarding Trigger */}
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-4">
+              <div className="p-4 rounded-2xl bg-[var(--color-brand-subtle)] border border-[var(--color-brand-border)] flex items-center justify-between gap-4">
                 <div>
-                  <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                  <h4 className="text-xs font-bold text-[var(--text-primary)]">
                     A fresh start
                   </h4>
-                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
+                  <p className="text-[11px] text-[var(--text-secondary)]">
                     Add one task and begin a quiet focus session.
                   </p>
                 </div>
@@ -872,7 +872,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     onClose();
                     openModal('onboarding');
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-[var(--text-on-brand)] text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
                 >
                   Start with one task
                 </button>
@@ -962,7 +962,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     value={icsInput}
                     onChange={(e) => setIcsInput(e.target.value)}
                     placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
-                    className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] focus:border-amber-500 text-[var(--text-primary)] outline-none font-mono"
+                    className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] focus:border-[var(--color-brand)] text-[var(--text-primary)] outline-none font-mono"
                   />
                 </div>
 
@@ -1194,7 +1194,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     </ul>
                   </div>
                   <div className="p-3 rounded-xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] space-y-1.5">
-                    <span className="font-semibold text-amber-800 dark:text-amber-400 block">🔒 Kept Strictly Local (this device only)</span>
+                    <span className="font-semibold text-[var(--color-brand)] block">🔒 Kept Strictly Local (this device only)</span>
                     <ul className="text-[11px] text-[var(--text-secondary)] list-disc list-inside space-y-0.5">
                       <li>Webcal feed URLs & cached external events</li>
                       <li>Audio engine cache & ambient sound volume</li>
@@ -1212,7 +1212,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                 <div id="s-storage" className="p-4 rounded-2xl bg-[var(--bg-surface-l2)]/60 border border-[var(--border-hairline)] space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
-                      <HardDrive size={15} className="text-amber-500" />
+                      <HardDrive size={15} className="text-[var(--color-brand)]" />
                       <span>Estimated browser storage</span>
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold">
@@ -1227,7 +1227,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                     </div>
                     <div className="w-full bg-[var(--bg-surface-l1)] h-2 rounded-full overflow-hidden border border-[var(--border-hairline)]">
                       <div
-                        className="bg-amber-500 h-full rounded-full transition-all duration-500"
+                        className="bg-[var(--color-brand)] h-full rounded-full transition-all duration-500"
                         style={{ width: `${Math.max(2, storageStats.percent)}%` }}
                       />
                     </div>
@@ -1257,11 +1257,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   <button
                     type="button"
                     onClick={downloadWorkspaceBackup}
-                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-amber-500/50 text-left transition-all flex items-center justify-between cursor-pointer"
+                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-[var(--color-brand-border)] text-left transition-all flex items-center justify-between cursor-pointer"
                   >
                     <div>
                       <div className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                        <Download size={13} className="text-amber-500" />
+                        <Download size={13} className="text-[var(--color-brand)]" />
                         <span>Download JSON Backup</span>
                       </div>
                       <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
@@ -1273,7 +1273,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                   <button
                     type="button"
                     onClick={handleDownloadCsv}
-                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-amber-500/50 text-left transition-all flex items-center justify-between cursor-pointer"
+                    className="p-3.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] hover:border-[var(--color-brand-border)] text-left transition-all flex items-center justify-between cursor-pointer"
                   >
                     <div>
                       <div className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
@@ -1383,7 +1383,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       syncStatus === 'synced'
                         ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
                         : syncStatus === 'syncing'
-                        ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 animate-pulse'
+                        ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] animate-pulse'
                         : 'bg-[var(--bg-surface-l2)] text-stone-700 dark:text-stone-300 border border-[var(--border-hairline)]'
                     }`}
                   >
@@ -1401,7 +1401,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
                       <button
                         type="button"
                         onClick={() => void forceSyncToCloud()}
-                        className="px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] hover:border-amber-500 text-xs font-semibold text-[var(--text-primary)] transition-all cursor-pointer flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] hover:border-[var(--color-brand)] text-xs font-semibold text-[var(--text-primary)] transition-all cursor-pointer flex items-center gap-1"
                       >
                         <RefreshCw size={12} />
                         <span>Sync Now</span>
@@ -1439,7 +1439,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
             }}
             className="flex items-center gap-1.5 hover:text-[var(--text-primary)] transition-colors cursor-pointer"
           >
-            <Keyboard size={14} className="text-amber-500" />
+            <Keyboard size={14} className="text-[var(--color-brand)]" />
             <span className="font-semibold">Keyboard Shortcuts Cheat Sheet</span>
             <span className="font-mono text-[10px] px-1 py-0.2 rounded bg-stone-200 dark:bg-white/10">?</span>
           </button>

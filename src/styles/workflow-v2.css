@@ -190,7 +190,7 @@
   .v2-planning-card strong {
     font-size: 12px;
   }
-  .v2-planning-card > div:nth-child(2) {
+  .v2-planning-content {
     flex: 1;
   }
   .v2-planning-card > button {

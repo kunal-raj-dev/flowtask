@@ -6,12 +6,12 @@ import { DEFAULT_STUDIO } from "../src/types/studio";
 import type { MediaCatalog, MediaAsset } from "../src/types/studio";
 
 describe("DesktopHeader Frontier Upgrade", () => {
-  it("renders the Focus Studio trigger button with accessible label and responds to clicks", () => {
+  it("keeps Focus Studio available in the header when navigation is collapsed", () => {
     const handleOpenFocus = vi.fn();
     render(
       <DesktopHeader
         viewTitle="Today"
-        isSidebarCollapsed={false}
+        isSidebarCollapsed={true}
         onToggleSidebar={vi.fn()}
         onOpenFocus={handleOpenFocus}
         onOpenAuth={vi.fn()}

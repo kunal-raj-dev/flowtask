@@ -1,6 +1,7 @@
 import React from 'react';
 import { CalendarDays, RefreshCw, BookOpen, AlertTriangle } from 'lucide-react';
 interface TimelineHeaderProps {
+  embedded?: boolean;
   scheduledCount: number;
   calendarEventCount: number;
   calendarIcsUrl: string;
@@ -22,13 +23,13 @@ interface TimelineHeaderProps {
 export const TimelineHeader: React.FC<TimelineHeaderProps> = (p) => (
   <header className="desk-plan-header">
     <div className="desk-page-header">
-      <div>
+      {!p.embedded && <div>
         <p className="desk-eyebrow">A realistic rhythm</p>
         <h1>
           Plan<span className="desk-title-dot">.</span>
         </h1>
         <p className="desk-page-description">Make space for your priorities, one block at a time.</p>
-      </div>
+      </div>}
       <div className="desk-header-actions">
         {p.onOpenStudySession && (
           <button className="desk-button" onClick={p.onOpenStudySession}>

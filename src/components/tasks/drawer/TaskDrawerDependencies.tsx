@@ -56,7 +56,7 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
         <div className="flex items-center gap-2">
           <Lock
             size={14}
-            className={blockedInfo.isBlocked ? 'text-rose-500' : 'text-[var(--text-secondary)]'}
+            className={blockedInfo.isBlocked ? 'text-[var(--pastel-coral)]' : 'text-[var(--text-secondary)]'}
           />
           <span className="text-xs font-semibold text-[var(--text-primary)]">
             Dependencies & Blockers
@@ -70,7 +70,7 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
               Unblocked
             </Badge>
           ) : (
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Ready</span>
+            <span className="text-[10px] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] font-medium">Ready</span>
           )}
         </div>
         {isDependenciesExpanded ? (
@@ -84,14 +84,14 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
         <div className="p-4 bg-[var(--bg-surface-l1)]/50 border-t border-[var(--border-hairline)] space-y-3.5 text-xs">
           {/* Potential Duplicate Warning */}
           {topDup && !isDone && (
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
+            <div className="p-3.5 rounded-xl bg-[var(--pastel-amber-subtle)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-down">
               <div className="flex items-start gap-2.5 min-w-0">
-                <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <AlertTriangle size={16} className="text-[var(--pastel-amber)] dark:text-[var(--pastel-amber)] mt-0.5 shrink-0" />
                 <div className="text-xs">
-                  <p className="font-semibold text-amber-800 dark:text-amber-200">
+                  <p className="font-semibold text-[var(--pastel-amber)] dark:text-[var(--pastel-amber)]">
                     Similar Task Detected ({Math.round(topDup.similarityScore * 100)}% match)
                   </p>
-                  <p className="text-amber-700 dark:text-amber-300 truncate font-mono text-[11px] mt-0.5 max-w-xs sm:max-w-sm">
+                  <p className="text-[var(--pastel-amber)] dark:text-[var(--pastel-amber)] truncate font-mono text-[11px] mt-0.5 max-w-xs sm:max-w-sm">
                     &quot;{topDup.task.title}&quot;
                   </p>
                 </div>
@@ -100,7 +100,7 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
                 <button
                   type="button"
                   onClick={() => handleMergeDuplicate(topDup.task)}
-                  className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-[var(--pastel-amber)] hover:bg-[var(--pastel-amber)] text-[var(--bg-main)] font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors"
                   title="Merge subtasks, tags, and notes into this task, and remove the duplicate"
                 >
                   <GitMerge size={12} />
@@ -109,7 +109,7 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
                 <button
                   type="button"
                   onClick={() => setDismissedDuplicateId(topDup.task.id)}
-                  className="px-2 py-1 rounded-lg text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                  className="px-2 py-1 rounded-lg text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-l3)] dark:hover:bg-white/[0.06] transition-colors"
                 >
                   Dismiss
                 </button>
@@ -125,7 +125,7 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
                 🔒 Blocked by {blockedInfo.blockingTasks.length} task{blockedInfo.blockingTasks.length > 1 ? 's' : ''}
               </Badge>
             ) : (
-              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <span className="text-[11px] font-medium text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] flex items-center gap-1">
                 <Unlock size={12} /> Ready to work
               </span>
             )}
@@ -146,7 +146,7 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
                     <div className="flex items-center gap-2 min-w-0">
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${
-                          isBlockerDone ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
+                          isBlockerDone ? 'bg-[var(--pastel-sage)]' : 'bg-[var(--pastel-coral)] animate-pulse'
                         }`}
                       />
                       <span
@@ -157,7 +157,7 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
                         {blocker.title}
                       </span>
                       {isBlockerDone && (
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">
+                        <span className="text-[10px] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] font-semibold shrink-0">
                           (Completed)
                         </span>
                       )}
@@ -169,7 +169,7 @@ export const TaskDrawerDependencies: React.FC<TaskDrawerDependenciesProps> = ({
                         updateTask(task.id, { blockedBy: updated });
                       }}
                       title="Remove blocker"
-                      className="p-1 text-[var(--text-muted)] hover:text-rose-500 rounded-md transition-colors ml-2 shrink-0"
+                      className="p-1 text-[var(--text-muted)] hover:text-[var(--pastel-coral)] rounded-md transition-colors ml-2 shrink-0"
                     >
                       <X size={13} />
                     </button>

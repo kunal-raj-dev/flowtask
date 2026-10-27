@@ -159,7 +159,7 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
   return (
     <div
       className={`desk-task-row ${
-        isFocused ? 'ring-2 ring-amber-500/80 border-amber-500/50 shadow-sm bg-[var(--bg-surface-hover)]' : ''
+        isFocused ? 'ring-2 ring-[var(--color-focus-ring)] border-[var(--color-brand-border)] shadow-sm bg-[var(--bg-surface-hover)]' : ''
       }`}
       id={domId}
       data-task-id={task.id}
@@ -197,7 +197,8 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
                 particleCount: 45,
                 spread: 60,
                 origin: { y: 0.7 },
-                colors: ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#3B82F6'],
+                colors: ['--color-brand', '--pastel-sage', '--pastel-lavender', '--pastel-coral', '--pastel-sky']
+                  .map(token => getComputedStyle(document.documentElement).getPropertyValue(token).trim()),
               });
             }
           }}
@@ -383,7 +384,7 @@ const TaskRowContent: React.FC<WorkspaceTaskRowProps & { context: RowContext }> 
               setActivePopover({ type: 'granularity', taskId: task.id });
             }}
           >
-            <Wand2 size={14} className="text-amber-500" />
+            <Wand2 size={14} className="text-[var(--color-brand)]" />
           </button>
         )}
         <button

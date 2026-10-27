@@ -1,6 +1,4 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Sun, Inbox, Calendar, Plus, Menu } from 'lucide-react';
+import { Sun, Inbox, Calendar, Plus, Menu, Folder, TrendingUp } from 'lucide-react';
 
 interface MobileBottomNavProps {
   activeView: string;
@@ -11,151 +9,19 @@ interface MobileBottomNavProps {
   inboxCount?: number;
   upcomingCount?: number;
 }
-
-export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
-  activeView,
-  onSelectView,
-  onQuickAdd,
-  onOpenMenu,
-  todayCount = 0,
-  inboxCount = 0,
-  upcomingCount: _upcomingCount = 0,
-}) => {
-  const isToday = activeView === 'today';
-  const isInbox = activeView === 'inbox';
-  const isUpcoming = activeView === 'timeline';
-  const isMore = !isToday && !isInbox && !isUpcoming;
-
-  return (
-    <nav
-      aria-label="Mobile navigation"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--bg-surface-l1)]/95 backdrop-blur-2xl border-t border-[var(--border-hairline)] shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)] px-3 pt-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))]"
-    >
-      <div className="flex items-center justify-around max-w-lg mx-auto">
-        {/* Tab 1: Today */}
-        <button
-          type="button"
-          onClick={() => onSelectView('today')}
-          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all enabled:active:scale-[0.96] ${
-            isToday
-              ? 'text-[var(--color-brand)] font-semibold'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-          }`}
-          aria-label="Today View"
-        >
-          <div className="relative flex flex-col items-center">
-            <Sun size={20} strokeWidth={1.75} className={isToday ? 'text-[var(--color-brand)]' : ''} />
-            {todayCount > 0 && (
-              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[var(--color-brand)] text-white font-mono tabular-nums text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
-                {todayCount > 99 ? '99+' : todayCount}
-              </span>
-            )}
-            {isToday && (
-              <motion.span
-                layoutId="mobileActiveTabIndicator"
-                className="absolute -bottom-1.5 w-4 h-0.5 rounded-full bg-[var(--color-brand)] shadow-[0_0_8px_rgba(217,119,6,0.6)]"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-          </div>
-          <span className="text-[10px] mt-1.5 tracking-tight">Today</span>
-        </button>
-
-        {/* Tab 2: Inbox */}
-        <button
-          type="button"
-          onClick={() => onSelectView('inbox')}
-          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all enabled:active:scale-[0.96] ${
-            isInbox
-              ? 'text-[var(--pastel-sky,#0284c7)] font-semibold'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-          }`}
-          aria-label="Inbox View"
-        >
-          <div className="relative flex flex-col items-center">
-            <Inbox size={20} strokeWidth={1.75} className={isInbox ? 'text-[var(--pastel-sky,#0284c7)]' : ''} />
-            {inboxCount > 0 && (
-              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[var(--pastel-sky,#0284c7)] text-white font-mono tabular-nums text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
-                {inboxCount > 99 ? '99+' : inboxCount}
-              </span>
-            )}
-            {isInbox && (
-              <motion.span
-                layoutId="mobileActiveTabIndicator"
-                className="absolute -bottom-1.5 w-4 h-0.5 rounded-full bg-[var(--pastel-sky,#0284c7)] shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-          </div>
-          <span className="text-[10px] mt-1.5 tracking-tight">Inbox</span>
-        </button>
-
-        {/* Center Elevating Quick Add (+) Button */}
-        <div className="relative -top-2 flex flex-col items-center">
-          <button
-            type="button"
-            onClick={onQuickAdd}
-            className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-[0_4px_16px_rgba(217,119,6,0.35)] enabled:active:scale-[0.96] transition-transform flex items-center justify-center cursor-pointer card-surface"
-            aria-label="Quick Add Task"
-          >
-            <Plus size={22} strokeWidth={2.2} />
-          </button>
-        </div>
-
-        {/* Tab 3: Upcoming */}
-        <button
-          type="button"
-          onClick={() => onSelectView('timeline')}
-          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all enabled:active:scale-[0.96] ${
-            isUpcoming
-              ? 'text-[var(--color-brand)] font-semibold'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-          }`}
-          aria-label="Plan View"
-        >
-          <div className="relative flex flex-col items-center">
-            <Calendar size={20} strokeWidth={1.75} className={isUpcoming ? 'text-[var(--color-brand)]' : ''} />
-            {_upcomingCount > 0 && (
-              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[var(--color-brand)] text-white font-mono tabular-nums text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
-                {_upcomingCount > 99 ? '99+' : _upcomingCount}
-              </span>
-            )}
-            {isUpcoming && (
-              <motion.span
-                layoutId="mobileActiveTabIndicator"
-                className="absolute -bottom-1.5 w-4 h-0.5 rounded-full bg-[var(--color-brand)] "
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-          </div>
-          <span className="text-[10px] mt-1.5 tracking-tight">Plan</span>
-        </button>
-
-        {/* Tab 4: More / Menu (opens mobile drawer with Projects, Review, Someday, All Tasks, Settings) */}
-        <button
-          type="button"
-          onClick={onOpenMenu}
-          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all enabled:active:scale-[0.96] ${
-            isMore
-              ? 'text-[var(--color-brand)] font-semibold'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-          }`}
-          aria-label="More views and projects"
-          aria-current={isMore ? 'page' : undefined}
-        >
-          <div className="relative flex flex-col items-center">
-            <Menu size={20} strokeWidth={1.75} className={isMore ? 'text-[var(--color-brand)]' : ''} />
-            {isMore && (
-              <motion.span
-                layoutId="mobileActiveTabIndicator"
-                className="absolute -bottom-1.5 w-4 h-0.5 rounded-full bg-[var(--color-brand)] shadow-[0_0_8px_rgba(217,119,6,0.6)]"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-          </div>
-          <span className="text-[10px] mt-1.5 tracking-tight">More</span>
-        </button>
-      </div>
-    </nav>
-  );
-};
+export function MobileBottomNav({ activeView, onSelectView, onQuickAdd, onOpenMenu, todayCount = 0, inboxCount = 0, upcomingCount = 0 }: MobileBottomNavProps) {
+  const items = [
+    { id: 'today', label: 'Today', aria: 'Today View', icon: Sun, active: activeView === 'today', count: todayCount },
+    { id: 'inbox', label: 'Inbox', aria: 'Inbox View', icon: Inbox, active: activeView === 'inbox', count: inboxCount },
+    { id: 'upcoming', label: 'Plan', aria: 'Plan View', icon: Calendar, active: ['upcoming', 'timeline'].includes(activeView), count: upcomingCount },
+    { id: 'projects', label: 'Projects', aria: 'Projects View', icon: Folder, active: activeView === 'projects' || activeView.startsWith('project:'), count: 0 },
+    { id: 'review', label: 'Review', aria: 'Review View', icon: TrendingUp, active: ['review', 'insights', 'logbook'].includes(activeView), count: 0 },
+  ];
+  return <>
+    <nav className="mobile-primary-nav" aria-label="Mobile navigation"><div>
+      {items.map(item => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => onSelectView(item.id)} aria-label={item.aria} aria-current={item.active ? 'page' : undefined}><span><Icon size={19} strokeWidth={1.75} />{item.count > 0 && <span className="mobile-nav-count">{item.count > 99 ? '99+' : item.count}</span>}</span><span>{item.label}</span></button>; })}
+      <button type="button" onClick={onOpenMenu} aria-label="More views and projects" aria-current={items.some(item => item.active) ? undefined : 'page'}><span><Menu size={19} strokeWidth={1.75} /></span><span>Tools</span></button>
+    </div></nav>
+    <button type="button" className="mobile-capture-fab" onClick={onQuickAdd} aria-label="Quick Add Task"><Plus size={22} /></button>
+  </>;
+}

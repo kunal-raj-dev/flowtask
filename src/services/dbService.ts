@@ -79,7 +79,7 @@ export function emptyWorkspace(workspaceId: string): WorkspaceRecord {
     projects: DEFAULT_PROJECTS.filter(p => p.id !== 'ideas'),
     dashboards: createStarterDashboards(),
     customViews: [],
-    preferences: {},
+    preferences: { workspace: { presentation: { version: 1, plainBackground: true } } },
     pending: [],
     undo: [],
     updatedAt: 0,

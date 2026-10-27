@@ -231,7 +231,7 @@ export const AestheticsSettingsContent: React.FC<
             {/* Tactile Volume Slider */}
             <div className="p-3.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)] flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)] shrink-0">
-                <Volume1 size={15} className="text-amber-500" />
+                <Volume1 size={15} className="text-[var(--color-brand)]" />
                 <span>Interface volume</span>
               </div>
               <div className="flex items-center gap-3 w-48 sm:w-64">
@@ -244,7 +244,7 @@ export const AestheticsSettingsContent: React.FC<
                   onChange={(e) =>
                     handleTactileVolumeChange(parseFloat(e.target.value))
                   }
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-[var(--color-brand)] cursor-pointer"
                   title="Adjust tactile feedback volume"
                   aria-label="Tactile feedback volume"
                 />
@@ -264,7 +264,7 @@ export const AestheticsSettingsContent: React.FC<
                     key={sp.id}
                     className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer card-surface ${
                       isSelected
-                        ? "border-amber-500 bg-amber-500/5 ring-1 ring-amber-500/20"
+                        ? "border-[var(--color-brand)] bg-[var(--color-brand-subtle)] ring-1 ring-[var(--color-brand-subtle)]"
                         : "border-[var(--border-hairline)] hover:bg-stone-200/40 dark:hover:bg-white/[0.04]"
                     }`}
                   >
@@ -335,7 +335,7 @@ export const AestheticsSettingsContent: React.FC<
                           aria-label={`Audition ${sp.name} toggle tone`}
                           className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
                             auditioningKey === `${sp.id}-toggle`
-                              ? "bg-amber-800 text-white border-amber-400 ring-2 ring-amber-500/30"
+                              ? "bg-[var(--color-brand)] text-[var(--text-on-brand)] border-[var(--color-brand)] ring-2 ring-[var(--color-brand-border)]"
                               : "bg-stone-100 dark:bg-white/10 border-[var(--border-hairline)] text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-white/15"
                           }`}
                         >
@@ -344,7 +344,7 @@ export const AestheticsSettingsContent: React.FC<
                             className={
                               auditioningKey === `${sp.id}-toggle`
                                 ? "fill-current"
-                                : "fill-current text-amber-500"
+                                : "fill-current text-[var(--color-brand)]"
                             }
                           />
                           <span>Toggle</span>

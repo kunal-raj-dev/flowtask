@@ -54,7 +54,7 @@ describe('Enterprise UI Component Primitives', () => {
       );
       expect(html).toContain('Top Focus');
       expect(html).toContain('3');
-      expect(html).toContain('bg-amber-500');
+      expect(html).toContain('bg-[var(--color-brand)]');
     });
 
     it('renders success and danger badges', () => {
@@ -62,13 +62,13 @@ describe('Enterprise UI Component Primitives', () => {
         React.createElement(Badge, { variant: 'success' }, 'Completed')
       );
       expect(successHtml).toContain('Completed');
-      expect(successHtml).toContain('text-emerald-800');
+      expect(successHtml).toContain('text-[var(--pastel-sage)]');
 
       const dangerHtml = renderToString(
         React.createElement(Badge, { variant: 'danger' }, 'Blocked')
       );
       expect(dangerHtml).toContain('Blocked');
-      expect(dangerHtml).toContain('text-rose-700');
+      expect(dangerHtml).toContain('text-[var(--pastel-coral)]');
     });
 
     it('renders priority and status variants correctly', () => {
@@ -76,13 +76,13 @@ describe('Enterprise UI Component Primitives', () => {
         React.createElement(Badge, { variant: 'p1', dot: true }, 'Urgent')
       );
       expect(p1Html).toContain('Urgent');
-      expect(p1Html).toContain('bg-rose-500');
+      expect(p1Html).toContain('bg-[var(--pastel-coral)]');
 
       const inProgressHtml = renderToString(
         React.createElement(Badge, { variant: 'in_progress', dot: true }, 'In Progress')
       );
       expect(inProgressHtml).toContain('In Progress');
-      expect(inProgressHtml).toContain('bg-sky-500');
+      expect(inProgressHtml).toContain('bg-[var(--pastel-sky)]');
     });
   });
 

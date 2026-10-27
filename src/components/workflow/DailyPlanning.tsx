@@ -103,7 +103,7 @@ export function DailyPlanning({
           <div className="v2-planning-icon">
             <Sun size={19} />
           </div>
-          <div>
+          <div className="v2-planning-content">
             <strong>A day that fits your life.</strong>
             <p>
               {Math.max(0, capacity - planned)} min of room · {planned} min

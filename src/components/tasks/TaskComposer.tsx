@@ -7,7 +7,7 @@ import { createNote, appendDailyNote } from '../../services/notesService';
 
 import { parseTaskInput } from '../../utils/nlpParser';
 import { useTodayStr } from '../../hooks/useCurrentDate';
-import type { Priority, RecurrenceFrequency } from '../../types/task';
+import type { ParsedTaskInput, Priority, RecurrenceFrequency } from '../../types/task';
 import { findPotentialDuplicates } from '../../utils/duplicateDetector';
 import {
   createVoiceDictationSession,
@@ -30,13 +30,23 @@ import {
   ListPlus,
   Timer,
   FileText,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { parseTimeToMinutes } from '../../utils/timelineUtils';
 import { LazyTaskSessionEditor as TaskSessionEditor } from './LazyTaskSessionEditor';
 import type { SessionDraft } from './TaskSessionEditor';
 import { getVelocityCalibration } from '../../utils/velocityCalibrator';
 import { Kbd } from '../ui';
+import '../../styles/task-composer.css';
 
+// The parser preserves the original input when every token was metadata.
+function hasTaskName(input: string, parsed: ParsedTaskInput): boolean {
+  const onlyMetadata = parsed.cleanTitle === input.trim() && Boolean(
+    parsed.priority || parsed.projectTag || parsed.estimatedMinutes || parsed.plannedDate ||
+    parsed.dueDate || parsed.dueTime || parsed.recurrence || parsed.tags?.length || parsed.contextTags?.length
+  );
+  return Boolean(parsed.cleanTitle.trim()) && !onlyMetadata;
+}
 
 interface TaskComposerProps {
   initialDraft?: string;
@@ -44,6 +54,7 @@ interface TaskComposerProps {
   onSuccess?: () => void;
   isModal?: boolean;
   autoFocus?: boolean;
+  taskInputLabel?: string;
 }
 
 export const TaskComposer: React.FC<TaskComposerProps> = ({
@@ -52,6 +63,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   onSuccess,
   isModal = false,
   autoFocus = false,
+  taskInputLabel = 'Task title',
 }) => {
   const {
     tasks,
@@ -71,6 +83,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
   const [input, setInput] = useState(initialDraft);
   const [showDetails, setShowDetails] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [isMultiline, setIsMultiline] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -113,7 +126,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
   }, [sessionStartTime, sessionEndTime]);
 
   // Default context resolution
-  const defaultProjectId = activeView.startsWith('project:') ? activeView.split(':')[1] : 'inbox';
+  const defaultProjectId = activeView?.startsWith('project:') ? activeView.split(':')[1] : 'inbox';
   const defaultPlannedDate = activeView === 'today' ? todayStr : undefined;
 
   // Sync draft change to parent
@@ -288,9 +301,19 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
 
     if (isMultiline) {
-      const lines = input.split('\n').filter((l) => l.trim().length > 0);
+      const lines = input.split('\n').filter((line) => line.trim() && (
+        settings?.enableSmartSyntaxParsing === false || hasTaskName(line, parseTaskInput(line))
+      ));
+      if (lines.length === 0) {
+        showToast('Add a task name before saving.');
+        return;
+      }
       addMultipleTasks(lines);
     } else {
+      if (!hasTaskName(input, parsed)) {
+        showToast('Add a task name before saving.');
+        return;
+      }
       const isSessionIncluded = isSessionActive;
       addTask(parsed.cleanTitle || input, {
         projectId: projectObj.id,
@@ -333,26 +356,26 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
   const getPriorityStyle = (p: Priority) => {
     switch (p) {
-      case 'p1': return 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-400/40';
-      case 'p2': return 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-400/40';
-      case 'p3': return 'bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-400/40';
-      case 'p4': return 'bg-stone-500/15 text-stone-800 dark:text-stone-300 border-stone-400/40';
+      case 'p1': return 'bg-[var(--pastel-coral-subtle)] text-[var(--pastel-coral)] border-[var(--border-color)]';
+      case 'p2': return 'bg-[var(--pastel-amber-subtle)] text-[var(--pastel-amber)] border-[var(--border-color)]';
+      case 'p3': return 'bg-[var(--pastel-sky-subtle)] text-[var(--pastel-sky)] border-[var(--border-color)]';
+      case 'p4': return 'bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] border-[var(--border-color)]';
     }
   };
 
   return (
-    <div className={`w-full ${isModal ? '' : 'mb-6'}`}>
+    <div className={`task-composer w-full ${isModal ? '' : 'mb-6'}`} data-capture-mode={captureMode} data-multiline={isMultiline || undefined} data-tools-open={toolsOpen || isListening || undefined}>
       <form
         onSubmit={handleSubmit}
-        className={`relative rounded-2xl transition-all duration-200 border ${
+        className={`task-composer-form relative rounded-2xl border transition-all ${
           isFocused
-            ? 'bg-[var(--bg-surface-l2)] border-amber-500/70 shadow-elevated ring-2 ring-amber-500/20'
-            : 'bg-[var(--bg-surface-l1)] border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-hairline)]'
+            ? 'bg-[var(--bg-surface-l1)] border-[var(--color-brand)] shadow-elevated ring-2 ring-[var(--color-brand-subtle)]'
+            : 'bg-[var(--bg-surface-l1)] border-[var(--border-color)] shadow-subtle hover:border-[var(--border-hover)]'
         }`}
       >
         <div className="p-3.5 sm:p-4">
           {/* Mode Switcher: Task / Note */}
-          <div className="flex items-center justify-between gap-2 mb-2.5">
+          <div className="task-composer-modes flex items-center justify-between gap-2 mb-2.5" hidden={!toolsOpen && captureMode === 'task'}>
             <div className="flex items-center p-0.5 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)]" role="tablist" aria-label="Capture mode">
               <button
                 type="button"
@@ -410,13 +433,13 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-start gap-2.5 sm:gap-3">
-            <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
+          <div className="task-composer-row">
+            <div className="task-composer-input flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
               <div className="text-[var(--text-muted)] mt-1 flex-shrink-0">
                 {captureMode === 'note' ? (
-                  <FileText size={18} strokeWidth={1.75} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
+                  <FileText size={18} strokeWidth={1.75} className={isFocused ? 'text-[var(--color-brand)]' : ''} />
                 ) : (
-                  <Plus size={18} strokeWidth={1.75} className={isFocused ? 'text-amber-500 dark:text-amber-400' : ''} />
+                  <Plus size={18} strokeWidth={1.75} className={isFocused ? 'text-[var(--color-brand)]' : ''} />
                 )}
               </div>
 
@@ -474,7 +497,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   />
                 ) : (
                   <input
-                    ref={inputRef} aria-label="Task title"
+                    ref={inputRef} aria-label={taskInputLabel}
                     type="text"
                     value={input}
                     onChange={(e) => handleInputChange(e.target.value)}
@@ -486,7 +509,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                         handleSubmit();
                       }
                     }}
-                    placeholder="What needs to be done? (e.g. 'Draft report tomorrow #work p1 ~30m')"
+                    placeholder="What needs to be done?"
                     className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm focus:outline-none focus-visible:outline-none outline-none font-sans"
                   />
                 )}
@@ -494,8 +517,11 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
             </div>
 
             {/* Actions: on mobile sits as an ergonomic bottom dock; on desktop sits inline */}
-            <div className="flex items-center justify-between sm:justify-end gap-1.5 pt-2 sm:pt-0 border-t border-[var(--border-hairline)] sm:border-t-0 shrink-0">
-              <div className="flex items-center gap-1 sm:gap-1.5">
+            <div className="task-composer-actions">
+              <button type="button" className="task-composer-tools-toggle" aria-label="Capture tools" aria-expanded={toolsOpen || isListening} onClick={() => setToolsOpen(!toolsOpen)} title="Notes, voice, templates and task properties">
+                <SlidersHorizontal size={16} /><span>Tools</span>
+              </button>
+              <div className="task-composer-tools flex items-center gap-1 sm:gap-1.5" hidden={!toolsOpen && !isListening}>
                 {isSpeechSupported && (
                   <button
                     type="button"
@@ -503,8 +529,8 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     title={isListening ? 'Stop Voice Input' : 'Voice Dictation'}
                     className={`p-2 rounded-xl transition-colors active:scale-95 ${
                       isListening
-                        ? 'bg-rose-500 text-white animate-pulse'
-                        : 'text-[var(--text-muted)] hover:text-amber-500 hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
+                        ? 'bg-[var(--pastel-coral-subtle)] text-[var(--pastel-coral)]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--color-brand)] hover:bg-[var(--bg-surface-hover)]'
                     }`}
                   >
                     {isListening ? <MicOff size={16} strokeWidth={1.75} /> : <Mic size={16} strokeWidth={1.75} />}
@@ -518,8 +544,8 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     title={isMultiline ? 'Switch to Single Task mode' : 'Switch to Multi-line Brain Dump'}
                     className={`p-2 rounded-xl transition-colors active:scale-95 ${
                       isMultiline
-                        ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
-                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.06]'
+                        ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] font-bold'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]'
                     }`}
                   >
                     <ListPlus size={16} strokeWidth={1.75} />
@@ -531,7 +557,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     type="button"
                     onClick={() => setIsTemplatePickerOpen(true)}
                     title="Browse Templates"
-                    className="p-2 text-[var(--text-muted)] hover:text-indigo-500 rounded-xl hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors active:scale-95"
+                    className="p-2 text-[var(--text-muted)] hover:text-[var(--color-brand)] rounded-xl hover:bg-[var(--bg-surface-hover)] transition-colors active:scale-95"
                   >
                     <Sparkles size={16} strokeWidth={1.75} />
                   </button>
@@ -546,7 +572,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                   >
                     <span>{showDetails ? '▾ Hide properties' : '▸ More details'}</span>
                     {!showDetails && hasAnyParsedTokens && (
-                      <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30" title="Parsed parameters active">
+                      <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--color-brand-subtle)] text-[var(--color-brand)] font-semibold border border-[var(--color-brand-border)]" title="Parsed parameters active">
                         Parsed
                       </span>
                     )}
@@ -559,10 +585,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                 onClick={() => handleSubmit()}
                 disabled={captureMode === 'note' ? (!input.trim() && !noteTitle.trim()) : !input.trim()}
                 aria-label={captureMode === 'note' ? (noteDestination === 'daily' ? 'Append note' : 'Save note') : 'Add'}
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-35 disabled:active:scale-100 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-amber-500/50 outline-none"
+                className="task-composer-submit px-3 py-1.5 rounded-xl bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] disabled:opacity-40 text-[var(--text-on-brand)] font-semibold text-xs shadow-xs flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] outline-none"
               >
                 <span>{captureMode === 'note' ? (noteDestination === 'daily' ? 'Append' : 'Save Note') : 'Add'}</span>
-                <Kbd size="xs" className="hidden sm:inline-block text-[10px] py-0 px-1 border-white/20 bg-black/20 text-white shadow-none">↵</Kbd>
+                <Kbd size="xs" className="hidden sm:inline-block text-[10px] py-0 px-1 border-current bg-transparent text-current shadow-none">↵</Kbd>
               </button>
             </div>
           </div>
@@ -620,7 +646,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     transition={SPRING_TACTILE}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] shrink-0"
                   >
-                    <Calendar size={12} strokeWidth={1.75} className="text-amber-500" />
+                    <Calendar size={12} strokeWidth={1.75} className="text-[var(--color-brand)]" />
                     <span className="text-[11px]">Plan:</span>
                     <input
                       aria-label="Planned date"
@@ -653,7 +679,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                     transition={SPRING_TACTILE}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] shrink-0"
                   >
-                    <Clock size={12} strokeWidth={1.75} className="text-purple-500" />
+                    <Clock size={12} strokeWidth={1.75} className="text-[var(--pastel-lavender)]" />
                     <span className="text-[11px]">Due:</span>
                     <input
                       aria-label="Deadline"
@@ -737,7 +763,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] active:scale-95"
                       title="Click to cycle estimated duration"
                     >
-                      <Sparkles size={11} strokeWidth={1.75} className="text-teal-500" />
+                      <Sparkles size={11} strokeWidth={1.75} className="text-[var(--pastel-sage)]" />
                       <span className="tabular-nums">{effectiveDuration ? `~${effectiveDuration}m` : 'Estimate'}</span>
                       {effectiveDuration && (
                         <span
@@ -770,10 +796,10 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       type="button"
                       data-testid="chip-velocity-calibration"
                       onClick={() => setExplicitDuration(velocityCalibration.recommendedMinutes)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 text-[11px] font-medium transition-colors active:scale-95"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--pastel-amber-subtle)] border border-[var(--border-color)] text-[var(--pastel-amber)] hover:bg-[var(--bg-surface-hover)] text-[11px] font-medium transition-colors active:scale-95"
                       title={`Historical velocity suggests ~${velocityCalibration.recommendedMinutes}m (based on ${velocityCalibration.sampleCount} tasks in ${velocityCalibration.scope}). Click to calibrate.`}
                     >
-                      <Sparkles size={11} strokeWidth={2} className="text-amber-500" />
+                      <Sparkles size={11} strokeWidth={2} className="text-[var(--pastel-amber)]" />
                       <span>Calibrated: ~{velocityCalibration.recommendedMinutes}m</span>
                     </button>
                   </motion.div>
@@ -800,7 +826,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] cursor-pointer active:scale-95"
                       title="Click to cycle recurrence"
                     >
-                      <Repeat size={11} strokeWidth={1.75} className="text-indigo-500" />
+                      <Repeat size={11} strokeWidth={1.75} className="text-[var(--pastel-lavender)]" />
                       <span>{effectiveRecurrence !== 'none' ? effectiveRecurrence : 'Repeat'}</span>
                       {effectiveRecurrence !== 'none' && (
                         <span
@@ -840,12 +866,12 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                       }}
                       className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer active:scale-95 ${
                         isSessionActive || isEditingSession
-                          ? 'bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30 font-semibold'
+                          ? 'bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] border-[var(--border-color)] font-semibold'
                           : 'bg-[var(--bg-surface-l2)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
                       title={isSessionActive ? 'Click to configure session' : 'Click to configure custom session duration & timeline block'}
                     >
-                      <Timer size={11} strokeWidth={1.75} className={isSessionActive || isEditingSession ? 'text-teal-500' : ''} />
+                      <Timer size={11} strokeWidth={1.75} className={isSessionActive || isEditingSession ? 'text-[var(--pastel-sage)]' : ''} />
                       <span className="tabular-nums">
                         {isSessionActive
                           ? `Session ${activeSessionNum} (${sessionStartTime}–${sessionEndTime})`
@@ -876,16 +902,16 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
           {/* Active Session Summary Card */}
           {!isMultiline && isSessionActive && !isEditingSession && (
-            <div className="mt-2.5 p-2.5 rounded-xl bg-teal-500/[0.08] dark:bg-teal-500/[0.12] border border-teal-500/25 flex items-center justify-between text-xs animate-slide-down">
+            <div className="task-composer-session mt-2.5 p-2.5 rounded-xl bg-[var(--pastel-sage-subtle)] border border-[var(--border-color)] flex flex-wrap gap-2 items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <Timer size={14} className="text-teal-600 dark:text-teal-400" />
-                <span className="font-semibold text-teal-900 dark:text-teal-200">
-                  🎯 Session #{activeSessionNum}
+                <Timer size={14} className="text-[var(--pastel-sage)]" />
+                <span className="font-semibold text-[var(--pastel-sage)]">
+                  Session #{activeSessionNum}
                 </span>
                 <span className="font-mono text-[11px] text-[var(--text-secondary)]">
                   {sessionStartTime} – {sessionEndTime}
                 </span>
-                <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-semibold bg-teal-500/20 text-teal-800 dark:text-teal-300">
+                <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-semibold bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)]">
                   {sessionDuration.formatted}
                 </span>
               </div>
@@ -893,7 +919,7 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEditingSession(true)}
-                  className="text-[11px] text-teal-700 dark:text-teal-300 font-semibold hover:underline cursor-pointer"
+                  className="text-[11px] text-[var(--pastel-sage)] font-semibold hover:underline cursor-pointer"
                 >
                   Edit
                 </button>
@@ -931,8 +957,8 @@ export const TaskComposer: React.FC<TaskComposerProps> = ({
 
               {/* Duplicate Warning Prompt */}
               {hasDuplicateWarning && (
-                <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-xs animate-fade-in">
-                  <AlertCircle size={13} className="shrink-0 text-amber-500" />
+                <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1.5 rounded-lg bg-[var(--pastel-amber-subtle)] border border-[var(--border-color)] text-[var(--pastel-amber)] text-xs" role="status">
+                  <AlertCircle size={13} className="shrink-0 text-[var(--pastel-amber)]" />
                   <span className="truncate">
                     Similar task exists: <strong>"{duplicateCandidates[0].task.title}"</strong> (Press Add to create anyway)
                   </span>

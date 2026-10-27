@@ -73,8 +73,8 @@ export const RecentActivityWidget: React.FC<WidgetComponentProps> = ({
               <div
                 className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                   item.type === 'task_done'
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                    ? 'bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)]'
+                    : 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)]'
                 }`}
               >
                 {item.type === 'task_done' ? (

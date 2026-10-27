@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { FocusStudio } from "./FocusStudio";
 import { useFocusStore } from "../../store/useFocusStore";
+import { useUIStore } from '../../store/useUIStore';
+import { FocusPipHUD } from './FocusPipPortal';
 
 const mocks = vi.hoisted(() => ({
   context: {} as Record<string, any>,
@@ -32,6 +34,7 @@ vi.mock("../../hooks/useStudio", async (importOriginal) => {
 describe("FocusStudio lobby", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useUIStore.setState({ theme: 'light' });
     mocks.context = {
       workspaceId: "local",
       workspacePreferences: {},
@@ -166,8 +169,40 @@ describe("FocusStudio lobby", () => {
     }));
   });
 
-  it('uses the bundled default Studio palette when no preference has been saved', () => {
+  it('follows app appearance when no Studio theme source has been saved', () => {
     render(<FocusStudio taskId={null} onClose={vi.fn()} />);
-    expect(screen.getByRole('dialog', { name: 'Focus Studio' }).getAttribute('data-studio-theme')).toBe('linen');
+    expect(screen.getByRole('dialog', { name: 'Focus Studio' }).getAttribute('data-studio-theme')).toBe('light');
+  });
+  it.each(['running', 'paused'] as const)('recolors a %s Studio and matching floating timer without changing the session or scene', state => {
+    const session = { id: 'theme-session', workspaceId: 'local', mode: 'countdown' as const, state, taskId: 'task-graphs', taskTitle: 'Review graph algorithms', targetDurationSec: 1500, startedAt: Date.now(), accumulatedElapsedMs: 120000 };
+    useFocusStore.setState({ focusSession: session, focusElapsedSeconds: 120 });
+    mocks.context.workspacePreferences = { studio: { sceneId: 'old-library', interfaceTheme: 'plum' }, appearance: { accent: '#ff00ff' } };
+    mocks.media.scenes = [{ id: 'old-library', title: 'Library', kind: 'image', src: '/library.webp', category: 'cozy' }];
+    const { container, rerender } = render(<><FocusStudio taskId="task-graphs" onClose={vi.fn()} /><FocusPipHUD onReturnToApp={vi.fn()} /></>);
+    const scene = container.querySelector('.studio-backdrop img')?.getAttribute('src');
+    act(() => useUIStore.setState({ theme: 'forest' }));
+    const studio = screen.getByRole('dialog', { name: 'Focus Studio' });
+    const pip = container.querySelector<HTMLElement>('.pip-container')!;
+    expect(studio.getAttribute('data-studio-theme')).toBe('forest');
+    expect(pip.dataset.pipTheme).toBe('forest');
+    expect(pip.style.getPropertyValue('--pip-amber')).toBe(studio.style.getPropertyValue('--studio-accent'));
+    expect(container.querySelector('.studio-backdrop img')?.getAttribute('src')).toBe(scene);
+    expect(useFocusStore.getState().focusSession).toBe(session);
+    expect(useFocusStore.getState().focusElapsedSeconds).toBe(120);
+    expect(mocks.context.startFocusSession).not.toHaveBeenCalled();
+    expect(mocks.context.stopFocusSession).not.toHaveBeenCalled();
+    expect(mocks.context.pauseFocusSession).not.toHaveBeenCalled();
+    expect(mocks.context.resumeFocusSession).not.toHaveBeenCalled();
+    mocks.context.workspacePreferences = { ...mocks.context.workspacePreferences, appearance: { accent: '#ff00ff', highContrast: true } };
+    rerender(<><FocusStudio taskId="task-graphs" onClose={vi.fn()} /><FocusPipHUD onReturnToApp={vi.fn()} /></>);
+    expect(pip.dataset.pipBackground).toBe('off');
+    expect(useFocusStore.getState().focusSession).toBe(session);
+  });
+  it('offers following the app without erasing the saved custom Studio palette', () => {
+    mocks.context.workspacePreferences = { studio: { interfaceTheme: 'plum', sceneId: 'local:my-room', themeMode: 'custom' } };
+    render(<FocusStudio taskId={null} onClose={vi.fn()} initialPanel="appearance" />);
+    expect(screen.getByRole('dialog', { name: 'Focus Studio' }).getAttribute('data-studio-theme')).toBe('plum');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Studio theme source' }), { target: { value: 'app' } });
+    expect(mocks.context.setWorkspacePreference).toHaveBeenCalledWith('studio', expect.objectContaining({ themeMode: 'app', interfaceTheme: 'plum', sceneId: 'local:my-room' }));
   });
 });

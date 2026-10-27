@@ -1,46 +1,14 @@
-import { useTaskAvailabilityClock } from '../../hooks/useTaskAvailabilityClock';
-import { shortcutHintsEnabled, MOD_KEY, ALT_KEY } from '../../services/shortcutRegistry';
-import { isTodayTask, isInboxTask } from '../../utils/taskSelectors';
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo, useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { useTodayStr } from '../../hooks/useCurrentDate';
-import type { ViewId } from '../../types/task';
-import {
-  Sun,
-  Inbox,
-  Calendar,
-  Lightbulb,
-  CheckCircle2,
-  Plus,
-  Moon,
-  Timer,
-  TrendingUp,
-  Palette,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Zap,
-  Brain,
-  Flame,
-  Archive,
-  Filter,
-  Trash2,
-  FileEdit,
-  Compass,
-  Clock,
-  Folder,
-  Settings,
-  DownloadCloud,
-  ChevronDown,
-  ChevronRight,
-  Target,
-  BookOpen,
-  Cloud,
-  Headphones as HeadphonesIcon,
-  Repeat,
-} from 'lucide-react';
+import { useTaskAvailabilityClock } from '../../hooks/useTaskAvailabilityClock';
+import { isTodayTask, isInboxTask } from '../../utils/taskSelectors';
 import { filterTasksByPredicate } from '../../utils/smartViewUtils';
+import { shortcutHintsEnabled, MOD_KEY, ALT_KEY } from '../../services/shortcutRegistry';
+import type { ViewId } from '../../types/task';
 import { Badge, BrandLogo } from '../ui';
+import { Sun, Inbox, Calendar, Folder, TrendingUp, Headphones, ChevronRight, ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Pin, PinOff, Plus, Trash2, FileEdit, BookOpen, Compass, Target, Repeat, CheckCircle2, Lightbulb, Archive, Filter, LayoutGrid, Columns3, Scale, Settings, Palette, DownloadCloud, Zap, Cloud, Keyboard } from 'lucide-react';
+import '../../styles/shell.css';
 
 interface SidebarProps {
   onOpenPomodoro: () => void;
@@ -56,756 +24,96 @@ interface SidebarProps {
   onItemClick?: () => void;
   isMobileDrawer?: boolean;
 }
+interface Destination { id: string; label: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number }>; count?: number; custom?: boolean; }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  onOpenPomodoro,
-  onOpenShortcuts: _onOpenShortcuts,
-  onOpenExportImport,
-  onOpenBrainDump,
-  onOpenAesthetics,
-  onOpenScratchpad,
-  onOpenStudySession,
-  onOpenSettings,
-  isCollapsed = false,
-  onToggleCollapse,
-  onItemClick,
-  isMobileDrawer = false,
-}) => {
-  const {
-    tasks,
-    projects,
-    activeView,
-    setActiveView,
-    theme,
-    toggleTheme,
-    addProject,
-    smartViews,
-    deleteSmartView,
-    setIsSmartFilterModalOpen,
-    setIsWeeklyReviewOpen,
-    setIsAuthModalOpen,
-    syncStatus,
-    workspacePreferences,
-    settings,
-  } = useTaskContext();
-
+export const Sidebar: React.FC<SidebarProps> = ({ onOpenPomodoro, onOpenShortcuts, onOpenExportImport, onOpenBrainDump, onOpenAesthetics, onOpenScratchpad, onOpenStudySession, onOpenSettings, isCollapsed = false, onToggleCollapse, onItemClick, isMobileDrawer = false }) => {
+  const { tasks, projects, activeView, setActiveView, addProject, smartViews, deleteSmartView, setIsSmartFilterModalOpen, setIsWeeklyReviewOpen, setIsAuthModalOpen, syncStatus, workspacePreferences = {}, setWorkspacePreference, settings } = useTaskContext();
+  const today = useTodayStr();
+  const now = useTaskAvailabilityClock(tasks);
   const hints = shortcutHintsEnabled(settings);
-  const [isAddingProject, setIsAddingProject] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-
-  const [isMoreCollapsed, setIsMoreCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('flowtask_sidebar_more_collapsed') !== 'false';
-    } catch {
-      return false;
-    }
-  });
-  const [isSmartViewsCollapsed, setIsSmartViewsCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('flowtask_sidebar_smartviews_collapsed') !== 'false';
-    } catch {
-      return true;
-    }
-  });
-  const [isProjectsCollapsed, setIsProjectsCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('flowtask_sidebar_projects_collapsed') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('flowtask_sidebar_more_collapsed', String(isMoreCollapsed));
-    } catch {}
-  }, [isMoreCollapsed]);
-  useEffect(() => {
-    try {
-      localStorage.setItem('flowtask_sidebar_smartviews_collapsed', String(isSmartViewsCollapsed));
-    } catch {}
-  }, [isSmartViewsCollapsed]);
-  useEffect(() => {
-    try {
-      localStorage.setItem('flowtask_sidebar_projects_collapsed', String(isProjectsCollapsed));
-    } catch {}
-  }, [isProjectsCollapsed]);
-
-  // Ensure current activeView section is expanded so user never loses their position
-  const [prevActiveView, setPrevActiveView] = useState(activeView);
-  if (activeView !== prevActiveView) {
-    setPrevActiveView(activeView);
-    if (['upcoming', 'study', 'review', 'all', 'someday', 'kanban', 'matrix', 'archive', 'trash'].includes(activeView)) {
-      setIsMoreCollapsed(false);
-    } else if (activeView.startsWith('smart:')) {
-      setIsSmartViewsCollapsed(false);
-    } else if (activeView.startsWith('project:')) {
-      setIsProjectsCollapsed(false);
-    }
-  }
-
-  const todayStr = useTodayStr();
-  const availabilityNow = useTaskAvailabilityClock(tasks);
-
-  // Memoized view counts and project counts in a single pass
-  const { todayCount, inboxCount, upcomingCount, somedayCount, allCount, activeProjectCount, projectTaskCountMap } = useMemo(() => {
-    let today = 0;
-    let inbox = 0;
-    let upcoming = 0;
-    let someday = 0;
-    let all = 0;
-    const projectMap = new Map<string, number>();
-
-    tasks.forEach((t) => {
-      if (t.deletedAt || t.archivedAt) return;
-      if (isTodayTask(t, todayStr, { tasks, projects, now: availabilityNow })) {
-        today++;
-      }
-      if (t.status !== 'done') {
-        all++;
-        projectMap.set(t.projectId, (projectMap.get(t.projectId) || 0) + 1);
-
-        if (isInboxTask(t, todayStr, { tasks, projects, now: availabilityNow })) {
-          inbox++;
-        }
-        const taskDate = t.plannedDate || t.dueDate;
-        if (taskDate && taskDate > todayStr) {
-          upcoming++;
-        }
-        if (t.isSomeday || (!t.dueDate && !t.plannedDate && t.projectId === 'ideas')) {
-          someday++;
-        }
-      }
-    });
-
-    const activeProjects = projects.filter((p) => p.id !== 'inbox' && p.id !== 'ideas' && !p.isArchived).length;
-
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [addingProject, setAddingProject] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const workspace = (workspacePreferences.workspace || {}) as { pinnedDestinations?: string[]; lastPlanView?: string };
+  const pinnedIds = Array.isArray(workspace.pinnedDestinations) ? workspace.pinnedDestinations : [];
+  const counts = useMemo(() => {
+    const active = tasks.filter(t => !t.deletedAt && !t.archivedAt && t.status !== 'done');
     return {
-      todayCount: today,
-      inboxCount: inbox,
-      upcomingCount: upcoming,
-      somedayCount: someday,
-      allCount: all,
-      activeProjectCount: activeProjects,
-      projectTaskCountMap: projectMap,
+      today: active.filter(t => isTodayTask(t, today, { tasks, projects, now })).length,
+      inbox: active.filter(t => isInboxTask(t, today, { tasks, projects, now })).length,
+      upcoming: active.filter(t => (t.plannedDate || t.dueDate || '') > today).length,
+      all: active.length,
+      project: (id: string) => active.filter(t => t.projectId === id).length,
     };
-  }, [tasks, projects, todayStr, availabilityNow]);
-
-  const handleCreateProject = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newProjectName.trim()) {
-      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4'];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      addProject(newProjectName.trim(), randomColor);
-      setNewProjectName('');
-      setIsAddingProject(false);
-    }
-  };
-
-  interface SidebarNavItem {
-    id: string;
-    label: string;
-    icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
-    count: number | null;
-    color: string;
-    isNew?: boolean;
-  }
-
-  // Execution Horizon: Today, Inbox, Upcoming, Timeline
-  const primaryNavItems: SidebarNavItem[] = [
-    { id: 'today', label: 'Today', icon: Sun, count: todayCount, color: 'text-amber-500' },
-    { id: 'inbox', label: 'Inbox', icon: Inbox, count: inboxCount, color: 'text-blue-500' },
-    { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: upcomingCount, color: 'text-purple-500' },
-    { id: 'timeline', label: 'Timeline & Grid', icon: Clock, count: null, color: 'text-teal-500' },
+  }, [tasks, projects, today, now]);
+  const primary: Destination[] = [
+    { id: 'today', label: 'Today', icon: Sun, count: counts.today },
+    { id: 'inbox', label: 'Inbox', icon: Inbox, count: counts.inbox },
+    { id: workspace.lastPlanView === 'timeline' ? 'timeline' : 'upcoming', label: 'Plan', icon: Calendar, count: counts.upcoming },
+    { id: 'projects', label: 'Projects', icon: Folder },
+    { id: 'review', label: 'Review', icon: TrendingUp },
   ];
-
-  // Strategic Life OS: Goals, Life Areas & Projects
-  const lifeNavItems: SidebarNavItem[] = [
-    { id: 'goals', label: 'Vision & Goals', icon: Target, count: null, color: 'text-rose-500' },
-    { id: 'areas', label: 'Life Areas', icon: Compass, count: null, color: 'text-amber-500' },
-    { id: 'projects', label: 'Projects', icon: Folder, count: activeProjectCount, color: 'text-indigo-500' },
+  const tools: Destination[] = [
+    { id: 'notes', label: 'Notes', icon: FileEdit }, { id: 'study', label: 'Study', icon: BookOpen },
+    { id: 'goals', label: 'Goals', icon: Target }, { id: 'areas', label: 'Life Areas', icon: Compass },
+    { id: 'routines', label: 'Routines', icon: Repeat }, { id: 'dashboard', label: 'My dashboards', icon: LayoutGrid },
+    { id: 'all', label: 'All Tasks', icon: CheckCircle2, count: counts.all }, { id: 'someday', label: 'Someday', icon: Lightbulb },
+    { id: 'kanban', label: 'Board', icon: Columns3 }, { id: 'matrix', label: 'Priority matrix', icon: Scale },
+    { id: 'insights', label: 'Insights', icon: TrendingUp }, { id: 'logbook', label: 'Logbook', icon: Archive },
+    { id: 'archive', label: 'Archive', icon: Archive }, { id: 'trash', label: 'Trash', icon: Trash2 },
+    ...projects.filter(p => !p.isArchived && p.id !== 'inbox' && p.id !== 'ideas').map(p => ({ id: `project:${p.id}`, label: p.name, icon: Folder, count: counts.project(p.id) })),
+    ...smartViews.map(v => ({ id: `smart:${v.id}`, label: v.name, icon: Filter, count: filterTasksByPredicate(tasks, v.predicate).length, custom: !v.isBuiltIn })),
   ];
-
-  // Deep Work & Daily Rituals
-  const toolsNavItems: SidebarNavItem[] = [
-    { id: 'review', label: 'Review & Rituals', icon: TrendingUp, count: null, color: 'text-teal-500' },
-    { id: 'routines', label: 'Routines', icon: Repeat, count: null, color: 'text-indigo-500' },
-    { id: 'notes', label: 'Notes', icon: FileEdit, count: null, color: 'text-[var(--color-brand)]' },
-    { id: 'study', label: 'Study Hub', icon: BookOpen, count: null, color: 'text-amber-600' },
-  ];
-
-  // Expandable Perspectives: All Tasks, Someday, Archive, Trash
-  const perspectiveNavItems: SidebarNavItem[] = [
-    { id: 'all', label: 'All Tasks', icon: CheckCircle2, count: allCount, color: 'text-stone-400' },
-    { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-amber-500' },
-    { id: 'archive', label: 'Archive', icon: Archive, count: null, color: 'text-stone-400' },
-    { id: 'trash', label: 'Trash', icon: Trash2, count: null, color: 'text-stone-400' },
-  ];
-
-  const workspaceConfig = workspacePreferences?.workspace as { pinnedDestinations?: string[] } | undefined;
-  const pinnedIds = Array.isArray(workspaceConfig?.pinnedDestinations) ? workspaceConfig.pinnedDestinations : [];
-  const pinnedItems: SidebarNavItem[] = [
-    ...projects.filter(p => !p.isArchived && pinnedIds.includes(`project:${p.id}`)).map(p => ({id:`project:${p.id}`,label:p.name,icon:Folder,count:null,color:'text-[var(--color-brand)]'})),
-    ...smartViews.filter(v => pinnedIds.includes(`smart:${v.id}`)).map(v => ({id:`smart:${v.id}`,label:v.name,icon:Filter,count:null,color:'text-[var(--color-brand)]'})),
-  ];
-  const allNavItems: SidebarNavItem[] = [...primaryNavItems, ...lifeNavItems, ...toolsNavItems, ...pinnedItems, ...perspectiveNavItems];
-
-  const getSmartViewIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'zap': return Zap;
-      case 'brain': return Brain;
-      case 'flame': return Flame;
-      case 'archive': return Archive;
-      case 'moon': return Moon;
-      case 'coffee': return Lightbulb;
-      default: return Filter;
-    }
-  };
-
-  if (isCollapsed) {
-    return (
-      <aside
-        aria-label={isMobileDrawer ? 'Mobile navigation drawer' : 'Desktop navigation'}
-        className="w-16 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/90 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col items-center select-none transition-all duration-200 py-3 justify-between"
-      >
-        {/* Top: FlowTask Brand Logo & Expand Toggle */}
-        <div className="flex flex-col items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (onToggleCollapse) {
-                onToggleCollapse();
-              } else {
-                setActiveView('today');
-              }
-              onItemClick?.();
-            }}
-            title={hints ? `FlowTask — Click to expand sidebar ([)` : 'FlowTask — Click to expand sidebar'}
-            aria-label="FlowTask — Expand Sidebar"
-            className="cursor-pointer enabled:active:scale-[0.96] transition-transform"
-          >
-            <BrandLogo size={32} />
-          </button>
-          {onToggleCollapse && (
-            <button
-              onClick={onToggleCollapse}
-              title={hints ? `Expand Sidebar ([)` : 'Expand Sidebar'}
-              aria-label={hints ? `Expand Sidebar ([)` : 'Expand Sidebar'}
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors enabled:active:scale-[0.96]"
-            >
-              <PanelLeftOpen size={16} strokeWidth={1.75} />
-            </button>
-          )}
-        </div>
-
-        {/* Center: Nav Views */}
-        <div className="flex flex-col items-center gap-1.5 my-auto overflow-y-auto max-h-[60vh] py-1 px-1">
-          {allNavItems.map((item, idx) => {
-            const Icon = item.icon;
-            const isActive = activeView === item.id;
-            const isSectionDivider = idx === 4 || idx === 7;
-            return (
-              <React.Fragment key={item.id}>
-                {isSectionDivider && (
-                  <div className="w-5 h-[1px] bg-[var(--border-hairline)] my-1" />
-                )}
-                <button
-                  onClick={() => {
-                    if (item.id === 'study_sessions') {
-                      onOpenStudySession?.();
-                    } else {
-                      setActiveView(item.id as ViewId);
-                    }
-                  }}
-                  title={`${item.label}${item.count !== null && item.count > 0 ? ` (${item.count})` : ''}`}
-                  aria-label={`${item.label}${item.count !== null && item.count > 0 ? ` (${item.count})` : ''}`}
-                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors enabled:active:scale-[0.96] ${
-                    isActive
-                      ? 'text-[var(--text-primary)] font-semibold'
-                      : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="collapsedSidebarActiveIndicator"
-                      className="absolute inset-0 bg-[var(--bg-surface-l2)] rounded-xl shadow-subtle border border-[var(--border-hairline)] card-surface z-0"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <Icon size={16} strokeWidth={1.75} className={`relative z-10 ${isActive ? item.color : 'text-[var(--text-muted)]'}`} />
-                  {item.count !== null && item.count > 0 && !isActive && (
-                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-500 ring-2 ring-[var(--bg-surface-l1)] z-10" />
-                  )}
-                  {item.isNew && (
-                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[var(--bg-surface-l1)] z-10" />
-                  )}
-                </button>
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* Bottom Utility Icons */}
-        <div className="flex flex-col items-center gap-1.5 pt-2 border-t border-[var(--border-hairline)] w-full px-2">
-          {onOpenPomodoro && (
-            <button
-              onClick={onOpenPomodoro}
-              title="Focus Mode & Pomodoro Timer"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-amber-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Timer size={16} />
-            </button>
-          )}
-          <button
-            onClick={() => {
-              setIsWeeklyReviewOpen(true);
-              onItemClick?.();
-            }}
-            title={hints ? `Weekly Review & Retrospective (${MOD_KEY}+Shift+W)` : 'Weekly Review & Retrospective'}
-            className="p-1.5 text-[var(--text-secondary)] hover:text-indigo-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            <Compass size={16} />
-          </button>
-          {onOpenAesthetics && (
-            <button
-              onClick={onOpenAesthetics}
-              title="Aesthetics & Sounds"
-              className="p-1.5 text-[var(--text-secondary)] hover:text-purple-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <Palette size={16} />
-            </button>
-          )}
-          {onOpenScratchpad && (
-            <button
-              onClick={onOpenScratchpad}
-              title={hints ? `Sticky Scratchpad (${ALT_KEY}+N)` : 'Sticky Scratchpad'}
-              className="p-1.5 text-[var(--text-secondary)] hover:text-amber-500 rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              <FileEdit size={16} />
-            </button>
-          )}
-          <button
-            onClick={() => {
-              onOpenExportImport();
-              onItemClick?.();
-            }}
-            title="Export / Import Data (Backup & Restore)"
-            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            <DownloadCloud size={16} />
-          </button>
-          <button
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-          <button
-            onClick={() => {
-              if (onOpenSettings) {
-                onOpenSettings();
-              } else {
-                onOpenExportImport();
-              }
-              onItemClick?.();
-            }}
-            title={hints ? `Preferences & Settings (${MOD_KEY}+,)` : 'Preferences & Settings'}
-            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            <Settings size={16} />
-          </button>
-        </div>
-      </aside>
-    );
-  }
-
-  const renderNavItem = (item: {
-    id: string;
-    label: string;
-    icon: any;
-    count: number | null;
-    color: string;
-    isNew?: boolean;
-  }) => {
+  const pinned = tools.filter(item => pinnedIds.includes(item.id));
+  const filtered = tools.filter(item => !pinnedIds.includes(item.id) && item.label.toLowerCase().includes(query.trim().toLowerCase()));
+  const currentView = activeView || '';
+  const isActive = (item: Destination) => item.label === 'Plan' ? ['upcoming', 'timeline'].includes(currentView) : item.id === 'projects' ? currentView === 'projects' || currentView.startsWith('project:') : item.id === 'review' ? ['review', 'insights', 'logbook'].includes(currentView) : currentView === item.id;
+  const select = (id: string) => { setActiveView(id as ViewId); onItemClick?.(); };
+  const pin = (id: string) => setWorkspacePreference?.('workspace', { ...workspace, pinnedDestinations: pinnedIds.includes(id) ? pinnedIds.filter(value => value !== id) : [...pinnedIds, id] });
+  const action = (callback: (() => void) | undefined) => { callback?.(); onItemClick?.(); };
+  const renderDestination = (item: Destination, pinnable = false) => {
     const Icon = item.icon;
-    const isActive = activeView === item.id;
-    return (
-      <button
-        key={item.id}
-        onClick={() => {
-          if (item.id === 'study_sessions') {
-            onOpenStudySession?.();
-          } else {
-            setActiveView(item.id as ViewId);
-          }
-          onItemClick?.();
-        }}
-        className={`relative w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors enabled:active:scale-[0.96] ${
-          isActive
-            ? 'text-[var(--text-primary)] font-semibold'
-            : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
-        }`}
-      >
-        {isActive && (
-          <motion.div
-            layoutId="sidebarActiveNavIndicator"
-            className="absolute inset-0 bg-[var(--bg-surface-l2)] rounded-xl shadow-subtle border border-[var(--border-hairline)] card-surface z-0"
-            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-          />
-        )}
-        <div className="relative z-10 flex items-center gap-2.5">
-          <div className={`p-1 rounded-lg ${isActive ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
-            <Icon size={14} strokeWidth={1.75} className={isActive ? item.color : 'text-[var(--text-muted)]'} />
-          </div>
-          <span>{item.label}</span>
-        </div>
-        <div className="relative z-10 flex items-center gap-1.5">
-          {item.count !== null && item.count > 0 && (
-            <Badge
-              size="xs"
-              variant={isActive ? 'brand' : 'neutral'}
-              className="font-mono tabular-nums text-[10px]"
-            >
-              {item.count}
-            </Badge>
-          )}
-          {item.isNew && (
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-semibold border border-emerald-500/20">
-              New
-            </span>
-          )}
-        </div>
+    return <div className="library-destination" key={item.id}>
+      <button type="button" className="sidebar-nav-item" aria-current={isActive(item) ? 'page' : undefined} onClick={() => select(item.id)} title={isCollapsed ? item.label : undefined} aria-label={isCollapsed ? item.label : undefined}>
+        <Icon size={17} strokeWidth={1.75} /><span>{item.label}</span>{!!item.count && <Badge size="xs" variant={isActive(item) ? 'brand' : 'neutral'}>{item.count}</Badge>}
       </button>
-    );
+      {pinnable && !isCollapsed && <button type="button" className="library-row-action" onClick={() => pin(item.id)} title={`${pinnedIds.includes(item.id) ? 'Unpin' : 'Pin'} ${item.label}`} aria-label={`${pinnedIds.includes(item.id) ? 'Unpin' : 'Pin'} ${item.label}`}>{pinnedIds.includes(item.id) ? <PinOff size={14} /> : <Pin size={14} />}</button>}
+      {item.custom && !isCollapsed && <button type="button" className="library-row-action library-delete" onClick={() => deleteSmartView(item.id.slice(6))} title="Delete Smart View" aria-label={`Delete Smart View ${item.label}`}><Trash2 size={14} /></button>}
+    </div>;
   };
-
-  return (
-    <aside
-      aria-label={isMobileDrawer ? 'Mobile navigation drawer' : 'Desktop navigation'}
-      className="flow-sidebar w-64 flex-shrink-0 h-screen bg-[var(--bg-surface-l1)]/80 backdrop-blur-xl border-r border-[var(--border-hairline)] flex flex-col select-none transition-colors duration-200"
-    >
-      {/* Workspace Brand Header */}
-      <div className="p-3 border-b border-[var(--border-hairline)] flex items-center justify-between gap-1.5">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveView('today');
-            onItemClick?.();
-          }}
-          title="FlowTask — Return to Today"
-          aria-label="FlowTask — Return to Today"
-          className="flex-1 flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-stone-200/40 dark:hover:bg-white/[0.04] transition-all text-left min-w-0 group cursor-pointer select-none enabled:active:scale-[0.96]"
-        >
-          <BrandLogo size={32} showWordmark={true} subtitle="" />
-        </button>
-
-        <div className="flex items-center gap-0.5 shrink-0">
-          <button
-            onClick={() => {
-              onOpenBrainDump();
-              onItemClick?.();
-            }}
-            title="Multi-line Brain Dump"
-            aria-label="Multi-line Brain Dump"
-            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors enabled:active:scale-[0.96]"
-          >
-            <Zap size={15} />
-          </button>
-          {onToggleCollapse && !isMobileDrawer && (
-            <button
-              onClick={onToggleCollapse}
-              title={hints ? `Collapse Sidebar ([)` : 'Collapse Sidebar'}
-              aria-label={hints ? `Collapse Sidebar ([)` : 'Collapse Sidebar'}
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors enabled:active:scale-[0.96]"
-            >
-              <PanelLeftClose size={15} />
-            </button>
-          )}
+  return <aside className={`flow-sidebar refined-sidebar ${isCollapsed ? 'flow-sidebar-rail' : ''}`} aria-label={isMobileDrawer ? 'Mobile navigation drawer' : 'Desktop navigation'}>
+    <div className="sidebar-brand-header">
+      <button type="button" className="sidebar-brand" onClick={() => isCollapsed && onToggleCollapse ? onToggleCollapse() : select('today')} aria-label={isCollapsed ? 'FlowTask — Expand Sidebar' : 'FlowTask — Return to Today'}><BrandLogo size={32} showWordmark={!isCollapsed} subtitle="" /></button>
+      {onToggleCollapse && !isMobileDrawer && <button type="button" className="sidebar-icon-control" onClick={onToggleCollapse} aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'} title={hints ? 'Toggle sidebar ([)' : 'Toggle sidebar'}>{isCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</button>}
+    </div>
+    <div className="sidebar-navigation">
+      {!isCollapsed && <p className="sidebar-section-label">Your workspace</p>}
+      <nav aria-label="Main destinations">{primary.map(item => renderDestination(item))}</nav>
+      <button type="button" className={isCollapsed ? 'sidebar-studio-compact sidebar-icon-control' : 'sidebar-studio-entry'} onClick={() => action(onOpenPomodoro)} aria-label="Focus Studio" title="Focus Studio"><Headphones size={27} strokeWidth={1.5} />{!isCollapsed && <><span>Focus Studio<small>A place for your best work</small></span><ChevronRight size={15} /></>}</button>
+      {pinned.length > 0 && <section className="sidebar-pinned" aria-label="Pinned destinations">{!isCollapsed && <p className="sidebar-section-label">Pinned</p>}{pinned.map(item => renderDestination(item, true))}</section>}
+      <button type="button" className="sidebar-library-toggle" aria-label="Tools library" aria-expanded={!isCollapsed && toolsOpen} onClick={() => { if (isCollapsed) onToggleCollapse?.(); setToolsOpen(!toolsOpen || isCollapsed); }}><LayoutGrid size={17} />{!isCollapsed && <><span>Tools library</span><ChevronDown size={14} className={toolsOpen ? 'is-open' : ''} /></>}</button>
+      {!isCollapsed && toolsOpen && <section className="sidebar-library" aria-label="Tools library contents">
+        <label className="library-search"><Search size={15} /><input type="search" aria-label="Search tools" placeholder="Find a tool or project…" value={query} onChange={event => setQuery(event.target.value)} /></label>
+        <div className="library-results">{filtered.map(item => renderDestination(item, true))}{filtered.length === 0 && <p className="library-empty">No matching tools.</p>}</div>
+        <div className="library-actions">
+          <button type="button" onClick={() => setAddingProject(true)}><Plus size={15} />Add Project</button>
+          <button type="button" onClick={() => action(() => setIsSmartFilterModalOpen(true))}><Filter size={15} />Create Smart Filter View</button>
+          <button type="button" onClick={() => action(() => setIsWeeklyReviewOpen(true))}><TrendingUp size={15} />Weekly review</button>
+          {onOpenStudySession && <button type="button" onClick={() => action(onOpenStudySession)}><BookOpen size={15} />New study session</button>}
+          <button type="button" onClick={() => action(onOpenBrainDump)}><Zap size={15} />Multi-line Brain Dump</button>
+          <button type="button" onClick={() => action(onOpenExportImport)}><DownloadCloud size={15} />Backup & restore</button>
+          {onOpenShortcuts && <button type="button" onClick={() => action(onOpenShortcuts)}><Keyboard size={15} />Keyboard shortcuts</button>}
         </div>
-      </div>
-
-      {/* Navigation Views */}
-      <div className="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-3.5">
-        {/* Execution Horizon */}
-        <div className="space-y-0.5">
-          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            Execution Horizon
-          </div>
-          {primaryNavItems.map(renderNavItem)}
-          <button className="sidebar-studio-entry" onClick={()=>{onOpenPomodoro();onItemClick?.();}}><HeadphonesIcon/><span>Focus Studio<small>A place for your best work</small></span><ChevronRight size={14}/></button>
-        </div>
-
-        {/* Strategic Life OS */}
-        <details className="sidebar-tools sidebar-life" open={['areas', 'goals', 'projects'].includes(activeView) || undefined}>
-          <summary>Strategic Life OS</summary>
-          {lifeNavItems.map(renderNavItem)}
-        </details>
-
-        {/* Deep Work & Rituals */}
-        <details className="sidebar-tools" open={['review', 'routines', 'notes', 'study'].includes(activeView) || undefined}>
-          <summary>Deep Work & Rituals</summary>
-          {toolsNavItems.map(renderNavItem)}
-        </details>
-
-        {/* More Perspectives & Archive */}
-        <details className="sidebar-tools" open={!isMoreCollapsed} onToggle={event => setIsMoreCollapsed(!event.currentTarget.open)}>
-          <summary>Perspectives & Recovery</summary>
-          {perspectiveNavItems.map(renderNavItem)}
-        </details>
-
-        {/* Perspectives Section */}
-        {pinnedItems.length > 0 && <div className="space-y-0.5"><div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">Pinned</div>{pinnedItems.map(renderNavItem)}</div>}
-
-        {/* Smart Filter Views Section */}
-        <div className="pt-2 pb-0.5 flex items-center justify-between px-2.5">
-          <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase flex items-center gap-1.5">
-            Smart Views
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setIsSmartFilterModalOpen(true)}
-              className="text-[var(--text-muted)] hover:text-indigo-500 p-0.5 rounded transition-colors enabled:active:scale-[0.96]"
-              title="Create Smart Filter View"
-              aria-label="Create Smart Filter View"
-            >
-              <Plus size={13} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsSmartViewsCollapsed((prev) => !prev)}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors enabled:active:scale-[0.96]"
-              title={isSmartViewsCollapsed ? 'Expand Smart Views' : 'Collapse Smart Views'}
-              aria-label={isSmartViewsCollapsed ? 'Expand Smart Views' : 'Collapse Smart Views'}
-            >
-              {isSmartViewsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-            </button>
-          </div>
-        </div>
-
-        {!isSmartViewsCollapsed &&
-          smartViews.map((sv) => {
-            const isSelected = activeView === `smart:${sv.id}`;
-            const count = filterTasksByPredicate(tasks, sv.predicate).length;
-            const Icon = getSmartViewIcon(sv.icon);
-
-            return (
-              <div
-                key={sv.id}
-                className={`group w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                  isSelected
-                    ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
-                    : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
-                }`}
-              >
-                <button
-                  onClick={() => {
-                    setActiveView(`smart:${sv.id}` as ViewId);
-                    onItemClick?.();
-                  }}
-                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left enabled:active:scale-[0.96]"
-                >
-                  <div className={`p-1 rounded-lg ${isSelected ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
-                    <Icon size={14} className={sv.color || 'text-indigo-500'} />
-                  </div>
-                  <span className="truncate">{sv.name}</span>
-                </button>
-
-                <div className="flex items-center gap-1 shrink-0">
-                  {count > 0 && (
-                    <Badge
-                      size="xs"
-                      variant={isSelected ? 'brand' : 'neutral'}
-                      className="font-mono text-[10px]"
-                    >
-                      {count}
-                    </Badge>
-                  )}
-                  {!sv.isBuiltIn && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteSmartView(sv.id);
-                      }}
-                      title="Delete Smart View"
-                      aria-label={`Delete Smart View ${sv.name}`}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-rose-500 text-[var(--text-muted)] transition-opacity"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-        {/* Projects Section */}
-        <div className="pt-2 pb-0.5 flex items-center justify-between px-2.5">
-          <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
-            Projects ({activeProjectCount})
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setIsAddingProject(true)}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors enabled:active:scale-[0.96]"
-              title="Add Project"
-              aria-label="Add Project"
-            >
-              <Plus size={13} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsProjectsCollapsed((prev) => !prev)}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors enabled:active:scale-[0.96]"
-              title={isProjectsCollapsed ? 'Expand Projects' : 'Collapse Projects'}
-              aria-label={isProjectsCollapsed ? 'Expand Projects' : 'Collapse Projects'}
-            >
-              {isProjectsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-            </button>
-          </div>
-        </div>
-
-        {!isProjectsCollapsed &&
-          projects
-            .filter((p) => p.id !== 'inbox' && p.id !== 'ideas')
-            .map((project) => {
-              const isSelected = activeView === `project:${project.id}`;
-              const projCount = projectTaskCountMap.get(project.id) || 0;
-
-              return (
-                <button
-                  key={project.id}
-                  onClick={() => {
-                    setActiveView(`project:${project.id}` as ViewId);
-                    onItemClick?.();
-                  }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all enabled:active:scale-[0.96] ${
-                    isSelected
-                      ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
-                      : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 truncate">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0 ring-1 ring-stone-900/10 dark:ring-white/20"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span className="truncate">{project.name}</span>
-                  </div>
-                  {projCount > 0 && (
-                    <Badge
-                      size="xs"
-                      variant={isSelected ? 'brand' : 'neutral'}
-                      className="font-mono text-[10px]"
-                    >
-                      {projCount}
-                    </Badge>
-                  )}
-                </button>
-              );
-            })}
-
-        {/* Inline Add Project Input */}
-        {isAddingProject && (
-          <form onSubmit={handleCreateProject} className="px-2 pt-1">
-            <input
-              type="text"
-              autoFocus
-              placeholder="Project name..."
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              onBlur={() => {
-                if (!newProjectName.trim()) setIsAddingProject(false);
-              }}
-              className="w-full text-xs px-2.5 py-1.5 bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border border-[var(--border-hairline)] rounded-xl outline-none focus:ring-2 focus:ring-stone-400/40 dark:focus:ring-white/20 card-surface"
-            />
-          </form>
-        )}
-      </div>
-
-      {/* Desktop account status lives in the header; retain access in the mobile drawer. */}
-      <div className="p-2.5 border-t border-[var(--border-hairline)] space-y-1.5 text-[var(--text-secondary)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        {onOpenAesthetics && <button className="sidebar-utility" aria-label="Customize appearance" onClick={()=>{onOpenAesthetics();onItemClick?.();}}><Palette size={14}/>Appearance</button>}
-        <a className="sidebar-utility" href="/">Visit welcome page<ChevronRight size={13}/></a>
-        {onOpenScratchpad && (
-          <button
-            type="button"
-            onClick={() => {
-              onOpenScratchpad();
-              onItemClick?.();
-            }}
-            title={hints ? `Sticky Scratchpad (${ALT_KEY}+N)` : 'Sticky Scratchpad'}
-            aria-label="Sticky Scratchpad"
-            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
-          >
-            <span className="flex items-center gap-2">
-              <FileEdit size={14} className="text-amber-600" />
-              <span>Quick Notes</span>
-            </span>
-            {hints && <span className="text-[10px] text-[var(--text-muted)] font-mono">{ALT_KEY}+N</span>}
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => {
-            if (onOpenSettings) onOpenSettings();
-            else onOpenExportImport();
-            onItemClick?.();
-          }}
-          title={hints ? `Preferences & Settings (${MOD_KEY}+,)` : 'Preferences & Settings'}
-          aria-label="Preferences and Settings"
-          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <Settings size={14} />
-            <span>Settings</span>
-          </span>
-          {hints && <span className="text-[10px] text-[var(--text-muted)] font-mono">{MOD_KEY}+,</span>}
-        </button>
-
-        {isMobileDrawer && <button
-          type="button"
-          onClick={() => {
-            setIsAuthModalOpen(true);
-            onItemClick?.();
-          }}
-          title={
-            syncStatus === 'synced'
-              ? 'Cloud sync active. Click for account & data management.'
-              : `Sync status: ${syncStatus}. Click to manage account.`
-          }
-          aria-label="Account and cloud sync"
-          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
-        >
-          <span className="flex items-center gap-2 truncate">
-            <Cloud
-              size={14}
-              className={
-                syncStatus === 'synced'
-                  ? 'text-emerald-600'
-                  : syncStatus === 'syncing'
-                  ? 'text-amber-500 animate-pulse'
-                  : 'text-[var(--text-muted)]'
-              }
-            />
-            <span className="truncate">
-              {syncStatus === 'synced' ? 'Account & Sync' : 'Cloud Sync'}
-            </span>
-          </span>
-          <span
-            className={`w-2 h-2 rounded-full shrink-0 ${
-              syncStatus === 'synced'
-                ? 'bg-emerald-500'
-                : syncStatus === 'syncing'
-                ? 'bg-amber-500 animate-ping'
-                : syncStatus === 'conflict'
-                ? 'bg-rose-500'
-                : 'bg-stone-400'
-            }`}
-          />
-        </button>}
-      </div>
-    </aside>
-  );
+        {addingProject && <form className="library-project-form" onSubmit={event => { event.preventDefault(); if (!projectName.trim()) return; const color = getComputedStyle(document.documentElement).getPropertyValue('--color-brand').trim() || '#496650'; addProject(projectName.trim(), color); setProjectName(''); setAddingProject(false); }}><input autoFocus aria-label="Project name" placeholder="Project name…" value={projectName} onChange={event => setProjectName(event.target.value)} /><button type="submit" className="desk-button primary">Add</button><button type="button" onClick={() => setAddingProject(false)}>Cancel</button></form>}
+      </section>}
+    </div>
+    <div className="sidebar-footer">
+      {onOpenAesthetics && <button type="button" className="sidebar-utility" aria-label="Customize appearance" title="Appearance" onClick={() => action(onOpenAesthetics)}><Palette size={16} />{!isCollapsed && <span>Appearance</span>}</button>}
+      {onOpenScratchpad && <button type="button" className="sidebar-utility" aria-label="Sticky Scratchpad" title="Quick Notes" onClick={() => action(onOpenScratchpad)}><FileEdit size={16} />{!isCollapsed && <><span>Quick Notes</span>{hints && <kbd>{ALT_KEY}+N</kbd>}</>}</button>}
+      <button type="button" className="sidebar-utility" aria-label="Preferences and Settings" title="Settings" onClick={() => action(onOpenSettings || onOpenExportImport)}><Settings size={16} />{!isCollapsed && <><span>Settings</span>{hints && <kbd>{MOD_KEY} ,</kbd>}</>}</button>
+      {isMobileDrawer && <><button type="button" className="sidebar-utility" onClick={() => action(() => setIsAuthModalOpen(true))}><Cloud size={16} /><span>{syncStatus === 'synced' ? 'Account · Synced' : 'Account & saving'}</span></button><a className="sidebar-utility" href="/">Visit welcome page<ChevronRight size={14} /></a></>}
+    </div>
+  </aside>;
 };
+

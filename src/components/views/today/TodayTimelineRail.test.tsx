@@ -68,6 +68,16 @@ describe('TodayTimelineRail', () => {
     expect(onToggle).toHaveBeenCalled();
   });
 
+  it('preserves the schedule when the same rail is collapsed and expanded', () => {
+    const props = { onToggleCollapse: vi.fn(), tasks: [scheduledTask] };
+    const { rerender } = render(<TodayTimelineRail {...props} isOpen />);
+    expect(screen.getByText('Architecture Review')).toBeDefined();
+    rerender(<TodayTimelineRail {...props} isOpen={false} />);
+    expect(screen.getByRole('button', { name: 'Expand 24h timeline rail' })).toBeDefined();
+    rerender(<TodayTimelineRail {...props} isOpen />);
+    expect(screen.getByText('Architecture Review')).toBeDefined();
+  });
+
   it('renders 24-hour visual schedule and scheduled task blocks when isOpen is true', () => {
     render(
       <TodayTimelineRail

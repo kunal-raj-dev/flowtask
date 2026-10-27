@@ -1,5 +1,7 @@
 # FlowTask
 
+The [experience upgrade plan](docs/FLOWTASK_EXPERIENCE_UPGRADE_PLAN.md) proposes a simpler daily workspace, editable task breakdown, continuous focus, actionable review, and preserved customization, with a prioritized implementation backlog and release gates.
+
 FlowTask is a local-first planner for personal life and work. Plan a realistic day, connect a task to a focus session, and review what you completed. The app includes an optional account and cloud sync; without an account, workspace data stays in this browser profile. Browser storage can be cleared or evicted, so download a JSON backup regularly.
 
 Start with one task in the optional inline introduction, then choose a 25-minute focus session or keep planning. Student/developer presets, work budgets, and appearance are available later in Settings. Today keeps task capture near the top and resumes existing focus sessions. Automatic scheduling uses the time left in the selected day and previews changes before applying them.

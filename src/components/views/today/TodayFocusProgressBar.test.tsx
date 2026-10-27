@@ -71,6 +71,9 @@ describe('TodayFocusProgressBar', () => {
     render(<TodayFocusProgressBar />);
 
     expect(screen.getByRole('progressbar', { name: 'Planning capacity used' })).toBeDefined();
+    const details = screen.getByLabelText('Day capacity details').closest('details')!;
+    expect(details.open).toBe(false);
+    fireEvent.click(screen.getByLabelText('Day capacity details'));
     expect(screen.getByText('A DAY THAT FITS')).toBeDefined();
     expect(screen.getByText('1 completed')).toBeDefined();
     expect(screen.getByText('30m focused')).toBeDefined();
@@ -80,6 +83,7 @@ describe('TodayFocusProgressBar', () => {
   it('renders plan my day trigger when onPlanMyDay callback is provided', () => {
     const onPlan = vi.fn();
     render(<TodayFocusProgressBar onPlanMyDay={onPlan} />);
+    fireEvent.click(screen.getByLabelText('Day capacity details'));
 
     const planBtn = screen.getByRole('button', { name: 'Plan my day' });
     fireEvent.click(planBtn);

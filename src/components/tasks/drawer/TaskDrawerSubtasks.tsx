@@ -130,10 +130,10 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
           <button
             type="button"
             onClick={handleStarterStep}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-[var(--text-primary)] border border-amber-500/30 shadow-xs transition-all active:scale-95"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[var(--color-brand-subtle)] hover:bg-[var(--color-brand-subtle)] text-[var(--text-primary)] border border-[var(--color-brand-border)] shadow-xs transition-all active:scale-95"
             title="Suggest a small first step for this task"
           >
-            <Zap size={11} className="text-amber-500 fill-current" />
+            <Zap size={11} className="text-[var(--color-brand)] fill-current" />
             <span>Find a 5-minute start</span>
           </button>
 
@@ -160,9 +160,9 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
       {/* Progress Bar and Rollup */}
       {totalSubs > 0 && (
         <div className="space-y-1.5 mb-2">
-          <div className="w-full h-1.5 bg-stone-200/70 dark:bg-stone-800 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-[var(--bg-surface-l3)] dark:bg-[var(--bg-surface-l3)] rounded-full overflow-hidden">
             <div
-              className="h-full bg-emerald-500 rounded-full transition-all duration-300 shadow-xs"
+              className="h-full bg-[var(--pastel-sage)] rounded-full transition-all duration-300 shadow-xs"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -172,7 +172,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
               {totalSubMinutes > 0 ? ` • ${completedSubMinutes}m / ${totalSubMinutes}m` : ''}
             </span>
             {timeSummary.untimedSubtaskIndicator && (
-              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+              <span className="text-[10px] text-[var(--color-brand)] dark:text-[var(--color-brand)] font-medium">
                 {timeSummary.untimedSubtaskIndicator}
               </span>
             )}
@@ -187,7 +187,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
             return (
               <div
                 key={sub.id}
-                className="flex items-center gap-1.5 p-1.5 rounded-lg bg-[var(--bg-surface-l1)] border border-amber-500/60 shadow-xs"
+                className="flex items-center gap-1.5 p-1.5 rounded-lg bg-[var(--bg-surface-l1)] border border-[var(--color-brand-border)] shadow-xs"
               >
                 <input
                   type="text"
@@ -235,7 +235,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                   disabled={!editingTitle.trim()}
                   title="Save changes (Enter)"
                   aria-label="Save subtask"
-                  className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/15 disabled:opacity-40 rounded-md transition-colors"
+                  className="p-1 text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] hover:bg-[var(--pastel-sage-subtle)] disabled:opacity-40 rounded-md transition-colors"
                 >
                   <Check size={14} />
                 </button>
@@ -244,7 +244,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                   onClick={handleCancelEdit}
                   title="Cancel (Esc)"
                   aria-label="Cancel editing subtask"
-                  className="p-1 text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-500/10 rounded-md transition-colors"
+                  className="p-1 text-[var(--text-muted)] hover:text-[var(--pastel-coral)] hover:bg-[var(--pastel-coral-subtle)] rounded-md transition-colors"
                 >
                   <X size={14} />
                 </button>
@@ -270,8 +270,8 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                   }}
                   className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all active:scale-90 ${
                     sub.completed
-                      ? 'bg-emerald-500 border-emerald-500 text-white'
-                      : 'border-[var(--border-strong)] hover:border-amber-500'
+                      ? 'bg-[var(--pastel-sage)] border-[var(--border-color)] text-white'
+                      : 'border-[var(--border-strong)] hover:border-[var(--color-brand)]'
                   }`}
                   aria-label={sub.completed ? 'Mark subtask incomplete' : 'Mark subtask complete'}
                 >
@@ -294,10 +294,10 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                   <span
                     className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono shrink-0 ${
                       sub.difficulty === 'HARD'
-                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                        ? 'bg-[var(--pastel-coral-subtle)] text-[var(--pastel-coral)] dark:text-[var(--pastel-coral)] border border-[var(--border-color)]'
                         : sub.difficulty === 'MEDIUM'
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                        : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                        ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] border border-[var(--color-brand-border)]'
+                        : 'bg-[var(--pastel-sage-subtle)] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] border border-[var(--border-color)]'
                     }`}
                   >
                     {sub.difficulty}
@@ -336,7 +336,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                     {sub.tags.map((tg) => (
                       <span
                         key={tg}
-                        className="text-[9px] px-1.5 py-0.2 rounded bg-stone-200/60 dark:bg-stone-800 text-[var(--text-muted)] font-medium"
+                        className="text-[9px] px-1.5 py-0.2 rounded bg-[var(--bg-surface-l3)] dark:bg-[var(--bg-surface-l3)] text-[var(--text-muted)] font-medium"
                       >
                         {tg}
                       </span>
@@ -393,7 +393,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
                   onClick={() => deleteSubTask(task.id, sub.id)}
                   title="Delete subtask"
                   aria-label="Delete subtask"
-                  className="text-[var(--text-muted)] hover:text-rose-500 p-1 rounded-md transition-all"
+                  className="text-[var(--text-muted)] hover:text-[var(--pastel-coral)] p-1 rounded-md transition-all"
                 >
                   <X size={13} />
                 </button>
@@ -413,7 +413,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
           placeholder="Add subtask..."
           value={newSubtaskTitle}
           onChange={(e) => setNewSubtaskTitle(e.target.value)}
-          className="flex-1 text-xs px-3 py-1.5 bg-[var(--bg-surface-l1)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-lg outline-none focus:border-stone-400 dark:focus:border-stone-600 card-surface"
+          className="flex-1 text-xs px-3 py-1.5 bg-[var(--bg-surface-l1)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-lg outline-none focus:border-[var(--border-color)] dark:focus:border-[var(--border-color)] card-surface"
         />
         <input
           id="new-subtask-estimate-input"
@@ -425,7 +425,7 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
           placeholder="min"
           value={newSubtaskEstimate || ''}
           onChange={(e) => setNewSubtaskEstimate(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-          className="w-14 text-xs px-2 py-1.5 bg-[var(--bg-surface-l1)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-lg outline-none focus:border-stone-400 dark:focus:border-stone-600 card-surface text-center font-mono"
+          className="w-14 text-xs px-2 py-1.5 bg-[var(--bg-surface-l1)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-[var(--border-hairline)] rounded-lg outline-none focus:border-[var(--border-color)] dark:focus:border-[var(--border-color)] card-surface text-center font-mono"
           title="Optional step duration estimate in minutes"
         />
         <button

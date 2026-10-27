@@ -40,7 +40,7 @@ export const WeeklyWorkloadWidget: React.FC<WidgetComponentProps> = () => {
             >
               {/* Deadline dot */}
               {d.deadlinesCount > 0 && (
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mb-0.5 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--pastel-coral)] mb-0.5 shrink-0" />
               )}
 
               {/* Bar track */}
@@ -48,10 +48,10 @@ export const WeeklyWorkloadWidget: React.FC<WidgetComponentProps> = () => {
                 <div
                   className={`w-full rounded-lg transition-all duration-300 ${
                     d.overbooked
-                      ? 'bg-rose-500'
+                      ? 'bg-[var(--pastel-coral)]'
                       : d.isToday
-                      ? 'bg-amber-500'
-                      : 'bg-emerald-600'
+                      ? 'bg-[var(--pastel-amber)]'
+                      : 'bg-[var(--pastel-sage)]'
                   }`}
                   style={{ height: `${Math.max(6, heightPct)}%` }}
                 />
@@ -61,7 +61,7 @@ export const WeeklyWorkloadWidget: React.FC<WidgetComponentProps> = () => {
               <div className="text-center">
                 <span
                   className={`text-[10px] block font-semibold truncate ${
-                    d.isToday ? 'text-amber-700 dark:text-amber-400 font-bold' : 'text-[var(--text-secondary)]'
+                    d.isToday ? 'text-[var(--pastel-amber)] dark:text-[var(--pastel-amber)] font-bold' : 'text-[var(--text-secondary)]'
                   }`}
                 >
                   {d.dayLabel}
@@ -78,7 +78,7 @@ export const WeeklyWorkloadWidget: React.FC<WidgetComponentProps> = () => {
       <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] text-[var(--text-muted)]">
         <span>Capacity: {Math.round(capacity / 60)}h / day</span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-rose-500" /> Deadline
+          <span className="w-2 h-2 rounded-full bg-[var(--pastel-coral)]" /> Deadline
         </span>
       </div>
     </div>

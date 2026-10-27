@@ -51,17 +51,17 @@ export const ResourcesWidget: React.FC<WidgetComponentProps> = () => {
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--bg-surface-l1)]/40 hover:bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] hover:border-emerald-600/30 transition-all text-xs group"
+              className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--bg-surface-l1)]/40 hover:bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] hover:border-[var(--border-color)] transition-all text-xs group"
             >
               <div className="min-w-0 flex-1">
-                <span className="font-semibold text-[var(--text-primary)] group-hover:text-emerald-700 dark:group-hover:text-emerald-300 truncate block">
+                <span className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--pastel-sage)] dark:group-hover:text-[var(--pastel-sage)] truncate block">
                   {item.title}
                 </span>
                 <span className="text-[11px] text-[var(--text-muted)] truncate block">
                   From: {item.source}
                 </span>
               </div>
-              <ExternalLink size={13} className="text-[var(--text-muted)] group-hover:text-emerald-600 shrink-0" />
+              <ExternalLink size={13} className="text-[var(--text-muted)] group-hover:text-[var(--pastel-sage)] shrink-0" />
             </a>
           ))}
         </div>

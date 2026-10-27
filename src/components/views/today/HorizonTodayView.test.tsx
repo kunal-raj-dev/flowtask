@@ -3,10 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { HorizonTodayView } from './HorizonTodayView';
 import type { Task } from '../../../types/task';
+import { defaultTodayLayout } from '../../../utils/todayLayout';
+
+const groupedLayout = () => ({ ...defaultTodayLayout(), sections: defaultTodayLayout().sections.map(section => ({ ...section, visible: ['capture', 'capacity', 'tasks', 'priorities', 'morning', 'evening'].includes(section.id) })) });
 
 const mockUpdateTask = vi.fn();
 const mockAddTask = vi.fn();
 const mockStartFocus = vi.fn();
+let visibleTasks: Task[];
 
 const sampleTasks: Task[] = [
   {
@@ -85,7 +89,8 @@ const sampleTasks: Task[] = [
 
 vi.mock('../../../context/TaskContext', () => ({
   useTaskContext: () => ({
-    tasks: sampleTasks,
+    tasks: visibleTasks,
+    activeView: 'today',
     projects: [{ id: 'inbox', name: 'Inbox', color: '#64748B' }],
     calendarEvents: [
       { id: 'cal-1', title: 'Team Standup', startTime: '10:00', endTime: '10:30', date: '2026-10-07' },
@@ -93,6 +98,8 @@ vi.mock('../../../context/TaskContext', () => ({
     settings: { targetWorkCapacityHours: 6, enableSmartSyntaxParsing: true },
     updateTask: mockUpdateTask,
     addTask: mockAddTask,
+    addMultipleTasks: vi.fn(),
+    setIsTemplatePickerOpen: vi.fn(),
     startFocusSession: mockStartFocus,
     showToast: vi.fn(),
     toggleTaskStatus: vi.fn(),
@@ -114,10 +121,11 @@ vi.mock('../../../hooks/useTotalFocusedTodaySeconds', () => ({
 describe('HorizonTodayView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    visibleTasks = sampleTasks;
   });
 
   it('renders Top 3 Priorities deck with rank badges', () => {
-    render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
+    render(<HorizonTodayView layout={groupedLayout()} onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
 
     expect(screen.getByRole('heading', { name: 'Today.' })).toBeDefined();
     expect(screen.getByRole('heading', { name: /your top 3/i })).toBeDefined();
@@ -128,7 +136,7 @@ describe('HorizonTodayView', () => {
   });
 
   it('renders structured daytime batches (Morning Focus, Daytime Flow, This Evening)', () => {
-    render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
+    render(<HorizonTodayView layout={groupedLayout()} onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
 
     expect(screen.getByRole('region', { name: 'Morning Focus' })).toBeDefined();
     expect(screen.getAllByText('Morning Focus Task').length).toBeGreaterThanOrEqual(1);
@@ -146,10 +154,10 @@ describe('HorizonTodayView', () => {
     const input = screen.getByRole('textbox', { name: 'Add a task to this list' });
     fireEvent.change(input, { target: { value: 'New Horizon Action Item !p1 ~45m' } });
 
-    const submitBtn = screen.getByRole('button', { name: 'Add task' });
+    const submitBtn = screen.getByRole('button', { name: 'Add' });
     fireEvent.click(submitBtn);
 
-    expect(mockAddTask).toHaveBeenCalledWith('New Horizon Action Item !p1 ~45m', expect.objectContaining({
+    expect(mockAddTask).toHaveBeenCalledWith('New Horizon Action Item', expect.objectContaining({
       plannedDate: '2026-10-07',
       priority: 'p1',
       estimatedMinutes: 45,
@@ -160,21 +168,24 @@ describe('HorizonTodayView', () => {
     const onSwitch = vi.fn();
     render(<HorizonTodayView onSwitchToDashboard={onSwitch} />);
 
-    const switcher = screen.getByRole('button', { name: 'Switch dashboard' });
+    const switcher = screen.getByRole('button', { name: 'Layout' });
     fireEvent.click(switcher);
+    expect(onSwitch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'My dashboards' }));
     expect(onSwitch).toHaveBeenCalled();
   });
 
-  it('inserts a duration shortcut that the task parser actually understands', () => {
+  it('offers the same project, date and duration controls as Inbox', () => {
     render(<HorizonTodayView />);
-    fireEvent.click(screen.getByText('Task shortcuts'));
-    fireEvent.click(screen.getByRole('button', { name: '25 minutes' }));
     const input = screen.getByRole('textbox', { name: 'Add a task to this list' });
-    expect((input as HTMLInputElement).value).toBe('~25m ');
-    expect((screen.getByRole('button', { name: 'Add task' }) as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(input, { target: { value: `${(input as HTMLInputElement).value}Read a chapter` } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
-    expect(mockAddTask).toHaveBeenCalledWith('~25m Read a chapter', expect.objectContaining({ estimatedMinutes: 25 }));
+    fireEvent.change(input, { target: { value: 'Read a chapter ~25m' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Capture tools' }));
+    fireEvent.click(screen.getByRole('button', { name: /More details/ }));
+    expect(screen.getByLabelText('Project')).toBeDefined();
+    expect(screen.getByLabelText('Planned date')).toBeDefined();
+    expect(screen.getByLabelText('Deadline')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(mockAddTask).toHaveBeenCalledWith('Read a chapter', expect.objectContaining({ plannedDate: '2026-10-07', estimatedMinutes: 25 }));
   });
 
   it('does not create a task containing only syntax metadata', () => {
@@ -185,9 +196,33 @@ describe('HorizonTodayView', () => {
     expect(mockAddTask).not.toHaveBeenCalled();
   });
 
+  it('honors a future date instead of forcing captured work into Today', () => {
+    render(<HorizonTodayView />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Add a task to this list' }), { target: { value: 'Send the outline due:2026-10-08' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(mockAddTask).toHaveBeenCalledWith('Send the outline', expect.objectContaining({ dueDate: '2026-10-08', plannedDate: undefined }));
+  });
+
+  it('shows one empty task state, with capture and planning still available', () => {
+    visibleTasks = [];
+    render(<HorizonTodayView />);
+    expect(screen.getByText('A little space for what matters.')).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Top 3 Priorities' })).toBeNull();
+    expect(screen.queryByText('What matters most today?')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Add a task to this list' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Plan your day' })).toBeDefined();
+  });
+
+  it('does not render an empty Daytime section when all tasks are priorities', () => {
+    visibleTasks = sampleTasks.filter(task => task.id.startsWith('top-'));
+    render(<HorizonTodayView layout={groupedLayout()} />);
+    expect(screen.getByRole('region', { name: 'Top 3 Priorities' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Daytime Flow' })).toBeNull();
+  });
+
   it('toggles Single-Task Horizon mode, collapses batches, and provides 5m starter timer', () => {
     const onStartFocus = vi.fn();
-    render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={onStartFocus} />);
+    render(<HorizonTodayView layout={groupedLayout()} onSelectTask={vi.fn()} onStartFocus={onStartFocus} />);
 
     // Initially batches are present
     expect(screen.getByRole('region', { name: 'Morning Focus' })).toBeDefined();

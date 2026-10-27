@@ -371,13 +371,13 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
       <button
         type="button"
         onClick={() => handleAction(() => deleteTask(task.id))}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-colors text-left cursor-pointer active:scale-[0.98]"
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-[var(--pastel-coral-subtle)] text-[var(--pastel-coral)] transition-colors text-left cursor-pointer active:scale-[0.98]"
       >
         <span className="flex items-center gap-2.5">
           <Trash2 size={14} />
           <span>Delete Task</span>
         </span>
-        {showHints && <kbd className="text-[9px] text-rose-400 font-mono">Del</kbd>}
+        {showHints && <kbd className="text-[9px] text-[var(--pastel-coral)] font-mono">Del</kbd>}
       </button>
         </>
       )}

@@ -19,6 +19,9 @@ interface UpcomingViewProps {
   onOpenBrainDump?: () => void;
   onStartSprint?: (taskId: string) => void;
   onOpenStudySession?: () => void;
+  embedded?: boolean;
+  selectedDate?: string | null;
+  onSelectedDateChange?: (date: string | null) => void;
 }
 
 export const UpcomingView: React.FC<UpcomingViewProps> = ({
@@ -26,6 +29,9 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   onStartFocus,
   onStartSprint,
   onOpenStudySession,
+  embedded = false,
+  selectedDate,
+  onSelectedDateChange,
 }) => {
   const {
     tasks,
@@ -37,7 +43,9 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   } = useTaskContext();
 
   const [presentationMode, setPresentationMode] = useState<'list' | 'timeline'>('list');
-  const [selectedHorizonDate, setSelectedHorizonDate] = useState<string | null>(null);
+  const [localSelectedDate, setLocalSelectedDate] = useState<string | null>(null);
+  const selectedHorizonDate = selectedDate === undefined ? localSelectedDate : selectedDate;
+  const setSelectedHorizonDate = (date: string | null) => { setLocalSelectedDate(date); onSelectedDateChange?.(date); };
 
   const todayStr = useTodayStr();
 
@@ -142,7 +150,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               {title}
             </h2>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-200 dark:bg-stone-800 text-[var(--text-secondary)] font-bold">
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--bg-surface-l3)] text-[var(--text-secondary)] font-bold">
               {sectionTasks.length}
             </span>
           </div>
@@ -169,11 +177,11 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8">
+    <div className={embedded ? 'planning-embedded' : 'max-w-4xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8'}>
       {/* View Header with Presentation Toggle */}
-      <div className="workspace-page-header mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
+      {!embedded && <div className="workspace-page-header mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-subtle)] shadow-subtle">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-subtle)] text-[var(--color-brand)] border border-[var(--color-brand-border)] flex items-center justify-center shrink-0">
             <CalendarDays size={20} className="stroke-[2.2]" />
           </div>
           <div>
@@ -195,10 +203,11 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
           value={presentationMode}
           onChange={(mode) => setPresentationMode(mode)}
         />
-      </div>
+      </div>}
 
       {/* 7-Day Planning Horizon Strip */}
-      <WeeklyWorkload />
+      {embedded && <div className="planning-capture"><TaskComposer /></div>}
+      {embedded ? <details className="planning-workload"><summary>Workload overview</summary><WeeklyWorkload /></details> : <WeeklyWorkload />}
       <div className="mb-6 overflow-x-auto pb-1">
         <div className="flex items-center gap-2 min-w-max">
           <button
@@ -206,7 +215,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
             onClick={() => setSelectedHorizonDate(null)}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
               selectedHorizonDate === null
-                ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                ? 'bg-[var(--color-brand)] text-[var(--text-on-brand)] border-[var(--color-brand)] shadow-sm'
                 : 'bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-hairline)]'
             }`}
           >
@@ -222,15 +231,15 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
                 onClick={() => setSelectedHorizonDate(isSelected ? null : hd.dateStr)}
                 className={`flex flex-col items-center px-3.5 py-1.5 rounded-xl text-xs transition-all border min-w-[70px] cursor-pointer ${
                   isSelected
-                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                    ? 'bg-[var(--color-brand)] text-[var(--text-on-brand)] border-[var(--color-brand)] shadow-sm'
                     : 'bg-[var(--bg-surface-l1)] hover:bg-[var(--bg-surface-l2)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--border-hairline)]'
                 }`}
               >
-                <span className={`text-[10px] font-semibold uppercase ${isSelected ? 'text-purple-200' : 'text-[var(--text-muted)]'}`}>
+                <span className={`text-[10px] font-semibold uppercase ${isSelected ? 'text-[var(--text-on-brand)]' : 'text-[var(--text-muted)]'}`}>
                   {hd.dayName}
                 </span>
                 <span className="text-sm font-bold my-0.5">{hd.dayNumber}</span>
-                <span className={`text-[10px] ${isSelected ? 'text-purple-200' : 'text-[var(--text-secondary)]'}`}>
+                <span className={`text-[10px] ${isSelected ? 'text-[var(--text-on-brand)]' : 'text-[var(--text-secondary)]'}`}>
                   {hd.taskCount > 0 ? `${hd.taskCount} tasks` : hd.hoursText}
                 </span>
               </button>
@@ -253,7 +262,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
       ) : (
         <>
           {/* Quick Capture */}
-          <TaskComposer />
+          {!embedded && <TaskComposer />}
 
           {/* Grouped Planning Sections */}
           {selectedHorizonDate ? (
@@ -275,7 +284,7 @@ export const UpcomingView: React.FC<UpcomingViewProps> = ({
             <EmptyState
               title={selectedHorizonDate ? 'No tasks on this date' : 'No upcoming tasks'}
               description="Capture future work or schedule tasks from your Inbox."
-              icon={<Calendar size={28} className="text-purple-500" />}
+              icon={<Calendar size={28} className="text-[var(--color-brand)]" />}
             />
           )}
         </>

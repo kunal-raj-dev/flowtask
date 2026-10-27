@@ -45,11 +45,13 @@ export const DashboardCanvasView: React.FC<DashboardCanvasViewProps> = ({
           </div>
           <button
             type="button"
+            aria-label="Back to Horizon Daily Flow"
             className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[var(--color-brand)] hover:underline rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.04] transition-colors"
             onClick={onSwitchToHorizon}
           >
             <ArrowLeft size={13} />
-            <span>Back to Horizon Daily Flow</span>
+            <span className="sr-only">Back to Horizon Daily Flow</span>
+            <span>Return to Today</span>
           </button>
         </div>
       )}

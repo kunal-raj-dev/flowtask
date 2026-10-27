@@ -65,7 +65,7 @@ export const TaskDrawerMergeModal: React.FC<TaskDrawerMergeModalProps> = ({
 
         {/* Modal Content */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs">
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200">
+          <div className="p-3 rounded-xl bg-[var(--pastel-amber-subtle)] border border-[var(--border-color)] text-[var(--pastel-amber)] dark:text-[var(--pastel-amber)]">
             <p className="font-semibold mb-1">Target Task (Retained):</p>
             <p className="font-medium text-xs text-[var(--text-primary)] truncate">&quot;{task.title}&quot;</p>
           </div>
@@ -113,7 +113,7 @@ export const TaskDrawerMergeModal: React.FC<TaskDrawerMergeModalProps> = ({
                         <div className="flex items-center gap-1.5 text-right font-mono">
                           <span className="text-[var(--text-muted)] line-through">{String(c.sourceValue)}</span>
                           <span>→</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          <span className="font-bold text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)]">
                             {String(c.resolvedValue)}
                           </span>
                         </div>
@@ -122,7 +122,7 @@ export const TaskDrawerMergeModal: React.FC<TaskDrawerMergeModalProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[11px]">
+                <div className="p-2.5 rounded-lg bg-[var(--pastel-sage-subtle)] border border-[var(--border-color)] text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] text-[11px]">
                   No field conflicts detected. Attributes cleanly merge.
                 </div>
               )}
@@ -148,7 +148,7 @@ export const TaskDrawerMergeModal: React.FC<TaskDrawerMergeModalProps> = ({
               </div>
 
               {mergePreview.redirectedTasks.length > 0 && (
-                <div className="p-2.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-[11px] text-sky-800 dark:text-sky-300">
+                <div className="p-2.5 rounded-lg bg-[var(--pastel-sky-subtle)] border border-[var(--border-color)] text-[11px] text-[var(--pastel-sky)] dark:text-[var(--pastel-sky)]">
                   <span className="font-semibold">Dependent tasks updated:</span>
                   <ul className="list-disc pl-4 mt-1 space-y-0.5">
                     {mergePreview.redirectedTasks.map((rt) => (
@@ -180,7 +180,7 @@ export const TaskDrawerMergeModal: React.FC<TaskDrawerMergeModalProps> = ({
             type="button"
             disabled={!selectedSourceTaskId}
             onClick={handleConfirmMerge}
-            className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white text-xs font-bold shadow-xs transition-colors"
+            className="px-4 py-1.5 rounded-xl bg-[var(--pastel-amber)] hover:bg-[var(--pastel-amber)] disabled:opacity-40 text-white text-xs font-bold shadow-xs transition-colors"
           >
             Confirm Merge
           </button>

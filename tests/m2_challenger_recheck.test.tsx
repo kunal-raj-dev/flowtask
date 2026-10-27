@@ -17,6 +17,7 @@ const mockDeleteTask = vi.fn();
 let mockTasks: Task[] = [];
 let mockFocusedSeconds = 0;
 let mockSettings = { targetWorkCapacityHours: 6, enableSmartSyntaxParsing: true };
+let mockWorkspacePreferences: Record<string, unknown> = {};
 
 vi.mock('../src/context/TaskContext', () => ({
   useTaskContext: () => ({
@@ -27,7 +28,7 @@ vi.mock('../src/context/TaskContext', () => ({
     selectedTaskIds: [],
     toggleTaskSelection: vi.fn(),
     clearTaskSelection: vi.fn(),
-    workspacePreferences: {},
+    workspacePreferences: mockWorkspacePreferences,
     workspaceId: 'local',
     settings: mockSettings,
     updateDashboards: vi.fn(),
@@ -69,6 +70,7 @@ describe('Empirical Verification: Milestone M2 Remediation Verification', () => 
     mockTasks = [];
     mockFocusedSeconds = 0;
     mockSettings = { targetWorkCapacityHours: 6, enableSmartSyntaxParsing: true };
+    mockWorkspacePreferences = {};
   });
 
   describe('Item 1: AppShell MobileBottomNav "More" click calls onOpenMobileSidebar', () => {
@@ -356,6 +358,19 @@ describe('Empirical Verification: Milestone M2 Remediation Verification', () => 
         },
       ];
 
+      mockWorkspacePreferences = {
+        workspace: {
+          todayLayout: {
+            version: 1,
+            sections: [
+              { id: 'capture', visible: true },
+              { id: 'capacity', visible: true },
+              { id: 'priorities', visible: true },
+              { id: 'tasks', visible: true },
+            ],
+          },
+        },
+      };
       render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
 
       // Top 3 deck check:
@@ -400,6 +415,19 @@ describe('Empirical Verification: Milestone M2 Remediation Verification', () => 
         { id: 't4', title: 'Task 4 Overflow In Daytime Flow', status: 'todo', priority: 'p3', projectId: 'inbox', createdAt: 4, plannedDate: '2026-10-19', topThreeDate: '2026-10-19', estimatedMinutes: 30, subtasks: [] },
       ];
 
+      mockWorkspacePreferences = {
+        workspace: {
+          todayLayout: {
+            version: 1,
+            sections: [
+              { id: 'capture', visible: true },
+              { id: 'capacity', visible: true },
+              { id: 'priorities', visible: true },
+              { id: 'tasks', visible: true },
+            ],
+          },
+        },
+      };
       render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
 
       // Exactly 3 in Top 3 deck

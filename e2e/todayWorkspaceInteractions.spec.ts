@@ -30,7 +30,8 @@ test('narrow Today timeline opens as a keyboard-accessible dialog and restores f
 });
 
 test('wide Today rail collapses without hiding the main task capture', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 }); await seedPlanner(page);
+  // The rail needs 1500px of workspace after the navigation sidebar.
+  await page.setViewportSize({ width: 1920, height: 900 }); await seedPlanner(page);
   await page.getByRole('button', { name: 'Collapse timeline rail', exact: true }).click();
   await expect(page.getByRole('complementary', { name: 'Today schedule' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Expand 24h timeline rail', exact: true }).click();

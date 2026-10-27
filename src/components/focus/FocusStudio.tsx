@@ -43,6 +43,7 @@ import {
 import { useTaskContext } from "../../context/TaskContext";
 import { useModal } from "../../context/ModalContext";
 import { useFocusStore } from "../../store/useFocusStore";
+import { useUIStore } from '../../store/useUIStore';
 import { useStudioPreferences, useMediaCatalog } from "../../hooks/useStudio";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import {
@@ -63,7 +64,7 @@ import { FocusAudioPanel } from "./FocusAudioPanel";
 import { ResetConfirmationDialog } from "./ResetConfirmationDialog";
 import { StudioEnvironmentLibrary } from './StudioEnvironmentLibrary';
 import { StudioThemePicker } from './StudioThemePicker';
-import { STUDIO_THEME_IDS, studioThemeTokens } from '../../utils/studioAppearance';
+import { STUDIO_THEME_IDS, resolveStudioTheme, studioThemeTokens } from '../../utils/studioAppearance';
 import { THEMES } from '../../utils/themeRegistry';
 import type {
   FocusRecipe,
@@ -176,7 +177,11 @@ export function FocusStudio({
   } = useStudioPreferences();
   const media = useMediaCatalog();
   const [panelOpacityPreview, setPanelOpacityPreview] = useState<number | null>(null);
-  const highContrast = Boolean((ctx.workspacePreferences.appearance as Partial<AppearancePreferences> | undefined)?.highContrast);
+  const appearance = ctx.workspacePreferences.appearance as Partial<AppearancePreferences> | undefined;
+  const highContrast = Boolean(appearance?.highContrast);
+  const appTheme = useUIStore(state => state.theme);
+  const resolvedTheme = resolveStudioTheme(p, appTheme);
+  const resolvedAccent = p.themeMode === 'app' ? appearance?.accent || '' : '';
   const session = useFocusStore((s) => s.focusSession);
   const elapsed = useFocusStore((s) => s.focusElapsedSeconds);
   const [panel, setPanelState] = useState<Panel>(initialPanel),
@@ -722,8 +727,9 @@ export function FocusStudio({
       className={`focus-studio ${clear ? "is-clear" : ""} ${lobby ? 'is-lobby' : 'is-session'}`}
       data-session-state={active?.state || (showSummary ? 'finished' : 'ready')}
       data-phase={currentPhase}
-      data-studio-theme={p.interfaceTheme}
-      data-interface-tone={THEMES[p.interfaceTheme].scheme}
+      data-studio-theme={resolvedTheme}
+      data-studio-theme-mode={p.themeMode}
+      data-interface-tone={THEMES[resolvedTheme].scheme}
       role="dialog"
       aria-modal="true"
       aria-label="Focus Studio"
@@ -733,10 +739,10 @@ export function FocusStudio({
           "--studio-overlay": p.overlay,
           "--studio-panel-opacity": `${panelOpacity * 100}%`,
           "--studio-panel-blur": `${panelOpacity * 24}px`,
-          ...studioThemeTokens(p.interfaceTheme, highContrast),
+          ...studioThemeTokens(resolvedTheme, highContrast, resolvedAccent),
           "--text-primary": "var(--studio-text)",
           "--text-secondary": "var(--studio-secondary)",
-          colorScheme: THEMES[p.interfaceTheme].scheme,
+          colorScheme: THEMES[resolvedTheme].scheme,
         } as CSSProperties
       }
     >
@@ -1114,8 +1120,9 @@ export function FocusStudio({
                 <Range label="Panel opacity" value={highContrast ? 1 : p.panelOpacity} disabled={highContrast} onPreview={setPanelOpacityPreview} onPreviewEnd={() => setPanelOpacityPreview(null)} onChange={panelOpacity => update({ panelOpacity })} />
                 <p className="studio-help">{highContrast ? 'Increased contrast keeps panels fully opaque.' : 'Adjust the timer card, side panels and bottom dock. 0% is clear; 100% is solid.'}</p>
               </div>
-              <p className="studio-help">A palette for your room. Your planner keeps its own theme.</p>
-              <StudioThemePicker value={p.interfaceTheme} onChange={interfaceTheme => update({ interfaceTheme })} />
+              <label className="studio-field">Studio theme<select aria-label="Studio theme source" value={p.themeMode} onChange={e => update({ themeMode: e.target.value as 'app' | 'custom' })}><option value="app">Follow app appearance</option><option value="custom">Use a custom Studio palette</option></select></label>
+              <p className="studio-help">{p.themeMode === 'app' ? 'Your app palette and accent follow you here. Your room and audio stay the same.' : 'This palette stays independent of the app. Switch back to Follow app at any time.'}</p>
+              {p.themeMode === 'custom' && <StudioThemePicker value={p.interfaceTheme} onChange={interfaceTheme => update({ interfaceTheme, themeMode: 'custom' })} />}
               <div className="studio-details">
                 <h3>Floating timer</h3>
                 <label className="studio-check"><input type="checkbox" checked={p.pipBackground} onChange={e => update({ pipBackground: e.target.checked })} />Use the current Studio background</label>

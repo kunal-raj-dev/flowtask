@@ -62,7 +62,7 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
         className="w-full flex items-center justify-between p-3.5 bg-[var(--bg-surface-l2)]/60 hover:bg-[var(--bg-surface-l2)] transition-colors text-left"
       >
         <div className="flex items-center gap-2">
-          <Repeat size={14} className="text-sky-500" />
+          <Repeat size={14} className="text-[var(--pastel-sky)]" />
           <span className="text-xs font-semibold text-[var(--text-primary)]">
             Recurrence & Schedule Blocks
           </span>
@@ -93,7 +93,7 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
                 htmlFor="task-recurrence-select"
                 className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5"
               >
-                <Repeat size={13} className="text-sky-500" /> Recurrence Rule
+                <Repeat size={13} className="text-[var(--pastel-sky)]" /> Recurrence Rule
               </label>
               {task.recurrence === 'custom' && task.customRecurrence && (
                 <button
@@ -145,7 +145,7 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
                 htmlFor="task-estimated-minutes-input"
                 className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5"
               >
-                <Clock size={13} className="text-amber-500" /> Estimated Duration (minutes)
+                <Clock size={13} className="text-[var(--color-brand)]" /> Estimated Duration (minutes)
               </label>
               {!isDone && (
                 <button
@@ -167,10 +167,10 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
                   }
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
                     isTimerRunning
-                      ? 'bg-amber-500 text-white shadow-xs animate-pulse'
+                      ? 'bg-[var(--color-brand)] text-[var(--text-on-brand)] shadow-xs animate-pulse'
                       : isTimerPaused
-                      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-dashed border-amber-500/50 shadow-2xs'
-                      : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-amber-500 border border-[var(--border-hairline)]'
+                      ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)] dark:text-[var(--color-brand)] border border-dashed border-[var(--color-brand-border)] shadow-2xs'
+                      : 'bg-[var(--bg-surface-l1)] text-[var(--text-secondary)] hover:text-[var(--color-brand)] border border-[var(--border-hairline)]'
                   }`}
                 >
                   {isTimerRunning ? (
@@ -223,7 +223,7 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
                 </div>
               </div>
               {task.timeSpentMinutes && task.timeSpentMinutes > 0 ? (
-                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                <span className="text-[11px] font-semibold text-[var(--pastel-sage)] dark:text-[var(--pastel-sage)] bg-[var(--pastel-sage-subtle)] px-2.5 py-1 rounded-lg border border-[var(--border-color)]">
                   {task.timeSpentMinutes}m spent
                 </span>
               ) : null}
@@ -232,10 +232,10 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
             {isDerived && <p id="derived-task-estimate" className="text-[11px] text-[var(--text-secondary)]">Synced from subtasks. Edit their times to update this estimate.</p>}
             {/* Velocity Calibrator */}
             {calibration && !isDerived && (
-              <div className="mt-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs shadow-xs">
+              <div className="mt-2.5 p-3 rounded-xl bg-[var(--color-brand-subtle)] border border-[var(--color-brand-border)] flex items-center justify-between gap-3 text-xs shadow-xs">
                 <div className="min-w-0 pr-1 flex items-start gap-2">
-                  <span className="text-amber-500 font-bold shrink-0 mt-0.5">🎯</span>
-                  <div className="text-[11px] text-amber-900 dark:text-amber-200 leading-snug">
+                  <span className="text-[var(--color-brand)] font-bold shrink-0 mt-0.5">🎯</span>
+                  <div className="text-[11px] text-[var(--color-brand)] dark:text-[var(--color-brand)] leading-snug">
                     <span>
                       You usually take <strong>~{calibration.recommendedMinutes}m</strong> on{' '}
                       <strong>{domainLabel}</strong> tasks ({calibration.ratio}x variance across{' '}
@@ -246,7 +246,7 @@ export const TaskDrawerRecurrence: React.FC<TaskDrawerRecurrenceProps> = ({
                 <button
                   type="button"
                   onClick={() => updateTask(task.id, { estimatedMinutes: calibration.recommendedMinutes })}
-                  className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-[11px] shrink-0 transition-all shadow-xs flex items-center gap-1"
+                  className="px-2.5 py-1.5 rounded-lg bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] active:scale-95 text-white font-bold text-[11px] shrink-0 transition-all shadow-xs flex items-center gap-1"
                   title="Apply calibrated estimate based on historical performance"
                 >
                   <span>Adjust to {calibration.recommendedMinutes}m</span>

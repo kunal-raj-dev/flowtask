@@ -61,25 +61,6 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
     canvasRef.current.scrollTop = Math.max(0, (hour - startHour - 1) * hourHeightPx);
   }, [isOpen, startHour, hourHeightPx]);
 
-  if (!isOpen) {
-    return (
-      <button
-        type="button"
-        onClick={onToggleCollapse}
-        aria-label="Expand 24h timeline rail"
-        title="Open Timeline Rail (Cmd+\)"
-        className="w-8 shrink-0 border-l border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-hover)] flex flex-col items-center py-4 gap-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors group"
-      >
-        <Calendar size={15} />
-        <span
-          className="text-[10px] font-bold tracking-widest uppercase origin-center rotate-90 select-none whitespace-nowrap mt-4"
-        >
-          Timeline
-        </span>
-      </button>
-    );
-  }
-
   // Filter tasks that have a scheduledStart for today
   const scheduledTasks = tasks.filter(
     (t) =>
@@ -153,6 +134,22 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
 
     return freeGaps;
   }, [calendarEvents, scheduledTasks, startHour, endHour]);
+
+  // Keep the same hooks mounted when this rail is expanded or collapsed.
+  if (!isOpen) {
+    return (
+      <button
+        type="button"
+        onClick={onToggleCollapse}
+        aria-label="Expand 24h timeline rail"
+        title="Open Timeline Rail"
+        className="w-8 shrink-0 border-l border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-hover)] flex flex-col items-center py-4 gap-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors group"
+      >
+        <Calendar size={15} />
+        <span className="text-[10px] font-bold tracking-widest uppercase origin-center rotate-90 select-none whitespace-nowrap mt-4">Timeline</span>
+      </button>
+    );
+  }
 
   const handleDragOver = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes('application/json')) {
@@ -247,9 +244,9 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
       {/* Rail Header */}
       <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] shrink-0">
         <div className="flex items-center gap-2">
-          <Calendar size={14} className="text-amber-500" />
+          <Calendar size={14} className="text-[var(--color-brand)]" />
           <span className="text-xs font-bold text-[var(--text-primary)]">Today Timeline</span>
-          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-stone-200/70 dark:bg-stone-800 text-[var(--text-muted)]">
+          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-[var(--bg-surface-l3)] text-[var(--text-muted)]">
             24h
           </span>
         </div>
@@ -267,7 +264,7 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
           </button>
           <button
             type="button"
-            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.04] transition-colors"
+            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-surface-hover)] transition-colors"
             onClick={onToggleCollapse}
             aria-label="Collapse timeline rail"
             title="Collapse rail (Cmd+\)"
@@ -321,7 +318,7 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
               className="timeline-gap-pill absolute left-14 right-2 flex items-center justify-center pointer-events-none z-0"
               style={{ top: `${topPx}px`, height: `${heightPx}px` }}
             >
-              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-stone-200/50 dark:bg-stone-800/60 text-[var(--text-muted)] border border-[var(--border-hairline)]/60">
+              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[var(--bg-surface-l3)] text-[var(--text-muted)] border border-[var(--border-hairline)]/60">
                 {gap.gapMinutes}m free window
               </span>
             </div>
@@ -341,11 +338,11 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
             return (
               <div
                 key={ev.id}
-                className="absolute left-14 right-2 rounded-lg bg-sky-500/15 border border-sky-500/30 p-1.5 overflow-hidden text-[11px] pointer-events-none z-10"
+                className="absolute left-14 right-2 rounded-lg bg-[var(--pastel-sky-subtle)] border border-[var(--border-hairline)] p-1.5 overflow-hidden text-[11px] pointer-events-none z-10"
                 style={{ top: `${topPx}px`, height: `${heightPx}px` }}
               >
-                <div className="font-semibold text-sky-800 dark:text-sky-300 truncate">{ev.title}</div>
-                <div className="text-[10px] font-mono text-sky-600 dark:text-sky-400">
+                <div className="font-semibold text-[var(--text-primary)] truncate">{ev.title}</div>
+                <div className="text-[10px] font-mono text-[var(--text-secondary)]">
                   {ev.startTime} – {ev.endTime}
                 </div>
               </div>
@@ -367,17 +364,17 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
               onClick={() => onSelectTask?.(t.id)}
               className={`absolute left-14 right-2 rounded-lg border p-2 cursor-pointer transition-all hover:shadow-xs group z-10 flex flex-col justify-between ${
                 isDone
-                  ? 'bg-stone-100/70 dark:bg-stone-800/40 border-stone-300 dark:border-stone-700 opacity-60'
+                  ? 'bg-[var(--bg-surface-l3)] border-[var(--border-hairline)] opacity-60'
                   : intensity === 'deep'
-                  ? 'bg-amber-500/15 border-amber-500/35 hover:border-amber-500/60'
-                  : 'bg-[var(--bg-surface-l2)] border-[var(--border-hairline)] hover:border-stone-400 dark:hover:border-stone-600'
+                  ? 'bg-[var(--color-brand-subtle)] border-[var(--color-brand-border)] hover:border-[var(--color-brand)]'
+                  : 'bg-[var(--bg-surface-l2)] border-[var(--border-hairline)] hover:border-[var(--border-strong)]'
               }`}
               style={{ top: `${topPx}px`, height: `${heightPx}px` }}
             >
               <div className="flex items-start justify-between gap-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                   {isDone ? (
-                    <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                    <CheckCircle2 size={12} className="text-[var(--pastel-sage)] shrink-0" />
                   ) : (
                     <Clock size={11} className="text-[var(--text-muted)] shrink-0" />
                   )}
@@ -395,7 +392,7 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
                   {!isDone && onStartFocus && (
                     <button
                       type="button"
-                      className="opacity-0 group-hover:opacity-100 p-0.5 text-amber-600 dark:text-amber-400 hover:scale-110 transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-0.5 text-[var(--color-brand)] hover:scale-110 transition-all"
                       title={'Focus on ' + t.title}
                       aria-label={'Focus on ' + t.title}
                       onClick={(e) => {
@@ -419,7 +416,7 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
                   {t.scheduledEnd ? ` – ${t.scheduledEnd}` : ` (${dur}m)`}
                 </span>
                 {intensity === 'deep' && (
-                  <span className="px-1 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-sans font-bold text-[9px]">
+                  <span className="px-1 rounded bg-[var(--color-brand-subtle)] text-[var(--text-primary)] font-sans font-bold text-[9px]">
                     Deep
                   </span>
                 )}
@@ -430,7 +427,7 @@ export const TodayTimelineRail: React.FC<TodayTimelineRailProps> = ({
         {/* 15-Minute Magnetic Ghost Drag-Over Preview */}
         {dragOverGhost && (
           <div
-            className="dragOverGhost absolute left-14 right-2 rounded-lg border-2 border-dashed border-amber-500/80 bg-amber-500/15 pointer-events-none z-20 flex items-center px-2.5 text-xs font-mono font-bold text-amber-700 dark:text-amber-300 transition-all duration-75 shadow-xs"
+            className="dragOverGhost absolute left-14 right-2 rounded-lg border-2 border-dashed border-[var(--color-brand)] bg-[var(--color-brand-subtle)] pointer-events-none z-20 flex items-center px-2.5 text-xs font-mono font-bold text-[var(--text-primary)] transition-all duration-75 shadow-xs"
             style={{ top: `${dragOverGhost.topPx}px`, height: `${dragOverGhost.heightPx}px` }}
           >
             <span>{dragOverGhost.timeStr}</span>

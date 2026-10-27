@@ -1,12 +1,19 @@
 import { renderHook, cleanup } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useStudioPreferences } from './useStudio';
-const state=vi.hoisted(()=>({studio:undefined as {sceneId:string;panelOpacity?:unknown}|undefined}));
+const state=vi.hoisted(()=>({studio:undefined as {sceneId:string;panelOpacity?:unknown;themeMode?:'app'|'custom';interfaceTheme?:'plum'}|undefined}));
 vi.mock('../context/TaskContext',()=>({useTaskContext:()=>({workspacePreferences:{studio:state.studio},setWorkspacePreference:vi.fn()})}));
 afterEach(()=>{cleanup();state.studio=undefined;});
 it('opens a new Studio in a still library with silence and manual 25/5 intervals',()=>{
   const {result}=renderHook(useStudioPreferences);
-  expect(result.current.preferences).toMatchObject({sceneId:'old-library',layers:[],musicId:null,motionEnabled:false,timer:{focusMinutes:25,shortBreakMinutes:5,autoStart:false}});
+  expect(result.current.preferences).toMatchObject({themeMode:'app',sceneId:'old-library',layers:[],musicId:null,motionEnabled:false,timer:{focusMinutes:25,shortBreakMinutes:5,autoStart:false}});
+});
+it('retains a legacy Studio palette while defaulting its new theme source to the app',()=>{
+  state.studio={sceneId:'local:my-image',interfaceTheme:'plum'};
+  const {result,rerender}=renderHook(useStudioPreferences);
+  expect(result.current.preferences).toMatchObject({themeMode:'app',interfaceTheme:'plum',sceneId:'local:my-image'});
+  state.studio={...state.studio,themeMode:'custom'};rerender();
+  expect(result.current.preferences).toMatchObject({themeMode:'custom',interfaceTheme:'plum',sceneId:'local:my-image'});
 });
 it('preserves a saved plain background and custom scenes',()=>{
   state.studio={sceneId:''};

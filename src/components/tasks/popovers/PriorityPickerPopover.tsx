@@ -23,10 +23,10 @@ const PRIORITIES: Array<{
   textColor: string;
   bgLight: string;
 }> = [
-  { id: 'p1', key: '1', label: 'Urgent', color: '#F43F5E', textColor: 'text-rose-500', bgLight: 'bg-rose-500/10' },
-  { id: 'p2', key: '2', label: 'High', color: '#0EA5E9', textColor: 'text-sky-500', bgLight: 'bg-sky-500/10' },
-  { id: 'p3', key: '3', label: 'Medium', color: '#8B5CF6', textColor: 'text-violet-500', bgLight: 'bg-violet-500/10' },
-  { id: 'p4', key: '4', label: 'Low / None', color: '#64748B', textColor: 'text-stone-400', bgLight: 'bg-stone-500/10' },
+  { id: 'p1', key: '1', label: 'Urgent', color: 'var(--pastel-coral)', textColor: 'text-[var(--pastel-coral)]', bgLight: 'bg-[var(--pastel-coral-subtle)]' },
+  { id: 'p2', key: '2', label: 'High', color: 'var(--pastel-amber)', textColor: 'text-[var(--pastel-amber)]', bgLight: 'bg-[var(--pastel-amber-subtle)]' },
+  { id: 'p3', key: '3', label: 'Medium', color: 'var(--pastel-sky)', textColor: 'text-[var(--pastel-sky)]', bgLight: 'bg-[var(--pastel-sky-subtle)]' },
+  { id: 'p4', key: '4', label: 'Low / None', color: 'var(--text-muted)', textColor: 'text-[var(--text-secondary)]', bgLight: 'bg-[var(--bg-surface-l3)]' },
 ];
 
 export const PriorityPickerPopover: React.FC<PriorityPickerPopoverProps> = ({

@@ -29,6 +29,7 @@ let mockTasks: Task[] = [];
 let mockCalendarEvents: CalendarEvent[] = [];
 let mockFocusedSeconds = 0;
 let mockSettings = { targetWorkCapacityHours: 6, enableSmartSyntaxParsing: true };
+let mockWorkspacePreferences: Record<string, unknown> = {};
 
 vi.mock('../src/context/TaskContext', () => ({
   useTaskContext: () => ({
@@ -39,7 +40,7 @@ vi.mock('../src/context/TaskContext', () => ({
     selectedTaskIds: [],
     toggleTaskSelection: vi.fn(),
     clearTaskSelection: vi.fn(),
-    workspacePreferences: {},
+    workspacePreferences: mockWorkspacePreferences,
     workspaceId: 'local',
     settings: mockSettings,
     updateDashboards: vi.fn(),
@@ -103,6 +104,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
     mockCalendarEvents = [];
     mockFocusedSeconds = 0;
     mockSettings = { targetWorkCapacityHours: 6, enableSmartSyntaxParsing: true };
+    mockWorkspacePreferences = {};
   });
 
   describe('1. HTML5 Drag-and-Drop Contract & Payload Robustness', () => {
@@ -414,7 +416,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(screen.getByRole('textbox', { name: 'Add a task to this list' })).toBeDefined();
       expect(screen.getByText('A DAY THAT FITS')).toBeDefined();
       expect(document.querySelector('.daily-planning-summary')?.textContent).toContain(
-        '0.5h planned · 5.5h in daily budget'
+        '0.5h planned·5.5h available'
       );
       expect(screen.queryByText(/Focus Session in Progress/)).toBeNull();
       expect(screen.getByText('1h 15m focused')).toBeDefined();
@@ -456,14 +458,27 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
     it('renders empty day state gracefully with guidance prompt and zero error cascades', async () => {
       mockTasks = [];
 
+      mockWorkspacePreferences = {
+        workspace: {
+          todayLayout: {
+            version: 1,
+            sections: [
+              { id: 'capture', visible: true },
+              { id: 'capacity', visible: true },
+              { id: 'priorities', visible: true },
+              { id: 'morning', visible: true },
+              { id: 'tasks', visible: true },
+              { id: 'evening', visible: true },
+            ],
+          },
+        },
+      };
+
       await flushRender(async () => (render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />)));
 
-      expect(screen.getByText('What matters most today?')).toBeDefined();
-      expect(
-        screen.getByText('Star up to three tasks below. Give your day a clear place to start.')
-      ).toBeDefined();
+      expect(screen.getByText('A little space for what matters.')).toBeDefined();
       expect(document.querySelector('.daily-planning-summary')?.textContent).toContain(
-        '0h planned · 6h in daily budget'
+        '0h planned·6h available'
       );
     });
 
@@ -541,6 +556,22 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
         },
       ];
 
+      mockWorkspacePreferences = {
+        workspace: {
+          todayLayout: {
+            version: 1,
+            sections: [
+              { id: 'capture', visible: true },
+              { id: 'capacity', visible: true },
+              { id: 'priorities', visible: true },
+              { id: 'morning', visible: true },
+              { id: 'tasks', visible: true },
+              { id: 'evening', visible: true },
+            ],
+          },
+        },
+      };
+
       await flushRender(async () => (render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />)));
 
       // Top 3
@@ -601,11 +632,11 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       await flushRender(async () => (render(<TodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />)));
 
       // Initially in Horizon View
-      expect(screen.getByText('Horizon View')).toBeDefined();
       expect(screen.getByRole('heading', { name: 'Today.' })).toBeDefined();
 
-      // Click "Switch dashboard" button
-      const switchBtn = screen.getByRole('button', { name: 'Switch dashboard' });
+      // Click "Layout" -> "My dashboards"
+      fireEvent.click(screen.getByRole('button', { name: 'Layout' }));
+      const switchBtn = screen.getByRole('menuitem', { name: 'My dashboards' });
       await act(async () => {
         fireEvent.click(switchBtn);
         await import('../src/components/views/DashboardCanvasView');
@@ -620,7 +651,6 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       fireEvent.click(backBtn);
 
       // Back in Horizon View
-      expect(screen.getByText('Horizon View')).toBeDefined();
       expect(screen.getByRole('heading', { name: 'Today.' })).toBeDefined();
     });
 
@@ -630,8 +660,10 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       for (let i = 0; i < 10; i++) {
         await act(async () => {
           // Switch to Dashboard
-          const switchBtn = screen.getByRole('button', { name: 'Switch dashboard' });
-          fireEvent.click(switchBtn);
+          fireEvent.click(screen.getByRole('button', { name: 'Layout' }));
+        });
+        await act(async () => {
+          fireEvent.click(screen.getByRole('menuitem', { name: 'My dashboards' }));
         });
 
         expect(screen.getByText('Modular Dashboard Canvas')).toBeDefined();
@@ -660,17 +692,27 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
 
       await flushRender(async () => (render(<HorizonTodayView />)));
 
-      expect(screen.getByText('What matters most today?')).toBeDefined();
-      expect(screen.getByText(/Star up to three tasks below/)).toBeDefined();
-      expect(screen.getByText('0/3 · Keep it intentional')).toBeDefined();
-      expect(screen.getByText(/A clear space to begin. Add a task above/)).toBeDefined();
+      expect(screen.getByText('A little space for what matters.')).toBeDefined();
 
       const summary = document.querySelector('.daily-planning-summary');
-      expect(summary?.textContent).toContain('0h planned · 6h in daily budget');
+      expect(summary?.textContent).toContain('0h planned·6h available');
       expect(summary?.textContent).toContain('0 completed');
     });
 
     it('1 task in Top 3: renders single rank badge 01 and exactly 2 spaces left banner', async () => {
+      mockWorkspacePreferences = {
+        workspace: {
+          todayLayout: {
+            version: 1,
+            sections: [
+              { id: 'capture', visible: true },
+              { id: 'capacity', visible: true },
+              { id: 'priorities', visible: true },
+              { id: 'tasks', visible: true },
+            ],
+          },
+        },
+      };
       mockTasks = [
         {
           id: 'solo-top-task',
@@ -692,11 +734,23 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       expect(screen.getByText('Sole Focus Task')).toBeDefined();
       expect(screen.getByLabelText('Priority 1')).toBeDefined();
       expect(screen.getByText('01')).toBeDefined();
-      expect(screen.getByText('1/3 · Keep it intentional')).toBeDefined();
-      expect(screen.getByText('2 spaces left. Leave room for what matters.')).toBeDefined();
+      expect(screen.getByText('1/3')).toBeDefined();
     });
 
     it('3 tasks in Top 3: renders badges 01, 02, 03 sorted by priority and hides empty spaces banner', async () => {
+      mockWorkspacePreferences = {
+        workspace: {
+          todayLayout: {
+            version: 1,
+            sections: [
+              { id: 'capture', visible: true },
+              { id: 'capacity', visible: true },
+              { id: 'priorities', visible: true },
+              { id: 'tasks', visible: true },
+            ],
+          },
+        },
+      };
       mockTasks = [
         {
           id: 'task-p3',
@@ -738,8 +792,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
 
       await flushRender(async () => (render(<HorizonTodayView />)));
 
-      expect(screen.getByText('3/3 · Keep it intentional')).toBeDefined();
-      expect(screen.queryByText(/spaces left/)).toBeNull();
+      expect(screen.getByText('3/3')).toBeDefined();
 
       const rankBadges = document.querySelectorAll('.daily-priorities .desk-task-rank');
       expect(rankBadges.length).toBe(3);
@@ -754,6 +807,19 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
     });
 
     it('50+ tasks in Top 3: strictly caps deck to 3 highest-priority items', async () => {
+      mockWorkspacePreferences = {
+        workspace: {
+          todayLayout: {
+            version: 1,
+            sections: [
+              { id: 'capture', visible: true },
+              { id: 'capacity', visible: true },
+              { id: 'priorities', visible: true },
+              { id: 'tasks', visible: true },
+            ],
+          },
+        },
+      };
       const tasks50: Task[] = [];
       const priorities: Priority[] = ['p4', 'p3', 'p2', 'p1'];
       for (let i = 0; i < 55; i++) {
@@ -789,6 +855,21 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
     });
 
     it('50+ tasks in daytime batches: virtual list renders without degradation or desync', async () => {
+      mockWorkspacePreferences = {
+        workspace: {
+          todayLayout: {
+            version: 1,
+            sections: [
+              { id: 'capture', visible: true },
+              { id: 'capacity', visible: true },
+              { id: 'priorities', visible: true },
+              { id: 'morning', visible: true },
+              { id: 'tasks', visible: true },
+              { id: 'evening', visible: true },
+            ],
+          },
+        },
+      };
       const massive: Task[] = [];
 
       // 3 Top 3 tasks
@@ -1136,7 +1217,7 @@ describe('Milestone M2 Adversarial & Empirical Stress Suite', () => {
       await flushRender(async () => (render(
         <DesktopHeader
           viewTitle="Today Horizon"
-          isSidebarCollapsed={false}
+          isSidebarCollapsed={true}
           onToggleSidebar={onToggle}
           onOpenFocus={onOpenFocus}
           onOpenAuth={vi.fn()}

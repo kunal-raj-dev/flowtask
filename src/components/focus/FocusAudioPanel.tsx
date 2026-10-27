@@ -183,18 +183,18 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
           </div>
         </div>
       ))}
-      <div className="studio-concurrent-mixer space-y-3 mt-4 pt-4 border-t border-white/10">
+      <div className="studio-concurrent-mixer space-y-3 mt-4 pt-4 border-t border-[var(--studio-border)]">
         <h3>Synthesized Soundscapes <small>Concurrent Mixer</small></h3>
 
         {/* Rain Track */}
-        <div className="studio-layer flex flex-col gap-1.5 p-2 rounded-xl bg-white/[0.03] border border-white/10">
+        <div className="studio-layer flex flex-col gap-1.5 p-2 rounded-xl bg-[var(--studio-raised)] border border-[var(--studio-border)]">
           <div className="flex items-center justify-between">
             <button
               type="button"
               className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
                 rainPlaying
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-white/[0.04] border-white/10 text-[var(--text-secondary)]'
+                  ? 'bg-[var(--studio-accent-soft)] border-[var(--studio-accent)] text-[var(--studio-accent)]'
+                  : 'bg-[var(--studio-raised)] border-[var(--studio-border)] text-[var(--text-secondary)]'
               }`}
               onClick={() => toggleTrack('rain', rainVol)}
             >
@@ -225,15 +225,15 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
         </div>
 
         {/* Brown / Pink Noise Track */}
-        <div className="studio-layer flex flex-col gap-1.5 p-2 rounded-xl bg-white/[0.03] border border-white/10">
+        <div className="studio-layer flex flex-col gap-1.5 p-2 rounded-xl bg-[var(--studio-raised)] border border-[var(--studio-border)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
                   noisePlaying
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                    : 'bg-white/[0.04] border-white/10 text-[var(--text-secondary)]'
+                    ? 'bg-[var(--studio-accent-soft)] border-[var(--studio-accent)] text-[var(--studio-accent)]'
+                    : 'bg-[var(--studio-raised)] border-[var(--studio-border)] text-[var(--text-secondary)]'
                 }`}
                 onClick={() => toggleTrack(noiseType, noiseVol)}
               >
@@ -249,7 +249,7 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
               <div className="flex items-center gap-1 text-[11px] font-mono">
                 <button
                   type="button"
-                  className={`px-1.5 py-0.5 rounded cursor-pointer ${noiseType === 'brown' ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-[var(--text-muted)] hover:text-white'}`}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer ${noiseType === 'brown' ? 'bg-[var(--studio-accent-soft)] text-[var(--studio-accent)] font-bold' : 'text-[var(--text-muted)] hover:text-[var(--studio-text)]'}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (noiseType === 'brown') return;
@@ -265,7 +265,7 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
                 <span className="text-[var(--text-muted)]">/</span>
                 <button
                   type="button"
-                  className={`px-1.5 py-0.5 rounded cursor-pointer ${noiseType === 'pink' ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-[var(--text-muted)] hover:text-white'}`}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer ${noiseType === 'pink' ? 'bg-[var(--studio-accent-soft)] text-[var(--studio-accent)] font-bold' : 'text-[var(--text-muted)] hover:text-[var(--studio-text)]'}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (noiseType === 'pink') return;
@@ -298,14 +298,14 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
         </div>
 
         {/* Binaural Beats Track */}
-        <div className="studio-layer flex flex-col gap-1.5 p-2 rounded-xl bg-white/[0.03] border border-white/10">
+        <div className="studio-layer flex flex-col gap-1.5 p-2 rounded-xl bg-[var(--studio-raised)] border border-[var(--studio-border)]">
           <div className="flex items-center justify-between">
             <button
               type="button"
               className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
                 binauralPlaying
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-white/[0.04] border-white/10 text-[var(--text-secondary)]'
+                  ? 'bg-[var(--studio-accent-soft)] border-[var(--studio-accent)] text-[var(--studio-accent)]'
+                  : 'bg-[var(--studio-raised)] border-[var(--studio-border)] text-[var(--text-secondary)]'
               }`}
               onClick={() => toggleTrack('binaural', binauralVol)}
             >

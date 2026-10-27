@@ -10,7 +10,6 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { MotionRuntime } from './components/settings/MotionRuntime';
 import './styles/workflow-v2.css';
 import './styles/workspace.css';
-import './styles/calm-workspace.css';
 
 function App() {
   return (
