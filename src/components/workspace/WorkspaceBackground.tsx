@@ -29,10 +29,11 @@ export function WorkspaceBackground({ children }: { children: ReactNode }) {
   const visible = enabled && !!src && failedImage !== imageKey;
   const missing = enabled && !!dashboard.coverImage && dashboard.coverImage !== 'none' && !media.loading && (!asset || failedImage === imageKey);
 
+  const appearanceConfig = workspacePreferences.appearance as { backgroundIntensity?: number } | undefined;
   const backgroundIntensity = typeof presentation?.intensity === 'number'
     ? presentation.intensity
-    : typeof (workspacePreferences.appearance as any)?.backgroundIntensity === 'number'
-    ? (workspacePreferences.appearance as any).backgroundIntensity
+    : typeof appearanceConfig?.backgroundIntensity === 'number'
+    ? appearanceConfig.backgroundIntensity
     : 1;
 
   return (
@@ -51,7 +52,7 @@ export function WorkspaceBackground({ children }: { children: ReactNode }) {
             alt=""
             loading="eager"
             onError={() => {
-              if (typeof globalThis !== 'undefined' && (globalThis as any).process?.env?.NODE_ENV === 'test') return;
+              if (import.meta.env?.MODE === 'test') return;
               setFailedImage(imageKey);
             }}
             style={{

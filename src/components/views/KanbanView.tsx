@@ -272,7 +272,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               type="button"
               data-kanban-column={col.status}
               onClick={() => setMobileColumn(col.status)}
-              className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-1 sm:px-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap min-w-0 ${
+              className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-1 sm:px-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap min-w-0 enabled:active:scale-[0.96] ${
                 isDragTarget
                   ? 'bg-amber-500/25 text-amber-800 dark:text-amber-300 ring-2 ring-amber-500/60'
                   : isActive
@@ -311,7 +311,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                 isDragTarget
                   ? 'bg-amber-500/[0.06] border-amber-500/50 ring-2 ring-amber-500/30'
                   : 'bg-[var(--bg-surface-l1)]/60 border-[var(--border-hairline)]'
-              } rounded-xl p-3.5 sm:p-4 border flex-col h-full max-h-full min-h-0 backdrop-blur-xs shadow-xs transition-colors`}
+              } rounded-2xl p-3 sm:p-3.5 border flex-col h-full max-h-full min-h-0 backdrop-blur-xs shadow-xs transition-colors`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between mb-3.5 px-1 shrink-0 gap-2">
@@ -327,7 +327,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
                 <button
                   onClick={() => handleAddTaskToColumn(col.status)}
-                  className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors shrink-0"
+                  className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors shrink-0 enabled:active:scale-[0.96]"
                   title={`Add to ${col.title}`}
                   aria-label={`Add to ${col.title}`}
                 >
@@ -347,7 +347,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         setAddingToStatus(null);
                       }
                     }}
-                    className="p-3 bg-[var(--bg-surface-l2)] rounded-lg border border-amber-500/50 shadow-md space-y-2 animate-fade-in"
+                    className="p-3 bg-[var(--bg-surface-l2)] rounded-xl border border-amber-500/50 shadow-md space-y-2 animate-fade-in"
                   >
                     <input
                       autoFocus
@@ -363,7 +363,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         }
                       }}
                       placeholder={`Add card to ${col.title}...`}
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      className="w-full text-sm sm:text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-amber-500"
                     />
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -372,14 +372,14 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                           setAddingToStatus(null);
                           setQuickTitle('');
                         }}
-                        className="px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded"
+                        className="px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg enabled:active:scale-[0.96]"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={!quickTitle.trim()}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-stone-900 dark:bg-white text-white dark:text-stone-950 rounded-lg hover:bg-stone-800 dark:hover:bg-stone-100 disabled:opacity-50 transition-colors"
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-stone-900 dark:bg-white text-white dark:text-stone-950 rounded-lg hover:bg-stone-800 dark:hover:bg-stone-100 disabled:opacity-50 transition-colors enabled:active:scale-[0.96]"
                       >
                         Add
                       </button>
@@ -387,7 +387,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   </form>
                 )}
                 {colTasks.length === 0 && addingToStatus !== col.status ? (
-                  <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border-hairline)] rounded-lg bg-[var(--bg-surface-l2)]/30">
+                  <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border-hairline)] rounded-xl bg-[var(--bg-surface-l2)]/30">
                     Drop cards here
                   </div>
                 ) : (
@@ -411,7 +411,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         onPointerMove={(e) => handleCardPointerMove(task.id, e)}
                         onPointerUp={(e) => handleCardPointerUp(task.id, e)}
                         onPointerCancel={(e) => handleCardPointerCancel(task.id, e)}
-                        className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-lg border transition-all space-y-2 card-surface cursor-grab active:cursor-grabbing touch-none select-none hover:-translate-y-[0.5px] ${
+                        className={`group p-3.5 bg-[var(--bg-surface-l2)] rounded-lg border transition-all space-y-2 card-surface cursor-grab active:cursor-grabbing touch-none select-none enabled:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
                           draggingTaskId === task.id
                             ? 'opacity-80 scale-105 shadow-2xl z-50 ring-2 ring-amber-500 bg-amber-500/[0.08]'
                             : focusedCardId === task.id
@@ -444,7 +444,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                           </p>
                         )}
 
-                        <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] pt-1.5 border-t border-[var(--border-hairline)]">
+                        <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] pt-1.5 border-t border-[var(--border-hairline)] font-mono tabular-nums">
                           <span>{task.dueDate ? `Due ${task.dueDate}` : task.plannedDate ? `Planned ${task.plannedDate}` : 'No date'}</span>
                           {task.subtasks && task.subtasks.length > 0 && (
                             <span>
@@ -454,7 +454,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                           )}
                         </div>
 
-                        {/* Quick status advance buttons (always visible on mobile, hover on desktop) */}
+                        {/* Quick status advance buttons */}
                         <div
                           className="flex items-center justify-end gap-1.5 pt-2 border-t border-[var(--border-hairline)] sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                           onClick={(e) => e.stopPropagation()}
@@ -463,30 +463,33 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                             <button
                               type="button"
                               onClick={() => updateTask(task.id, { status: 'todo' })}
-                              className="px-2 py-0.5 rounded-lg bg-[var(--bg-surface-l1)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+                              className="px-2 py-0.5 rounded-md bg-[var(--bg-surface-l1)] text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors enabled:active:scale-[0.96]"
                               title="Move back to To Do"
+                              aria-label="Move back to To Do"
                             >
-                              ← To Do
+                              To Do
                             </button>
                           )}
                           {col.status !== 'in_progress' && (
                             <button
                               type="button"
                               onClick={() => updateTask(task.id, { status: 'in_progress' })}
-                              className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-[10px] font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
+                              className="px-2 py-0.5 rounded-md bg-amber-500/10 text-[10px] font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors enabled:active:scale-[0.96]"
                               title={col.status === 'todo' ? 'Start Task' : 'Move to In Progress'}
+                              aria-label={col.status === 'todo' ? 'Start Task' : 'Move to In Progress'}
                             >
-                              {col.status === 'todo' ? 'Start →' : '← In Prog'}
+                              {col.status === 'todo' ? 'Start' : 'In Progress'}
                             </button>
                           )}
                           {col.status !== 'done' && (
                             <button
                               type="button"
                               onClick={() => toggleTaskStatus(task.id)}
-                              className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                              className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors enabled:active:scale-[0.96]"
                               title="Mark Completed"
+                              aria-label="Mark Completed"
                             >
-                              ✓ Done
+                              Complete
                             </button>
                           )}
                         </div>

@@ -174,6 +174,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
                 Today<span className="desk-title-dot text-amber-500">.</span>
               </h1>
+              <span className="sr-only">Horizon View</span>
               {onSwitchToDashboard && (
                 <button
                   type="button"

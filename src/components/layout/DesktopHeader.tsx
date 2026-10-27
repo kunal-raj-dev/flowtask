@@ -102,9 +102,9 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({ viewTitle, isSideb
           <FocusMiniPlayer variant="desktop" />
         ) : (
           <button
-            className="desk-button product-focus-button hover:scale-102 active:scale-98 transition-all cursor-pointer shadow-2xs"
+            className="desk-button product-focus-button enabled:active:scale-[0.96] transition-transform cursor-pointer shadow-2xs"
             onClick={onOpenFocus}
-            aria-label="Open Focus Studio"
+            aria-label="Focus"
             title="Open Focus Studio"
           >
             <Timer size={16} className="text-amber-500" />
@@ -112,7 +112,7 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({ viewTitle, isSideb
           </button>
         )}
         <button
-          className="desk-button primary product-add-button hover:scale-102 active:scale-98 transition-all cursor-pointer shadow-xs"
+          className="desk-button primary product-add-button enabled:active:scale-[0.96] transition-transform cursor-pointer shadow-xs"
           onClick={onQuickAdd}
           aria-label="New Task"
         >

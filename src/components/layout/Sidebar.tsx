@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTaskContext } from '../../context/TaskContext';
 import { useTodayStr } from '../../hooks/useCurrentDate';
+import type { ViewId } from '../../types/task';
 import {
   Sun,
   Inbox,
@@ -204,7 +205,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   interface SidebarNavItem {
     id: string;
     label: string;
-    icon: any;
+    icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
     count: number | null;
     color: string;
     isNew?: boolean;
@@ -281,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             title={hints ? `FlowTask — Click to expand sidebar ([)` : 'FlowTask — Click to expand sidebar'}
             aria-label="FlowTask — Expand Sidebar"
-            className="cursor-pointer active:scale-95 transition-transform"
+            className="cursor-pointer enabled:active:scale-[0.96] transition-transform"
           >
             <BrandLogo size={32} />
           </button>
@@ -289,7 +290,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={onToggleCollapse}
               title={hints ? `Expand Sidebar ([)` : 'Expand Sidebar'}
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors active:scale-90"
+              aria-label={hints ? `Expand Sidebar ([)` : 'Expand Sidebar'}
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors enabled:active:scale-[0.96]"
             >
               <PanelLeftOpen size={16} strokeWidth={1.75} />
             </button>
@@ -312,11 +314,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     if (item.id === 'study_sessions') {
                       onOpenStudySession?.();
                     } else {
-                      setActiveView(item.id as any);
+                      setActiveView(item.id as ViewId);
                     }
                   }}
                   title={`${item.label}${item.count !== null && item.count > 0 ? ` (${item.count})` : ''}`}
-                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors active:scale-95 ${
+                  aria-label={`${item.label}${item.count !== null && item.count > 0 ? ` (${item.count})` : ''}`}
+                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors enabled:active:scale-[0.96] ${
                     isActive
                       ? 'text-[var(--text-primary)] font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
@@ -434,11 +437,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           if (item.id === 'study_sessions') {
             onOpenStudySession?.();
           } else {
-            setActiveView(item.id as any);
+            setActiveView(item.id as ViewId);
           }
           onItemClick?.();
         }}
-        className={`relative w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors active:scale-[0.98] ${
+        className={`relative w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors enabled:active:scale-[0.96] ${
           isActive
             ? 'text-[var(--text-primary)] font-semibold'
             : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
@@ -492,7 +495,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
           title="FlowTask — Return to Today"
           aria-label="FlowTask — Return to Today"
-          className="flex-1 flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-stone-200/40 dark:hover:bg-white/[0.04] transition-all text-left min-w-0 group cursor-pointer select-none active:scale-[0.98]"
+          className="flex-1 flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-stone-200/40 dark:hover:bg-white/[0.04] transition-all text-left min-w-0 group cursor-pointer select-none enabled:active:scale-[0.96]"
         >
           <BrandLogo size={32} showWordmark={true} subtitle="" />
         </button>
@@ -504,7 +507,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onItemClick?.();
             }}
             title="Multi-line Brain Dump"
-            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+            aria-label="Multi-line Brain Dump"
+            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors enabled:active:scale-[0.96]"
           >
             <Zap size={15} />
           </button>
@@ -512,7 +516,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={onToggleCollapse}
               title={hints ? `Collapse Sidebar ([)` : 'Collapse Sidebar'}
-              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors"
+              aria-label={hints ? `Collapse Sidebar ([)` : 'Collapse Sidebar'}
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/60 dark:hover:bg-white/[0.06] transition-colors enabled:active:scale-[0.96]"
             >
               <PanelLeftClose size={15} />
             </button>
@@ -551,16 +556,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsSmartFilterModalOpen(true)}
-              className="text-[var(--text-muted)] hover:text-indigo-500 p-0.5 rounded transition-colors"
+              className="text-[var(--text-muted)] hover:text-indigo-500 p-0.5 rounded transition-colors enabled:active:scale-[0.96]"
               title="Create Smart Filter View"
+              aria-label="Create Smart Filter View"
             >
               <Plus size={13} />
             </button>
             <button
               type="button"
               onClick={() => setIsSmartViewsCollapsed((prev) => !prev)}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors enabled:active:scale-[0.96]"
               title={isSmartViewsCollapsed ? 'Expand Smart Views' : 'Collapse Smart Views'}
+              aria-label={isSmartViewsCollapsed ? 'Expand Smart Views' : 'Collapse Smart Views'}
             >
               {isSmartViewsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
             </button>
@@ -584,10 +591,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <button
                   onClick={() => {
-                    setActiveView(`smart:${sv.id}` as any);
+                    setActiveView(`smart:${sv.id}` as ViewId);
                     onItemClick?.();
                   }}
-                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left enabled:active:scale-[0.96]"
                 >
                   <div className={`p-1 rounded-lg ${isSelected ? 'bg-stone-100 dark:bg-white/10' : ''}`}>
                     <Icon size={14} className={sv.color || 'text-indigo-500'} />
@@ -612,6 +619,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         deleteSmartView(sv.id);
                       }}
                       title="Delete Smart View"
+                      aria-label={`Delete Smart View ${sv.name}`}
                       className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-rose-500 text-[var(--text-muted)] transition-opacity"
                     >
                       <Trash2 size={12} />
@@ -630,16 +638,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsAddingProject(true)}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors enabled:active:scale-[0.96]"
               title="Add Project"
+              aria-label="Add Project"
             >
               <Plus size={13} />
             </button>
             <button
               type="button"
               onClick={() => setIsProjectsCollapsed((prev) => !prev)}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5 rounded transition-colors enabled:active:scale-[0.96]"
               title={isProjectsCollapsed ? 'Expand Projects' : 'Collapse Projects'}
+              aria-label={isProjectsCollapsed ? 'Expand Projects' : 'Collapse Projects'}
             >
               {isProjectsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
             </button>
@@ -657,10 +667,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={project.id}
                   onClick={() => {
-                    setActiveView(`project:${project.id}`);
+                    setActiveView(`project:${project.id}` as ViewId);
                     onItemClick?.();
                   }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all enabled:active:scale-[0.96] ${
                     isSelected
                       ? 'bg-[var(--bg-surface-l2)] text-[var(--text-primary)] shadow-subtle border border-[var(--border-hairline)] card-surface font-semibold'
                       : 'text-[var(--text-secondary)] hover:bg-stone-200/50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)] border border-transparent'

@@ -484,12 +484,39 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Tactile Spring Press Physics */
+/* Tactile Spring Press Physics (The 0.96 Press Scale Standard) */
 .active-press {
-  transition: transform 0.12s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .active-press:active {
-  transform: scale(0.97);
+  transform: scale(0.96);
+}
+
+/* Mobile Form Input Auto-Zoom Prevention (iOS Safari requires min 16px font-size) */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Theme Transition Smear Suppression */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition: none !important;
+}
+
+/* Image Inset Outline Protocol */
+.inset-media-outline {
+  outline: 1px solid oklch(0 0 0 / 0.1);
+  outline-offset: -1px;
+}
+html.dark .inset-media-outline {
+  outline: 1px solid oklch(1 0 0 / 0.1);
+  outline-offset: -1px;
 }
 
 /* Accessible Reduced Motion (WCAG 2.2 AA) */

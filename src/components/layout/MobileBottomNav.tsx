@@ -36,7 +36,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           type="button"
           onClick={() => onSelectView('today')}
-          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all active:scale-95 ${
+          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all enabled:active:scale-[0.96] ${
             isToday
               ? 'text-[var(--color-brand)] font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -65,24 +65,24 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           type="button"
           onClick={() => onSelectView('inbox')}
-          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all active:scale-95 ${
+          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all enabled:active:scale-[0.96] ${
             isInbox
-              ? 'text-blue-500 font-semibold'
+              ? 'text-[var(--pastel-sky,#0284c7)] font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
           aria-label="Inbox View"
         >
           <div className="relative flex flex-col items-center">
-            <Inbox size={20} strokeWidth={1.75} className={isInbox ? 'text-blue-500' : ''} />
+            <Inbox size={20} strokeWidth={1.75} className={isInbox ? 'text-[var(--pastel-sky,#0284c7)]' : ''} />
             {inboxCount > 0 && (
-              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-blue-500 text-white font-mono tabular-nums text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
+              <span className="absolute -top-1 -right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[var(--pastel-sky,#0284c7)] text-white font-mono tabular-nums text-[9px] font-bold flex items-center justify-center ring-2 ring-[var(--bg-surface-l1)]">
                 {inboxCount > 99 ? '99+' : inboxCount}
               </span>
             )}
             {isInbox && (
               <motion.span
                 layoutId="mobileActiveTabIndicator"
-                className="absolute -bottom-1.5 w-4 h-0.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+                className="absolute -bottom-1.5 w-4 h-0.5 rounded-full bg-[var(--pastel-sky,#0284c7)] shadow-[0_0_8px_rgba(59,130,246,0.6)]"
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
@@ -95,7 +95,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <button
             type="button"
             onClick={onQuickAdd}
-            className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-[0_4px_16px_rgba(217,119,6,0.35)] active:scale-90 transition-transform flex items-center justify-center cursor-pointer card-surface"
+            className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-[0_4px_16px_rgba(217,119,6,0.35)] enabled:active:scale-[0.96] transition-transform flex items-center justify-center cursor-pointer card-surface"
             aria-label="Quick Add Task"
           >
             <Plus size={22} strokeWidth={2.2} />
@@ -106,7 +106,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           type="button"
           onClick={() => onSelectView('timeline')}
-          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all active:scale-95 ${
+          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all enabled:active:scale-[0.96] ${
             isUpcoming
               ? 'text-[var(--color-brand)] font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -135,7 +135,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           type="button"
           onClick={onOpenMenu}
-          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all active:scale-95 ${
+          className={`relative flex flex-col items-center justify-center min-w-[56px] min-h-[46px] py-1 px-2 rounded-xl transition-all enabled:active:scale-[0.96] ${
             isMore
               ? 'text-[var(--color-brand)] font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'

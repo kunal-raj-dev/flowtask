@@ -80,7 +80,7 @@ export const GlobalCaptureHUD: React.FC<GlobalCaptureHUDProps> = ({ isOpen, onCl
       dueDate: parsed.dueDate,
       plannedDate: parsed.plannedDate,
       dueTime: parsed.dueTime,
-      estimatedMinutes: parsed.estimatedMinutes || (settings as any)?.defaultEstimatedMinutes || 30,
+      estimatedMinutes: parsed.estimatedMinutes || settings?.defaultTaskDuration || 30,
       cognitiveLoad: parsed.cognitiveLoad,
       tags: parsed.tags,
       contextTags: parsed.contextTags,
@@ -167,14 +167,14 @@ export const GlobalCaptureHUD: React.FC<GlobalCaptureHUDProps> = ({ isOpen, onCl
               onChange={(e) => setInputVal(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="What needs doing? (~45m #work !p1 ~deep tomorrow)"
-              className="w-full pl-3 pr-28 py-2 text-sm bg-transparent border-b-2 border-[var(--color-brand)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
+              className="w-full pl-3 pr-28 py-2 text-base sm:text-sm bg-transparent border-b-2 border-[var(--color-brand)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
               autoFocus
               data-testid="capture-hud-input"
             />
             <button
               type="submit"
               disabled={!parsed.cleanTitle.trim()}
-              className="absolute right-1 px-3 py-1 rounded-lg bg-[var(--color-brand)] text-white text-xs font-semibold hover:bg-[var(--color-brand-hover)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-transform active:scale-95 shadow-sm"
+              className="absolute right-1 px-3 py-1 rounded-lg bg-[var(--color-brand)] text-white text-xs font-semibold hover:bg-[var(--color-brand-hover)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-transform enabled:active:scale-[0.96] shadow-sm"
               data-testid="capture-hud-submit"
             >
               <span>Capture</span>

@@ -24,7 +24,7 @@ describe("DesktopHeader Frontier Upgrade", () => {
       />
     );
 
-    const focusBtn = screen.getByRole("button", { name: "Open Focus Studio" });
+    const focusBtn = screen.getByRole("button", { name: /Focus/i });
     expect(focusBtn).toBeDefined();
     expect(focusBtn.textContent).toContain("Focus Studio");
 

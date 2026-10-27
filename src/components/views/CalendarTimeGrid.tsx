@@ -393,7 +393,7 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleToday}
-            className="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-l2)] hover:border-[var(--color-brand)] transition active:scale-95 min-h-[36px]"
+            className="px-3 py-1 text-xs font-semibold rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-l2)] hover:border-[var(--color-brand)] transition enabled:active:scale-[0.96] min-h-[36px]"
           >
             Today
           </button>
@@ -401,19 +401,19 @@ export const CalendarTimeGrid: React.FC<CalendarTimeGridProps> = ({
             <button
               onClick={handlePrev}
               aria-label="Previous Day"
-              className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] min-h-[36px] min-w-[36px] flex items-center justify-center enabled:active:scale-[0.96]"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={handleNext}
               aria-label="Next Day"
-              className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] min-h-[36px] min-w-[36px] flex items-center justify-center enabled:active:scale-[0.96]"
             >
               <ChevronRight size={16} />
             </button>
           </div>
-          <span className="font-bold text-sm tracking-tight ml-1">
+          <span className="font-bold text-sm tracking-tight ml-1 font-mono tabular-nums">
             {dates[0]}
             {dates.length > 1 && ` – ${dates[dates.length - 1]}`}
           </span>

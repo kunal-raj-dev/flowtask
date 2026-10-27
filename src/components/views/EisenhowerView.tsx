@@ -15,6 +15,7 @@ import {
   Sparkles,
   CheckCheck,
   ArrowDownUp,
+  Clock,
 } from 'lucide-react';
 import { useTodayStr, getTomorrowStr } from '../../hooks/useCurrentDate';
 import { calculateTaskPriorityScore } from '../../utils/priorityScoring';
@@ -343,7 +344,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
             type="button"
             onClick={() => setSortByScore((prev) => !prev)}
             aria-label="Rank tasks by score"
-            className={`min-h-[36px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${
+            className={`min-h-[36px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all enabled:active:scale-[0.96] ${
               sortByScore
                 ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
                 : 'bg-[var(--bg-surface-l2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-hairline)]'
@@ -359,7 +360,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
             type="button"
             onClick={handleAutoAlignAll}
             aria-label="Auto-align tasks to suggested quadrants"
-            className="min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shadow-xs transition-all active:scale-95"
+            className="min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shadow-xs transition-all enabled:active:scale-[0.96]"
             title="Auto-align tasks to match their multi-factor suggested quadrants"
           >
             <CheckCheck size={13} />
@@ -412,7 +413,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
               type="button"
               data-quadrant={q.priority}
               onClick={() => setMobileQuadrant(q.priority)}
-              className={`flex-1 min-w-[70px] min-h-[42px] flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
+              className={`flex-1 min-w-[70px] min-h-[42px] flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-xs font-semibold transition-all enabled:active:scale-[0.96] ${
                 isDragTarget
                   ? 'bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/60'
                   : isActive
@@ -429,11 +430,13 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
 
       {/* Cartesian 2D Coordinate Axis Banners (Desktop) */}
       <div className="hidden lg:grid grid-cols-2 gap-4 mb-2 text-center text-[11px] font-bold tracking-wider uppercase text-[var(--text-muted)] select-none">
-        <div className="flex items-center justify-center gap-1.5 py-1 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
-          <span>⚡ High Urgency (Immediate Action)</span>
+        <div className="flex items-center justify-center gap-2 py-1.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
+          <Zap size={13} className="text-amber-500 shrink-0" />
+          <span>High Urgency (Immediate Action)</span>
         </div>
-        <div className="flex items-center justify-center gap-1.5 py-1 rounded-lg bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
-          <span>🕒 Low Urgency (Strategic / Planned)</span>
+        <div className="flex items-center justify-center gap-2 py-1.5 rounded-xl bg-[var(--bg-surface-l1)]/60 border border-[var(--border-hairline)]">
+          <Clock size={13} className="text-teal-500 shrink-0" />
+          <span>Low Urgency (Strategic / Planned)</span>
         </div>
       </div>
 
@@ -471,11 +474,11 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
               onDragLeave={handleDragLeave}
               className={`${
                 isVisibleOnMobile ? 'flex' : 'hidden lg:flex'
-              } bg-[var(--bg-surface-l2)] rounded-xl border ${
+              } bg-[var(--bg-surface-l2)] rounded-2xl border ${
                 isOver
                   ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-500/[0.04]'
                   : 'border-[var(--border-hairline)]'
-              } p-4 sm:p-5 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
+              } p-3.5 sm:p-4 flex-col shadow-card card-surface min-h-[260px] md:min-h-[280px] transition-all`}
             >
               {/* Quadrant Header */}
               <div className="flex items-start justify-between pb-3 mb-3 border-b border-[var(--border-hairline)] gap-2">
@@ -499,7 +502,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                   </Badge>
                   <button
                     onClick={() => handleQuickAdd(q.priority)}
-                    className="p-1.5 min-w-[28px] min-h-[28px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                    className="p-1.5 min-w-[28px] min-h-[28px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/[0.06] transition-colors enabled:active:scale-[0.96]"
                     title="Add task to this quadrant"
                     aria-label={`Add task to ${q.title}`}
                   >
@@ -520,7 +523,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       onClick={() => {
                         if (quadTasks.length > 0) batchUpdateTasks(quadTasks.map((t) => t.id), { plannedDate: todayStr });
                       }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 font-semibold text-[11px] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 font-semibold text-[11px] transition-colors enabled:active:scale-[0.96]"
                       title="Schedule all P1 tasks for Today"
                     >
                       <Calendar size={11} className="stroke-[2.2]" />
@@ -533,7 +536,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       onClick={() => {
                         if (quadTasks.length > 0) batchUpdateTasks(quadTasks.map((t) => t.id), { plannedDate: tomorrowStr });
                       }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-semibold text-[11px] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-semibold text-[11px] transition-colors enabled:active:scale-[0.96]"
                       title="Schedule all P2 tasks for Tomorrow"
                     >
                       <Calendar size={11} className="stroke-[2.2]" />
@@ -546,7 +549,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                       onClick={() => {
                         if (quadTasks.length > 0) batchUpdateTasks(quadTasks.map((t) => t.id), { plannedDate: todayStr });
                       }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-semibold text-[11px] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-semibold text-[11px] transition-colors enabled:active:scale-[0.96]"
                       title="Batch focus P3 tasks for Today"
                     >
                       <Zap size={11} className="stroke-[2.2]" />
@@ -561,7 +564,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                           batchUpdateTasks(quadTasks.map((t) => t.id), { isSomeday: true, plannedDate: undefined, isPinnedToday: false });
                         }
                       }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-500/10 hover:bg-stone-500/20 text-stone-600 dark:text-stone-400 font-semibold text-[11px] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-500/10 hover:bg-stone-500/20 text-stone-600 dark:text-stone-400 font-semibold text-[11px] transition-colors enabled:active:scale-[0.96]"
                       title="Park all in Someday backlog"
                     >
                       <Archive size={11} className="stroke-[2.2]" />
@@ -583,7 +586,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                         setAddingToPriority(null);
                       }
                     }}
-                    className="p-3 bg-[var(--bg-surface-l2)] rounded-lg border border-[var(--color-brand)]/50 shadow-md space-y-2 mb-2 animate-fade-in"
+                    className="p-3 bg-[var(--bg-surface-l2)] rounded-xl border border-[var(--color-brand)]/50 shadow-md space-y-2 mb-2 animate-fade-in"
                   >
                     <input
                       autoFocus
@@ -600,7 +603,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                         }
                       }}
                       placeholder={`Add task to ${q.title}...`}
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand)]"
+                      className="w-full text-sm sm:text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-l1)] text-[var(--text-primary)] border border-[var(--border-hairline)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand)]"
                     />
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -609,14 +612,14 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                           setAddingToPriority(null);
                           setQuickTitle('');
                         }}
-                        className="px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded"
+                        className="px-2 py-1 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg enabled:active:scale-[0.96]"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={!quickTitle.trim()}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] disabled:opacity-50 text-white rounded-lg transition-colors"
+                        className="px-2.5 py-1 text-[11px] font-semibold bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] disabled:opacity-50 text-white rounded-lg transition-colors enabled:active:scale-[0.96]"
                       >
                         Add
                       </button>
@@ -625,7 +628,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                 )}
 
                 {quadTasks.length === 0 && addingToPriority !== q.priority ? (
-                  <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border-hairline)] rounded-lg bg-[var(--bg-surface-l1)]/20">
+                  <div className="h-32 flex items-center justify-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border-hairline)] rounded-xl bg-[var(--bg-surface-l1)]/20">
                     Drop tasks here
                   </div>
                 ) : (
@@ -641,7 +644,7 @@ export const EisenhowerView: React.FC<EisenhowerViewProps> = ({
                         onPointerMove={(e) => handleCardPointerMove(task.id, e)}
                         onPointerUp={(e) => handleCardPointerUp(task.id, e)}
                         onPointerCancel={(e) => handleCardPointerCancel(task.id, e)}
-                        className={`group p-2.5 sm:p-3 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l2)] shadow-subtle cursor-grab active:cursor-grabbing touch-none select-none transition-all flex items-center justify-between gap-2.5 card-surface hover:-translate-y-[0.5px] ${
+                        className={`group p-2.5 sm:p-3 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/50 hover:bg-[var(--bg-surface-l2)] shadow-subtle cursor-grab active:cursor-grabbing touch-none select-none transition-all flex items-center justify-between gap-2.5 card-surface enabled:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                           draggingTaskId === task.id
                             ? 'opacity-80 scale-105 shadow-2xl z-50 ring-2 ring-indigo-500 bg-indigo-500/[0.08]'
                             : ''
