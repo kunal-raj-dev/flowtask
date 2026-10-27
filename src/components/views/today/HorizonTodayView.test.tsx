@@ -120,7 +120,7 @@ describe('HorizonTodayView', () => {
     render(<HorizonTodayView onSelectTask={vi.fn()} onStartFocus={vi.fn()} />);
 
     expect(screen.getByRole('heading', { name: 'Today.' })).toBeDefined();
-    expect(screen.getByText('Your Top 3')).toBeDefined();
+    expect(screen.getByRole('heading', { name: /your top 3/i })).toBeDefined();
     expect(screen.getByText('Top Priority 1')).toBeDefined();
     expect(screen.getByText('Top Priority 2')).toBeDefined();
     expect(screen.getByLabelText('Priority 1')).toBeDefined();
@@ -163,6 +163,26 @@ describe('HorizonTodayView', () => {
     const switcher = screen.getByRole('button', { name: 'Switch dashboard' });
     fireEvent.click(switcher);
     expect(onSwitch).toHaveBeenCalled();
+  });
+
+  it('inserts a duration shortcut that the task parser actually understands', () => {
+    render(<HorizonTodayView />);
+    fireEvent.click(screen.getByText('Task shortcuts'));
+    fireEvent.click(screen.getByRole('button', { name: '25 minutes' }));
+    const input = screen.getByRole('textbox', { name: 'Add a task to this list' });
+    expect((input as HTMLInputElement).value).toBe('~25m ');
+    expect((screen.getByRole('button', { name: 'Add task' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(input, { target: { value: `${(input as HTMLInputElement).value}Read a chapter` } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    expect(mockAddTask).toHaveBeenCalledWith('~25m Read a chapter', expect.objectContaining({ estimatedMinutes: 25 }));
+  });
+
+  it('does not create a task containing only syntax metadata', () => {
+    render(<HorizonTodayView />);
+    const input = screen.getByRole('textbox', { name: 'Add a task to this list' });
+    fireEvent.change(input, { target: { value: 'p1 ~25m #work' } });
+    fireEvent.submit(input.closest('form')!);
+    expect(mockAddTask).not.toHaveBeenCalled();
   });
 
   it('toggles Single-Task Horizon mode, collapses batches, and provides 5m starter timer', () => {

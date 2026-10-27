@@ -5,6 +5,14 @@ import { studioAudio } from '../../services/studioAudio';
 import { audioEngine } from '../../utils/audioEngine';
 import type { StudioPreferences, FocusStudioPreferences, MediaCatalog, MediaAsset, MixerLayer } from '../../types/studio';
 
+const SoundwaveBars: React.FC = () => (
+  <span className="studio-soundwave" aria-hidden="true">
+    <span />
+    <span />
+    <span />
+  </span>
+);
+
 export interface FocusAudioPanelProps {
   preferences: StudioPreferences | FocusStudioPreferences;
   media: MediaCatalog;
@@ -116,7 +124,12 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
           >
             <Volume2 size={15} />
             {a.title}
-            {p.layers.some((l: MixerLayer) => l.id === a.id) && <Check size={14} />}
+            {p.layers.some((l: MixerLayer) => l.id === a.id) && (
+              <span className="flex items-center gap-1.5 ml-auto">
+                <SoundwaveBars />
+                <Check size={14} />
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -187,7 +200,12 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
             >
               <Volume2 size={13} />
               <span>Rain Sound</span>
-              {rainPlaying && <Check size={12} />}
+              {rainPlaying && (
+                <span className="flex items-center gap-1">
+                  <SoundwaveBars />
+                  <Check size={12} />
+                </span>
+              )}
             </button>
             <span className="text-[10px] font-mono text-[var(--text-muted)]">
               {Math.round(rainVol * 100)}%
@@ -221,7 +239,12 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
               >
                 <Volume2 size={13} />
                 <span>{noiseType === 'brown' ? 'Brown Noise' : 'Pink Noise'}</span>
-                {noisePlaying && <Check size={12} />}
+                {noisePlaying && (
+                  <span className="flex items-center gap-1">
+                    <SoundwaveBars />
+                    <Check size={12} />
+                  </span>
+                )}
               </button>
               <div className="flex items-center gap-1 text-[11px] font-mono">
                 <button
@@ -288,7 +311,12 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
             >
               <Volume2 size={13} />
               <span>Binaural Beats (40Hz)</span>
-              {binauralPlaying && <Check size={12} />}
+              {binauralPlaying && (
+                <span className="flex items-center gap-1">
+                  <SoundwaveBars />
+                  <Check size={12} />
+                </span>
+              )}
             </button>
             <span className="text-[10px] font-mono text-[var(--text-muted)]">
               {Math.round(binauralVol * 100)}%
@@ -364,7 +392,10 @@ export const FocusAudioPanel: React.FC<FocusAudioPanelProps> = ({
                   </small>
                 </span>
                 {resolveAsset(p.musicId, media.audio)?.id === a.id && (
-                  <Check size={16} />
+                  <span className="flex items-center gap-1.5 ml-auto">
+                    <SoundwaveBars />
+                    <Check size={16} />
+                  </span>
                 )}
               </button>
               <small className="studio-credit">

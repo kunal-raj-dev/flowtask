@@ -65,14 +65,17 @@ export const TodayFocusProgressBar: React.FC<TodayFocusProgressBarProps> = ({
       : 0;
 
   return (
-    <div className={`today-focus-progress-container space-y-3 ${className}`}>
+    <div className={`today-focus-progress-container space-y-4 ${className}`}>
       {/* Daily Planning Budget Banner */}
-      <div className="daily-planning-summary flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-2xs">
-        <div>
-          <span className="daily-summary-label text-[10px] font-bold tracking-wider uppercase text-[var(--text-muted)] block mb-1">
-            A DAY THAT FITS
-          </span>
-          <p className="text-sm font-medium text-[var(--text-secondary)]">
+      <div className="daily-planning-summary flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-2xs hover:shadow-xs transition-shadow">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="daily-summary-label text-[10px] font-bold tracking-wider uppercase text-[var(--text-muted)] block">
+              A DAY THAT FITS
+            </span>
+          </div>
+          <p className="text-sm font-medium text-[var(--text-secondary)] leading-relaxed">
             <strong className="text-[var(--text-primary)] font-bold">{hours(summary.totalDemandMinutes)}</strong> planned{' '}
             <span className="text-[var(--text-muted)]">·</span>{' '}
             <strong className="text-[var(--text-primary)] font-bold">
@@ -85,16 +88,16 @@ export const TodayFocusProgressBar: React.FC<TodayFocusProgressBarProps> = ({
               <strong className="text-[var(--text-primary)] font-bold">{forecast.time}{forecast.dayOffset > 0 ? ` (+${forecast.dayOffset}d)` : ''}</strong>
             </span>
           </p>
-          {forecast.outsideWorkHours && <p role="status" className="today-finish-warning">Remaining work extends past your planning hours. Review your plan.</p>}
+          {forecast.outsideWorkHours && <p role="status" className="today-finish-warning text-xs text-amber-600 dark:text-amber-400 font-medium mt-1">Remaining work extends past your planning hours. Review your plan.</p>}
         </div>
 
-        <div className="daily-summary-actions flex items-center gap-3">
-          <section className="daily-progress flex items-center gap-3 text-xs text-[var(--text-secondary)] font-medium">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-semibold">
+        <div className="daily-summary-actions flex flex-wrap items-center gap-3">
+          <section className="daily-progress flex flex-wrap items-center gap-2.5 text-xs text-[var(--text-secondary)] font-medium">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-semibold shadow-2xs transition-transform hover:scale-105">
               <Check size={13} strokeWidth={2.5} />
               {summary.completedTaskCount} completed
             </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-semibold">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-semibold shadow-2xs transition-transform hover:scale-105">
               <Flame size={13} strokeWidth={2} />
               {formatSecondsToHumanReadable(focusedSeconds)} focused
             </span>
@@ -103,7 +106,7 @@ export const TodayFocusProgressBar: React.FC<TodayFocusProgressBarProps> = ({
           {onPlanMyDay && (
             <button
               type="button"
-              className="desk-button primary text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1"
+              className="desk-button primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-2xs hover:scale-102 active:scale-95 transition-all cursor-pointer"
               onClick={onPlanMyDay}
               aria-label="Plan my day"
             >
@@ -114,13 +117,13 @@ export const TodayFocusProgressBar: React.FC<TodayFocusProgressBarProps> = ({
       </div>
 
       {/* Visual Progress Bar */}
-      <div className="px-1">
-        <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
-          <span>Capacity load</span>
-          <span className="font-mono font-medium">{pct}%</span>
+      <div className="px-1.5 space-y-1.5">
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+          <span className="font-medium">Capacity load</span>
+          <span className="font-mono font-bold text-[var(--text-secondary)]">{pct}%</span>
         </div>
         <div
-          className="desk-capacity-bar w-full h-2 rounded-full bg-stone-200/70 dark:bg-stone-800 overflow-hidden relative"
+          className="desk-capacity-bar w-full h-2.5 rounded-full bg-stone-200/80 dark:bg-stone-800 overflow-hidden relative shadow-inner"
           role="progressbar"
           aria-label="Planning capacity used"
           aria-valuemin={0}
@@ -128,7 +131,7 @@ export const TodayFocusProgressBar: React.FC<TodayFocusProgressBarProps> = ({
           aria-valuenow={pct}
         >
           <div
-            className={`h-full rounded-full transition-all duration-300 ${
+            className={`h-full rounded-full transition-all duration-500 ease-out ${
               summary.overbooked
                 ? 'bg-rose-500 dark:bg-rose-400'
                 : pct > 80

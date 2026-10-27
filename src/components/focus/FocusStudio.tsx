@@ -37,6 +37,8 @@ import {
   Coffee,
   Sparkles,
   Palette,
+  Search,
+  Leaf,
 } from "lucide-react";
 import { useTaskContext } from "../../context/TaskContext";
 import { useModal } from "../../context/ModalContext";
@@ -59,7 +61,7 @@ import { pictureInPictureService } from "../../services/pictureInPictureService"
 import { transitionView } from "../../utils/viewTransitions";
 import { FocusAudioPanel } from "./FocusAudioPanel";
 import { ResetConfirmationDialog } from "./ResetConfirmationDialog";
-import { FEATURED_ROOMS, roomImage } from '../../services/featuredRooms';
+import { StudioEnvironmentLibrary } from './StudioEnvironmentLibrary';
 import { StudioThemePicker } from './StudioThemePicker';
 import { STUDIO_THEME_IDS, studioThemeTokens } from '../../utils/studioAppearance';
 import { THEMES } from '../../utils/themeRegistry';
@@ -179,6 +181,7 @@ export function FocusStudio({
   const elapsed = useFocusStore((s) => s.focusElapsedSeconds);
   const [panel, setPanelState] = useState<Panel>(initialPanel),
     [category, setCategory] = useState("all");
+  const [sceneQuery, setSceneQuery] = useState('');
   const setPanel = useCallback((next: Panel) => {
     setPanelOpacityPreview(null);
     setPanelState(next);
@@ -288,6 +291,21 @@ export function FocusStudio({
       : p.breakSceneId || p.sceneId
     ).startsWith("local:") &&
       !scene);
+  const sceneResults = useMemo(() => {
+    const terms = sceneQuery.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    return media.scenes.filter(asset => {
+      const inCategory = category === 'all' || (category === 'favorites' && p.favorites.includes(asset.id)) ||
+        (category === 'recent' && p.recent.includes(asset.id)) || asset.category === category;
+      const categoryName = SCENE_CATEGORIES.find(([id]) => id === asset.category)?.[1] || asset.category;
+      const description = [asset.title, categoryName, ...(asset.moods || []), ...(asset.contexts || [])].join(' ').toLocaleLowerCase();
+      return inCategory && terms.every(term => description.includes(term));
+    });
+  }, [media.scenes, category, sceneQuery, p.favorites, p.recent]);
+  const chooseScene = (id: string) => update({
+    recipeId: '',
+    ...(currentPhase === 'focus' ? { sceneId: id, missingPersonalScene: false } : { breakSceneId: id }),
+    recent: [id, ...p.recent.filter(value => value !== id)].slice(0, 12),
+  });
   const timer = active?.timerConfiguration || p.timer;
   const minutes =
     currentPhase === "focus"
@@ -662,7 +680,7 @@ export function FocusStudio({
     if (active) {
       setMessage("Timer settings apply to your next session.");
     }
-    update({ timer: { ...p.timer, ...patch } });
+    update({ recipeId: '', timer: { ...p.timer, ...patch } });
   };
   const captureTask = () => {
     const selected =
@@ -693,6 +711,8 @@ export function FocusStudio({
     scene?.kind === "video" && p.motionEnabled && !reduced && !dataSaving;
   const savedLobbyRecipes = recipes.filter(recipe => !recipe.builtIn || recipe.favorite).slice(0, 3);
   const panelOpacity = highContrast ? 1 : panelOpacityPreview ?? p.panelOpacity;
+  const playbackLabel = running ? 'Pause' : active?.state === 'paused' || active?.state === 'ready' ? 'Resume' : currentPhase === 'focus' ? 'Start focus' : 'Start break';
+  const cycle = active?.pomodoroCycle || last?.nextCycle || 1;
   return (
     <div
       ref={root}
@@ -700,6 +720,7 @@ export function FocusStudio({
       data-session-state={active?.state || (showSummary ? 'finished' : 'ready')}
       data-phase={currentPhase}
       data-studio-theme={p.interfaceTheme}
+      data-interface-tone={THEMES[p.interfaceTheme].scheme}
       role="dialog"
       aria-modal="true"
       aria-label="Focus Studio"
@@ -813,7 +834,7 @@ export function FocusStudio({
             FlowTask<span className="studio-beta">STUDIO</span>
           </span>
         </div>
-        <div className="studio-header-center">A SPACE FOR YOUR BEST WORK</div>
+        <div className="studio-header-center"><span aria-hidden="true" />A QUIETER KIND OF PRODUCTIVE</div>
         <div className="studio-header-actions">
           <button
             onClick={() => {
@@ -847,7 +868,7 @@ export function FocusStudio({
         </div>
       </header>
       <main className={`studio-stage ${panel ? "has-panel" : ""}`}>
-        {lobby && <div className="studio-lobby-intro"><p className="studio-eyebrow">YOUR FOCUS STUDIO</p><h2>Find a little room for your best work.</h2><p>Choose your intention. Settle into a space. Begin.</p></div>}
+        {lobby && <div className="studio-lobby-intro"><p className="studio-eyebrow"><Leaf size={13} strokeWidth={1.5} aria-hidden="true" /> YOUR FOCUS SANCTUARY</p><h2>A little space to <em>find your flow.</em></h2><p>Somewhere quiet. Something meaningful. At your own pace.</p></div>}
         <div className={lobby ? 'studio-lobby' : 'studio-session'}>
         <section className="studio-session-core" aria-label={lobby ? 'Prepare your session' : 'Current session'}>
         <div className="studio-mode-switch" aria-label="Session phase">
@@ -896,13 +917,23 @@ export function FocusStudio({
             </p>
           )}
         </div>
-        {lobby && <div className="studio-lobby-config"><label>Focus task<select aria-label="Focus task" value={selectedTask} onChange={e=>setSelectedTask(e.target.value)}><option value="">Open focus · no task</option>{availableTasks.map(t=><option value={t.id} key={t.id}>{t.title}</option>)}</select></label><label>Rhythm<select aria-label="Focus rhythm" value={timer.mode === 'pomodoro' && timer.focusMinutes === 25 && timer.shortBreakMinutes === 5 ? '25' : timer.mode === 'pomodoro' && timer.focusMinutes === 50 && timer.shortBreakMinutes === 10 ? '50' : timer.mode === 'stopwatch' ? 'open' : 'custom'} onChange={e=>{const v=e.target.value;if(v==='custom')setPanel('timer');else updateTimer(v==='open'?{mode:'stopwatch'}:{mode:'pomodoro',focusMinutes:Number(v),shortBreakMinutes:v==='50'?10:5});}}><option value="25">25 / 5 · A gentle start</option><option value="50">50 / 10 · Go deeper</option><option value="open">Open-ended · Your pace</option><option value="custom">Custom rhythm…</option></select></label></div>}
+        {lobby && <div className="studio-lobby-config">
+          <label className="studio-intention-field"><span><small>01</small>Your intention</span><select aria-label="Focus task" value={selectedTask} onChange={event => setSelectedTask(event.target.value)}><option value="">Open focus · a little time for yourself</option>{availableTasks.map(item => <option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
+          <div className="studio-rhythm-field">
+            <div className="studio-rhythm-heading"><span><small>02</small>Your rhythm</span><button type="button" onClick={() => setPanel('timer')}><Settings2 size={12} />Custom</button></div>
+            <div className="studio-rhythm-options" role="group" aria-label="Focus rhythm">
+              {([25, 50] as const).map(value => <button key={value} type="button" aria-label={`${value}-minute focus`} aria-pressed={timer.mode === 'pomodoro' && timer.focusMinutes === value && timer.shortBreakMinutes === (value === 50 ? 10 : 5)} onClick={() => updateTimer({ mode: 'pomodoro', focusMinutes: value, shortBreakMinutes: value === 50 ? 10 : 5 })}><strong>{value}<small>min</small></strong><span>{value === 25 ? 'A gentle start' : 'A little deeper'}</span></button>)}
+              <button type="button" aria-label="Open-ended focus" aria-pressed={timer.mode === 'stopwatch'} onClick={() => updateTimer({ mode: 'stopwatch' })}><strong aria-hidden="true">∞</strong><span>Your own pace</span></button>
+            </div>
+          </div>
+        </div>}
         <div
           className={`studio-clock ${p.timerStyle === "ring" ? "with-ring" : ""} ${seconds >= 3600 ? 'is-hour-clock' : ''} ${active && active.targetDurationSec > 0 && seconds <= 60 && seconds > 0 ? 'urgency-pulse animate-pulse' : ''}`}
           role="timer"
           aria-label={`${Math.floor(seconds / 60)} minutes ${seconds % 60} seconds ${(active ? active.targetDurationSec > 0 : timer.mode !== "stopwatch" || currentPhase !== "focus") ? "remaining" : "elapsed"}`}
         >
           <span className="studio-clock-digits">{formatTimerClock(seconds)}</span>
+          {p.timerStyle === 'ring' && <small className="studio-clock-caption" aria-hidden="true">{running ? 'ONE MOMENT AT A TIME' : active?.state === 'paused' ? 'TAKE YOUR TIME' : 'MAKE A LITTLE ROOM'}</small>}
           {p.timerStyle === "ring" && (() => {
             const ringRadius = 52;
             const ringCircumference = 2 * Math.PI * ringRadius; // ~326.726
@@ -913,6 +944,7 @@ export function FocusStudio({
               : -ringFractionElapsed * ringCircumference;
             return (
               <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r="57" className="studio-ring-markers" />
                 <circle cx="60" cy="60" r={ringRadius} className="studio-ring-track" />
                 <circle
                   cx="60"
@@ -926,12 +958,15 @@ export function FocusStudio({
             );
           })()}
         </div>
-        <p className="studio-session-label">
+        <div className="studio-session-label">
+          <p>
           {timer.mode === "stopwatch" && currentPhase === "focus"
             ? "Open-ended · your pace, your space"
-            : `${minutes} minutes ${currentPhase === "focus" ? "of intention" : "to recharge"} · ${timer.mode === "pomodoro" ? `session ${active?.pomodoroCycle || last?.nextCycle || 1} of ${timer.cyclesBeforeLongBreak}` : "make it yours"}`}
-        </p>
-        <div className="studio-playback">
+            : `${minutes} minutes ${currentPhase === "focus" ? "of intention" : "to recharge"}`}
+          </p>
+          {timer.mode === 'pomodoro' && <span className="studio-round-progress"><span className="studio-round-dots" aria-hidden="true">{Array.from({ length: Math.min(8, timer.cyclesBeforeLongBreak) }, (_, index) => <i key={index} data-complete={index < cycle - 1 || undefined} data-current={index === cycle - 1 || undefined} />)}</span>Round {cycle} of {timer.cyclesBeforeLongBreak}</span>}
+        </div>
+        <div className="studio-playback" data-preparing={lobby || undefined}>
           <button
             type="button"
             className="studio-control-btn studio-reset-btn"
@@ -947,6 +982,7 @@ export function FocusStudio({
           <button
             type="button"
             className="studio-start"
+            aria-label={playbackLabel}
             onClick={() => void toggle()}
           >
             {running ? (
@@ -954,15 +990,8 @@ export function FocusStudio({
             ) : (
               <Play size={20} fill="currentColor" />
             )}
-            <span>
-              {running
-                ? "Pause"
-                : active?.state === "paused" || active?.state === "ready"
-                  ? "Resume"
-                  : currentPhase === "focus"
-                    ? "Start focus"
-                    : "Start break"}
-            </span>
+            <span>{playbackLabel}</span>
+            {hints && <kbd aria-hidden="true">Space</kbd>}
           </button>
 
           <button
@@ -986,6 +1015,7 @@ export function FocusStudio({
           <ArrowRight size={14} />
         </button>
         <div className="studio-context-actions"><button onClick={()=>setPanel(panel==='notes'?null:'notes')}><FileText size={14}/>Notes</button><button onClick={()=>setPanel(panel==='queue'?null:'queue')}><ListTodo size={14}/>Queue{queue.length ? ` · ${queue.length}` : ''}</button></div>
+        {lobby && scene && <button type="button" className="studio-current-room" onClick={() => setPanel('scenes')} aria-label={`Change room, currently ${scene.title}`}><img src={scene.thumbnail || scene.poster || scene.src} alt="" /><span><small>YOUR ROOM</small>{scene.title}</span><ArrowRight size={14} /></button>}
         <div className="studio-break-prompt-slot">
           {currentPhase !== "focus" && p.breakPrompts && (
             <p className="studio-break-prompt">
@@ -994,14 +1024,7 @@ export function FocusStudio({
           )}
         </div>
         </section>
-        {lobby && <aside className={`studio-lobby-library ${savedLobbyRecipes.length ? "has-saved" : ""}`} aria-label="Choose your focus environment">
-          <div className="studio-lobby-section-heading"><h3>A change of scene</h3><button onClick={()=>setPanel('scenes')}>Browse rooms<ArrowRight size={13}/></button></div>
-          <div className="studio-lobby-rooms">{FEATURED_ROOMS.map(r=><button key={r.id} aria-label={`Choose ${r.title} room`} aria-pressed={p.sceneId===r.id} onClick={()=>update({sceneId:r.id})}><img src={roomImage(r.id,true)} alt="" loading="lazy"/><span>{r.title}<small>{r.category}</small></span>{p.sceneId===r.id&&<Check size={14}/>}</button>)}</div>
-          <div className="studio-lobby-section-heading"><h3>Start with a ritual</h3><button onClick={()=>setPanel('recipes')}>Your recipes<ArrowRight size={13}/></button></div>
-          <div className="studio-lobby-recipes">{recipes.filter(r=>r.builtIn).slice(0, savedLobbyRecipes.length ? 3 : 6).map(r=>{const cover=resolveAsset(r.sceneId,media.scenes);return <button key={r.id} aria-pressed={p.recipeId===r.id} onClick={()=>selectRecipe(r)}>{cover&&<img src={cover.thumbnail||cover.poster||cover.src} alt="" loading="lazy"/>}<span>{r.name}<small>{r.timer.mode==='stopwatch'?'Open-ended':`${r.timer.focusMinutes}/${r.timer.shortBreakMinutes}`} · {r.layers.length||r.musicId?'Sound recipe':'Silence'}</small></span>{p.recipeId===r.id&&<Check size={13}/>}</button>;})}</div>
-          {savedLobbyRecipes.length > 0&&<><div className="studio-lobby-section-heading studio-saved-heading"><h3>Saved for your flow</h3></div><div className="studio-lobby-recipes">{savedLobbyRecipes.map(r=><button key={r.id} aria-pressed={p.recipeId===r.id} onClick={()=>selectRecipe(r)}><span>{r.name}<small>{r.timer.mode==='stopwatch'?'Open-ended':`${r.timer.focusMinutes}/${r.timer.shortBreakMinutes}`}</small></span></button>)}</div></>}
-          <p className="studio-lobby-note"><Headphones size={13}/>Sound starts only when you start your session.</p>
-        </aside>}
+        {lobby && <StudioEnvironmentLibrary scene={scene} scenes={media.scenes} recipes={recipes} savedRecipes={savedLobbyRecipes} recipeId={p.recipeId} onChooseScene={chooseScene} onChooseRecipe={selectRecipe} onBrowseRooms={() => setPanel('scenes')} onBrowseRecipes={() => setPanel('recipes')} />}
         </div>
       </main>
       <div className="studio-bottom">
@@ -1054,9 +1077,7 @@ export function FocusStudio({
           ))}
         </nav>
         <div className="studio-shortcuts">
-          {running
-            ? "A little progress is still progress."
-            : "Plan your day. Enter your flow."}
+          {hints ? <><kbd>Space</kbd>{running ? 'pause' : active ? 'resume' : 'begin'}<span>·</span><kbd>Esc</kbd>back to your day</> : 'Your pace. Your space.'}
         </div>
       </div>
       {(message || media.error || sceneMissing) && (
@@ -1102,6 +1123,7 @@ export function FocusStudio({
             {['timer','recipes','queue'].includes(panel) && <nav className="studio-session-tabs" aria-label="Session tools">{(['timer','recipes','queue'] as const).map(tab=><button key={tab} aria-pressed={panel===tab} onClick={()=>setPanel(tab)}>{tab==='timer'?'Timer':tab==='recipes'?'Recipes':'Task queue'}</button>)}</nav>}
             {panel === "scenes" && (
               <>
+                <label className="studio-room-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label="Search rooms" placeholder="A room, a place, a feeling…" value={sceneQuery} onChange={event => setSceneQuery(event.target.value)} />{sceneQuery && <button type="button" onClick={() => setSceneQuery('')} aria-label="Clear room search"><X size={14} /></button>}</label>
                 <div className="studio-chips">
                   <button
                     aria-pressed={category === "all"}
@@ -1137,17 +1159,10 @@ export function FocusStudio({
                     Personal
                   </button>
                 </div>
+                <p className="studio-room-result-count" role="status">{sceneResults.length} {sceneResults.length === 1 ? 'room' : 'rooms'}{sceneQuery.trim() ? ' for your moment' : ' to make your own'}</p>
+                {sceneResults.length === 0 && <div className="studio-room-empty"><Leaf size={28} strokeWidth={1.2} aria-hidden="true" /><h3>{category === 'favorites' && !sceneQuery ? 'Keep a little collection.' : 'A different somewhere?'}</h3><p>{category === 'favorites' && !sceneQuery ? 'Tap a heart on any room to save it here.' : 'Try a different word or explore all your rooms.'}</p><button type="button" onClick={() => { setSceneQuery(''); setCategory('all'); }}>Explore all rooms<ArrowRight size={14} /></button></div>}
                 <div className="studio-scene-grid">
-                  {media.scenes
-                    .filter(
-                      (a) =>
-                        category === "all" ||
-                        (category === "favorites" &&
-                          p.favorites.includes(a.id)) ||
-                        (category === "recent" && p.recent.includes(a.id)) ||
-                        a.category === category,
-                    )
-                    .map((a) => (
+                  {sceneResults.map((a) => (
                       <div
                         className={`studio-scene-card ${scene?.id === a.id ? "selected" : ""}`}
                         key={a.id}
@@ -1156,17 +1171,7 @@ export function FocusStudio({
                           className="studio-scene-select"
                           aria-label={`Use ${a.title} background`}
                           aria-pressed={scene?.id === a.id}
-                          onClick={() =>
-                            update({
-                              ...(currentPhase === "focus"
-                                ? { sceneId: a.id, missingPersonalScene: false }
-                                : { breakSceneId: a.id }),
-                              recent: [
-                                a.id,
-                                ...p.recent.filter((id) => id !== a.id),
-                              ].slice(0, 12),
-                            })
-                          }
+                          onClick={() => chooseScene(a.id)}
                         >
                           <img
                             src={a.thumbnail || a.poster || a.src}
@@ -1982,3 +1987,4 @@ export function FocusStudio({
 }
 import '../../styles/focus-studio.css';
 import '../../styles/studio-appearance.css';
+import '../../styles/calm-studio.css';

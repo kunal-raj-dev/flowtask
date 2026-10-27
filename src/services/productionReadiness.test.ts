@@ -155,6 +155,12 @@ describe('durable account-scoped recovery', () => {
     await Promise.all([recoveryService.create('a', record(), 'auto_daily'), recoveryService.create('a', record(), 'auto_daily')]);
     expect(await recoveryService.list('a')).toHaveLength(1);
   });
+  it('writes and reads current schema checkpoints containing scheduled work blocks', async () => {
+    const block = { id: 'focus-block', taskId: 'one', startInstant: Date.UTC(2026, 9, 27, 4), endInstant: Date.UTC(2026, 9, 27, 4, 25), timezone: 'Asia/Kolkata', status: 'scheduled' as const, durationMinutes: 25 };
+    const snapshot = await recoveryService.create('a', { ...record(), workBlocks: [block] }, 'auto_daily');
+    expect(snapshot.backup.schemaVersion).toBe(9);
+    expect((await recoveryService.read('a', snapshot.id)).workBlocks).toMatchObject([block]);
+  });
   it('contains a full portable workspace, without running timers, private calendar imports or queued operations', async () => {
     const snap = await recoveryService.create('a', record());
     const restored = await recoveryService.read('a', snap.id);

@@ -96,7 +96,7 @@ describe("FocusStudio lobby", () => {
       Boolean(session.compareDocumentPosition(environments) & Node.DOCUMENT_POSITION_FOLLOWING),
     ).toBe(true);
     expect(screen.getByRole("combobox", { name: "Focus task" })).toBeDefined();
-    expect(screen.getByRole("combobox", { name: "Focus rhythm" })).toBeDefined();
+    expect(screen.getByRole("group", { name: "Focus rhythm" })).toBeDefined();
     expect(screen.getByRole("timer")).toBeDefined();
 
     fireEvent.change(screen.getByRole("combobox", { name: "Focus task" }), {
@@ -130,5 +130,44 @@ describe("FocusStudio lobby", () => {
       "A little breathing room",
       5 * 60,
     );
+  });
+
+  it('applies a complete one-click focus rhythm', () => {
+    render(<FocusStudio taskId={null} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '50-minute focus' }));
+    expect(mocks.context.setWorkspacePreference).toHaveBeenCalledWith('studio', expect.objectContaining({
+      timer: expect.objectContaining({ mode: 'pomodoro', focusMinutes: 50, shortBreakMinutes: 10 }),
+    }));
+  });
+
+  it('searches rooms within the selected category and recovers from an empty search', () => {
+    mocks.media.scenes = [
+      { id: 'rain', title: 'Rainy Library', category: 'cozy', moods: ['soft'], src: '/rain.webp' },
+      { id: 'moon', title: 'Moonlit Coast', category: 'ocean', moods: ['soft'], src: '/moon.webp' },
+    ];
+    render(<FocusStudio taskId={null} onClose={vi.fn()} initialPanel="scenes" />);
+    const search = screen.getByRole('searchbox', { name: 'Search rooms' });
+    fireEvent.change(search, { target: { value: 'soft' } });
+    expect(screen.getByRole('button', { name: 'Use Rainy Library background' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Use Moonlit Coast background' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cozy study' }));
+    expect(screen.queryByRole('button', { name: 'Use Moonlit Coast background' })).toBeNull();
+    fireEvent.change(search, { target: { value: 'not-a-room' } });
+    expect(screen.getByText('A different somewhere?')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Explore all rooms' }));
+    expect(screen.getByRole('button', { name: 'Use Moonlit Coast background' })).toBeDefined();
+  });
+
+  it('changes the break room without replacing the focus room', () => {
+    render(<FocusStudio taskId={null} onClose={vi.fn()} initialPhase="short_break" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Choose Kyoto Rain room' }));
+    expect(mocks.context.setWorkspacePreference).toHaveBeenCalledWith('studio', expect.objectContaining({
+      sceneId: 'old-library', breakSceneId: 'kyoto-rain', recent: ['kyoto-rain'],
+    }));
+  });
+
+  it('uses the bundled default Studio palette when no preference has been saved', () => {
+    render(<FocusStudio taskId={null} onClose={vi.fn()} />);
+    expect(screen.getByRole('dialog', { name: 'Focus Studio' }).getAttribute('data-studio-theme')).toBe('linen');
   });
 });

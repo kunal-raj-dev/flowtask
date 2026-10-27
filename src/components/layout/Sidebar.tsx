@@ -532,12 +532,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Life Architecture */}
-        <div className="space-y-0.5 pt-2">
-          <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            Life Architecture
-          </div>
+        <details className="sidebar-tools sidebar-life" open={['areas', 'goals', 'routines'].includes(activeView) || undefined}>
+          <summary>Life & routines</summary>
           {lifeNavItems.map(renderNavItem)}
-        </div>
+        </details>
 
         {/* Dedicated Tools Group */}
         <details className="sidebar-tools" open={!isMoreCollapsed} onToggle={event => setIsMoreCollapsed(!event.currentTarget.open)}><summary>More</summary>{toolsNavItems.map(renderNavItem)}{perspectiveNavItems.map(renderNavItem)}</details>

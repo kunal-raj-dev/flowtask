@@ -154,11 +154,18 @@
   color: #dddcd8;
   padding: 8px 17px;
   border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.studio-mode-switch button:hover:not([aria-pressed="true"]) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 .studio-mode-switch button[aria-pressed="true"] {
   background: #f5f0e6;
   color: #222d2c;
   font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 .studio-title-slot {
   min-height: 96px;
@@ -257,6 +264,20 @@
   stroke-width: 5;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
+  filter: drop-shadow(0 0 12px rgba(240, 214, 165, 0.45));
+}
+@keyframes studioRingAura {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(240, 214, 165, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(240, 214, 165, 0.65));
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .studio-clock.with-ring .studio-ring-progress {
+    animation: studioRingAura 4s ease-in-out infinite;
+  }
 }
 .studio-clock.urgency-pulse {
   color: #fbbf24;
@@ -305,20 +326,26 @@ html[data-reduced-motion="true"] .studio-clock.with-ring .studio-ring-progress {
   gap: 8px;
   min-height: 44px;
   min-width: 44px;
-  padding: 0 16px;
+  padding: 0 18px;
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(20, 32, 35, 0.65);
+  backdrop-filter: blur(12px);
   color: #dedbd4;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .studio-control-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.16);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.studio-control-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
 }
 .studio-control-btn:disabled {
   opacity: 0.35;
@@ -346,31 +373,50 @@ html[data-reduced-motion="true"] .studio-clock.with-ring .studio-ring-progress {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 13px;
-  min-width: 172px;
-  height: 55px;
-  padding: 0 25px;
-  border-radius: 30px;
-  background: #f6f0e4;
-  color: #24322d;
-  font-size: 13px;
+  gap: 12px;
+  min-width: 180px;
+  height: 54px;
+  padding: 0 28px;
+  border-radius: 27px;
+  background: linear-gradient(135deg, #fbf7ee 0%, #efe7d6 100%);
+  color: #1c2724;
+  font-size: 14px;
   font-weight: 700;
-  box-shadow: 0 4px 30px #0002;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease;
 }
 .studio-start:hover {
-  background: #fffaf1;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+}
+.studio-start:active {
+  transform: translateY(1px) scale(0.98);
 }
 .studio-task-link {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   margin-top: 24px;
   color: #f3eee4;
-  padding: 10px 16px;
+  padding: 10px 18px;
   border-radius: 20px;
-  background: #0d192066;
-  border: 1px solid #ffffff24;
+  background: rgba(13, 25, 32, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.studio-task-link:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.38);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.studio-task-link:active {
+  transform: translateY(1px) scale(0.98);
 }
 .studio-break-prompt-slot {
   height: 40px;
@@ -425,33 +471,44 @@ html[data-reduced-motion="true"] .studio-clock.with-ring .studio-ring-progress {
 .studio-dock {
   display: flex;
   align-items: center;
-  padding: 7px 13px;
-  gap: 7px;
-  border: 1px solid #ffffff35;
-  border-radius: 24px;
-  background: #0d191d9e;
-  box-shadow: 0 8px 32px #0002;
-  backdrop-filter: blur(20px);
+  padding: 8px 14px;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 26px;
+  background: rgba(13, 25, 29, 0.68);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  backdrop-filter: blur(24px);
 }
 .studio-dock button {
-  min-width: 65px;
-  min-height: 59px;
-  border-radius: 16px;
+  min-width: 68px;
+  min-height: 60px;
+  border-radius: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   color: #eee9de;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .studio-dock button span {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.2px;
 }
-.studio-dock button:hover,
-.studio-dock button[aria-pressed="true"] {
-  background: #ffffff1a;
+.studio-dock button:hover {
+  background: rgba(255, 255, 255, 0.12);
   color: #f9dca4;
+  transform: translateY(-2px) scale(1.03);
+}
+.studio-dock button:active {
+  transform: translateY(1px) scale(0.97);
+}
+.studio-dock button[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fbbf24;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 .studio-shortcuts {
   font-size: 12px;
@@ -1527,23 +1584,26 @@ html[data-reduced-motion="true"] .focus-studio * {
 .studio-lobby .studio-session-core {
   text-align: left;
   align-items: stretch;
-  padding: 28px;
-  background: #14231ef5;
-  border-radius: 18px;
+  padding: 30px;
+  background: rgba(20, 35, 30, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.45);
 }
 .studio-lobby .studio-mode-switch {
   align-self: flex-start;
   margin-bottom: 24px;
 }
 .studio-lobby .studio-mode-switch button {
-  padding: 8px 12px;
+  padding: 8px 14px;
   font-size: 12px;
 }
 .studio-lobby .studio-session-core > h1 {
-  font-size: 24px;
-  letter-spacing: -0.04em;
-  line-height: 1.4;
-  margin-top: 13px;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  line-height: 1.35;
+  margin-top: 14px;
   text-align: left;
 }
 .studio-lobby .studio-next-action {
@@ -1558,13 +1618,14 @@ html[data-reduced-motion="true"] .focus-studio * {
   background: none;
   box-shadow: none;
   font-size: 70px;
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   padding: 0;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
 }
 .studio-lobby .studio-session-label {
   align-self: center;
   font-size: 12px;
+  color: #dfdbd1;
 }
 .studio-lobby .studio-playback, .studio-lobby .studio-task-link, .studio-lobby .studio-context-actions {
   align-self: center;
@@ -1581,12 +1642,13 @@ html[data-reduced-motion="true"] .focus-studio * {
 .studio-lobby-config {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 22px;
+  gap: 14px;
+  margin-top: 24px;
 }
 .studio-lobby-config label {
   font-size: 12px;
   color: #dfdfd5;
+  font-weight: 500;
   min-width: 0;
 }
 .studio-lobby-config select {
@@ -1594,122 +1656,169 @@ html[data-reduced-motion="true"] .focus-studio * {
   width: 100%;
   min-width: 0;
   font-size: 12px;
-  min-height: 38px;
-  padding: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
   margin-top: 8px;
-  border: 1px solid #87938c;
-  border-radius: 7px;
-  background: #23372d;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(30, 48, 40, 0.75);
   color: #f6f4ec;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.studio-lobby-config select:hover,
+.studio-lobby-config select:focus {
+  border-color: rgba(240, 214, 165, 0.6);
+  outline: none;
 }
 .studio-lobby-library {
-  padding: 23px;
-  background: #14231ef5;
-  border: 1px solid #ffffff24;
-  border-radius: 18px;
+  padding: 26px;
+  background: rgba(20, 35, 30, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.45);
 }
 .studio-lobby-section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 .studio-lobby-section-heading h3 {
   font-size: 13px;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .studio-lobby-section-heading > button {
   font-size: 12px;
-  color: #eeeadc;
+  color: #f0d6a5;
   display: flex;
   gap: 6px;
   align-items: center;
   min-height: 30px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.studio-lobby-section-heading > button:hover {
+  opacity: 0.8;
 }
 .studio-lobby-rooms {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 21px;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 .studio-lobby-rooms > button {
   min-width: 0;
   position: relative;
-  border: 1px solid #7b8a7e;
-  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
   overflow: hidden;
   text-align: left;
-  background: #1a2d23;
+  background: rgba(24, 38, 32, 0.7);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.studio-lobby-rooms > button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(240, 214, 165, 0.5);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+}
+.studio-lobby-rooms > button:active {
+  transform: translateY(1px) scale(0.98);
 }
 .studio-lobby-rooms img {
   display: block;
   width: 100%;
-  height: 83px;
+  height: 84px;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.studio-lobby-rooms > button:hover img {
+  transform: scale(1.04);
 }
 .studio-lobby-rooms > button > span {
   display: block;
-  padding: 9px;
+  padding: 10px 10px 11px;
   font-size: 12px;
   font-weight: 600;
 }
 .studio-lobby-rooms small {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   color: #dedfd4;
   font-weight: 400;
   margin-top: 3px;
+  opacity: 0.8;
 }
 .studio-lobby-rooms > button > svg {
   position: absolute;
-  top: 7px;
-  right: 7px;
+  top: 8px;
+  right: 8px;
   border-radius: 50%;
-  background: #f2e9ce;
-  color: #20382c;
-  padding: 2px;
-  width: 19px;
-  height: 19px;
+  background: #f5eedc;
+  color: #1a2a22;
+  padding: 3px;
+  width: 20px;
+  height: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  z-index: 2;
 }
 .studio-lobby-rooms > button[aria-pressed="true"], .studio-lobby-recipes > button[aria-pressed="true"] {
-  border-color: #efd29a;
-  box-shadow: 0 0 0 1px #efd29a;
+  border-color: #f0d6a5;
+  box-shadow: 0 0 0 1.5px #f0d6a5, 0 4px 16px rgba(240, 214, 165, 0.25);
 }
 .studio-lobby-recipes {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 9px;
+  gap: 10px;
 }
 .studio-lobby-recipes > button {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 9px;
-  border: 1px solid #7b8a7e;
-  border-radius: 9px;
-  background: #1a2d23;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(24, 38, 32, 0.7);
+  backdrop-filter: blur(8px);
   text-align: left;
-  min-height: 61px;
+  min-height: 64px;
   min-width: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.studio-lobby-recipes > button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(240, 214, 165, 0.5);
+  box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.35);
+}
+.studio-lobby-recipes > button:active {
+  transform: translateY(1px) scale(0.98);
 }
 .studio-lobby-recipes img {
-  width: 38px;
-  height: 38px;
-  border-radius: 5px;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
   object-fit: cover;
   flex-shrink: 0;
 }
 .studio-lobby-recipes > button > span {
   font-size: 12px;
+  font-weight: 550;
   flex: 1;
   overflow-wrap: anywhere;
 }
 .studio-lobby-recipes small {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   color: #dddcd1;
-  margin-top: 4px;
+  margin-top: 3px;
+  opacity: 0.8;
 }
 .studio-lobby-note {
   display: flex;

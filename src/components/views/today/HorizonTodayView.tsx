@@ -31,7 +31,10 @@ import {
   Target,
   SlidersHorizontal,
   CalendarDays,
+  Headphones,
+  Leaf,
 } from 'lucide-react';
+import { roomImage } from '../../../services/featuredRooms';
 import type { Task, Priority } from '../../../types/task';
 
 interface HorizonTodayViewProps {
@@ -41,6 +44,7 @@ interface HorizonTodayViewProps {
   onSwitchToDashboard?: () => void;
   onCustomize?: () => void;
   introduction?: React.ReactNode;
+  footer?: React.ReactNode;
 }
 
 export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
@@ -50,6 +54,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   onSwitchToDashboard,
   onCustomize,
   introduction,
+  footer,
 }) => {
   const {
     tasks,
@@ -72,7 +77,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   useEffect(() => {
     const element = frameRef.current;
     if (!element) return;
-    const measure = () => setWide(element.clientWidth >= 1200);
+    const measure = () => setWide(element.clientWidth >= 1500);
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
@@ -82,7 +87,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
   const [completedOpen, setCompletedOpen] = useState(false);
   const [somedayOpen, setSomedayOpen] = useState(false);
   const [singleTaskMode, setSingleTaskMode] = useState(false);
-  const [shelfOpen, setShelfOpen] = useState(true);
+  const [shelfOpen, setShelfOpen] = useState(false);
 
   // Filter tasks
   const activeTodayTasks = useMemo(() => {
@@ -178,7 +183,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
                   title="Switch to Modular Dashboard Grid"
                 >
                   <Compass size={13} className="text-amber-500" />
-                  <span>Horizon View</span>
+                  <span>Daily desk</span>
                   <ChevronDown size={12} className="text-[var(--text-muted)]" />
                 </button>
               )}
@@ -195,6 +200,8 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
           </div>
         </header>
 
+        <div className="today-workspace-grid">
+        <div className="today-workflow">
         {optionsOpen && <Dialog isOpen onClose={() => setOptionsOpen(false)} title="Today options" description="Choose how you want to work today.">
           <div className="today-customize-actions">
             <button type="button" className="desk-button" aria-pressed={singleTaskMode} onClick={() => { setSingleTaskMode(!singleTaskMode); setOptionsOpen(false); }}><Target size={16} />{singleTaskMode ? 'Show all tasks' : 'Single-Task Horizon'}</button>
@@ -221,7 +228,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
 
         {/* Clean Slate Backlog De-escalation Prompt */}
         {overdueTasks.length > 0 && (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+          <div className="today-gentle-reset flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
             <div className="flex items-center gap-2.5">
               <Sparkles size={16} className="text-amber-500 shrink-0" />
               <div>
@@ -229,7 +236,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
                   {overdueTasks.length} overdue {overdueTasks.length === 1 ? 'task needs' : 'tasks need'} attention
                 </p>
                 <p className="text-[11px] text-[var(--text-secondary)]">
-                  Take a fresh breath. Quarantine stale tasks to Someday without losing anything.
+                  A fresh start is always an option. Review and move what can wait.
                 </p>
               </div>
             </div>
@@ -315,20 +322,22 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
         ) : (
           <>
             {/* Top 3 Priorities Deck */}
-            <section className="daily-priorities space-y-2.5" aria-label="Top 3 Priorities">
+            <section className="daily-priorities p-5 sm:p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-2xs hover:shadow-xs transition-all space-y-4" aria-label="Top 3 Priorities">
               <div className="daily-section-heading flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Target size={16} className="text-amber-500" />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-500 shadow-2xs">
+                    <Target size={15} />
+                  </div>
                   <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
-                    Your Top 3
+                    Your top 3
                   </h2>
                 </div>
-                <span className="text-xs text-[var(--text-muted)] font-medium">
+                <span className="text-xs text-[var(--text-muted)] font-medium px-2.5 py-1 rounded-full bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] shadow-2xs">
                   {topThreeTasks.length}/3 · Keep it intentional
                 </span>
               </div>
 
-              <div className="desk-priorities space-y-1.5">
+              <div className="desk-priorities space-y-2">
                 {topThreeTasks.length > 0 ? (
                   <>
                     {topThreeTasks.map((task, i) => (
@@ -344,16 +353,18 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
                       />
                     ))}
                     {topThreeTasks.length < 3 && (
-                      <p className="desk-priority-space text-xs text-[var(--text-muted)] p-2.5 rounded-xl border border-dashed border-[var(--border-hairline)] text-center">
+                      <p className="desk-priority-space text-xs text-[var(--text-muted)] p-3.5 rounded-xl border border-dashed border-[var(--border-hairline)] text-center bg-[var(--bg-surface-l2)]/40 transition-colors">
                         {3 - topThreeTasks.length} {topThreeTasks.length === 2 ? 'space' : 'spaces'} left. Leave room for what matters.
                       </p>
                     )}
                   </>
                 ) : (
-                  <div className="desk-widget-empty p-6 rounded-2xl border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface-l1)]/40 text-center flex flex-col items-center justify-center space-y-2">
-                    <Target size={24} className="text-amber-500/80" />
-                    <h3 className="text-xs font-bold text-[var(--text-primary)]">What matters most today?</h3>
-                    <p className="text-[11px] text-[var(--text-secondary)] max-w-sm">
+                  <div className="desk-widget-empty p-10 rounded-2xl border border-dashed border-[var(--border-hairline)] bg-[var(--bg-surface-l2)]/50 text-center flex flex-col items-center justify-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/15 flex items-center justify-center text-amber-500 shadow-xs mb-1">
+                      <Target size={24} />
+                    </div>
+                    <h3 className="text-sm font-bold text-[var(--text-primary)]">What matters most today?</h3>
+                    <p className="text-xs text-[var(--text-secondary)] max-w-sm leading-relaxed">
                       Star up to three tasks below. Give your day a clear place to start.
                     </p>
                   </div>
@@ -362,14 +373,18 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
             </section>
 
             {/* Daytime Task Batches */}
-            <div className="today-task-batches space-y-6">
+            <div className="today-task-batches space-y-6 sm:space-y-8">
               {/* 1. Morning Focus Batch */}
               {morningBatch.length > 0 && (
-                <section className="morning-focus-batch space-y-2" aria-label="Morning Focus">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
-                    <Sun size={15} />
-                    <h3>Morning Focus</h3>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300">
+                <section className="morning-focus-batch space-y-3.5 p-5 sm:p-6 rounded-2xl" aria-label="Morning Focus">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">
+                      <span className="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-500 shadow-2xs">
+                        <Sun size={14} />
+                      </span>
+                      <h3>Morning Focus</h3>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 shadow-2xs">
                       {morningBatch.length}
                     </span>
                   </div>
@@ -378,18 +393,22 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
               )}
 
               {/* 2. Daytime Flow Batch */}
-              <section className="daytime-flow-batch space-y-2" aria-label="Daytime Flow">
-                <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
-                  <Coffee size={15} className="text-amber-500" />
-                  <h3>Daytime Flow</h3>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-stone-200/70 dark:bg-stone-800 text-[var(--text-secondary)]">
+              <section className="daytime-flow-batch space-y-3.5 p-5 sm:p-6 rounded-2xl" aria-label="Daytime Flow">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs">
+                      <Coffee size={14} />
+                    </span>
+                    <h3>Daytime Flow</h3>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-stone-200/70 dark:bg-stone-800 text-[var(--text-secondary)] shadow-2xs">
                     {daytimeFlowBatch.length}
                   </span>
                 </div>
                 {daytimeFlowBatch.length > 0 ? (
                   <VirtualTaskList tasks={daytimeFlowBatch} renderTask={renderRow} estimatedItemHeight={78} />
                 ) : morningBatch.length === 0 ? (
-                  <div className="p-4 rounded-xl border border-dashed border-[var(--border-hairline)] text-center text-xs text-[var(--text-muted)]">
+                  <div className="p-5 rounded-xl border border-dashed border-[var(--border-hairline)] text-center text-xs text-[var(--text-muted)] bg-[var(--bg-surface-l2)]/40">
                     A clear space to begin. Add a task above, or pull in from your backlog.
                   </div>
                 ) : null}
@@ -397,11 +416,15 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
 
               {/* 3. This Evening Batch */}
               {eveningBatch.length > 0 && (
-                <section className="this-evening-batch space-y-2" aria-label="This Evening">
-                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">
-                    <Moon size={15} />
-                    <h3>This Evening</h3>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300">
+                <section className="this-evening-batch space-y-3.5 p-5 sm:p-6 rounded-2xl" aria-label="This Evening">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                      <span className="w-6 h-6 rounded-lg bg-indigo-500/15 flex items-center justify-center text-indigo-500 shadow-2xs">
+                        <Moon size={14} />
+                      </span>
+                      <h3>This Evening</h3>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 shadow-2xs">
                       {eveningBatch.length}
                     </span>
                   </div>
@@ -465,6 +488,29 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
             </div>
           </>
         )}
+        </div>
+        {!wide && <aside className="today-companion" aria-label="Your quiet corner">
+          <section className="quiet-corner-card">
+            <div className="quiet-corner-scene">
+              <img src={roomImage('kyoto-rain')} alt="A cozy Japanese room overlooking a garden at dusk" loading="lazy" />
+              <span><Headphones size={13} /> Focus Studio</span>
+            </div>
+            <div className="quiet-corner-copy">
+              <p className="desk-eyebrow">A little room to focus</p>
+              <h2>The world can wait<br />a little while.</h2>
+              <p>One task. A quiet space.<br />A rhythm that feels like you.</p>
+              <button type="button" className="desk-button" onClick={() => openModal('pomodoro')}><Headphones size={15} />Enter Focus Studio<ArrowRight size={14} /></button>
+            </div>
+          </section>
+          <section className="desk-kind-note">
+            <div className="desk-sprout" aria-hidden="true"><Leaf size={24} strokeWidth={1.3} /></div>
+            <p>Room to breathe.<br /><strong>Space to grow.</strong></p>
+            <span>Small steps count, too.</span>
+          </section>
+          <div className="desk-daily-note"><DailyNoteButton /></div>
+        </aside>}
+        </div>
+        {footer}
       </div>
 
       {/* Side-Docked Brain Dump Shelf on Wide Viewports */}
@@ -556,11 +602,15 @@ function TodayTaskCapture() {
     () => (settings?.enableSmartSyntaxParsing === false ? { cleanTitle: input.trim() } : parseTaskInput(input)),
     [input, settings?.enableSmartSyntaxParsing]
   );
+  // The shared parser falls back to raw input when every word was metadata.
+  // A shortcut alone should not accidentally create a task named "~25m".
+  const hasTaskTitle = Boolean(parsed.cleanTitle.trim()) && !(parsed.cleanTitle === input.trim() &&
+    (parsed.priority || parsed.estimatedMinutes || parsed.projectTag || parsed.plannedDate || parsed.dueDate));
 
   const handleCaptureSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const clean = input.trim();
-    if (!clean) return;
+    if (!clean || !hasTaskTitle) return;
 
     const targetPlannedDate = parsed.plannedDate || (!parsed.dueDate || parsed.dueDate === today ? today : undefined);
 
@@ -582,34 +632,83 @@ function TodayTaskCapture() {
   };
 
   return (
-        <section className="daily-capture" aria-label="Add a task">
-          <form className="desk-inline-capture relative" onSubmit={handleCaptureSubmit}>
-            <Plus size={16} className="text-[var(--text-muted)] shrink-0" />
-            <input
-              aria-label="Add a task to this list"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="What needs your attention today?"
-              className="w-full bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
-            />
+    <section className="daily-capture" aria-label="Add a task">
+      <form
+        className="desk-inline-capture relative p-4 sm:p-5 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface-l1)] focus-within:border-[var(--color-brand)] focus-within:ring-2 focus-within:ring-[var(--color-brand)]/20 transition-all shadow-2xs hover:shadow-xs"
+        onSubmit={handleCaptureSubmit}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+            <Plus size={18} />
+          </div>
+          <input
+            aria-label="Add a task to this list"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="What needs your attention today?"
+            className="w-full bg-transparent text-sm sm:text-base focus:outline-none placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
+          />
+          <button
+            type="submit"
+            disabled={!hasTaskTitle}
+            aria-label="Add task"
+            className="w-8 h-8 rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-700 dark:text-amber-300 hover:text-stone-900 disabled:opacity-30 disabled:hover:bg-amber-500/15 disabled:hover:text-amber-700 flex items-center justify-center font-bold text-sm transition-all active:scale-95 cursor-pointer shrink-0"
+          >
+            ↵
+          </button>
+        </div>
+        {input.trim() ? (
+          <div className="desk-capture-preview flex items-center gap-2 mt-3 pt-3 border-t border-[var(--border-hairline)] text-[10px] text-[var(--text-muted)] font-mono flex-wrap" aria-label="Recognized task details">
+            <span className="px-2 py-0.5 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)]">Planned · {parsed.plannedDate || (!parsed.dueDate || parsed.dueDate === today ? 'Today' : 'Inbox')}</span>
+            {parsed.dueDate && <span className="px-2 py-0.5 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)]">Deadline · {parsed.dueDate}</span>}
+            {parsed.projectTag && <span className="px-2 py-0.5 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)]">Project · {parsed.projectTag}</span>}
+            {parsed.estimatedMinutes && <span className="px-2 py-0.5 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)]">⏱️ {parsed.estimatedMinutes}m</span>}
+            {parsed.priority && <span className="px-2 py-0.5 rounded-md bg-[var(--bg-surface-l2)] border border-[var(--border-hairline)] font-bold text-amber-600 dark:text-amber-400">⚡ {parsed.priority.toUpperCase()}</span>}
+          </div>
+        ) : (
+          <details className="desk-capture-shortcuts">
+          <summary><SlidersHorizontal size={12} />Task shortcuts<span>Dates, duration & tags</span><ChevronDown size={12} /></summary>
+          <div className="desk-capture-tags flex items-center gap-2 mt-3 pt-3 border-t border-[var(--border-hairline)] overflow-x-auto text-[11px] text-[var(--text-muted)]">
+            <span className="text-[10px] font-bold tracking-wider uppercase text-[var(--text-secondary)] shrink-0">Quick tags:</span>
             <button
-              type="submit"
-              disabled={!input.trim()}
-              aria-label="Add task"
-              className="px-2 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 disabled:opacity-40"
+              type="button"
+              className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] hover:scale-105 active:scale-95 border border-[var(--border-hairline)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-all flex items-center gap-1 shrink-0"
+              onClick={() => setInput(prev => `${prev.trim()} p1 `.trimStart())}
             >
-              ↵
+              <span>Priority · P1</span>
             </button>
-            {input.trim() && (
-              <div className="desk-capture-preview flex items-center gap-2 mt-2 text-[10px] text-[var(--text-muted)] font-mono" aria-label="Recognized task details">
-                <span>Planned · {parsed.plannedDate || (!parsed.dueDate || parsed.dueDate === today ? 'Today' : 'Inbox')}</span>
-                {parsed.dueDate && <span>Deadline · {parsed.dueDate}</span>}
-                {parsed.projectTag && <span>Project · {parsed.projectTag}</span>}
-                {parsed.estimatedMinutes && <span>{parsed.estimatedMinutes}m</span>}
-                {parsed.priority && <span>{parsed.priority.toUpperCase()}</span>}
-              </div>
-            )}
-          </form>
-        </section>
+            <button
+              type="button"
+              className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] hover:scale-105 active:scale-95 border border-[var(--border-hairline)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-all flex items-center gap-1 shrink-0"
+              onClick={() => setInput(prev => `${prev.trim()} ~25m `.trimStart())}
+            >
+              <span>25 minutes</span>
+            </button>
+            <button
+              type="button"
+              className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] hover:scale-105 active:scale-95 border border-[var(--border-hairline)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-all flex items-center gap-1 shrink-0"
+              onClick={() => setInput(prev => `${prev.trim()} today `.trimStart())}
+            >
+              <span>Today</span>
+            </button>
+            <button
+              type="button"
+              className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] hover:scale-105 active:scale-95 border border-[var(--border-hairline)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-all flex items-center gap-1 shrink-0"
+              onClick={() => setInput(prev => `${prev.trim()} #work `.trimStart())}
+            >
+              <span>#work</span>
+            </button>
+            <button
+              type="button"
+              className="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-l2)] hover:bg-[var(--bg-surface-hover)] hover:scale-105 active:scale-95 border border-[var(--border-hairline)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-all flex items-center gap-1 shrink-0"
+              onClick={() => setInput(prev => `${prev.trim()} #personal `.trimStart())}
+            >
+              <span>#personal</span>
+            </button>
+          </div>
+          </details>
+        )}
+      </form>
+    </section>
   );
 }

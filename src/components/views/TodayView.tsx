@@ -98,7 +98,6 @@ export const TodayView: React.FC<TodayViewProps> = ({
 
   const introduction = <>
       {welcome && <OnboardingFlow inline isOpen onClose={() => setWelcome(false)} />}
-      <BackupReminder />
       {!!workspacePreferences._dashboardRecovery && (
         <p className="desk-notice" role="status">
           A saved layout needs repair. A recovery copy is preserved on this device; your tasks and notes are safe.
@@ -114,6 +113,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
       {viewMode === 'horizon' ? (
         <HorizonTodayView
           introduction={introduction}
+          footer={<BackupReminder />}
           onSelectTask={onSelectTask}
           onStartFocus={onStartFocus}
           onStartSprint={onStartSprint}
@@ -123,7 +123,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
       ) : (
         <Suspense fallback={<p role="status">Opening your dashboard…</p>}>
         <DashboardCanvasView
-          introduction={introduction}
+          introduction={<>{introduction}<BackupReminder /></>}
           onSelectTask={onSelectTask}
           onStartFocus={onStartFocus}
           onStartSprint={onStartSprint}

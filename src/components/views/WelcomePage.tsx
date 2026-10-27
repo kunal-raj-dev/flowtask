@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowUpRight,
   ArrowRight,
   Check,
+  CheckCircle2,
   Headphones,
   Play,
+  Pause,
+  RotateCcw,
+  Plus,
   Sun,
   Inbox,
   CalendarDays,
@@ -14,6 +18,7 @@ import {
   BookOpen,
   Circle,
   Star,
+  Sparkles,
 } from "lucide-react";
 import { BrandLogo } from "../ui/BrandLogo";
 import { FeedbackForm } from "../settings/FeedbackForm";
@@ -22,10 +27,73 @@ import { FEATURED_ROOMS, roomImage } from "../../services/featuredRooms";
 import { BUILD_ID, BUILD_LABEL } from "../../utils/buildInfo";
 import "../../styles/welcome.css";
 
+interface PreviewTask {
+  id: number;
+  title: string;
+  duration: number;
+  completed: boolean;
+}
+
+const INITIAL_PREVIEW_TASKS: PreviewTask[] = [
+  { id: 1, title: "Understand one difficult concept", duration: 50, completed: false },
+  { id: 2, title: "Build the first working version", duration: 40, completed: false },
+  { id: 3, title: "Make time for a little reading", duration: 30, completed: false },
+];
+
 export function WelcomePage() {
   const [preview, setPreview] = useState<"plan" | "focus">("plan");
   const [room, setRoom] = useState<string>(FEATURED_ROOMS[0].id);
   const selectedRoom = FEATURED_ROOMS.find((r) => r.id === room)!;
+
+  // Interactive Daily Desk preview state
+  const [tasks, setTasks] = useState<PreviewTask[]>(INITIAL_PREVIEW_TASKS);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+
+  // Interactive Focus Studio preview state
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(25 * 60);
+
+  useEffect(() => {
+    if (!isTimerRunning) return;
+    const interval = window.setInterval(() => {
+      setTimerSeconds((prev) => {
+        if (prev <= 1) {
+          setIsTimerRunning(false);
+          return 25 * 60;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [isTimerRunning]);
+
+  const toggleTask = (id: number) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+    );
+  };
+
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newTaskTitle.trim();
+    if (!trimmed) return;
+    setTasks((prev) => [
+      ...prev,
+      { id: Date.now(), title: trimmed, duration: 25, completed: false },
+    ]);
+    setNewTaskTitle("");
+  };
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
+  const plannedHours = Math.round(
+    tasks.reduce((sum, t) => sum + (t.completed ? 0 : t.duration), 0) / 60
+  );
+
   return (
     <div className="welcome-page" data-build={BUILD_ID}>
       <a className="welcome-skip" href="#welcome-main">
@@ -82,16 +150,18 @@ export function WelcomePage() {
               </span>
               <div role="group" aria-label="Product preview">
                 <button
+                  type="button"
                   aria-pressed={preview === "plan"}
                   onClick={() => setPreview("plan")}
                 >
-                  Plan
+                  Plan (Daily Desk)
                 </button>
                 <button
+                  type="button"
                   aria-pressed={preview === "focus"}
                   onClick={() => setPreview("focus")}
                 >
-                  Focus
+                  Focus (Studio)
                 </button>
               </div>
             </div>
@@ -129,37 +199,69 @@ export function WelcomePage() {
                       <small>YOUR DAILY DESK</small>
                       <h2>A day with intention.</h2>
                     </div>
-                    <span>2h planned · 4h free</span>
+                    <span>
+                      {plannedHours}h planned · {Math.max(1, 6 - plannedHours)}h free
+                    </span>
                   </div>
                   <div className="welcome-preview-next">
                     <span className="welcome-eyebrow">
-                      UP NEXT · YOUR CHOICE
+                      <Sparkles size={11} className="welcome-accent-icon" /> UP NEXT · YOUR CHOICE
                     </span>
                     <h3>Make something meaningful.</h3>
                     <p>Start with the smallest useful step.</p>
-                    <button onClick={() => setPreview("focus")}>
+                    <button type="button" onClick={() => setPreview("focus")}>
                       <Play size={12} fill="currentColor" />
                       Preview Focus
                     </button>
                   </div>
                   <div className="welcome-preview-tasks">
-                    <span className="welcome-eyebrow">YOUR TOP 3</span>
-                    {[
-                      "Understand one difficult concept",
-                      "Build the first working version",
-                      "Make time for a little reading",
-                    ].map((title, i) => (
-                      <div key={title}>
-                        <Circle size={15} />
-                        <span>{title}</span>
-                        <small>{[50, 40, 30][i]}m</small>
-                        <Star size={12} />
-                      </div>
+                    <div className="welcome-preview-tasks-header">
+                      <span className="welcome-eyebrow">YOUR TOP 3 (INTERACTIVE)</span>
+                      <span className="welcome-preview-tasks-count">
+                        {tasks.filter((t) => t.completed).length} / {tasks.length} done
+                      </span>
+                    </div>
+                    {tasks.map((task) => (
+                      <button
+                        key={task.id}
+                        type="button"
+                        className={`welcome-preview-task-item ${
+                          task.completed ? "is-completed" : ""
+                        }`}
+                        onClick={() => toggleTask(task.id)}
+                        aria-label={`Toggle task: ${task.title}`}
+                        aria-pressed={task.completed}
+                      >
+                        {task.completed ? (
+                          <CheckCircle2 size={15} className="welcome-task-check" />
+                        ) : (
+                          <Circle size={15} className="welcome-task-circle" />
+                        )}
+                        <span className="welcome-task-text">{task.title}</span>
+                        <small>{task.duration}m</small>
+                        <Star
+                          size={12}
+                          className={
+                            task.completed ? "welcome-star-active" : "welcome-star-muted"
+                          }
+                        />
+                      </button>
                     ))}
                   </div>
-                  <div className="welcome-preview-capture">
-                    ＋ What needs your attention today?
-                  </div>
+                  <form
+                    className="welcome-preview-capture-form"
+                    onSubmit={handleAddTask}
+                  >
+                    <Plus size={13} aria-hidden="true" />
+                    <input
+                      type="text"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      placeholder="Add a task for today (press enter)..."
+                      aria-label="Add a task to preview"
+                      maxLength={80}
+                    />
+                  </form>
                 </div>
                 <aside className="welcome-preview-agenda">
                   <span className="welcome-eyebrow">YOUR AFTERNOON</span>
@@ -179,6 +281,8 @@ export function WelcomePage() {
                     src={roomImage("alpine-mirror", true)}
                     alt=""
                     loading="lazy"
+                    width="180"
+                    height="95"
                   />
                   <p>Leave a little breathing room.</p>
                 </aside>
@@ -191,17 +295,67 @@ export function WelcomePage() {
                 }}
                 aria-label={`${selectedRoom.title} Focus preview`}
               >
+                <div className="welcome-focus-ambient-badge">
+                  <Headphones size={13} />
+                  <span>{selectedRoom.title}</span>
+                  <div
+                    className={`welcome-soundwave ${isTimerRunning ? "active" : ""}`}
+                    aria-hidden="true"
+                    title="Auditory ambience indicator"
+                  >
+                    <span className="wave-bar bar-1" />
+                    <span className="wave-bar bar-2" />
+                    <span className="wave-bar bar-3" />
+                    <span className="wave-bar bar-4" />
+                  </div>
+                </div>
                 <span className="welcome-eyebrow">ONE THING AT A TIME</span>
                 <h2>Make something meaningful.</h2>
-                <strong>25:00</strong>
+                <strong className="welcome-focus-timer">
+                  {formatTimer(timerSeconds)}
+                </strong>
                 <p>Your task. Your space. Your pace.</p>
-                <a href="/app">
-                  <Play size={14} fill="currentColor" />
-                  Open your Studio
-                </a>
-                <small>
-                  <Headphones size={13} /> {selectedRoom.title} · Preview is
-                  silent
+                <div className="welcome-focus-action-row">
+                  <button
+                    type="button"
+                    className="welcome-timer-toggle-btn"
+                    onClick={() => setIsTimerRunning((r) => !r)}
+                    aria-label={
+                      isTimerRunning ? "Pause preview timer" : "Start preview timer"
+                    }
+                  >
+                    {isTimerRunning ? (
+                      <>
+                        <Pause size={13} fill="currentColor" /> Pause Preview
+                      </>
+                    ) : (
+                      <>
+                        <Play size={13} fill="currentColor" /> Test Focus Timer
+                      </>
+                    )}
+                  </button>
+                  {timerSeconds !== 25 * 60 && (
+                    <button
+                      type="button"
+                      className="welcome-timer-reset-btn"
+                      onClick={() => {
+                        setIsTimerRunning(false);
+                        setTimerSeconds(25 * 60);
+                      }}
+                      aria-label="Reset timer"
+                      title="Reset timer to 25:00"
+                    >
+                      <RotateCcw size={12} />
+                    </button>
+                  )}
+                  <a href="/app" className="welcome-open-studio-link">
+                    Open your Studio <ArrowUpRight size={13} />
+                  </a>
+                </div>
+                <small className="welcome-focus-caption">
+                  {isTimerRunning
+                    ? "Demonstration timer ticking · No audio in preview"
+                    : `${selectedRoom.mood} · Preview is silent`}
                 </small>
               </div>
             )}
@@ -252,30 +406,48 @@ export function WelcomePage() {
             </p>
           </div>
           <div className="welcome-room-grid">
-            {FEATURED_ROOMS.map((r) => (
-              <button
-                key={r.id}
-                aria-label={`Preview ${r.title}`}
-                aria-pressed={preview === "focus" && room === r.id}
-                onClick={() => {
-                  setRoom(r.id);
-                  setPreview("focus");
-                  document
-                    .getElementById("product")
-                    ?.scrollIntoView({ block: "center", behavior: "instant" });
-                }}
-              >
-                <img src={roomImage(r.id)} alt="" loading="lazy" />
-                <span>
-                  <small>{r.category}</small>
-                  <strong>
-                    {r.title}
-                    <ArrowUpRight size={19} />
-                  </strong>
-                  <em>{r.mood}</em>
-                </span>
-              </button>
-            ))}
+            {FEATURED_ROOMS.map((r) => {
+              const isSelected = room === r.id;
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={`welcome-room-card ${isSelected ? "is-active" : ""}`}
+                  aria-label={`Preview ${r.title}`}
+                  aria-pressed={preview === "focus" && isSelected}
+                  onClick={() => {
+                    setRoom(r.id);
+                    setPreview("focus");
+                    document
+                      .getElementById("product")
+                      ?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+                  }}
+                >
+                  <div className="welcome-room-image-wrap">
+                    <img
+                      src={roomImage(r.id)}
+                      alt=""
+                      loading="lazy"
+                      width="480"
+                      height="300"
+                    />
+                    {isSelected && (
+                      <span className="welcome-room-active-pill">
+                        Active in Preview
+                      </span>
+                    )}
+                  </div>
+                  <span className="welcome-room-info">
+                    <small>{r.category}</small>
+                    <strong>
+                      {r.title}
+                      <ArrowUpRight size={17} />
+                    </strong>
+                    <em>{r.mood}</em>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </section>
         <section className="welcome-for">

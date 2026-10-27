@@ -1,5 +1,4 @@
 import { getDatabase } from './dbService';
-import type { WorkspaceRecord } from '../types/workspace';
 import { createWorkspaceBackup, validateBackupExtras } from '../utils/workspaceBackup';
 import { validateWorkspaceData } from '../utils/workspaceValidation';
 
@@ -25,7 +24,7 @@ function scope(workspaceId: string) {
   if (!workspaceId || typeof workspaceId !== 'string') throw new Error('Choose a workspace before managing recovery checkpoints.');
 }
 function validate(backup: PortableWorkspace) {
-  if (backup.schemaVersion > 8) throw new Error('This backup requires a newer FlowTask version.');
+  if (backup.schemaVersion > 9) throw new Error('This backup requires a newer FlowTask version.');
   validateWorkspaceData(backup.tasks, backup.projects);
   validateBackupExtras(backup);
 }
@@ -39,7 +38,7 @@ export const recoveryService = {
     return records.filter((value): value is RecoverySnapshot => value.version === 2 && value.workspaceId === workspaceId)
       .sort((a, b) => b.timestamp - a.timestamp || b.id.localeCompare(a.id));
   },
-  async create(workspaceId: string, record: Pick<WorkspaceRecord, 'tasks' | 'projects' | 'preferences' | 'customViews' | 'dashboards' | 'notes'>,
+  async create(workspaceId: string, record: Parameters<typeof createWorkspaceBackup>[0],
     trigger: RecoverySnapshot['trigger'] = 'manual', label?: string): Promise<RecoverySnapshot> {
     scope(workspaceId);
     const backup = structuredClone(createWorkspaceBackup(record));

@@ -122,7 +122,7 @@ export const DEFAULT_TIMER: TimerConfiguration = {
   autoStart: false,
 };
 export const DEFAULT_STUDIO: StudioPreferences = {
-  interfaceTheme: 'graphite',
+  interfaceTheme: 'linen',
   panelOpacity: .96,
   pipTheme: 'studio',
   pipBackground: true,

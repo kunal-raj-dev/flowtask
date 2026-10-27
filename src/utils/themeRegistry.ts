@@ -75,7 +75,7 @@ function palette(label: string, description: string, scheme: 'light' | 'dark', c
 }
 
 export const THEMES = {
-  light: palette('Alabaster Dawn', 'Warm paper, amber accents, a clear everyday workspace.', 'light', ['#f8f8f3','#f1f2eb','#fffefa','#eeeee6','#e5e8dd','#24352e','#58665d','#5e6b62','#966019'], true),
+  light: palette('Alabaster Dawn', 'Warm paper, soft sage accents and a quiet everyday workspace.', 'light', ['#f7f7f2','#f0f1eb','#fffefa','#eef1e9','#e1e8dc','#293c34','#58675e','#68736c','#496650'], true),
   dark: palette('Obsidian Night', 'Soft charcoal, clean layers and a warm amber highlight.', 'dark', ['#101113','#15171a','#1c1e22','#25282d','#30343b','#f1f2f4','#c0c4cd','#949ba7','#e9b968']),
   tokyo: palette('Tokyo Night', 'Inky indigo, muted periwinkle and soft silver text.', 'dark', ['#151620','#1a1c28','#212432','#2a2e40','#34394e','#e1e5f5','#bcc5e0','#9ba8c7','#b6aff0']),
   nord: palette('Nordic Slate', 'Smoky arctic slate with a quiet frost-blue accent.', 'dark', ['#242a33','#2b323d','#333c49','#3c4655','#465263','#eceff4','#d0d8e5','#afbdcf','#99c5d0']),

@@ -9,7 +9,7 @@ export function useStudioPreferences() {
   const { workspacePreferences = {}, setWorkspacePreference } = useTaskContext();
   const saved = workspacePreferences?.studio as Partial<StudioPreferences> | undefined;
   const preferences = useMemo(() => ({ ...DEFAULT_STUDIO, ...saved,
-    interfaceTheme: studioThemeId(saved?.interfaceTheme),
+    interfaceTheme: studioThemeId(saved?.interfaceTheme ?? DEFAULT_STUDIO.interfaceTheme),
     panelOpacity: normalizePanelOpacity(saved?.panelOpacity),
     pipTheme: saved?.pipTheme && saved.pipTheme !== 'studio' ? studioThemeId(saved.pipTheme) : 'studio' as const,
     pipBackground: saved?.pipBackground !== false,

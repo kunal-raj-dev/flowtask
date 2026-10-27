@@ -16,7 +16,7 @@ async function assertSessionFits(studio: Locator) {
   const layout = await studio.evaluate(root => {
     const stage = root.querySelector<HTMLElement>('.studio-stage')!;
     const bounds = stage.getBoundingClientRect();
-    const controls = [...root.querySelectorAll<HTMLElement>('.studio-playback button')].map(el => el.getBoundingClientRect());
+    const controls = [...root.querySelectorAll<HTMLElement>('.studio-playback button')].filter(el => el.getClientRects().length > 0).map(el => el.getBoundingClientRect());
     const clock = root.querySelector('.studio-clock > span')!.getBoundingClientRect();
     return {
       scrolls: stage.scrollHeight > stage.clientHeight + 1,
@@ -70,8 +70,38 @@ test('multi-hour clocks stay fully readable on a small phone', async ({ page }) 
   await studio.getByRole('spinbutton', { name:'Focus minutes',exact:true }).fill('180');
   await studio.getByRole('button', { name:'Close customization panel' }).click();
   await expect(studio.getByRole('timer')).toContainText('03:00:00');
+  const clockWidths = await studio.getByRole('timer').evaluate(element => ({
+    face: element.getBoundingClientRect().width,
+    digits: element.querySelector('.studio-clock-digits')!.getBoundingClientRect().width,
+  }));
+  expect(clockWidths.digits).toBeLessThan(clockWidths.face * .9);
   await assertSessionFits(studio);
   await studio.getByRole('button', { name:'Start focus',exact:true }).click();
+  await assertSessionFits(studio);
+});
+
+test('room search and quick rhythms work together without losing the selected task', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await seedPlanner(page);
+  await openStudio(page);
+  const studio = page.getByRole('dialog', { name: 'Focus Studio', exact: true });
+  await studio.getByRole('button', { name: '50-minute focus', exact: true }).click();
+  await expect(studio.getByRole('timer')).toContainText('50:00');
+  await expect(studio.locator('.studio-lobby-recipes > button[aria-pressed="true"]')).toHaveCount(0);
+  await studio.getByRole('button', { name: 'Browse rooms', exact: true }).click();
+  const search = studio.getByRole('searchbox', { name: 'Search rooms' });
+  await search.fill('kyoto');
+  await expect(studio.getByRole('button', { name: /^Use .* background$/ })).toHaveCount(1);
+  await studio.getByRole('button', { name: 'Use Kyoto Rain background', exact: true }).click();
+  await search.fill('nothing-matches-this-room');
+  await expect(studio.getByText('A different somewhere?')).toBeVisible();
+  await studio.getByRole('button', { name: 'Explore all rooms', exact: true }).click();
+  await expect(search).toHaveValue('');
+  await studio.getByRole('button', { name: 'Close customization panel' }).click();
+  await expect(studio.locator('.studio-room-feature')).toContainText('Kyoto Rain');
+  await studio.getByRole('button', { name: 'Start focus', exact: true }).click();
+  await expect(studio.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  await expect(studio.getByRole('timer')).toContainText('50:00');
   await assertSessionFits(studio);
 });
 
@@ -147,11 +177,12 @@ test('floating timer shares the current scene, supports independent palettes and
   await popup.getByRole('button', { name: 'Match Studio', exact:true }).click();
   await popup.keyboard.press('Escape');
   await expect(popup.getByRole('region', { name:'Floating timer appearance options' })).toHaveCount(0);
-  await popup.locator('body').click({ position:{x:180,y:110} });
+  // Focus a noninteractive corner; the center can be the playback button.
+  await popup.locator('.pip-container').click({ position:{x:4,y:4} });
   await popup.keyboard.press('Space');
-  await expect(popup.getByRole('button', { name:'Resume focus timer' })).toBeVisible();
+  await expect(popup.getByRole('button', { name:'Resume focus session' })).toBeVisible();
   await popup.keyboard.press('Space');
-  await expect(popup.getByRole('button', { name:'Pause focus timer' })).toBeVisible();
+  await expect(popup.getByRole('button', { name:'Pause focus session' })).toBeVisible();
   await studio.getByRole('button', { name: 'Close customization panel' }).click();
   await studio.getByRole('button', { name: 'Room', exact:true }).click();
   await studio.getByRole('button', { name: 'Use Dolomite Dawn background', exact:true }).click();
