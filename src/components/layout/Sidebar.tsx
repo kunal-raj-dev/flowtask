@@ -211,30 +211,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isNew?: boolean;
   }
 
-  // Focus has a dedicated entry beside the four planning destinations.
+  // Execution Horizon: Today, Inbox, Upcoming, Timeline
   const primaryNavItems: SidebarNavItem[] = [
     { id: 'today', label: 'Today', icon: Sun, count: todayCount, color: 'text-amber-500' },
     { id: 'inbox', label: 'Inbox', icon: Inbox, count: inboxCount, color: 'text-blue-500' },
-    { id: 'timeline', label: 'Calendar & Plan', icon: Clock, count: null, color: 'text-teal-500' },
-    { id: 'projects', label: 'Projects', icon: Folder, count: activeProjectCount, color: 'text-indigo-500' },
-    { id: 'notes', label: 'Notes', icon: FileEdit, count: null, color: 'text-[var(--color-brand)]' },
-  ];
-
-  // Dedicated Tools Group: Study & Review
-  const toolsNavItems: SidebarNavItem[] = [
     { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: upcomingCount, color: 'text-purple-500' },
-    { id: 'study', label: 'Study Hub', icon: BookOpen, count: null, color: 'text-amber-600' },
-    { id: 'review', label: 'Review', icon: TrendingUp, count: null, color: 'text-teal-500' },
+    { id: 'timeline', label: 'Timeline & Grid', icon: Clock, count: null, color: 'text-teal-500' },
   ];
 
-  // Life Architecture: Areas, Goals & Routines
+  // Strategic Life OS: Goals, Life Areas & Projects
   const lifeNavItems: SidebarNavItem[] = [
-    { id: 'areas', label: 'Life Areas', icon: Compass, count: null, color: 'text-amber-500' },
     { id: 'goals', label: 'Vision & Goals', icon: Target, count: null, color: 'text-rose-500' },
-    { id: 'routines', label: 'Routines', icon: Repeat, count: null, color: 'text-indigo-500' },
+    { id: 'areas', label: 'Life Areas', icon: Compass, count: null, color: 'text-amber-500' },
+    { id: 'projects', label: 'Projects', icon: Folder, count: activeProjectCount, color: 'text-indigo-500' },
   ];
 
-  // Expandable Perspectives: Board, Matrix, All Tasks, Someday, Archive, Trash
+  // Deep Work & Daily Rituals
+  const toolsNavItems: SidebarNavItem[] = [
+    { id: 'review', label: 'Review & Rituals', icon: TrendingUp, count: null, color: 'text-teal-500' },
+    { id: 'routines', label: 'Routines', icon: Repeat, count: null, color: 'text-indigo-500' },
+    { id: 'notes', label: 'Notes', icon: FileEdit, count: null, color: 'text-[var(--color-brand)]' },
+    { id: 'study', label: 'Study Hub', icon: BookOpen, count: null, color: 'text-amber-600' },
+  ];
+
+  // Expandable Perspectives: All Tasks, Someday, Archive, Trash
   const perspectiveNavItems: SidebarNavItem[] = [
     { id: 'all', label: 'All Tasks', icon: CheckCircle2, count: allCount, color: 'text-stone-400' },
     { id: 'someday', label: 'Someday', icon: Lightbulb, count: somedayCount, color: 'text-amber-500' },
@@ -527,23 +527,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation Views */}
       <div className="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-3.5">
-        {/* Primary Destinations */}
+        {/* Execution Horizon */}
         <div className="space-y-0.5">
           <div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">
-            Workspace
+            Execution Horizon
           </div>
           {primaryNavItems.map(renderNavItem)}
           <button className="sidebar-studio-entry" onClick={()=>{onOpenPomodoro();onItemClick?.();}}><HeadphonesIcon/><span>Focus Studio<small>A place for your best work</small></span><ChevronRight size={14}/></button>
         </div>
 
-        {/* Life Architecture */}
-        <details className="sidebar-tools sidebar-life" open={['areas', 'goals', 'routines'].includes(activeView) || undefined}>
-          <summary>Life & routines</summary>
+        {/* Strategic Life OS */}
+        <details className="sidebar-tools sidebar-life" open={['areas', 'goals', 'projects'].includes(activeView) || undefined}>
+          <summary>Strategic Life OS</summary>
           {lifeNavItems.map(renderNavItem)}
         </details>
 
-        {/* Dedicated Tools Group */}
-        <details className="sidebar-tools" open={!isMoreCollapsed} onToggle={event => setIsMoreCollapsed(!event.currentTarget.open)}><summary>More</summary>{toolsNavItems.map(renderNavItem)}{perspectiveNavItems.map(renderNavItem)}</details>
+        {/* Deep Work & Rituals */}
+        <details className="sidebar-tools" open={['review', 'routines', 'notes', 'study'].includes(activeView) || undefined}>
+          <summary>Deep Work & Rituals</summary>
+          {toolsNavItems.map(renderNavItem)}
+        </details>
+
+        {/* More Perspectives & Archive */}
+        <details className="sidebar-tools" open={!isMoreCollapsed} onToggle={event => setIsMoreCollapsed(!event.currentTarget.open)}>
+          <summary>Perspectives & Recovery</summary>
+          {perspectiveNavItems.map(renderNavItem)}
+        </details>
 
         {/* Perspectives Section */}
         {pinnedItems.length > 0 && <div className="space-y-0.5"><div className="text-[10px] font-bold text-[var(--text-muted)] px-2.5 py-1 tracking-wider uppercase">Pinned</div>{pinnedItems.map(renderNavItem)}</div>}

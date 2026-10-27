@@ -22,7 +22,7 @@ const StudySessionModal = lazy(() => import('./StudySessionModal').then(m => ({ 
 const FocusEngineModal = lazy(() => import('../focus/FocusEngineModal').then(m => ({ default: m.FocusEngineModal })));
 const FocusStudio = lazy(() => import('../focus/FocusStudio').then(m => ({ default: m.FocusStudio })));
 const SettingsDrawer = lazy(() => import('./SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
-const CopilotOmnibar = lazy(() => import('./CopilotOmnibar').then(m => ({ default: m.CopilotOmnibar })));
+const CopilotDrawer = lazy(() => import('./CopilotDrawer').then(m => ({ default: m.CopilotDrawer })));
 const GlobalCaptureHUD = lazy(() => import('../capture/GlobalCaptureHUD').then(m => ({ default: m.GlobalCaptureHUD })));
 const ProcrastinationWizardModal = lazy(() => import('./ProcrastinationWizardModal').then(m => ({ default: m.ProcrastinationWizardModal })));
 const CleanSlateModal = lazy(() => import('./CleanSlateModal').then(m => ({ default: m.CleanSlateModal })));
@@ -78,6 +78,15 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
             isOpen={true}
             onClose={() => closeModal('settings')}
             initialTab={getModalProps<{ initialTab?: SettingsTab }>('settings')?.initialTab}
+          />
+        )}
+
+        {/* Universal Multi-Provider AI Copilot Drawer (Cmd+J) */}
+        {isModalOpen('copilotOmnibar') && (
+          <CopilotDrawer
+            isOpen={true}
+            onClose={() => closeModal('copilotOmnibar')}
+            targetTaskId={getModalProps<{ taskId?: string }>('copilotOmnibar')?.taskId}
           />
         )}
 
@@ -221,14 +230,6 @@ export const ModalRoot: React.FC<ModalRootProps> = ({ onSelectTask, onStartStudy
 
         {/* Template Picker */}
         {isModalOpen('templatePicker') && <TemplatePickerModal />}
-
-        {/* FlowTask Copilot Omnibar */}
-        {isModalOpen('copilotOmnibar') && (
-          <CopilotOmnibar
-            isOpen={true}
-            onClose={() => closeModal('copilotOmnibar')}
-          />
-        )}
 
         {/* Omnichannel Quick-Capture HUD */}
         {isModalOpen('captureHUD') && (

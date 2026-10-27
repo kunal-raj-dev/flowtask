@@ -560,11 +560,14 @@ export function FocusStudio({
       } else if (event.code === "KeyP") {
         event.preventDefault();
         void showPip();
+      } else if (event.code === "KeyI") {
+        event.preventDefault();
+        openModal('interruption');
       }
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [panel, clear, onClose, toggleFullscreen, showPip, setPanel, ctx.settings?.keyboardShortcutsEnabled]);
+  }, [panel, clear, onClose, toggleFullscreen, showPip, setPanel, ctx.settings?.keyboardShortcutsEnabled, openModal]);
   useEffect(() => {
     if (summaryDismissed)
       setWorkspacePreference("studioSummaryDismissed", summaryDismissed);

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../../../context/TaskContext';
 import type { Task } from '../../../types/task';
-import { suggestSubtasks, suggestDuration } from '../../../utils/aiCopilot';
+import { suggestDuration } from '../../../utils/aiCopilot';
+import { aiProviderService } from '../../../services/aiProviderService';
 import { generateStarterAction } from '../../../utils/procrastinationSplitter';
 import { saveCustomTemplate } from '../../../utils/templateEngine';
 import { calculateTaskTimeSummary } from '../../../utils/taskTimeSummary';
@@ -85,23 +86,27 @@ export const TaskDrawerSubtasks: React.FC<TaskDrawerSubtasksProps> = ({ task }) 
     showToast(`⚡ 5-min starter added: "${starter.starterAction}"`);
   };
 
-  const handleMagicBreakdown = () => {
+  const handleMagicBreakdown = async () => {
     setIsDecomposing(true);
-    setTimeout(() => {
-      const suggested = suggestSubtasks(task.title, task.description);
-      const newItems = suggested
+    try {
+      const result = await aiProviderService.decomposeTask(task.title, task.description);
+      const newItems = result.steps
         .filter((sub) => !task.subtasks?.some((s) => s.title.toLowerCase() === sub.title.toLowerCase()))
-        .map((sub) => ({ title: sub.title }));
+        .map((sub) => ({ title: sub.title, estimatedMinutes: sub.estimatedMinutes }));
 
       if (newItems.length > 0) {
         addSubTasks(task.id, newItems);
+        showToast(`AI added ${newItems.length} steps (${result.providerUsed})`);
       }
 
       if (!task.estimatedMinutes) {
         updateTask(task.id, { estimatedMinutes: suggestDuration(task.title) });
       }
+    } catch {
+      showToast('Could not decompose task. Try again.');
+    } finally {
       setIsDecomposing(false);
-    }, 200);
+    }
   };
 
   const handleAddSub = (e: React.FormEvent) => {

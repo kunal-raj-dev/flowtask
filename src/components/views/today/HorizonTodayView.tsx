@@ -14,6 +14,7 @@ import { VirtualTaskList } from '../../tasks/VirtualTaskList';
 import { TodayTimelineRail } from './TodayTimelineRail';
 import { TodayFocusProgressBar } from './TodayFocusProgressBar';
 import { DailyPlanning } from '../../workflow/DailyPlanning';
+import { useGoalAlignment } from '../../../hooks/useGoalAlignment';
 import { Dialog } from '../../ui/Dialog';
 import {
   Sun,
@@ -66,6 +67,7 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
 
   const { openModal } = useModal();
   const today = useTodayStr();
+  const { todayAlignment } = useGoalAlignment();
   const availabilityNow = useTaskAvailabilityClock(tasks);
   const overdueTasks = useMemo(() => getOverdueTasks(tasks), [tasks]);
   const [planning, setPlanning] = useState(false);
@@ -322,6 +324,42 @@ export const HorizonTodayView: React.FC<HorizonTodayViewProps> = ({
           </div>
         ) : (
           <>
+            {/* Life OS Strategic Goal Alignment Meter */}
+            {todayAlignment.totalTodayTasks > 0 && (
+              <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] text-xs text-[var(--text-secondary)] shadow-subtle mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500">
+                    <Target size={14} />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[var(--text-primary)]">
+                      {todayAlignment.alignmentPercent}% Strategic Alignment
+                    </span>
+                    <span className="text-[var(--text-muted)] ml-1.5 hidden sm:inline">
+                      • {todayAlignment.alignedTodayTasks} of {todayAlignment.totalTodayTasks} planned tasks drive active goals
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="w-24 h-2 bg-[var(--bg-surface-l3)] rounded-full overflow-hidden hidden sm:block">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full transition-all duration-500"
+                      style={{ width: `${todayAlignment.alignmentPercent}%` }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openModal('copilotOmnibar')}
+                    className="text-[11px] font-semibold text-[var(--color-brand)] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles size={12} />
+                    <span>AI Plan</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Top 3 Priorities Deck */}
             <section className="daily-priorities p-5 sm:p-6 rounded-2xl bg-[var(--bg-surface-l1)] border border-[var(--border-hairline)] shadow-2xs hover:shadow-xs transition-all space-y-4" aria-label="Top 3 Priorities">
               <div className="daily-section-heading flex items-center justify-between">

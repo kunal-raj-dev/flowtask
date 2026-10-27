@@ -20,6 +20,7 @@ const StudyView = lazy(() => import('../views/StudyView').then((m) => ({ default
 const LifeAreasView = lazy(() => import('../views/LifeAreasView').then((m) => ({ default: m.LifeAreasView })));
 const GoalsView = lazy(() => import('../views/GoalsView').then((m) => ({ default: m.GoalsView })));
 const RoutinesView = lazy(() => import('../views/RoutinesView').then((m) => ({ default: m.RoutinesView })));
+const InboxTriageView = lazy(() => import('../views/InboxTriageView').then((m) => ({ default: m.InboxTriageView })));
 import { TaskList } from '../tasks/TaskList';
 import { AppShell } from './AppShell';
 import { DesktopHeader } from './DesktopHeader';
@@ -440,12 +441,9 @@ export const AppLayout: React.FC = () => {
     }
     if (activeView === 'inbox') {
       return (
-        <TaskList
-          filterInbox
+        <InboxTriageView
           onSelectTask={handleSelectTask}
-          onStartFocus={handleStartFocus}
-          onOpenBrainDump={handleOpenBrainDump}
-          onStartSprint={handleStartStudySprint}
+          onGoToToday={() => setActiveView('today')}
         />
       );
     }

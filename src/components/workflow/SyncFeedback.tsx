@@ -8,6 +8,7 @@ export function SyncFeedback({ store, snapshot, download }: { store: WorkspaceSt
   const [differences, setDifferences] = useState<Difference[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  if (store.id === 'local' && !snapshot.error && !differences) return null;
   if (!snapshot.error && snapshot.sync !== 'offline' && !differences) return null;
   return <>
     <aside className="workspace-sync-notice" aria-label="Saving and sync notice" role="alert">

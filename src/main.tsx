@@ -16,11 +16,25 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Updates wait for explicit user action, and never interrupt an active focus session.
+// Clean reload on deployment chunk hash mismatch while guarding against infinite loops
 window.addEventListener('vite:preloadError', event => {
   event.preventDefault();
   window.dispatchEvent(new CustomEvent('flowtask:update-available'));
+  try {
+    const lastRetry = Number(sessionStorage.getItem('flowtask:preload-retry') || 0);
+    const now = Date.now();
+    if (now - lastRetry > 15000) {
+      sessionStorage.setItem('flowtask:preload-retry', String(now));
+      window.location.reload();
+      return;
+    }
+  } catch {
+    // sessionStorage may be restricted in sandboxes
+  }
 });
+setTimeout(() => {
+  try { sessionStorage.removeItem('flowtask:preload-retry'); } catch {}
+}, 5000);
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/sw.js').then(registration => {

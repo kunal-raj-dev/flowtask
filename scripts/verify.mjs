@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import path from 'node:path';
 
-if (Number(process.versions.node.split('.')[0]) !== 22) throw new Error('Release checks require Node 22. Use the checked-in .nvmrc/.node-version, then npm run verify.');
+if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('Release checks require Node 22 or newer. Use the checked-in .nvmrc/.node-version, then npm run verify.');
 const commands = [
   ['Lint', ['node_modules/oxlint/bin/oxlint']],
   ['TypeScript', ['node_modules/typescript/bin/tsc', '-b', '--pretty', 'false']],

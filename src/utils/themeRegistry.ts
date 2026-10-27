@@ -101,6 +101,8 @@ export const THEMES = {
   graphite: palette('Graphite', 'Balanced graphite, silver details and understated blue.', 'dark', ['#121416','#191c1f','#212529','#2b3035','#363c43','#f0f2f4','#c1c8cf','#9ca7b1','#a3c4ed'], true),
   espresso: palette('Espresso', 'Roasted cocoa, warm stone and a soft caramel accent.', 'dark', ['#1b1715','#231e1b','#2d2622','#38302a','#463b33','#f5eee5','#d5c5b5','#b5a390','#dfbd91'], true),
   plum: palette('Velvet Plum', 'Smoky aubergine, powder rose and soft champagne text.', 'dark', ['#1b1620','#231d29','#2e2535','#3a2f43','#483a51','#f6eef5','#d7c4d8','#baa3be','#e0b4cf']),
+  titanium: palette('Obsidian Titanium', 'Linear precision craft with razor-sharp hairlines and titanium violet.', 'dark', ['#0c0d0e','#121417','#181b20','#20242b','#2a303a','#f4f5f7','#c4c8d2','#979ea8','#6366f1'], true),
+  executive: palette('Midnight Executive', 'Superhuman high-contrast velocity with intense keyboard focus.', 'dark', ['#050505','#0d0d0d','#141414','#1f1f1f','#2b2b2b','#ffffff','#e5e5e5','#a3a3a3','#f59e0b'], true),
 } satisfies Record<string, ThemeDefinition>;
 
 export type AppTheme = keyof typeof THEMES;
